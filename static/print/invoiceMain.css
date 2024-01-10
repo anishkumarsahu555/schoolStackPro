@@ -1,0 +1,96 @@
+   body{
+        line-height: 1;
+    }
+
+
+.panel-body {
+
+    padding-top: 1px!important;
+    padding-right: 15px;
+    padding-bottom: 1px!important;
+    padding-left: 15px;
+}
+.vl {
+  border-left: 1px solid black;
+  height: 208px;
+}
+
+.vltwo {
+  border-left: 1px solid black;
+  height: 186px;
+}
+
+.vlthree {
+  border-left: 1px solid black;
+  height: 94px;
+}
+hr {
+    margin-top: 0.5px;
+    margin-bottom: 0.5px;
+    border: 0;
+    border-top: 1px solid black;
+    /*border-top: 1px solid black;*/
+}
+
+.maindiv{
+    text-align: center;
+    margin-top: 10px
+}
+.taxinvoice{
+    color: black;
+    font-weight: bolder;
+    font-size: 16px
+}
+
+.panelstyle{
+    margin: 10px
+}
+
+.rowmargin{
+    margin-left: 8px;
+    line-height: 18px;
+}
+
+.col-sm-0 {
+        width: 0%;!important;
+     float: left;!important;
+   }
+
+.customername{
+    font-size: 15px;font-weight: bold
+}
+
+.smallrow{
+    margin-bottom: 0px
+}
+
+.marginForLeft{
+    margin-top: 5px;
+}
+
+.panel-default {
+    border-color: #000;!important;
+}
+
+
+.boldtext{
+    font-weight: bold;
+
+}
+
+.tabletextaling{
+    text-align: right;
+
+}
+
+.margintabletext{
+    margin-right: 10px;
+}
+
+.centertext{
+    text-align: center;
+}
+
+.righttext{
+    text-align: center;
+}

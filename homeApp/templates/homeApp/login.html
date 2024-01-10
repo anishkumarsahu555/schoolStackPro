@@ -1,0 +1,228 @@
+{% load static %}
+{#{% load pwa %}#}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width,  initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="icon" href="{% static 'sw/images/favicon.ico' %}" sizes="any">
+    <link rel="apple-touch-icon" href="{% static 'sw/images/apple-touch-icon.png' %}">
+    <title>Login</title>
+{#    {% progressive_web_app_meta %}#}
+    {#    <link rel="stylesheet" type="text/css" href="{% static 'cssMain/semantic.min.css' %}">#}
+    {#     <script src="{% static 'jsMain/jquery.min.js' %}"></script>#}
+    {#    <script src="{% static 'jsMain/semantic.min.js' %}"></script>#}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+            integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.8/semantic.min.css"
+          integrity="sha512-pbLYRiE96XJxmJgF8oWBfa9MdKwuXhlV7vgs2LLlapHLXceztfcta0bdeOgA4reIf0WH67ThWzA684JwkM3zfQ=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.8/semantic.min.js"
+            integrity="sha512-t5mAtfZZmR2gl5LK7WEkJoyHCfyzoy10MlerMGhxsXl3J7uSSNTAW6FK/wvGBC8ua9AFazwMaC0LxsMTMiM5gg=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="{% static 'sw/app.js' %}"></script>
+
+
+    <style>
+        body {
+            background: rgba(71, 255, 163, 0.50);
+            background: -webkit-linear-gradient(0deg, rgba(71, 255, 163, 0.5) 0%, rgba(71, 172, 255, 0.5) 100%);
+            background: linear-gradient(0deg, rgba(71, 255, 163, 0.5) 0%, rgba(71, 172, 255, 0.5) 100%);
+        }
+
+        fieldset {
+            border: none;
+        }
+
+        .container {
+            padding-top: 4rem;
+        }
+
+        .ui.grid {
+            display: flex;
+            justify-content: center;
+        }
+
+        header {
+            background-color: #3c3a3a;
+            color: #ffffff;
+            display: block;
+            padding: 1em;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: block;
+            margin: 1em auto;
+            border-bottom: 1px solid #4caf50;
+            border-radius: 3px;
+            width: 300px;
+            padding-left: 20px;
+            font-size: 20px;
+        }
+
+        input {
+            width: 100%;
+            line-height: 1;
+            background-color: transparent;
+            border: none;
+            padding: .6em .5em;
+            outline: 0;
+            color: white;
+        }
+
+        .column_1 {
+            width: 300px;
+           background: rgba(255,255,255,0.5);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 5px;
+
+        }
+
+        .column_2 {
+            width: 300px;
+            background-color: #272E38;
+            border-radius: 5px;
+        }
+
+        button {
+            outline: 0;
+            font-size: 12px;
+            letter-spacing: 0.1em;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            width: 200px;
+            padding: 1.2em 0;
+            margin: 4em auto;
+            display: block;
+            border-top: 2px solid transparent;
+            border-bottom: 2px solid transparent;
+        }
+
+        hover {
+            border-bottom-color: darkgoldenrod;
+        }
+
+        p.hd {
+            text-align: center;
+            font-variant: small-caps;
+            font-weight: bold;
+            font-family: "Times New Roman", Times, serif;
+            font-size: 30px;
+            color: #3c3a3a;
+        }
+
+        .credit {
+            text-align: center;
+            font-size: 15px;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="ui equal width center aligned padded grid">
+        <div class="ui raised segment" style="background-color: transparent;">
+            <div class="ui two column centered grid" style="background-color: transparent;padding: 1rem">
+                <div class="column_1" style="width: 350px; padding: 05px">
+                    <img class="ui centered medium circular image" src="{% static 'sw/images/icon-192.png' %}"
+                         style="width: 100px;height: 100px;margin-top: 30px" alt="Logo">
+                    <br>
+                    <p class="hd">SCHOOL-STACK</p>
+
+                </div>
+                <div class="column_2" style="width: 350px; padding: 05px">
+                    <form id="userLoginForm" action="{% url 'homeApp:post_login' %}" method="post">{% csrf_token %}
+                        <div class="login-form-container">
+                            <header>LOGIN</header>
+                            <fieldset>
+                                <div class="input-wrapper">
+                                    <input type="text" placeholder="Username" name="userName" id="userName"/>
+                                </div>
+                                <div class="input-wrapper">
+                                    <input type="password" placeholder="Password " name="password" id="password"/>
+                                </div>
+                                <button style="cursor: pointer" id="continue" type="button" onclick="UserLogin()">
+                                    CONTINUE
+                                </button>
+                            </fieldset>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<p class="credit" style="">Developed by <a href="http://zivainfotech.com" target="_blank">Ziva Infotech</a></p>
+<script>
+    function UserLogin() {
+        var username = $('#userName').val();
+        var password = $('#password').val();
+
+        if (username === "" || password === "") {
+
+
+            $('body')
+                .toast({
+                    class: 'error',
+                    message: 'Username and Password is required !'
+                })
+            ;
+
+        } else {
+            data = new FormData();
+            data.append('userName', username);
+            data.append('password', password);
+
+            $.ajax({
+                type: 'post',
+                url: '{% url 'homeApp:post_login' %}',
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+
+
+                success: function (response) {
+                    if (response.message === 'success') {
+                        $('body')
+                            .toast({
+                                class: 'success',
+                                message: 'Login Successful.'
+                            });
+                        document.location.href = "" + response.data;
+                    } else {
+                        $('body')
+                            .toast({
+                                class: 'warning',
+                                message: 'Incorrect username or password. Please try again.'
+                            })
+                        ;
+
+                    }
+
+                    return response;
+                },
+                error: function () {
+                    $('body')
+                        .toast({
+                            class: 'error',
+                            message: 'An error occurred !'
+                        })
+                    ;
+                }
+            });
+        }
+    }
+</script>
+</body>
+</html>

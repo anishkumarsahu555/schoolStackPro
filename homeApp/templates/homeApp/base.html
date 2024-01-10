@@ -1,0 +1,436 @@
+{% load static %}
+{#{% load pwa %}#}
+{#{% load custom_has_group_tag %}#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,  user-scalable=0"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    {% block title %}
+        <title>SCHOOL-STACK</title>
+    {% endblock %}
+
+{#    {% progressive_web_app_meta %}#}
+
+    <link rel="icon" href="{% static 'sw/images/favicon.ico' %}" sizes="any">
+    <link rel="apple-touch-icon" href="{% static 'sw/images/apple-touch-icon.png' %}">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.0/semantic.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.0/semantic.min.js"></script>
+    <script src="{% static 'sw/app.js' %}"></script>
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/dataTables.semanticui.min.css">
+    <script src="{% static 'sw/app.js' %}"></script>
+    <link rel="stylesheet" type="text/css"
+          href="https://cdn.datatables.net/fixedcolumns/4.1.0/css/fixedColumns.dataTables.min.css">
+
+    {% block css %}
+
+    {% endblock %}
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .sidenav {
+            height: 100%;
+            width: 200px;
+            position: fixed;
+            z-index: 1;
+            top: 40px;
+            left: 0;
+            background-color: #000000;
+            overflow-x: hidden;
+            padding-top: 10px;
+        }
+
+        .sidenav a {
+            padding: 15px 12px 15px 16px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #818181;
+            display: block;
+        }
+
+        .sidenav a:hover {
+            color: #f1f1f1;
+        }
+
+        .preloader {
+            align-items: center;
+            background: rgb(23, 22, 22);
+            display: flex;
+            height: 100vh;
+            justify-content: center;
+            left: 0;
+            position: fixed;
+            top: 0;
+            transition: opacity 0.3s linear;
+            width: 100%;
+            z-index: 9999;
+        }
+
+        body ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .ui.vertical.menu.sidebar-menu {
+            margin-top: 40px !important;
+            max-height: calc(100% - 40px) !important;
+            height: calc(100% - 40px) !important;
+        }
+
+        .ui.vertical.menu.sidebar-menu .item i.icon {
+            float: left;
+            margin: 0em 0.5em 0em 0em;
+        }
+
+        .main-content {
+            margin-top: 40px;
+        }
+
+        @media (min-width: 768px) {
+            .ui.vertical.menu.sidebar-menu {
+                visibility: visible;
+                -webkit-transform: translate3d(0, 0, 0);
+                transform: translate3d(0, 0, 0);
+                width: 15rem !important;
+            }
+
+            .main-content {
+                margin-left: 15rem;
+            }
+
+            .sidebar-menu-toggler {
+                display: none !important;
+            }
+        }
+
+        .custom_search {
+            width: 100%;
+            -webkit-transition: width 0.4s ease-in-out;
+            transition: width 0.4s ease-in-out;
+        }
+
+        .custom_search:focus {
+            width: 100%;
+        }
+
+        .bgColor {
+            background-color: #2A3F54 !important;
+        }
+
+        .logoImg {
+            width: 30px;
+            height: 30px;
+            margin: 5px;
+            position: relative;
+            left: 10px;
+        }
+
+        .ui.inverted.menu .active.item {
+            background: #3d3e3f;
+            color: #4cebb8 !important;
+        }
+
+        .dataTables_scroll {
+            position: inherit !important;
+        }
+    </style>
+
+</head>
+
+<body>
+<!-- sidebar -->
+<div class="ui sidebar inverted bgColor vertical menu sidebar-menu" id="sidebar">
+
+    {% block sidebar %}
+
+    {% endblock %}
+
+
+
+        <div class="item">
+            <div class="header">
+                Profile
+            </div>
+            <div class="menu">
+                <a class="item" href="#">
+                    <div><i class="user icon"></i>My Profile</div>
+                </a>
+                <a class="item" href="{% url 'homeApp:user_logout' %}">
+                    <div><i class="sign out alternate icon"></i>Logout</div>
+                </a>
+            </div>
+        </div>
+
+
+    <div class="ui segment bgColor inverted">
+        <div class="ui tiny olive inverted progress">
+            <div class="bar" style="width: 54%"></div>
+            <div class="label">Developed By Ziva Infotech</div>
+        </div>
+
+        <div class="ui tiny teal inverted progress">
+            <div class="bar" style="width:78%"></div>
+            <div class="label">v 1.0.2</div>
+        </div>
+    </div>
+</div>
+
+<!-- sidebar -->
+<!-- top nav -->
+
+<nav class="ui top fixed inverted bgColor menu">
+    <div class="left menu">
+        <a href="#" class="sidebar-menu-toggler item" data-target="#sidebar">
+            <i class="sidebar icon"></i>
+        </a>
+        <img class="logo logoImg" src="{% static 'sw/images/icon-192.png' %}">
+        <a href="#" class="header item">
+
+            SCHOOL-STACK
+        </a>
+    </div>
+
+    <div class="right menu">
+
+ <div class="ui dropdown item"  >
+            <i class="calendar check icon"></i>
+ <span data-tooltip="Change Session" data-position="bottom center" data-variation="tiny">{{ request.session.current_session.currentSessionYear }}</span>
+            <div class="menu">
+
+                 {% for foo in request.session.session_list %}
+                     <a href="#" class="item" onclick="showSessionModal({{ foo.Id }})">
+                    <i class="circle outline icon"></i>
+                    {{ foo.currentSessionYear }}
+                </a>
+   {% endfor %}
+
+            </div>
+        </div>
+        <div class="ui dropdown item">
+            <i class="user cirlce icon"></i>
+            <div class="menu">
+                <a href="{% url 'homeApp:user_logout' %}" class="item">
+                    <i class="sign out alternate icon"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- top nav -->
+
+<div class="pusher">
+
+    <div class="main-content">
+        {% block body %}
+       <p>BODY</p>
+        {% endblock %}
+
+    </div>
+
+
+</div>
+<div class="preloader">
+    <div class="ui active dimmer">
+        <div class="ui medium text loader">Loading</div>
+    </div>
+</div>
+
+<div class="ui mini test modal front transition"  id="sessionModal">
+    <div class="header">
+      Change School Session?
+    </div>
+    <div class="content">
+      <p>Are you sure you want to change the school session?</p>
+        <input type="hidden" id="sessionID">
+      <span class="ui text small red">Note: Alterations made to the school session will not be reflected in the database.</span>
+    </div>
+    <div class="actions">
+      <div class="ui negative button">
+        No
+      </div>
+       <button class="ui right labeled icon button green saveBtn" onclick="changeSession()">
+                                    Submit
+                                    <i class="checkmark icon"></i>
+                                </button>
+                                <button style="display: none" class="ui right labeled icon button green saveBtnLoad" >
+                                    Saving ...
+                                    <i class="checkmark icon"></i>
+                                </button>
+    </div>
+  </div>
+
+
+<script src="https://frontendfunn.github.io/semantic-ui-admin-dashboard-template/js/script.js"></script>
+
+<script>
+    $('.menu .item').tab();
+    $(window).on("load", function () {
+        $(".preloader").fadeOut(50);
+    });
+
+    function showLoading() {
+        $('.saveBtn').css('display', 'none');
+        $('.saveBtnLoad').css('display', '');
+
+    }
+
+    function hideLoading() {
+        $('.saveBtn').css('display', '');
+        $('.saveBtnLoad').css('display', 'none');
+
+    }
+    function requiredFieldError() {
+         $('body')
+                    .toast({
+                        class: 'orange',
+                        message: '* fields are required.'
+                    });
+    }
+    function addSuccessNotification(message, color) {
+         $('body')
+            .toast({
+                class: ''+color,
+                message: ""+message
+            });
+
+    }
+    function addErrorNotification() {
+          $('body')
+            .toast({
+                class: 'error',
+                message: 'An error occurred ! Please try again.'
+            })
+        ;
+
+    }
+
+
+    $(function () {
+        var current = location.pathname;
+        $('.sidebar  a').each(function () {
+            var $this = $(this);
+            // if the current path is like this link, make it active
+            if ($this.attr('href').indexOf(current) !== -1) {
+                $this.addClass('active');
+            }
+        })
+    })
+</script>
+<script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+{#<script src="https://cdn.datatables.net/1.12.1/js/dataTables.semanticui.min.js"></script>#}
+<script src="{% static 'js/dataTables.semanticui.js' %}"></script>
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.semanticui.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
+<script src="https://cdn.datatables.net/fixedcolumns/4.1.0/js/dataTables.fixedColumns.min.js"></script>
+
+<script>
+    $.fn.DataTable.ext.pager.numbers_length = 4;
+    $(document).ready(function () {
+        // initialize the form an fields
+        $('.ui.form')
+            .form({
+                fields: {
+                    fileInput: {
+                        identifier: 'name',
+                        rules: [
+                            {
+                                type: 'empty'
+                            }
+                        ]
+                    }
+                }
+            });
+    });
+
+    function myOwnReset() {
+        $('.ui.form').form('reset');
+    }
+
+    function showSessionModal(id) {
+        $('#sessionModal')
+          .modal('show')
+        ;
+        $('#sessionID').val(id);
+
+    }
+
+    function changeSession() {
+            showLoading();
+            let sessionID = $('#sessionID').val();
+
+            if (sessionID === '' ) {
+               requiredFieldError();
+                hideLoading();
+            }
+
+            else {
+
+
+                        let data = new FormData();
+                        data.append('sessionID', sessionID);
+                     $.ajax({
+                        type: 'post',
+                        url: "{% url 'homeAppAPI:change_session' %}",
+                        data: data,
+                        contentType: false,
+                        cache: false,
+                        processData: false,
+
+                        success: function (response) {
+                            if (response.status === 'success') {
+                               addSuccessNotification(response.message, response.color);
+                               $('#sessionModal').modal('toggle');
+                                setTimeout(location.reload.bind(location), 1500);
+                                hideLoading();
+
+                            } else {
+                                addErrorNotification();
+                                hideLoading();
+
+                            }
+
+                            return response;
+                        },
+                        error: function () {
+                            addErrorNotification();
+                            hideLoading();
+                        }
+                    });
+
+                }
+
+        }
+
+
+</script>
+
+
+{% block js %}
+    <script>
+        $('.message .close')
+            .on('click', function () {
+                $(this)
+                    .closest('.message')
+                    .transition('fade')
+                ;
+            })
+        ;
+
+    </script>
+
+{% endblock %}
+</body>
+</html>
