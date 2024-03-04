@@ -3,7 +3,7 @@ from django.apps import AppConfig
 
 class SchoolappConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'schoolApp'
+    name = 'managementApp'
 
     def ready(self):
-        import schoolApp.signals
+        import managementApp.signals

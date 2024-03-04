@@ -39,7 +39,7 @@ def homepage(request):
     if request.user.is_authenticated and (
             'Admin' in request.user.groups.values_list('name', flat=True) or 'Owner' in request.user.groups.values_list(
             'name', flat=True)):
-        return redirect('/school/')
+        return redirect('managementApp:admin_home')
     else:
         return render(request, 'homeApp/login.html')
 
@@ -48,11 +48,19 @@ def homepage(request):
 def admin_home(request):
     context = {
     }
-    return render(request, 'schoolApp/index.html', context)
+    return render(request, 'managementApp/index.html', context)
 
 
 @check_groups('Admin', 'Owner')
 def manage_class(request):
     context = {
     }
-    return render(request, 'schoolApp/class.html', context)
+    return render(request, 'managementApp/class.html', context)
+
+
+@check_groups('Admin', 'Owner')
+def add_teacher(request):
+    context = {
+    }
+    return render(request, 'managementApp/add_teacher.html', context)
+

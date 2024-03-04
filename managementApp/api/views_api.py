@@ -6,8 +6,8 @@ from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
-from schoolApp.models import *
-from schoolApp.signals import pre_save_with_user
+from managementApp.models import *
+from managementApp.signals import pre_save_with_user
 
 
 @transaction.atomic
@@ -99,10 +99,10 @@ class StandardListJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            action = '''<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetUserDetails('{}')" class="ui circular facebook icon button green">
+            action = '''<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
                 <i class="pen icon"></i>
               </button>
-              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delUser('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
+              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
                 <i class="trash alternate icon"></i>
               </button></td>'''.format(item.pk, item.pk),
             if item.classTeacher:
@@ -123,3 +123,51 @@ class StandardListJson(BaseDatatableView):
             ])
 
         return json_data
+
+
+@login_required
+def get_class_detail(request,**kwargs):
+    try:
+        id = request.GET.get('id')
+        obj = Standard.objects.get(pk=id, isDeleted=False, sessionID_id=request.session['current_session']['Id'])
+        if obj.classTeacher:
+            teacher = obj.classTeacher.firstName + " " + obj.classTeacher.middleName + " " + obj.classTeacher.lastName
+            teacherID = obj.classTeacher.pk
+        else:
+            teacher = "N/A"
+            teacherID = "N/A"
+        if obj.hasSection == "Yes":
+            section = obj.section
+        else:
+            section = "N/A"
+        obj_dic = {
+            'ClassID': obj.pk,
+            'Class': obj.name,
+            'Location': obj.classLocation,
+            'Section': section,
+            'StartRoll': obj.startingRoll,
+            'EndRoll': obj.endingRoll,
+            'Teacher': teacher,
+            'TeacherID': str(teacherID)
+        }
+        return JsonResponse({'status': 'success','data': obj_dic}, safe=False)
+    except:
+        return JsonResponse({'status': 'error'}, safe=False)
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def delete_class(request):
+    if request.method == 'POST':
+        try:
+            id = request.POST.get("dataID")
+            instance = Standard.objects.get(pk=int(id), isDeleted=False, sessionID_id=request.session['current_session']['Id'])
+            instance.isDeleted = True
+            pre_save_with_user.send(sender=Standard, instance=instance, user=request.user.pk)
+            instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'Class detail deleted successfully.',
+                 'color': 'success'}, safe=False)
+        except:
+            return JsonResponse({'status': 'error'}, safe=False)
+    return JsonResponse({'status': 'error'}, safe=False)

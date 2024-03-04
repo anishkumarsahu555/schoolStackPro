@@ -1,0 +1,593 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+{% block title %}
+    <title>Manage Subjects</title>
+{% endblock %}
+{% block css %}
+{% endblock %}
+{% block body %}
+
+    <style>
+        .showSectionDiv{
+            display: none;
+        }
+
+
+        #ClassTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #ClassTable_filter {
+            width: 50%;
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+    </style>
+
+    <div class="ui right aligned basic  grid">
+        <div class="sixteen wide column">
+            <div class="ui  pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user"
+                >Manage Subjects
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <button class="ui green mini plus button right" onclick="showClassModal()">
+                        <i class="plus square outline icon"></i>
+                        Add Class
+                    </button>
+                </div>
+            </div>
+            <div class="ui tab " data-tab="user">
+
+                <div class="row" style="padding-left: 5px; padding-right: 5px">
+                    <div class="wide">
+
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="ClassTable"
+                               style="margin-top: 5px;width: 100%">
+                            <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Section</th>
+                                <th>ClassTeacher</th>
+                                <th>StartingRoll</th>
+                                <th>EndingRoll</th>
+                                <th>Location</th>
+                                <th>EditedBy</th>
+                                <th>AddedOn</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="ui modal" id="addModal">
+                        <i class="close icon"></i>
+                        <div class="header">
+                            Add Class
+                        </div>
+                        <div class="content">
+
+                            <form class="ui tiny form" id="addForm">{% csrf_token %}
+
+
+                                <div class="three fields">
+                                    <div class="field required">
+                                        <label>Class Name</label>
+                                        <input type="text" name="Name" placeholder="Class Name" id="className">
+                                    </div>
+                                    <div class="field required">
+                                        <label>Class Location</label>
+                                        <input type="text" name="Location" id="classLocation" placeholder="Class Location">
+                                    </div>
+                                    <div class="field required">
+                                        <label>Has Section?</label>
+                                        <select class="ui fluid dropdown" id="hasSection" onchange="HaveSection(this)">
+                                            <option value="No" selected>No</option>
+                                            <option value="Yes">Yes</option>
+
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="four fields">
+                                    <div class="field required">
+                                        <label>Start Roll</label>
+                                        <input type="number" name="startRoll0" id="startRoll0" placeholder="Start Roll">
+                                    </div>
+                                    <div class="field required">
+                                        <label>End Roll</label>
+                                        <input type="number" name="endRoll0" id="endRoll0" placeholder="End Roll">
+                                    </div>
+                                    <div class="field required showSectionDiv">
+                                        <label>Section</label>
+                                        <input type="text" name="section" id="section0" placeholder="Section">
+                                    </div>
+                                     <div class="field"> </div>
+
+
+
+                                </div>
+                                <div id="sectionBlock" class="showSectionDiv"></div>
+
+                                <div  class="ui right floated showSectionDiv">
+                                    <button class="ui mini right labeled icon button purple " onclick="AddAnotherSection()" type="button">
+                                        Add More
+                                    <i class="add icon"></i>
+                                    </button>
+                                </div>
+
+
+
+
+
+
+                            </form>
+
+                            <div class="actions" style="padding-top: 20px; padding-bottom: 20px ;float: right">
+                                <div class="ui cancel button">Cancel</div>
+                                <button class="ui right labeled icon button green saveBtn" onclick="addData()">
+                                    Submit
+                                    <i class="checkmark icon"></i>
+                                </button>
+                                <button style="display: none" class="ui right labeled icon button green saveBtnLoad" >
+                                    Saving ...
+                                    <i class="checkmark icon"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui basic modal custom" id="deleteDataModal">
+                    <div class="ui icon header">
+                       <i class="trash alternate icon red"></i>
+                        Class Details will be Deleted
+                    </div>
+                    <div class="content">
+                        <p style="text-align: center">The Class will be deleted, are you sure to delete this Class?</p>
+                    </div>
+                    <div class="actions">
+                        <div class="ui red basic cancel inverted button">
+                            <i class="remove icon"></i>
+                            No
+                        </div>
+                        <input type="hidden" id="dataID">
+                        <div class="ui green ok inverted button" onclick="deleteData()">
+                            <i class="checkmark icon"></i>
+                            Yes
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui modal" id="editModal">
+                    <i class="close icon"></i>
+                    <div class="header">
+                        Edit Class
+                    </div>
+                    <div class="content">
+
+                        <form class="ui tiny form" id="EditForm">{% csrf_token %}
+                            <div class="three fields">
+                                    <div class="field required">
+                                        <label>Class Name</label>
+                                        <input type="text" name="Name" placeholder="Class Name" id="classNameEdit">
+                                    </div>
+                                    <div class="field required">
+                                        <label>Class Location</label>
+                                        <input type="text" name="Location" id="classLocationEdit" placeholder="Class Location">
+                                    </div>
+                                    <div class="field">
+                                        <label>Class Teacher</label>
+                                        <select class="ui fluid dropdown" id="teacherEdit" >
+                                            <option value="None" selected>Select Teacher</option>
+                                            <option value="Yes">Yes</option>
+
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="four fields">
+                                    <div class="field required">
+                                        <label>Start Roll</label>
+                                        <input type="number" name="startRoll0" id="startRoll0Edit" placeholder="Start Roll">
+                                    </div>
+                                    <div class="field required">
+                                        <label>End Roll</label>
+                                        <input type="number" name="endRoll0" id="endRoll0Edit" placeholder="End Roll">
+                                    </div>
+                                    <div class="field required" style="display: none" id="sectionDiveEdit">
+                                        <label>Section</label>
+                                        <input type="text" name="section" id="section0Edit" placeholder="Section">
+                                    </div>
+                                     <div class="field"> </div>
+
+
+
+                                </div>
+
+                            <input type="hidden" id="dataIDEdit">
+                        </form>
+
+                        <div class="actions" style="padding-top: 20px; padding-bottom: 20px ;float: right">
+                            <div class="ui cancel button">Cancel</div>
+                            <button class="ui right labeled icon button green saveBtn" onclick="editData()">
+                                Update
+                                <i class="checkmark icon"></i>
+                            </button>
+                            <button style="display: none" class="ui right labeled icon button green saveBtnLoad" >
+                                    Saving ...
+                                    <i class="checkmark icon"></i>
+                                </button>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let sectionArray = [0];
+        let sectionCount = 1;
+        function AddAnotherSection() {
+            $('#sectionBlock').append('<div class="four fields" id ="sec' + sectionCount + '"><div class="field required"><label>Start Roll</label> <input type="number" name="startRoll' + sectionCount + '" id="startRoll' + sectionCount + '" placeholder="Start Roll"> </div><div class="field required"><label>End Roll</label> <input type="number" name="endRoll' + sectionCount + '" id="endRoll' + sectionCount + '" placeholder="End Roll"> </div><div class="field required"><label>Section</label> <input type="text" name="section' + sectionCount + '" id="section' + sectionCount + '" placeholder="Section"> </div> <div class="field" style="padding-top: 1.5rem"> <button type="button" data-inverted="" data-tooltip="Remove" data-position="right center" data-variation="mini" style="font-size:10px;" onclick= removeSection(' + sectionCount + ') class="ui circular youtube icon button"> <i class="trash alternate icon"></i></button></div></div>')
+
+             sectionArray.push(sectionCount);
+            sectionCount += 1;
+
+        }
+        function removeSection(id) {
+            $('#sec' + id).remove();
+            let index = $.inArray(id, sectionArray);
+
+        // Remove the element if found
+        if (index !== -1) {
+          sectionArray.splice(index, 1);
+    }
+
+
+        }
+        function HaveSection(elm) {
+             if (elm.value === 'Yes') {
+                $('.showSectionDiv').css('display', 'block');
+
+            }
+            else{
+                $('.showSectionDiv').css('display', 'none');
+            }
+        }
+
+        let classTab
+
+        function addData() {
+            showLoading();
+            let className = $('#className').val();
+            let classLocation = $('#classLocation').val();
+            let hasSection = $('#hasSection').val();
+            let startRoll0 = $('#startRoll0').val();
+            let endRoll0 = $('#endRoll0').val();
+            let SecDetail = "";
+            let allCorrect = true;
+
+            if (className === '' || classLocation === '' || startRoll0 ==='' || endRoll0 === '') {
+               requiredFieldError();
+                hideLoading();
+                allCorrect = false;
+            }
+
+            else {
+                if ( hasSection === 'Yes') {
+                sectionArray.forEach(function(value) {
+                     let secName = $('#section' + value).val();
+                    let secStartRoll = $('#startRoll' + value).val();
+                    let secEndRoll = $('#endRoll' + value).val();
+                    if (!secName || !secStartRoll || !secEndRoll) {
+                        allCorrect = false;
+                        requiredFieldError();
+                        hideLoading();
+                        return false;
+                    } else {
+                        SecDetail += secName + '|' + secStartRoll + '|' + secEndRoll + '@';
+                    }
+
+
+                    });
+
+                 }
+                    if (allCorrect === true) {
+
+                        let data = new FormData();
+                        data.append('className', className);
+                        data.append('classLocation', classLocation);
+                        data.append('hasSection', hasSection);
+                        data.append('startRoll0', startRoll0);
+                        data.append('endRoll0', endRoll0);
+                        data.append('secDetail', SecDetail);
+                        data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+                     $.ajax({
+                        type: 'post',
+                        url: "{% url 'managementAppAPI:add_class' %}",
+                        data: data,
+                        contentType: false,
+                        cache: false,
+                        processData: false,
+
+
+                        success: function (response) {
+                            if (response.status === 'success') {
+                               addSuccessNotification(response.message, response.color);
+                                classTab.ajax.reload(null, false);
+                                $('#addForm').trigger('reset');
+                                $('#addModal').modal('toggle');
+                                hideLoading();
+                            } else {
+                                addErrorNotification();
+                                hideLoading();
+
+                            }
+
+                            return response;
+                        },
+                        error: function () {
+                            addErrorNotification();
+                            hideLoading();
+                        }
+                    });
+
+                }
+
+
+
+
+            }
+        }
+
+
+        function showClassModal() {
+            $('#addModal').modal('show');
+            myOwnReset();
+        }
+
+        function EditUser() {
+            $('')
+        }
+
+
+        // user Details
+
+        classTab = $('#ClassTable').DataTable({
+            dom: 'Blfrtip',
+            "scrollY": "350px",
+            "scrollX": true,
+            stateSave: true,
+            fixedColumns: {
+                left: 1,
+                right: 1
+            },
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0,1, 2, 3, 4, 5, 6, 7]
+                }
+            }
+                {% comment %}      , {
+                          extend: 'print',
+                          exportOptions: {
+                               columns: [1, 2, 3, 4, 5, 6, 7, 8]
+                          }
+                      }{% endcomment %}
+            ],
+            "columnDefs": [
+                {"name": "name", "targets": 0, "orderable": true},
+                {"name": "section", "targets": 1, "orderable": true},
+                {"name": "classTeacher", "targets": 2, "orderable": true},
+                {"name": "startingRoll", "targets": 3, "orderable": true},
+                {"name": "endingRoll", "targets": 4, "orderable": true},
+                {"name": "classLocation", "targets": 5, "orderable": true},
+                {"name": "lastEditedBy", "targets": 6, "orderable": true},
+                {"name": "datetime", "targets": 7, "orderable": true},
+                {"name": "action", "targets": 8, "orderable": false}
+            ],
+            aaSorting: [[7, 'desc']],
+            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            "pageLength": 10,
+            "processing": true,
+            "serverSide": true,
+            "ajax": "{% url 'managementAppAPI:class_list' %}"
+        });
+
+
+        function delData(id) {
+            $('#deleteDataModal')
+                .modal('show')
+            ;
+            $('#dataID').val(id)
+        }
+
+        function deleteData() {
+            let id = $('#dataID').val();
+            let data = new FormData();
+            data.append('dataID', id);
+
+            $.ajax({
+                url: "{% url 'managementAppAPI:delete_class' %}",
+                type: "post",
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+
+                success: function (response) {
+                    if (response.status === 'success') {
+                            addSuccessNotification(response.message, response.color);
+                            classTab.ajax.reload(null, false);
+                            $('#deleteDataModal').modal('toggle');
+                        } else {
+                                  addErrorNotification();
+                        }
+                        return response;
+                    },
+                    error: function () {
+                               addErrorNotification();
+                    }
+            });
+
+        }
+
+        function GetDataDetails(id) {
+            myOwnReset();
+            $('#editModal').modal('show');
+            $.ajax({
+                type: 'get',
+                data: {id: id},
+                url: '{% url "managementAppAPI:get_class_detail" %}',
+
+                success: function (response) {
+                     if (response.status === 'success') {
+                               console.log(response);
+                    $('#dataIDEdit').val(response.data['ClassID']);
+                    $('#classNameEdit').val(response.data['Class']);
+                    $('#classLocationEdit').val(response.data['Location']);
+                    $('#section0Edit').val(response.data['Section']);
+                    $('#startRoll0Edit').val(response.data['StartRoll']);
+                    $('#endRoll0Edit').val(response.data['EndRoll']);
+                    $('#teacherEdit').val(response.data['TeacherID']).change();
+                    if (response.data['Section'] === 'N/A') {
+                        $('#sectionDiveEdit').css('display', 'none');
+                    } else {
+                        $('#sectionDiveEdit').css('display', 'block');
+                    }
+
+                            } else {
+                                addErrorNotification();
+
+                            }
+                },
+                error: function () {
+                    addErrorNotification();
+                }
+            });
+        }
+
+        function editData() {
+           showLoading();
+            var EditUserId = $('#EditUserId').val();
+            var CompanyUserName = $('#CompanyUserNameEdit').val();
+            var UserPhoneNo = $('#UserPhoneNoEdit').val();
+            var UserEmail = $('#UserEmailEdit').val();
+            var UserAddress = $('#UserAddressEdit').val();
+            var UserGroup = $('#UserGroupEdit').val();
+            {#var PartyGroup = $('#PartyGroupEdit').val();#}
+            var UserStatus = $('#UserStatusEdit').val();
+            var UserPwd = $('#UserPwdEdit').val();
+            var ConfirmPwd = $('#ConfirmPwdEdit').val();
+
+
+            if (CompanyUserName === '' || UserPhoneNo === '' ||
+                UserAddress === '' || UserPwd === '' || ConfirmPwd === '' || UserGroup === '' || UserStatus === '') {
+                $('body')
+                    .toast({
+                        class: 'orange',
+                        message: 'User Name, Phone Number, Photo, Address ... are required !. Also ensure that password is matched'
+                    })
+                ;
+                hideLoading();
+            } else {
+
+                var csrfmiddlewaretoken = $("input[name='csrfmiddlewaretoken']").val();
+
+                data = new FormData();
+                data.append('EditUserId', EditUserId);
+                data.append('CompanyUserName', CompanyUserName);
+                data.append('UserPhoneNo', UserPhoneNo);
+                data.append('UserEmail', UserEmail);
+                data.append('UserAddress', UserAddress);
+                data.append('UserGroup', UserGroup);
+                data.append('UserStatus', UserStatus);
+                data.append('UserPwd', UserPwd);
+                data.append('imageUpload', imageUpload);
+                data.append('imageUploadID', imageUploadID);
+                {#data.append('PartyGroup', PartyGroup);#}
+
+
+                data.append('csrfmiddlewaretoken', csrfmiddlewaretoken);
+
+
+                if (UserPwd !== ConfirmPwd) {
+                    $('body')
+                        .toast({
+                            class: 'orange',
+                            message: 'Password not matched!'
+                        })
+                    ;
+                    hideLoading();
+                } else {
+
+
+                    $.ajax({
+                        type: 'post',
+                        url: '#',
+                        data: data,
+                        contentType: false,
+                        cache: false,
+                        processData: false,
+
+
+                        success: function (response) {
+                            if (response.message === 'success') {
+                                $('body')
+                                    .toast({
+                                        class: 'success',
+                                        message: 'User detail updated Successfully.'
+                                    })
+                                ;
+
+
+                                userTab.ajax.reload(null, false);
+                                $('#EditForm').trigger('reset');
+                                $('#userModal').modal('toggle');
+                                hideLoading();
+                            } else {
+                                $('body')
+                                    .toast({
+                                        class: 'error',
+                                        message: 'An error occurred !'
+                                    })
+                                ;
+                                hideLoading();
+
+                            }
+
+                            return response;
+                        },
+                        error: function () {
+                            $('body')
+                                .toast({
+                                    class: 'error',
+                                    message: 'An error occurred !'
+                                })
+                            ;
+                            hideLoading();
+                        }
+                    });
+                }
+
+            }
+
+        }
+
+    </script>
+
+{% endblock %}

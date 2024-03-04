@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 from homeApp.models import SchoolSession
-from schoolApp.models import TeacherDetail, NonTeachingStaff, ComputerOperator
+from managementApp.models import TeacherDetail, NonTeachingStaff, ComputerOperator
 
 
 def init_session(func):
