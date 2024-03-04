@@ -11,7 +11,7 @@
         <title>SCHOOL-STACK</title>
     {% endblock %}
 
-{#    {% progressive_web_app_meta %}#}
+    {#    {% progressive_web_app_meta %}#}
 
     <link rel="icon" href="{% static 'sw/images/favicon.ico' %}" sizes="any">
     <link rel="apple-touch-icon" href="{% static 'sw/images/apple-touch-icon.png' %}">
@@ -219,19 +219,19 @@
 
 
 
-        <div class="item">
-            <div class="header">
-                Profile
-            </div>
-            <div class="menu">
-                <a class="item" href="#">
-                    <div><i class="user icon"></i>My Profile</div>
-                </a>
-                <a class="item" href="{% url 'homeApp:user_logout' %}">
-                    <div><i class="sign out alternate icon"></i>Logout</div>
-                </a>
-            </div>
+    <div class="item">
+        <div class="header">
+            Profile
         </div>
+        <div class="menu">
+            <a class="item" href="#">
+                <div><i class="user icon"></i>My Profile</div>
+            </a>
+            <a class="item" href="{% url 'homeApp:user_logout' %}">
+                <div><i class="sign out alternate icon"></i>Logout</div>
+            </a>
+        </div>
+    </div>
 
 
     <div class="ui segment bgColor inverted">
@@ -264,17 +264,18 @@
 
     <div class="right menu">
 
- <div class="ui dropdown item"  >
+        <div class="ui dropdown item">
             <i class="calendar check icon"></i>
- <span data-tooltip="Change Session" data-position="bottom center" data-variation="tiny">{{ request.session.current_session.currentSessionYear }}</span>
+            <span data-tooltip="Change Session" data-position="bottom center"
+                  data-variation="tiny">{{ request.session.current_session.currentSessionYear }}</span>
             <div class="menu">
 
-                 {% for foo in request.session.session_list %}
-                     <a href="#" class="item" onclick="showSessionModal({{ foo.Id }})">
-                    <i class="circle outline icon"></i>
-                    {{ foo.currentSessionYear }}
-                </a>
-   {% endfor %}
+                {% for foo in request.session.session_list %}
+                    <a href="#" class="item" onclick="showSessionModal({{ foo.Id }})">
+                        <i class="circle outline icon"></i>
+                        {{ foo.currentSessionYear }}
+                    </a>
+                {% endfor %}
 
             </div>
         </div>
@@ -296,7 +297,7 @@
 
     <div class="main-content">
         {% block body %}
-       <p>BODY</p>
+            <p>BODY</p>
         {% endblock %}
 
     </div>
@@ -309,29 +310,29 @@
     </div>
 </div>
 
-<div class="ui mini test modal front transition"  id="sessionModal">
+<div class="ui mini test modal front transition" id="sessionModal">
     <div class="header">
-      Change School Session?
+        Change School Session?
     </div>
     <div class="content">
-      <p>Are you sure you want to change the school session?</p>
+        <p>Are you sure you want to change the school session?</p>
         <input type="hidden" id="sessionID">
-      <span class="ui text small red">Note: Alterations made to the school session will not be reflected in the database.</span>
+        <span class="ui text small red">Note: Alterations made to the school session will not be reflected in the database.</span>
     </div>
     <div class="actions">
-      <div class="ui negative button">
-        No
-      </div>
-       <button class="ui right labeled icon button green saveBtn" onclick="changeSession()">
-                                    Submit
-                                    <i class="checkmark icon"></i>
-                                </button>
-                                <button style="display: none" class="ui right labeled icon button green saveBtnLoad" >
-                                    Saving ...
-                                    <i class="checkmark icon"></i>
-                                </button>
+        <div class="ui negative button">
+            No
+        </div>
+        <button class="ui right labeled icon button green saveBtn" onclick="changeSession()">
+            Submit
+            <i class="checkmark icon"></i>
+        </button>
+        <button style="display: none" class="ui right labeled icon button green saveBtnLoad">
+            Saving ...
+            <i class="checkmark icon"></i>
+        </button>
     </div>
-  </div>
+</div>
 
 
 <script src="https://frontendfunn.github.io/semantic-ui-admin-dashboard-template/js/script.js"></script>
@@ -347,29 +348,39 @@
         $('.saveBtnLoad').css('display', '');
 
     }
+    function showUpdateLoading() {
+        $('.saveBtnUpdate').css('display', 'none');
+        $('.saveBtnLoad').css('display', '');
+
+    }
 
     function hideLoading() {
         $('.saveBtn').css('display', '');
         $('.saveBtnLoad').css('display', 'none');
+        $('.saveBtnUpdate').css('display', 'none');
 
     }
+
+
     function requiredFieldError() {
-         $('body')
-                    .toast({
-                        class: 'orange',
-                        message: '* fields are required.'
-                    });
-    }
-    function addSuccessNotification(message, color) {
-         $('body')
+        $('body')
             .toast({
-                class: ''+color,
-                message: ""+message
+                class: 'orange',
+                message: '* fields are required.'
+            });
+    }
+
+    function addSuccessNotification(message, color) {
+        $('body')
+            .toast({
+                class: '' + color,
+                message: "" + message
             });
 
     }
+
     function addErrorNotification() {
-          $('body')
+        $('body')
             .toast({
                 class: 'error',
                 message: 'An error occurred ! Please try again.'
@@ -427,58 +438,56 @@
 
     function showSessionModal(id) {
         $('#sessionModal')
-          .modal('show')
+            .modal('show')
         ;
         $('#sessionID').val(id);
 
     }
 
     function changeSession() {
-            showLoading();
-            let sessionID = $('#sessionID').val();
+        showLoading();
+        let sessionID = $('#sessionID').val();
 
-            if (sessionID === '' ) {
-               requiredFieldError();
-                hideLoading();
-            }
-
-            else {
+        if (sessionID === '') {
+            requiredFieldError();
+            hideLoading();
+        } else {
 
 
-                        let data = new FormData();
-                        data.append('sessionID', sessionID);
-                     $.ajax({
-                        type: 'post',
-                        url: "{% url 'homeAppAPI:change_session' %}",
-                        data: data,
-                        contentType: false,
-                        cache: false,
-                        processData: false,
+            let data = new FormData();
+            data.append('sessionID', sessionID);
+            $.ajax({
+                type: 'post',
+                url: "{% url 'homeAppAPI:change_session' %}",
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
 
-                        success: function (response) {
-                            if (response.status === 'success') {
-                               addSuccessNotification(response.message, response.color);
-                               $('#sessionModal').modal('toggle');
-                                setTimeout(location.reload.bind(location), 1500);
-                                hideLoading();
+                success: function (response) {
+                    if (response.status === 'success') {
+                        addSuccessNotification(response.message, response.color);
+                        $('#sessionModal').modal('toggle');
+                        setTimeout(location.reload.bind(location), 1500);
+                        hideLoading();
 
-                            } else {
-                                addErrorNotification();
-                                hideLoading();
+                    } else {
+                        addErrorNotification();
+                        hideLoading();
 
-                            }
+                    }
 
-                            return response;
-                        },
-                        error: function () {
-                            addErrorNotification();
-                            hideLoading();
-                        }
-                    });
-
+                    return response;
+                },
+                error: function () {
+                    addErrorNotification();
+                    hideLoading();
                 }
+            });
 
         }
+
+    }
 
 
 </script>

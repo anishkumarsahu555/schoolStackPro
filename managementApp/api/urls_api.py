@@ -9,4 +9,11 @@ urlpatterns = [
     path('get_class_detail', get_class_detail, name='get_class_detail'),
     path('delete_class', delete_class, name='delete_class'),
 
+    # subject api
+    path('add_subject', add_subject, name='add_subject'),
+    path('delete_subject', delete_subject, name='delete_subject'),
+    path('get_subject_detail', get_subject_detail, name='get_subject_detail'),
+    path('edit_subject', edit_subject, name='edit_subject'),
+    path('SubjectListJson', SubjectListJson.as_view(), name='SubjectListJson'),
+
     ]
