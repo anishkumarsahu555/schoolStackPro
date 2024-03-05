@@ -178,6 +178,29 @@ def delete_class(request):
     return JsonResponse({'status': 'error'}, safe=False)
 
 
+@login_required
+def get_standard_list_api(request):
+    objs = Standard.objects.filter(isDeleted=False, sessionID_id=request.session['current_session']['Id']).order_by(
+        'name')
+    data = []
+    for obj in objs:
+        if obj.section:
+            name = obj.name + ' - ' + obj.section
+        else:
+            name = obj.name
+        data_dic = {
+            'ID': obj.pk,
+            'Name': name
+
+        }
+        data.append(data_dic)
+    return JsonResponse(
+        {'status': 'success', 'data': data,
+         'color': 'success'}, safe=False)
+
+
+# subjects -----------------------------------
+
 # subject
 
 @transaction.atomic
@@ -294,7 +317,7 @@ def edit_subject(request):
                      'color': 'info'},
                     safe=False)
             else:
-                instance = Subjects.objects.get(pk=int(editID))
+                # instance = Subjects.objects.get(pk=int(editID))
                 instance.name = subject_name
                 pre_save_with_user.send(sender=Subjects, instance=instance, user=request.user.pk)
                 instance.save()
@@ -303,4 +326,156 @@ def edit_subject(request):
                     safe=False)
         except:
 
+            return JsonResponse({'status': 'error'}, safe=False)
+
+
+@login_required
+def get_subjects_list_api(request):
+    objs = Subjects.objects.filter(isDeleted=False, sessionID_id=request.session['current_session']['Id']).order_by(
+        'name')
+    data = []
+    for obj in objs:
+        data_dic = {
+            'ID': obj.pk,
+            'Name': obj.name
+
+        }
+        data.append(data_dic)
+    return JsonResponse(
+        {'status': 'success', 'data': data, 'color': 'success'}, safe=False)
+
+
+# assign subjects to class
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_subject_to_class(request):
+    if request.method == 'POST':
+        try:
+            standard = request.POST.get("standard")
+            subjects = request.POST.get("subjects")
+            subject_list = [int(x) for x in subjects.split(',')]
+            for s in subject_list:
+                try:
+                    AssignSubjectsToClass.objects.get(subjectID_id=int(s), standardID_id=int(standard), isDeleted=False,
+                                                      sessionID_id=request.session['current_session']['Id'])
+                except:
+                    instance = AssignSubjectsToClass()
+                    instance.standardID_id = int(standard)
+                    instance.subjectID_id = int(s)
+                    pre_save_with_user.send(sender=AssignSubjectsToClass, instance=instance, user=request.user.pk)
+                    instance.save()
+            return JsonResponse(
+                    {'status': 'success', 'message': 'New subject created successfully.', 'color': 'success'},
+                    safe=False)
+        except:
+            return JsonResponse({'status': 'error'}, safe=False)
+
+
+class AssignSubjectToClassListJson(BaseDatatableView):
+    order_columns = ['standardID.name', 'subjectID.name', 'lastEditedBy', 'datetime']
+
+    def get_initial_queryset(self):
+        return AssignSubjectsToClass.objects.select_related().filter(isDeleted__exact=False,
+                                                        sessionID_id=self.request.session["current_session"]["Id"]).order_by('standardID__name')
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(standardID__name__icontains=search)
+                | Q(subjectID__name__icontains=search)| Q(standardID__section__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            action = '''<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
+                <i class="pen icon"></i>
+              </button>
+              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
+                <i class="trash alternate icon"></i>
+              </button></td>'''.format(item.pk, item.pk),
+            if item.standardID.section:
+                name = item.standardID.name + ' - ' + item.standardID.section
+            else:
+                name = item.standardID.name
+
+            json_data.append([
+                escape(name),
+                escape(item.subjectID.name),
+                escape(item.lastEditedBy),
+                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                action,
+
+            ])
+
+        return json_data
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def delete_assign_subject_to_class(request):
+    if request.method == 'POST':
+        try:
+            id = request.POST.get("dataID")
+            instance = AssignSubjectsToClass.objects.get(pk=int(id), isDeleted=False,
+                                            sessionID_id=request.session['current_session']['Id'])
+            instance.isDeleted = True
+            pre_save_with_user.send(sender=AssignSubjectsToClass, instance=instance, user=request.user.pk)
+            instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'Assigned Subject detail deleted successfully.',
+                 'color': 'success'}, safe=False)
+        except:
+            return JsonResponse({'status': 'error'}, safe=False)
+    return JsonResponse({'status': 'error'}, safe=False)
+
+
+@login_required
+def get_assigned_subject_to_class_detail(request, **kwargs):
+    try:
+        id = request.GET.get('id')
+        obj = AssignSubjectsToClass.objects.get(pk=id, isDeleted=False, sessionID_id=request.session['current_session']['Id'])
+        obj_dic = {
+            'StandardID': obj.standardID.pk,
+            'SubjectID': obj.subjectID.pk,
+            'ID': obj.pk,
+        }
+        return JsonResponse({'status': 'success', 'data': obj_dic}, safe=False)
+    except:
+        return JsonResponse({'status': 'error'}, safe=False)
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def update_subject_to_class(request):
+    if request.method == 'POST':
+        try:
+            editID = request.POST.get("editID")
+            standard = request.POST.get("standard")
+            subjects = request.POST.get("subjects")
+            subject_list = [int(x) for x in subjects.split(',')]
+            instance = AssignSubjectsToClass.objects.get(pk=int(editID))
+            for s in subject_list:
+                try:
+                    AssignSubjectsToClass.objects.get(subjectID_id=int(s), standardID_id=int(standard), isDeleted=False,
+                                                      sessionID_id=request.session['current_session']['Id']).exclude(
+                pk=int(editID))
+                except:
+                    # instance = AssignSubjectsToClass()
+                    instance.standardID_id = int(standard)
+                    instance.subjectID_id = int(s)
+                    pre_save_with_user.send(sender=AssignSubjectsToClass, instance=instance, user=request.user.pk)
+                    instance.save()
+            return JsonResponse(
+                    {'status': 'success', 'message': 'Detail updated successfully.', 'color': 'success'},
+                    safe=False)
+        except:
             return JsonResponse({'status': 'error'}, safe=False)

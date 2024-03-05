@@ -8,6 +8,7 @@ pre_save_with_user = Signal()
 
 @receiver(pre_save_with_user, sender=Subjects)
 @receiver(pre_save_with_user, sender=Standard)
+@receiver(pre_save_with_user, sender=AssignSubjectsToClass)
 def update_fields_from_signal(sender, instance, **kwargs):
     # Check if the instance is being created (has no primary key yet)
     # if instance.pk is None:

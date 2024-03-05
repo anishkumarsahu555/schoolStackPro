@@ -12,6 +12,7 @@ def admin_home(request):
     }
     return render(request, 'managementApp/index.html', context)
 
+
 @login_required
 @check_groups('Admin', 'Owner')
 def manage_class(request):
@@ -28,4 +29,9 @@ def manage_subjects(request):
     return render(request, 'managementApp/subjects/addEditListSubjects.html', context)
 
 
-
+@login_required
+@check_groups('Admin', 'Owner')
+def assign_subjects_to_class(request):
+    context = {
+    }
+    return render(request, 'managementApp/subjects/assignSubjectsToClass.html', context)
