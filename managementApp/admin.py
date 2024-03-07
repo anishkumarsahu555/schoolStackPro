@@ -1,21 +1,15 @@
 from django.contrib import admin
+
 from .models import *
+
 
 # Register your models here.
 
-class NonTeachingStaffAdmin(admin.ModelAdmin):
-    search_fields = ['firstName', 'phoneNumber', 'EmployeeCode']
-
-    list_display = ['firstName', 'phoneNumber', 'EmployeeCode', 'isActive', 'datetime', 'lastUpdatedOn', ]
-
-
-admin.site.register(NonTeachingStaff, NonTeachingStaffAdmin)
-
 
 class TeacherDetailAdmin(admin.ModelAdmin):
-    search_fields = ['firstName', 'phoneNumber', 'EmployeeCode']
+    search_fields = ['name', 'phoneNumber', 'employeeCode']
 
-    list_display = ['firstName', 'phoneNumber', 'EmployeeCode', 'isActive', 'datetime', 'lastUpdatedOn', ]
+    list_display = ['name', 'phoneNumber', 'employeeCode', 'isActive', 'datetime', 'lastUpdatedOn', ]
 
 
 admin.site.register(TeacherDetail, TeacherDetailAdmin)

@@ -10,6 +10,6 @@ urlpatterns = [
     #admin
     path('admin_home/', admin_home, name='admin_home'),
     path('manage-class/', manage_class, name='manage_class'),
-    path('add_teacher/', add_teacher, name='add_teacher'),
+    # path('add_teacher/', add_teacher, name='add_teacher'),
 
     ]

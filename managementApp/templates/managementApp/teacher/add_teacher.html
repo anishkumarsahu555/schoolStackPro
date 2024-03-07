@@ -1,0 +1,437 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+{% block title %}
+    <title>Add Teacher</title>
+{% endblock %}
+{% block css %}
+{% endblock %}
+{% block body %}
+
+    <div class="ui basic  grid">
+        <div class="sixteen wide column">
+            <div class="ui  pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user"
+                >Add Teacher
+                </div>
+                {% comment %} <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <button class="ui green mini plus button right" onclick="showClassModal()">
+                        <i class="plus square outline icon"></i>
+                        Add Class
+                    </button>
+                </div>{% endcomment %}
+            </div>
+            <div class="ui tab " data-tab="user">
+                <form class="ui form segment tiny" id="addForm" enctype="multipart/form-data"> {% csrf_token %}
+                    <h4 class="ui dividing header">Photo</h4>
+                    <div class="field required">
+
+                        <label>Photo</label>
+
+                        <div class="ui" style="width: 100%; text-align: center">
+                            <div class="ui icon header">
+                                <div class="inline ">
+
+                                    <div class="avatar-upload">
+                                        <div class="avatar-edit">
+                                            <input type='file' id="imageUpload" name="photo"
+                                                   accept=".png, .jpg, .jpeg"/>
+                                            <label for="imageUpload"><i class="edit icon"
+                                                                        style="font-size: 1rem;padding: 0.4rem"></i>
+                                            </label>
+                                        </div>
+                                        <div class="avatar-preview">
+                                            <div id="cImg"
+                                                 style="background-image: url({% static 'images/add_photo.svg' %});">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <h4 class="ui dividing header">Personal Details</h4>
+
+                    <div class="three fields">
+                        <div class="field required">
+                            <label>Name</label>
+                            <div class="ui input">
+                                <input type="text" name="name" id="name" placeholder="Name">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Email</label>
+                            <div class="ui input">
+                                <input type="text" name="email" id="email" placeholder="Email">
+                            </div>
+                        </div>
+                        <div class="field required">
+                            <label>Phone Number</label>
+                            <div class="ui input">
+                                <input type="number" name="phone" id="phone" placeholder="Phone Number">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="three fields">
+                        <div class="field required">
+                            <label>Blood Group</label>
+                            <select class="ui dropdown" id="bloodGroup">
+                                <option value="">Select Blood Group</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+
+                        </div>
+                        <div class="field required">
+                            <label>Gender</label>
+                            <select class="ui dropdown" id="gender">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Others">Others</option>
+                            </select>
+
+                        </div>
+                        <div class="field required">
+                            <label>DOB</label>
+                            <div class="ui calendar" id="dobCal">
+                                <div class="ui input left icon">
+                                    <i class="calendar icon"></i>
+                                    <input type="text" placeholder="Date of birth" id="dob">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="two fields">
+                        <div class="field required">
+                            <label>Aadhar Number</label>
+                            <div class="ui input">
+                                <input type="number" name="aadhar" id="aadhar" placeholder="Aadhar Number">
+                            </div>
+                        </div>
+                        <div class="field required">
+                            <label>Qualification</label>
+                            <div class="ui input">
+                                <input type="text" name="qualification" id="qualification" placeholder="Qualification">
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 class="ui dividing header">Present Address</h4>
+                    <div class="field required">
+                        <label>Address</label>
+                        <textarea name="address" id="address" rows="2" placeholder="Address"></textarea>
+                    </div>
+
+                    <div class="fields">
+                        <div class="six wide field required">
+                            <label>City</label>
+                            <input type="text" name="city" id="city" placeholder="City">
+                        </div>
+                        <div class="four wide field required">
+                            <label>State</label>
+                            <select class="ui fluid search dropdown" name="state" id="state">
+                                <option value="">State</option>
+                                <option value="Manipur">Manipur</option>
+                                <option value="Assam">Assam</option>
+                                <option value="Mizoram">Mizoram</option>
+                            </select>
+                        </div>
+
+                        <div class="three wide field required">
+                            <label>Country</label>
+                            <select class="ui fluid search dropdown" name="country" id="country">
+                                <option value="">Country</option>
+                                <option value="India">India</option>
+
+                            </select>
+                        </div>
+                        <div class="three wide field required">
+                            <label>Pincode</label>
+                            <input type="number" name="pincode" id="pincode" maxlength="6" placeholder="Pincode">
+                        </div>
+
+                    </div>
+
+                    <h4 class="ui dividing header">Permanent Address</h4>
+                    <div class="ui segment">
+                        <div class="field">
+                            <div class="ui toggle checkbox" onclick="sameAsPresentAddress()">
+                                <input type="checkbox" name="sameAs" id="sameAs" tabindex="0" class="hidden">
+                                <label>Same as present address</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field required">
+                        <label>Address</label>
+                        <textarea name="addressP" id="addressP" rows="2" placeholder="Address"></textarea>
+                    </div>
+
+                    <div class="fields">
+                        <div class="six wide field required">
+                            <label>City</label>
+                            <input type="text" name="cityP" id="cityP" placeholder="City">
+                        </div>
+                        <div class="four wide field required">
+                            <label>State</label>
+                            <select class="ui fluid search dropdown" name="stateP" id="stateP">
+                                <option value="">State</option>
+                                <option value="Manipur">Manipur</option>
+                                <option value="Assam">Assam</option>
+                                <option value="Mizoram">Mizoram</option>
+                            </select>
+                        </div>
+
+                        <div class="three wide field required">
+                            <label>Country</label>
+                            <select class="ui fluid search dropdown" name="countryP" id="countryP">
+                                <option value="">Country</option>
+                                <option value="India">India</option>
+
+                            </select>
+                        </div>
+                        <div class="three wide field required">
+                            <label>Pincode</label>
+                            <input type="number" name="pincodeP" id="pincodeP" maxlength="6" placeholder="Pincode">
+                        </div>
+
+                    </div>
+                    <h4 class="ui dividing header">School Detail</h4>
+                    <div class="three fields">
+                        <div class="field required">
+                            <label>Employee Code</label>
+                            <input type="text" name="empCode" id="empCode" placeholder="Employee Code">
+                        </div>
+                        <div class="field required">
+                            <label>Staff Type</label>
+                            <select class="ui dropdown" id="staffType">
+                                <option value="">Select Type</option>
+                                <option value="Teaching">Teaching</option>
+                                <option value="Computer Operator">Computer Operator</option>
+                                <option value="Helper">Helper</option>
+                                <option value="Others">Others</option>
+                            </select>
+
+                        </div>
+                        <div class="field required">
+                            <label>Date Of Joining</label>
+                            <div class="ui calendar" id="dojCal">
+                                <div class="ui input left icon">
+                                    <i class="calendar icon"></i>
+                                    <input type="text" placeholder="Date of joining" id="doj">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </form>
+                <div class="ui segment center aligned">
+                    <button type="button" id="saveBtn" class="ui mini green button saveBtn"
+                            onclick="addData()">
+                        <i class="icon plus square"></i>
+                        Add
+                    </button>
+                    <button style="display: none" type="button" id="saveBtnUpdate"
+                            onclick="editData()"
+                            class="ui mini orange button saveBtnUpdate">
+                        <i class="icon redo"></i>
+                        Update
+                    </button>
+                    <button style="display: none" class="ui right labeled icon button green saveBtnLoad">
+                        Saving ...
+                        <i class="checkmark icon"></i>
+                    </button>
+                    <button class="ui mini red button" type="button" onclick="myOwnReset()">
+                        <i class="icon times circle"></i>
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+
+
+        $('.ui.checkbox')
+            .checkbox()
+        ;
+        let today = new Date();
+        $('#dobCal')
+            .calendar({
+                    {#initialDate: today.getDate() + '/' + (today.getMonth() + 1) + '/' + today.getFullYear(),#}
+                    {#initialDate: {{ obj.collectionDateTime|date:'d' }} + '/' + {{ obj.collectionDateTime|date:'m' }} + '/' + {{ obj.collectionDateTime|date:'Y' }},#}
+                    monthFirst: false,
+                    type: 'date',
+                    formatter: {
+                        date: function (date, settings) {
+
+                            if (!date) return '';
+                            var day = String(date.getDate());
+                            var month = String(date.getMonth() + 1);
+                            var year = date.getFullYear();
+                            return day + '/' + month + '/' + year;
+                        }
+                    }
+                }
+            );
+        $('#dojCal')
+            .calendar({
+                    {#initialDate: today.getDate() + '/' + (today.getMonth() + 1) + '/' + today.getFullYear(),#}
+                    {#initialDate: {{ obj.collectionDateTime|date:'d' }} + '/' + {{ obj.collectionDateTime|date:'m' }} + '/' + {{ obj.collectionDateTime|date:'Y' }},#}
+                    monthFirst: false,
+                    type: 'date',
+                    formatter: {
+                        date: function (date, settings) {
+
+                            if (!date) return '';
+                            var day = String(date.getDate());
+                            var month = String(date.getMonth() + 1);
+                            var year = date.getFullYear();
+                            return day + '/' + month + '/' + year;
+                        }
+                    }
+                }
+            );
+
+
+        function readURLPhoto(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    $('#cImg').css('background-image', 'url(' + e.target.result + ')');
+                    $('#cImg').hide();
+                    $('#cImg').fadeIn(650);
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        $("#imageUpload").change(function () {
+            readURLPhoto(this);
+        });
+
+        function sameAsPresentAddress() {
+
+
+            let address = $('#address').val();
+            let city = $('#city').val();
+            let state = $('#state').val();
+            let country = $('#country').val();
+            let pin = $('#pincode').val();
+            $('#addressP').val(address);
+            $('#cityP').val(city);
+            $('#countryP').val(country).change();
+            $('#pincodeP').val(pin);
+            $('#stateP').val(state).change();
+        }
+
+        function addData() {
+            showLoading();
+            let name = $('#name').val();
+            let email = $('#email').val();
+            let phone = $('#phone').val();
+            let bloodGroup = $('#bloodGroup').val();
+            let gender = $('#gender').val();
+            let dob = $('#dob').val();
+            let aadhar = $('#aadhar').val();
+            let qualification = $('#qualification').val();
+            let imageUpload = document.getElementById("imageUpload").files[0];
+            let address = $('#address').val();
+            let city = $('#city').val();
+            let state = $('#state').val();
+            let country = $('#country').val();
+            let pincode = $('#pincode').val();
+            let addressP = $('#addressP').val();
+            let cityP = $('#cityP').val();
+            let stateP = $('#stateP').val();
+            let countryP = $('#countryP').val();
+            let pincodeP = $('#pincodeP').val();
+            let empCode = $('#empCode').val();
+            let staffType = $('#staffType').val();
+            let doj = $('#doj').val();
+            debugger
+
+
+            if (name.trim() === '' || email.trim() === '' || phone.trim() === '' || bloodGroup.trim() === '' || gender.trim() === '' || dob.trim() === '' || aadhar.trim() === '' || qualification.trim() === '' || imageUpload === undefined
+                || address.trim() === '' || city.trim() === '' || state.trim() === '' || country.trim() === '' || pincode.trim() === ''
+                || addressP.trim() === '' || cityP.trim() === '' || stateP.trim() === '' || countryP.trim() === '' || pincodeP.trim() === '' || empCode.trim() === '' || staffType.trim() === '' || doj.trim() === '') {
+                requiredFieldError();
+                hideLoading();
+            } else {
+
+                let data = new FormData();
+                data.append('name', name);
+                data.append('email', email);
+                data.append('phone', phone);
+                data.append('bloodGroup', bloodGroup);
+                data.append('gender', gender);
+                data.append('dob', dob);
+                data.append('aadhar', aadhar);
+                data.append('qualification', qualification);
+                data.append('imageUpload', imageUpload);
+                data.append('address', address);
+                data.append('city', city);
+                data.append('state', state);
+                data.append('country', country);
+                data.append('pincode', pincode);
+                data.append('addressP', addressP);
+                data.append('cityP', cityP);
+                data.append('stateP', stateP);
+                data.append('countryP', countryP);
+                data.append('pincodeP', pincodeP);
+                data.append('empCode', empCode);
+                data.append('staffType', staffType);
+                data.append('doj', doj);
+                data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+                $.ajax({
+                    type: 'post',
+                    url: "{% url 'managementAppAPI:add_teacher_api' %}",
+                    data: data,
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            addSuccessNotification(response.message, response.color);
+                            {#subjectTab.ajax.reload(null, false);#}
+                            myOwnReset();
+                            hideLoading();
+                            $('#cImg').css('background-image', 'url( {% static 'images/add_photo.svg' %} )');
+
+                        } else {
+                            addErrorNotification();
+                            hideLoading();
+
+                        }
+
+                        return response;
+                    },
+                    error: function () {
+                        addErrorNotification();
+                        hideLoading();
+                    }
+                });
+
+
+            }
+        }
+
+
+    </script>
+
+{% endblock %}

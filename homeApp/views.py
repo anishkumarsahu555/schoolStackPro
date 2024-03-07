@@ -58,9 +58,9 @@ def manage_class(request):
     return render(request, 'managementApp/class.html', context)
 
 
-@check_groups('Admin', 'Owner')
-def add_teacher(request):
-    context = {
-    }
-    return render(request, 'managementApp/add_teacher.html', context)
-
+# @check_groups('Admin', 'Owner')
+# def add_teacher(request):
+#     context = {
+#     }
+#     return render(request, 'managementApp/teacher/add_teacher.html', context)
+#

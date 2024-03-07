@@ -35,3 +35,19 @@ def assign_subjects_to_class(request):
     context = {
     }
     return render(request, 'managementApp/subjects/assignSubjectsToClass.html', context)
+
+
+# Teacher --------------------
+@login_required
+@check_groups('Admin', 'Owner')
+def add_teacher(request):
+    context = {
+    }
+    return render(request, 'managementApp/teacher/add_teacher.html', context)
+
+@login_required
+@check_groups('Admin', 'Owner')
+def teacher_list(request):
+    context = {
+    }
+    return render(request, 'managementApp/teacher/teacher_list.html', context)

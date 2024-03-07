@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 from homeApp.models import SchoolSession
-from managementApp.models import TeacherDetail, NonTeachingStaff, ComputerOperator
+from managementApp.models import *
 
 
 def init_session(func):
@@ -23,10 +23,8 @@ def get_current_school_session():
 
 def action_taken_by(user):
     try:
-        user_detail = TeacherDetail.objects.get(userID_id=user) | NonTeachingStaff.objects.get(
-            userID_id=user) | ComputerOperator.objects.get(userID_id=user)
-        return {'actionTakenBy': user_detail.firstName + ' ' + str(user_detail.middleName) + ' ' + str(
-            user_detail.lastName) + ' - ' + user_detail.username}
+        user_detail = TeacherDetail.objects.get(userID_id=user)
+        return {'actionTakenBy': user_detail.name + ' - ' + user_detail.username}
     except:
         return {'actionTakenBy': 'N/A'}
 

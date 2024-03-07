@@ -26,4 +26,9 @@ urlpatterns = [
     path('update_subject_to_class', update_subject_to_class, name='update_subject_to_class'),
     path('AssignSubjectToClassListJson', AssignSubjectToClassListJson.as_view(), name='AssignSubjectToClassListJson'),
 
+    # Teacher Staff
+    path('add_teacher_api', add_teacher_api, name='add_teacher_api'),
+    path('delete_teacher', delete_teacher, name='delete_teacher'),
+    path('TeacherListJson', TeacherListJson.as_view(), name='TeacherListJson'),
+
     ]
