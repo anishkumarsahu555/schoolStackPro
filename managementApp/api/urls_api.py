@@ -1,6 +1,6 @@
 from django.urls import path
-from .views_api import *
 
+from .views_api import *
 
 urlpatterns = [
     # api
@@ -22,7 +22,8 @@ urlpatterns = [
     # subjects to class
     path('add_subject_to_class', add_subject_to_class, name='add_subject_to_class'),
     path('delete_assign_subject_to_class', delete_assign_subject_to_class, name='delete_assign_subject_to_class'),
-    path('get_assigned_subject_to_class_detail', get_assigned_subject_to_class_detail, name='get_assigned_subject_to_class_detail'),
+    path('get_assigned_subject_to_class_detail', get_assigned_subject_to_class_detail,
+         name='get_assigned_subject_to_class_detail'),
     path('update_subject_to_class', update_subject_to_class, name='update_subject_to_class'),
     path('AssignSubjectToClassListJson', AssignSubjectToClassListJson.as_view(), name='AssignSubjectToClassListJson'),
 
@@ -31,4 +32,8 @@ urlpatterns = [
     path('delete_teacher', delete_teacher, name='delete_teacher'),
     path('TeacherListJson', TeacherListJson.as_view(), name='TeacherListJson'),
 
-    ]
+    # student
+    path('add_student_api', add_student_api, name='add_student_api'),
+    path('StudentListJson', StudentListJson.as_view(), name='StudentListJson'),
+
+]

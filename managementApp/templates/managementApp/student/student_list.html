@@ -1,0 +1,191 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+{% block title %}
+    <title>Student List</title>
+{% endblock %}
+{% block css %}
+{% endblock %}
+{% block body %}
+
+    <style>
+
+
+        #StudentTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #StudentTable_filter {
+            width: 50%;
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+    </style>
+
+    <div class="ui right aligned basic  grid">
+        <div class="sixteen wide column">
+            <div class="ui  pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user"
+                >Student List
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <a class="ui green mini plus button right" href="{% url 'managementApp:add_student' %}">
+                        <i class="plus square outline icon"></i>
+                        Add Student
+                    </a>
+                </div>
+            </div>
+            <div class="ui tab " data-tab="user">
+
+                <div class="row" style="padding-left: 5px; padding-right: 5px">
+                    <div class="wide">
+
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="StudentTable"
+                               style="margin-top: 5px;width: 100%">
+                            <thead>
+                            <tr>
+                                <th>Photo</th>
+                                <th>Name</th>
+                                <th>Class-Section</th>
+                                <th>Gender</th>
+                                <th>Father Name</th>
+                                <th>PhoneNumber</th>
+                                <th>City</th>
+                                <th>IsActive</th>
+                                <th>EditedBy</th>
+                                <th>AddedOn</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
+
+                </div>
+
+                <div class="ui basic modal custom" id="deleteDataModal">
+                    <div class="ui icon header">
+                       <i class="trash alternate icon red"></i>
+                        Student Details will be Deleted
+                    </div>
+                    <div class="content">
+                        <p style="text-align: center">This detail will be deleted, are you sure to delete this Student?</p>
+                    </div>
+                    <div class="actions">
+                        <div class="ui red basic cancel inverted button">
+                            <i class="remove icon"></i>
+                            No
+                        </div>
+                        <input type="hidden" id="dataID">
+                        <div class="ui green ok inverted button" onclick="deleteData()">
+                            <i class="checkmark icon"></i>
+                            Yes
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let studentTab
+        // user Details
+
+        studentTab = $('#StudentTable').DataTable({
+            dom: 'Blfrtip',
+            "scrollY": "350px",
+            "scrollX": true,
+            stateSave: true,
+            fixedColumns: {
+                left: 1,
+                right: 1
+            },
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [1, 2, 3, 4, 5, 6, 7,8,9]
+                }
+            }
+                {% comment %}      , {
+                          extend: 'print',
+                          exportOptions: {
+                               columns: [1, 2, 3, 4, 5, 6, 7, 8]
+                          }
+                      }{% endcomment %}
+            ],
+            "columnDefs": [
+                {"name": "photo", "targets": 0, "orderable": true},
+                {"name": "name", "targets": 1, "orderable": true},
+                {"name": "standardID.name", "targets": 2, "orderable": true},
+                {"name": "gender", "targets": 3, "orderable": true},
+                {"name": "parentID.fatherName", "targets": 4, "orderable": true},
+                {"name": "parentID.phoneNumber", "targets": 5, "orderable": true},
+                {"name": "presentCity", "targets": 6, "orderable": true},
+                {"name": "isActive", "targets": 7, "orderable": true},
+                {"name": "lastEditedBy", "targets": 8, "orderable": true},
+                {"name": "datetime", "targets": 9, "orderable": true},
+                {"name": "action", "targets": 10, "orderable": false}
+            ],
+            aaSorting: [[2, 'asc']],
+            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            "pageLength": 10,
+            "processing": true,
+            "serverSide": true,
+            "ajax": "{% url 'managementAppAPI:StudentListJson' %}"
+        });
+
+
+        function delData(id) {
+            $('#deleteDataModal')
+                .modal('show')
+            ;
+            $('#dataID').val(id)
+        }
+
+        function deleteData() {
+            let id = $('#dataID').val();
+            let data = new FormData();
+            data.append('dataID', id);
+
+            $.ajax({
+                url: "{% url 'managementAppAPI:delete_teacher' %}",
+                type: "post",
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+
+                success: function (response) {
+                    if (response.status === 'success') {
+                            addSuccessNotification(response.message, response.color);
+                            studentTab.ajax.reload(null, false);
+                            $('#deleteDataModal').modal('toggle');
+                        } else {
+                                  addErrorNotification();
+                        }
+                        return response;
+                    },
+                    error: function () {
+                               addErrorNotification();
+                    }
+            });
+
+        }
+
+    </script>
+
+{% endblock %}

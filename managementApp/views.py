@@ -51,3 +51,19 @@ def teacher_list(request):
     context = {
     }
     return render(request, 'managementApp/teacher/teacher_list.html', context)
+
+# student
+
+@login_required
+@check_groups('Admin', 'Owner')
+def add_student(request):
+    context = {
+    }
+    return render(request, 'managementApp/student/add_student.html', context)
+
+@login_required
+@check_groups('Admin', 'Owner')
+def student_list(request):
+    context = {
+    }
+    return render(request, 'managementApp/student/student_list.html', context)

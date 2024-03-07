@@ -14,6 +14,7 @@ from managementApp.models import *
 from managementApp.signals import pre_save_with_user
 
 
+# Class ------------------
 @transaction.atomic
 @csrf_exempt
 @login_required
@@ -614,11 +615,10 @@ class TeacherListJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            print(item.photo)
             images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
 
             action = '''<button data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button purple">
-                <i class="file invoice icon"></i>
+                <i class="eye icon"></i>
               </button>
             <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
                 <i class="pen icon"></i>
@@ -645,6 +645,7 @@ class TeacherListJson(BaseDatatableView):
 
         return json_data
 
+
 @transaction.atomic
 @csrf_exempt
 @login_required
@@ -653,10 +654,10 @@ def delete_teacher(request):
         try:
             id = request.POST.get("dataID")
             instance = TeacherDetail.objects.get(pk=int(id), isDeleted=False,
-                                            sessionID_id=request.session['current_session']['Id'])
+                                                 sessionID_id=request.session['current_session']['Id'])
             instance.isDeleted = True
             instance.isActive = 'No'
-            user = User.objects.get(pk = instance.userID_id)
+            user = User.objects.get(pk=instance.userID_id)
             user.is_active = False
             user.save()
             pre_save_with_user.send(sender=TeacherDetail, instance=instance, user=request.user.pk)
@@ -667,3 +668,200 @@ def delete_teacher(request):
         except:
             return JsonResponse({'status': 'error'}, safe=False)
     return JsonResponse({'status': 'error'}, safe=False)
+
+
+# student api
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_student_api(request):
+    if request.method == 'POST':
+        name = request.POST.get("name")
+        email = request.POST.get("email")
+        bloodGroup = request.POST.get("bloodGroup")
+        gender = request.POST.get("gender")
+        phone = request.POST.get("phone")
+        dob = request.POST.get("dob")
+        aadhar = request.POST.get("aadhar")
+        fname = request.POST.get("fname")
+        mname = request.POST.get("mname")
+        contactNumber = request.POST.get("contactNumber")
+        cEmail = request.POST.get("cEmail")
+        occupation = request.POST.get("occupation")
+        registrationCode = request.POST.get("registrationCode")
+        standard = request.POST.get("standard")
+        imageUpload = request.FILES["imageUpload"]
+        address = request.POST.get("address")
+        city = request.POST.get("city")
+        state = request.POST.get("state")
+        country = request.POST.get("country")
+        pincode = request.POST.get("pincode")
+        addressP = request.POST.get("addressP")
+        cityP = request.POST.get("cityP")
+        stateP = request.POST.get("stateP")
+        countryP = request.POST.get("countryP")
+        pincodeP = request.POST.get("pincodeP")
+        roll = request.POST.get("roll")
+        tuitionFee = request.POST.get("tuitionFee")
+        admissionFee = request.POST.get("admissionFee")
+        doj = request.POST.get("doj")
+        parent_id = ''
+
+        try:
+            parent_obj = Parent.objects.get(phoneNumber__icontains=contactNumber, isDeleted=False)
+            parent_id = parent_obj.pk
+
+
+        except:
+            parent_obj = Parent()
+            parent_obj.fatherName = fname
+            parent_obj.motherName = mname
+            parent_obj.phoneNumber = contactNumber
+            parent_obj.email = cEmail
+            parent_obj.profession = occupation
+            pre_save_with_user.send(sender=Parent, instance=parent_obj, user=request.user.pk)
+            parent_obj.save()
+            parent_id = parent_obj.pk
+
+        try:
+            Student.objects.get(registrationCode__iexact=registrationCode, isDeleted=False,
+                                sessionID_id=request.session['current_session']['Id'])
+            return JsonResponse(
+                {'status': 'success', 'message': 'Student already exists. Please change the name.', 'color': 'info'},
+                safe=False)
+
+        except:
+            instance = Student()
+            instance.parentID_id = parent_id
+            instance.name = name
+            instance.email = email
+            instance.bloodGroup = bloodGroup
+            instance.gender = gender
+            instance.dob = datetime.strptime(dob, '%d/%m/%Y')
+            instance.dateOfJoining = datetime.strptime(doj, '%d/%m/%Y')
+            instance.phoneNumber = phone
+            instance.aadhar = aadhar
+            instance.photo = imageUpload
+            instance.presentAddress = address
+            instance.presentCity = city
+            instance.presentState = state
+            instance.presentCountry = country
+            instance.presentPinCode = pincode
+            instance.permanentAddress = addressP
+            instance.permanentCity = cityP
+            instance.permanentState = stateP
+            instance.permanentCountry = countryP
+            instance.permanentPinCode = pincodeP
+            instance.registrationCode = registrationCode
+            instance.standardID_id = int(standard)
+            try:
+                instance.roll = float(roll)
+
+            except:
+                pass
+
+            try:
+                instance.tuitionFee = float(tuitionFee)
+            except:
+                pass
+
+            try:
+                instance.admissionFee = float(admissionFee)
+            except:
+                pass
+
+            username = 'STU' + get_random_string(length=5, allowed_chars='1234567890')
+            password = get_random_string(length=8, allowed_chars='1234567890')
+            while User.objects.select_related().filter(username__exact=username).count() > 0:
+                username = 'STU' + get_random_string(length=5, allowed_chars='1234567890')
+            else:
+                new_user = User()
+                new_user.username = username
+                new_user.set_password(password)
+
+                new_user.save()
+                instance.username = username
+                instance.password = password
+                instance.userID_id = new_user.pk
+
+                instance.save()
+
+                try:
+                    g = Group.objects.get(name="Student")
+                    g.user_set.add(new_user.pk)
+                    g.save()
+
+                except:
+                    g = Group()
+                    g.name = "Student"
+                    g.save()
+                    g.user_set.add(new_user.pk)
+                    g.save()
+            pre_save_with_user.send(sender=Student, instance=instance, user=request.user.pk)
+            instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'New Student added successfully.', 'color': 'success'},
+                safe=False)
+    return JsonResponse({'status': 'error'}, safe=False)
+
+
+class StudentListJson(BaseDatatableView):
+    order_columns = ['photo', 'name', 'standardID.name', 'gender', 'parentID.fatherName',
+                     'parentID.phoneNumber', 'presentCity',
+                     'isActive', 'lastEditedBy', 'datetime']
+
+    def get_initial_queryset(self):
+        return Student.objects.select_related().filter(isDeleted__exact=False,
+                                                       sessionID_id=self.request.session["current_session"]["Id"])
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(name__icontains=search)
+                | Q(email__icontains=search)
+                | Q(phoneNumber__icontains=search)
+                | Q(standardID__name__icontains=search)  | Q(standardID__section__icontains=search)
+                | Q(gender__icontains=search) | Q(parentID__phoneNumber__icontains=search)| Q(parentID__motherName__icontains=search)| Q(parentID__profession__icontains=search)
+                | Q(parentID__fatherName__icontains=search) | Q(presentAddress__icontains=search)
+                | Q(presentCity__icontains=search) | Q(isActive__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
+
+            action = '''<button data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button purple">
+                <i class="eye icon"></i>
+              </button>
+            <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
+                <i class="pen icon"></i>
+              </button>
+              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
+                <i class="trash alternate icon"></i>
+              </button></td>'''.format(item.pk, item.pk, item.pk),
+            if item.standardID.section:
+                standard = item.standardID.name + ' - ' + item.standardID.section
+            else:
+                standard = item.standardID.name
+            json_data.append([
+                images,
+                escape(item.name),
+                escape(standard),
+                escape(item.gender),
+                escape(item.parentID.fatherName),
+                escape(item.parentID.phoneNumber),
+                escape(item.presentCity),
+                escape(item.isActive),
+                escape(item.lastEditedBy),
+                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                action,
+
+            ])
+
+        return json_data
