@@ -162,7 +162,7 @@
             data.append('dataID', id);
 
             $.ajax({
-                url: "{% url 'managementAppAPI:delete_teacher' %}",
+                url: "{% url 'managementAppAPI:delete_student' %}",
                 type: "post",
                 data: data,
                 contentType: false,

@@ -149,6 +149,24 @@ class AssignSubjectsToClass(models.Model):
         verbose_name_plural = 'j) Assign Subjects To Class Details'
 
 
+class AssignSubjectsToTeacher(models.Model):
+    assignedSubjectID = models.ForeignKey(AssignSubjectsToClass, blank=True, null=True, on_delete=models.CASCADE)
+    teacherID = models.ForeignKey(TeacherDetail, blank=True, null=True, on_delete=models.CASCADE)
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    subjectBranch = models.CharField(max_length=500, blank=True, null=True)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+
+    def __str__(self):
+        return self.teacherID.name + ' - ' + self.sessionID.sessionYear
+
+    class Meta:
+        verbose_name_plural = 'j) Assign Subjects To Class Details'
+
+
 class Parent(models.Model):
     fatherName = models.CharField(max_length=500, blank=True, null=True)
     motherName = models.CharField(max_length=500, blank=True, null=True)

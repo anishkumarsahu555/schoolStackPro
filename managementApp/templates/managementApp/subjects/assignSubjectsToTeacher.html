@@ -1,7 +1,7 @@
 {% extends 'managementApp/index.html' %}
 {% load static %}
 {% block title %}
-    <title>Assign Subjects To Class</title>
+    <title>Assign Subjects To Teachers</title>
 {% endblock %}
 {% block css %}
 {% endblock %}
@@ -33,7 +33,7 @@
         <div class="sixteen wide column">
             <div class="ui  pointing secondary menu">
                 <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Assign Subjects To Class
+                >Assign Subjects To Teacher
                 </div>
 
             </div>
@@ -41,26 +41,32 @@
                 <div class="ui segment">
                     <h4 class="ui horizontal left aligned divider header">
                         <i class="left align icon"></i>
-                        Assign Subject
+                        Assign Teacher
                     </h4>
                     <form class="ui tiny form" id="addForm">{% csrf_token %}
                         <input type="hidden" id="editID">
 
-                        <div class="three fields">
+                        <div class="four fields">
 
                             <div class="field required">
-                                <label>Class Name</label>
+                                <label>ClassName - Section - Subject</label>
                                 <select class="ui clearable search dropdown" id="standard">
-                                    <option value="">Search By Class Name</option>
+                                    <option value="">Search By Class Name or section or subject</option>
                                 </select>
 
                             </div>
 
                             <div class="field required">
-                                <label>Subject Name</label>
-                                <select class="ui fluid search dropdown" multiple="" id="subjects">
-                                    <option value="">Search By Subject Name</option>
+                                <label>Teacher Name</label>
+                                <select class="ui fluid search dropdown" id="teachers">
+                                    <option value="">Search By Teacher Name</option>
                                 </select>
+
+                            </div>
+                            <div class="field">
+                                <label>Sub Branch Name</label>
+                                <input type="text" name="branch" placeholder="Subject Sub Branch" id="branch">
+
 
                             </div>
 
@@ -100,8 +106,11 @@
                                style="margin-top: 5px;width: 100%">
                             <thead>
                             <tr>
-                                <th>Class-Section</th>
+                                <th>Class</th>
+                                <th>Section</th>
                                 <th>Subject</th>
+                                <th>Teacher</th>
+                                <th>SubjectBranch</th>
                                 <th>EditedBy</th>
                                 <th>AddedOn</th>
                                 <th>Actions</th>
@@ -148,20 +157,20 @@
 {% block js %}
     <script>
 
-        $(getStandardList());
-        $(getSubjectsList());
+        $(getStandardSubjectList());
+        $(getTeacherList());
 
 
-        function getStandardList() {
+        function getStandardSubjectList() {
 
             $.ajax({
                 type: 'get',
-                url: "{% url 'managementAppAPI:get_standard_list_api' %}",
+                url: "{% url 'managementAppAPI:get_subjects_to_class_assign_list_api' %}",
 
                 success: function (response) {
 
                     $('#standard').html('');
-                    $('#standard').append(' <option value="">Search By Class Name</option>');
+                    $('#standard').append(' <option value="">Search By Class Name or section or subject</option>');
                     var j;
                     for (j = 0; j < response.data.length; j++) {
 
@@ -183,19 +192,21 @@
 
 
         }
-           function getSubjectsList() {
+
+        function getTeacherList() {
             $.ajax({
                 type: 'get',
-                url: "{% url 'managementAppAPI:get_subjects_list_api' %}",
+                url: "{% url 'managementAppAPI:get_teacher_list_api' %}",
 
                 success: function (response) {
+                    console.log(response)
 
-                    $('#subjects').html('');
-                    $('#subjects').append(' <option value="">Search By Subject Name</option>');
+                    $('#teachers').html('');
+                    $('#teachers').append(' <option value="">Search By Teacher Name</option>');
                     var j;
                     for (j = 0; j < response.data.length; j++) {
 
-                        $('#subjects').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+                        $('#teachers').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
 
                     }
 
@@ -220,20 +231,21 @@
         function addData() {
             showLoading();
             let standard = $('#standard').val();
-            let subjects = $('#subjects').val();
-            console.log(subjects.length)
-            if (standard.trim() === '' || subjects.length<=0) {
+            let teachers = $('#teachers').val();
+            let branch = $('#branch').val();
+            if (standard.trim() === '' || teachers.trim() ==='') {
                 requiredFieldError();
                 hideLoading();
             } else {
 
                 let data = new FormData();
                 data.append('standard', standard);
-                data.append('subjects', subjects);
+                data.append('teachers', teachers);
+                data.append('branch', branch.trim());
                 data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
                 $.ajax({
                     type: 'post',
-                    url: "{% url 'managementAppAPI:add_subject_to_class' %}",
+                    url: "{% url 'managementAppAPI:add_subject_to_teacher' %}",
                     data: data,
                     contentType: false,
                     cache: false,
@@ -278,7 +290,7 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [0, 1, 2,3]
+                    columns: [0, 1, 2, 3,4,5,6]
                 }
             }
                 {% comment %}      , {
@@ -289,18 +301,21 @@
                       }{% endcomment %}
             ],
             "columnDefs": [
-                {"name": "standardID.name", "targets": 0, "orderable": true},
-                {"name": "subjectID.name", "targets": 1, "orderable": true},
-                {"name": "lastEditedBy", "targets": 2, "orderable": true},
-                {"name": "datetime", "targets": 3, "orderable": true},
-                {"name": "action", "targets": 4, "orderable": false}
+                {"name": "assignedSubjectID.standardID.name", "targets": 0, "orderable": true},
+                {"name": "assignedSubjectID.standardID.section", "targets": 1, "orderable": true},
+                {"name": "assignedSubjectID.subjectID.name", "targets": 2, "orderable": true},
+                {"name": "teacherID.name", "targets": 3, "orderable": true},
+                {"name": "subjectBranch", "targets": 4, "orderable": true},
+                {"name": "lastEditedBy", "targets": 5, "orderable": true},
+                {"name": "datetime", "targets": 6, "orderable": true},
+                {"name": "action", "targets": 7, "orderable": false}
             ],
             aaSorting: [[0, 'asc']],
             "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             "pageLength": 10,
             "processing": true,
             "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:AssignSubjectToClassListJson' %}"
+            "ajax": "{% url 'managementAppAPI:AssignSubjectToTeacherListJson' %}"
         });
 
 
@@ -317,7 +332,7 @@
             data.append('dataID', id);
 
             $.ajax({
-                url: "{% url 'managementAppAPI:delete_assign_subject_to_class' %}",
+                url: "{% url 'managementAppAPI:delete_assign_teacher_to_subject' %}",
                 type: "post",
                 data: data,
                 contentType: false,
@@ -347,12 +362,13 @@
             $.ajax({
                 type: 'get',
                 data: {id: id},
-                url: "{% url 'managementAppAPI:get_assigned_subject_to_class_detail' %}",
+                url: "{% url 'managementAppAPI:get_assigned_subject_to_teacher_detail' %}",
 
                 success: function (response) {
                     if (response.status === 'success') {
                         $('#standard').val(response.data['StandardID']).change();
-                        $('#subjects').val(response.data['SubjectID']).change();
+                        $('#teachers').val(response.data['teacherID']).change();
+                        $('#branch').val(response.data['branch']).change();
                         $('#editID').val(response.data['ID']);
                     } else {
                         addErrorNotification();
@@ -371,21 +387,23 @@
         function editData() {
             showUpdateLoading();
             let standard = $('#standard').val();
-            let subjects = $('#subjects').val();
+            let teachers = $('#teachers').val();
+            let branch = $('#branch').val();
             let editID = $('#editID').val();
-            if (standard.trim() === '' || subjects.length<=0) {
+            if (standard.trim() === '' || teachers.trim() === '') {
                 requiredFieldError();
                 hideLoading();
             } else {
 
                 let data = new FormData();
                 data.append('standard', standard);
-                data.append('subjects', subjects);
+                data.append('teachers', teachers);
+                data.append('branch', branch.trim());
                 data.append('editID', editID);
                 data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
                 $.ajax({
                     type: 'post',
-                    url: "{% url 'managementAppAPI:update_subject_to_class' %}",
+                    url: "{% url 'managementAppAPI:update_subject_to_teacher' %}",
                     data: data,
                     contentType: false,
                     cache: false,

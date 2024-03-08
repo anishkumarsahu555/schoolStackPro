@@ -36,6 +36,13 @@ def assign_subjects_to_class(request):
     }
     return render(request, 'managementApp/subjects/assignSubjectsToClass.html', context)
 
+@login_required
+@check_groups('Admin', 'Owner')
+def assign_subjects_to_teacher(request):
+    context = {
+    }
+    return render(request, 'managementApp/subjects/assignSubjectsToTeacher.html', context)
+
 
 # Teacher --------------------
 @login_required

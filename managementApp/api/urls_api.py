@@ -25,15 +25,27 @@ urlpatterns = [
     path('get_assigned_subject_to_class_detail', get_assigned_subject_to_class_detail,
          name='get_assigned_subject_to_class_detail'),
     path('update_subject_to_class', update_subject_to_class, name='update_subject_to_class'),
+    path('get_subjects_to_class_assign_list_api', get_subjects_to_class_assign_list_api,
+         name='get_subjects_to_class_assign_list_api'),
     path('AssignSubjectToClassListJson', AssignSubjectToClassListJson.as_view(), name='AssignSubjectToClassListJson'),
 
+    # subjects to teacher
+    path('add_subject_to_teacher', add_subject_to_teacher, name='add_subject_to_teacher'),
+    path('delete_assign_teacher_to_subject', delete_assign_teacher_to_subject, name='delete_assign_teacher_to_subject'),
+    path('get_assigned_subject_to_teacher_detail', get_assigned_subject_to_teacher_detail,
+         name='get_assigned_subject_to_teacher_detail'),
+    path('update_subject_to_teacher', update_subject_to_teacher, name='update_subject_to_teacher'),
+    path('AssignSubjectToTeacherListJson', AssignSubjectToTeacherListJson.as_view(),
+         name='AssignSubjectToTeacherListJson'),
     # Teacher Staff
     path('add_teacher_api', add_teacher_api, name='add_teacher_api'),
     path('delete_teacher', delete_teacher, name='delete_teacher'),
+    path('get_teacher_list_api', get_teacher_list_api, name='get_teacher_list_api'),
     path('TeacherListJson', TeacherListJson.as_view(), name='TeacherListJson'),
 
     # student
     path('add_student_api', add_student_api, name='add_student_api'),
+    path('delete_student', delete_student, name='delete_student'),
     path('StudentListJson', StudentListJson.as_view(), name='StudentListJson'),
 
 ]

@@ -350,7 +350,7 @@ def get_subjects_list_api(request):
         {'status': 'success', 'data': data, 'color': 'success'}, safe=False)
 
 
-# assign subjects to class
+# assign subjects to class------------------------------------------------------------------
 
 @transaction.atomic
 @csrf_exempt
@@ -491,7 +491,238 @@ def update_subject_to_class(request):
             return JsonResponse({'status': 'error'}, safe=False)
 
 
-# Teachers -----------------------------
+@login_required
+def get_subjects_to_class_assign_list_api(request):
+    objs = AssignSubjectsToClass.objects.filter(isDeleted=False,
+                                                sessionID_id=request.session['current_session']['Id']).order_by(
+        'standardID__name')
+    data = []
+    for obj in objs:
+        if obj.standardID.section:
+            name = obj.standardID.name + ' - ' + obj.standardID.section + ' - ' + obj.subjectID.name
+        else:
+            name = obj.standardID.name + ' - ' + obj.subjectID.name
+        data_dic = {
+            'ID': obj.pk,
+            'Name': name
+
+        }
+        data.append(data_dic)
+    return JsonResponse(
+        {'status': 'success', 'data': data,
+         'color': 'success'}, safe=False)
+
+
+# Assign Subjects To Teacher --------------------------------------------------------------
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_subject_to_teacher(request):
+    if request.method == 'POST':
+        try:
+            standard = request.POST.get("standard")
+            teachers = request.POST.get("teachers")
+            branch = request.POST.get("branch")
+
+            try:
+                AssignSubjectsToTeacher.objects.get(assignedSubjectID_id=int(standard), teacherID_id=int(teachers),
+                                                    subjectBranch__iexact=branch, isDeleted=False,
+                                                    sessionID_id=request.session['current_session']['Id'])
+                return JsonResponse(
+                    {'status': 'success', 'message': 'Subject already assigned successfully.', 'color': 'info'},
+                    safe=False)
+            except:
+                instance = AssignSubjectsToTeacher()
+                instance.teacherID_id = int(teachers)
+                instance.assignedSubjectID_id = int(standard)
+                instance.subjectBranch = branch
+                pre_save_with_user.send(sender=AssignSubjectsToTeacher, instance=instance, user=request.user.pk)
+                instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'Subject assigned successfully.', 'color': 'success'},
+                safe=False)
+        except:
+            return JsonResponse({'status': 'error'}, safe=False)
+
+
+class AssignSubjectToTeacherListJson(BaseDatatableView):
+    order_columns = ['assignedSubjectID.standardID.name', 'assignedSubjectID.standardID.section',
+                     'assignedSubjectID.subjectID.name', 'teacherID.name', 'subjectBranch', 'lastEditedBy', 'datetime']
+
+    def get_initial_queryset(self):
+        return AssignSubjectsToTeacher.objects.select_related().filter(isDeleted__exact=False,
+                                                                       sessionID_id=
+                                                                       self.request.session["current_session"][
+                                                                           "Id"]).order_by(
+            'assignedSubjectID__standardID__name')
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(assignedSubjectID__standardID__name__icontains=search) | Q(teacherID__name__icontains=search) | Q(
+                    teacherID__employeeCode__icontains=search)
+                | Q(assignedSubjectID__subjectID__name__icontains=search) | Q(
+                    assignedSubjectID__standardID__section__icontains=search) | Q(
+                    subjectBranch__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            action = '''
+              <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
+                <i class="pen icon"></i>
+              </button>
+              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
+                <i class="trash alternate icon"></i>
+              </button></td>'''.format(item.pk, item.pk),
+            if item.assignedSubjectID.standardID.section:
+                section = item.assignedSubjectID.standardID.section
+            else:
+                section = 'N/A'
+
+            json_data.append([
+                escape(item.assignedSubjectID.standardID.name),
+                escape(section),
+                escape(item.assignedSubjectID.subjectID.name),
+                escape(item.teacherID.name),
+                escape(item.subjectBranch),
+                escape(item.lastEditedBy),
+                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                action,
+
+            ])
+
+        return json_data
+
+
+class AssignSubjectToClassListJson(BaseDatatableView):
+    order_columns = ['standardID.name', 'subjectID.name', 'lastEditedBy', 'datetime']
+
+    def get_initial_queryset(self):
+        return AssignSubjectsToClass.objects.select_related().filter(isDeleted__exact=False,
+                                                                     sessionID_id=
+                                                                     self.request.session["current_session"][
+                                                                         "Id"]).order_by('standardID__name')
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(standardID__name__icontains=search)
+                | Q(subjectID__name__icontains=search) | Q(standardID__section__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            action = '''
+              <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
+                <i class="pen icon"></i>
+              </button>
+              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
+                <i class="trash alternate icon"></i>
+              </button></td>'''.format(item.pk, item.pk),
+            if item.standardID.section:
+                name = item.standardID.name + ' - ' + item.standardID.section
+            else:
+                name = item.standardID.name
+
+            json_data.append([
+                escape(name),
+                escape(item.subjectID.name),
+                escape(item.lastEditedBy),
+                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                action,
+
+            ])
+
+        return json_data
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def delete_assign_teacher_to_subject(request):
+    if request.method == 'POST':
+        try:
+            id = request.POST.get("dataID")
+            instance = AssignSubjectsToTeacher.objects.get(pk=int(id), isDeleted=False,
+                                                           sessionID_id=request.session['current_session']['Id'])
+            instance.isDeleted = True
+            pre_save_with_user.send(sender=AssignSubjectsToTeacher, instance=instance, user=request.user.pk)
+            instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'Assigned Teacher detail deleted successfully.',
+                 'color': 'success'}, safe=False)
+        except:
+            return JsonResponse({'status': 'error'}, safe=False)
+    return JsonResponse({'status': 'error'}, safe=False)
+
+
+@login_required
+def get_assigned_subject_to_teacher_detail(request, **kwargs):
+    try:
+        id = request.GET.get('id')
+        obj = AssignSubjectsToTeacher.objects.get(pk=id, isDeleted=False,
+                                                  sessionID_id=request.session['current_session']['Id'])
+        obj_dic = {
+            'StandardID': obj.assignedSubjectID_id,
+            'teacherID': obj.teacherID_id,
+            'branch': obj.subjectBranch,
+            'ID': obj.pk,
+        }
+        return JsonResponse({'status': 'success', 'data': obj_dic}, safe=False)
+    except:
+        return JsonResponse({'status': 'error'}, safe=False)
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def update_subject_to_teacher(request):
+    if request.method == 'POST':
+        try:
+            editID = request.POST.get("editID")
+            standard = request.POST.get("standard")
+            teachers = request.POST.get("teachers")
+            branch = request.POST.get("branch")
+
+            instance = AssignSubjectsToTeacher.objects.get(pk=int(editID))
+
+            try:
+                AssignSubjectsToTeacher.objects.get(subjectBranch__iexact=branch,
+                                                    assignedSubjectID_id=instance.assignedSubjectID_id,
+                                                    isDeleted=False,
+                                                    sessionID_id=request.session['current_session']['Id']).exclude(
+                    pk=int(editID))
+                return JsonResponse(
+                    {'status': 'success', 'message': 'Detail already assigned.', 'color': 'info'},
+                    safe=False)
+            except:
+                # instance = AssignSubjectsToClass()
+                instance.standardID_id = int(standard)
+                instance.teacherID_id = int(teachers)
+                instance.subjectBranch = branch
+                pre_save_with_user.send(sender=AssignSubjectsToTeacher, instance=instance, user=request.user.pk)
+                instance.save()
+                return JsonResponse(
+                    {'status': 'success', 'message': 'Detail updated successfully.', 'color': 'success'},
+                    safe=False)
+        except:
+            return JsonResponse({'status': 'error'}, safe=False)
+
+
+# Teachers ---------------------------------------------------------------------------------------
 
 @transaction.atomic
 @csrf_exempt
@@ -670,7 +901,27 @@ def delete_teacher(request):
     return JsonResponse({'status': 'error'}, safe=False)
 
 
-# student api
+@login_required
+def get_teacher_list_api(request):
+    objs = TeacherDetail.objects.filter(isDeleted=False, sessionID_id=request.session['current_session']['Id'],
+                                        isActive='Yes').order_by(
+        'name')
+    data = []
+    for obj in objs:
+        name = obj.name + ' - ' + obj.employeeCode
+
+        data_dic = {
+            'ID': obj.pk,
+            'Name': name
+
+        }
+        data.append(data_dic)
+    return JsonResponse(
+        {'status': 'success', 'data': data,
+         'color': 'success'}, safe=False)
+
+
+# student api --------------------------------------------------------------------------
 @transaction.atomic
 @csrf_exempt
 @login_required
@@ -822,8 +1073,9 @@ class StudentListJson(BaseDatatableView):
                 Q(name__icontains=search)
                 | Q(email__icontains=search)
                 | Q(phoneNumber__icontains=search)
-                | Q(standardID__name__icontains=search)  | Q(standardID__section__icontains=search)
-                | Q(gender__icontains=search) | Q(parentID__phoneNumber__icontains=search)| Q(parentID__motherName__icontains=search)| Q(parentID__profession__icontains=search)
+                | Q(standardID__name__icontains=search) | Q(standardID__section__icontains=search)
+                | Q(gender__icontains=search) | Q(parentID__phoneNumber__icontains=search) | Q(
+                    parentID__motherName__icontains=search) | Q(parentID__profession__icontains=search)
                 | Q(parentID__fatherName__icontains=search) | Q(presentAddress__icontains=search)
                 | Q(presentCity__icontains=search) | Q(isActive__icontains=search)
                 | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
@@ -865,3 +1117,27 @@ class StudentListJson(BaseDatatableView):
             ])
 
         return json_data
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def delete_student(request):
+    if request.method == 'POST':
+        try:
+            id = request.POST.get("dataID")
+            instance = Student.objects.get(pk=int(id), isDeleted=False,
+                                           sessionID_id=request.session['current_session']['Id'])
+            instance.isDeleted = True
+            instance.isActive = 'No'
+            user = User.objects.get(pk=instance.userID_id)
+            user.is_active = False
+            user.save()
+            pre_save_with_user.send(sender=Student, instance=instance, user=request.user.pk)
+            instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'Student detail deleted successfully.',
+                 'color': 'success'}, safe=False)
+        except:
+            return JsonResponse({'status': 'error'}, safe=False)
+    return JsonResponse({'status': 'error'}, safe=False)
