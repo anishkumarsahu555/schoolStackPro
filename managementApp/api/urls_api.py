@@ -48,4 +48,14 @@ urlpatterns = [
     path('delete_student', delete_student, name='delete_student'),
     path('StudentListJson', StudentListJson.as_view(), name='StudentListJson'),
 
+
+    # Exam
+    path('add_exam', add_exam, name='add_exam'),
+    path('delete_exam', delete_exam, name='delete_exam'),
+    path('get_exam_detail', get_exam_detail, name='get_exam_detail'),
+    path('edit_exam', edit_exam, name='edit_exam'),
+    path('get_exams_list_api', get_exams_list_api, name='get_exams_list_api'),
+    path('ExamListJson', ExamListJson.as_view(), name='ExamListJson'),
+
+
 ]

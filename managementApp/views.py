@@ -74,3 +74,13 @@ def student_list(request):
     context = {
     }
     return render(request, 'managementApp/student/student_list.html', context)
+
+# Exam ----------------------------------------------
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_exams(request):
+    context = {
+    }
+    return render(request, 'managementApp/exam/addEditListExams.html', context)
+
+

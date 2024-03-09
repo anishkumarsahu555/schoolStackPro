@@ -19,4 +19,7 @@ urlpatterns = [
     path('add_student/', add_student, name='add_student'),
     path('student_list/', student_list, name='student_list'),
 
+    # Exams
+    path('manage_exams/', manage_exams, name='manage_exams'),
+
 ]

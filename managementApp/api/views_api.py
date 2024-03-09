@@ -1141,3 +1141,147 @@ def delete_student(request):
         except:
             return JsonResponse({'status': 'error'}, safe=False)
     return JsonResponse({'status': 'error'}, safe=False)
+
+
+# ---------------------Exam -------------------------------------------------
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_exam(request):
+    if request.method == 'POST':
+        exam = request.POST.get("exam")
+        try:
+            Exam.objects.get(name__iexact=exam, isDeleted=False,
+                                 sessionID_id=request.session['current_session']['Id'])
+            return JsonResponse(
+                {'status': 'success', 'message': 'Exam already exists. Please change the name.', 'color': 'info'},
+                safe=False)
+        except:
+            instance = Exam()
+            instance.name = exam
+            pre_save_with_user.send(sender=Exam, instance=instance, user=request.user.pk)
+            instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'New Exam created successfully.', 'color': 'success'},
+                safe=False)
+    return JsonResponse({'status': 'error'}, safe=False)
+
+
+class ExamListJson(BaseDatatableView):
+    order_columns = ['name', 'lastEditedBy', 'datetime']
+
+    def get_initial_queryset(self):
+        return Exam.objects.select_related().filter(isDeleted__exact=False,
+                                                        sessionID_id=self.request.session["current_session"]["Id"])
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(name__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            action = '''<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
+                <i class="pen icon"></i>
+              </button>
+              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
+                <i class="trash alternate icon"></i>
+              </button></td>'''.format(item.pk, item.pk),
+
+            json_data.append([
+                escape(item.name),
+                escape(item.lastEditedBy),
+                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                action,
+
+            ])
+
+        return json_data
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def delete_exam(request):
+    if request.method == 'POST':
+        try:
+            id = request.POST.get("dataID")
+            instance = Exam.objects.get(pk=int(id), isDeleted=False,
+                                            sessionID_id=request.session['current_session']['Id'])
+            instance.isDeleted = True
+            pre_save_with_user.send(sender=Exam, instance=instance, user=request.user.pk)
+            instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'Exam detail deleted successfully.',
+                 'color': 'success'}, safe=False)
+        except:
+            return JsonResponse({'status': 'error'}, safe=False)
+    return JsonResponse({'status': 'error'}, safe=False)
+
+
+
+@login_required
+def get_exam_detail(request, **kwargs):
+    try:
+        id = request.GET.get('id')
+        obj = Exam.objects.get(pk=id, isDeleted=False, sessionID_id=request.session['current_session']['Id'])
+        obj_dic = {
+            'ID': obj.pk,
+            'ExamName': obj.name,
+        }
+        return JsonResponse({'status': 'success', 'data': obj_dic}, safe=False)
+    except:
+        return JsonResponse({'status': 'error'}, safe=False)
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def edit_exam(request):
+    if request.method == 'POST':
+        exam = request.POST.get("exam")
+        editID = request.POST.get("editID")
+        try:
+            instance = Exam.objects.get(pk=int(editID))
+            data = Exam.objects.filter(name__iexact=exam, isDeleted=False,
+                                           sessionID_id=request.session['current_session']['Id']).exclude(
+                pk=int(editID))
+            if data.count() > 0:
+                return JsonResponse(
+                    {'status': 'success', 'message': 'Exam already exists. Please change the name.',
+                     'color': 'info'},
+                    safe=False)
+            else:
+                # instance = Subjects.objects.get(pk=int(editID))
+                instance.name = exam
+                pre_save_with_user.send(sender=Exam, instance=instance, user=request.user.pk)
+                instance.save()
+                return JsonResponse(
+                    {'status': 'success', 'message': 'Exam name updated successfully.', 'color': 'success'},
+                    safe=False)
+        except:
+
+            return JsonResponse({'status': 'error'}, safe=False)
+
+
+@login_required
+def get_exams_list_api(request):
+    objs = Exam.objects.filter(isDeleted=False, sessionID_id=request.session['current_session']['Id']).order_by(
+        'name')
+    data = []
+    for obj in objs:
+        data_dic = {
+            'ID': obj.pk,
+            'Name': obj.name
+
+        }
+        data.append(data_dic)
+    return JsonResponse(
+        {'status': 'success', 'data': data, 'color': 'success'}, safe=False)

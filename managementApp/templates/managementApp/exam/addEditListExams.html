@@ -1,0 +1,344 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+{% block title %}
+    <title>Manage Exams</title>
+{% endblock %}
+{% block css %}
+{% endblock %}
+{% block body %}
+
+    <style>
+
+
+        #SubjectTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #SubjectTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+    </style>
+
+    <div class="ui left aligned basic  grid">
+        <div class="sixteen wide column">
+            <div class="ui  pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user"
+                >Manage Subjects
+                </div>
+
+            </div>
+            <div class="ui tab " data-tab="user">
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="left align icon"></i>
+                        Add/Edit Exam
+                    </h4>
+                    <form class="ui tiny form" id="addForm">{% csrf_token %}
+                        <input type="hidden" id="editID">
+
+                        <div class="five fields">
+
+                            <div class="field">
+                                <label>Exam Name</label>
+                                <input type="text" name="exam" id="exam" placeholder="Exam Name">
+
+                            </div>
+
+
+                            <div class="field" style="padding-top: 2em;">
+                                <button type="button" id="saveBtn" class="ui mini green button saveBtn"
+                                        onclick="addData()">
+                                    <i class="icon plus square"></i>
+                                    Add
+                                </button>
+                                <button style="display: none" type="button" id="saveBtnUpdate"
+                                        onclick="editData()"
+                                        class="ui mini orange button saveBtnUpdate">
+                                    <i class="icon redo"></i>
+                                    Update
+                                </button>
+                                <button style="display: none" class="ui right labeled icon button green saveBtnLoad">
+                                    Saving ...
+                                    <i class="checkmark icon"></i>
+                                </button>
+                                <button class="ui mini red button" type="button" onclick="clearAndReset()">
+                                    <i class="icon times circle"></i>
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+
+                <div class="row" style="padding-left: 5px; padding-right: 5px">
+                    <div class="wide">
+
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                               id="SubjectTable"
+                               style="margin-top: 5px;width: 100%">
+                            <thead>
+                            <tr>
+                                <th>Exam</th>
+                                <th>EditedBy</th>
+                                <th>AddedOn</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <div class="ui basic modal custom" id="deleteDataModal">
+                    <div class="ui icon header">
+                        <i class="trash alternate icon red"></i>
+                        Exam Details will be Deleted
+                    </div>
+                    <div class="content">
+                        <p style="text-align: center">The Exam will be deleted, are you sure to delete this
+                            entry?</p>
+                    </div>
+                    <div class="actions">
+                        <div class="ui red basic cancel inverted button">
+                            <i class="remove icon"></i>
+                            No
+                        </div>
+                        <input type="hidden" id="dataID">
+                        <div class="ui green ok inverted button" onclick="deleteData()">
+                            <i class="checkmark icon"></i>
+                            Yes
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+
+
+{% block js %}
+    <script>
+
+        let subjectTab
+
+        function addData() {
+            showLoading();
+            let exam = $('#exam').val();
+            if (exam.trim() === '') {
+                requiredFieldError();
+                hideLoading();
+            } else {
+
+                let data = new FormData();
+                data.append('exam', exam);
+                data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+                $.ajax({
+                    type: 'post',
+                    url: "{% url 'managementAppAPI:add_exam' %}",
+                    data: data,
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            addSuccessNotification(response.message, response.color);
+                            subjectTab.ajax.reload(null, false);
+                            $('#addForm').trigger('reset');
+                            hideLoading();
+                        } else {
+                            addErrorNotification();
+                            hideLoading();
+
+                        }
+
+                        return response;
+                    },
+                    error: function () {
+                        addErrorNotification();
+                        hideLoading();
+                    }
+                });
+
+
+            }
+        }
+
+
+        // user Details
+
+        subjectTab = $('#SubjectTable').DataTable({
+            dom: 'Blfrtip',
+            "scrollY": "350px",
+            "scrollX": true,
+            stateSave: true,
+            fixedColumns: {
+                left: 1,
+                right: 1
+            },
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0, 1, 2]
+                }
+            }
+                {% comment %}      , {
+                          extend: 'print',
+                          exportOptions: {
+                               columns: [1, 2, 3, 4, 5, 6, 7, 8]
+                          }
+                      }{% endcomment %}
+            ],
+            "columnDefs": [
+                {"name": "name", "targets": 0, "orderable": true},
+                {"name": "lastEditedBy", "targets": 1, "orderable": true},
+                {"name": "datetime", "targets": 2, "orderable": true},
+                {"name": "action", "targets": 3, "orderable": false}
+            ],
+            aaSorting: [[2, 'desc']],
+            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+            "pageLength": 10,
+            "processing": true,
+            "serverSide": true,
+            "ajax": "{% url 'managementAppAPI:ExamListJson' %}"
+        });
+
+
+        function delData(id) {
+            $('#deleteDataModal')
+                .modal('show')
+            ;
+            $('#dataID').val(id)
+        }
+
+        function deleteData() {
+            let id = $('#dataID').val();
+            let data = new FormData();
+            data.append('dataID', id);
+
+            $.ajax({
+                url: "{% url 'managementAppAPI:delete_exam' %}",
+                type: "post",
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+
+                success: function (response) {
+                    if (response.status === 'success') {
+                        addSuccessNotification(response.message, response.color);
+                        subjectTab.ajax.reload(null, false);
+                        $('#deleteDataModal').modal('toggle');
+                    } else {
+                        addErrorNotification();
+                    }
+                    return response;
+                },
+                error: function () {
+                    addErrorNotification();
+                }
+            });
+
+        }
+
+         function GetDataDetails(id) {
+            $('#saveBtn').css('display', 'none');
+            $('#saveBtnUpdate').css('display', '');
+            $.ajax({
+                type: 'get',
+                 data: {id: id},
+                url: "{% url 'managementAppAPI:get_exam_detail' %}",
+
+                success: function (response) {
+                    if (response.status === 'success') {
+                        $('#exam').val(response.data['ExamName']);
+                        $('#editID').val(response.data['ID']);
+                    }
+                    else{
+                        addErrorNotification();
+                    }
+
+
+                },
+                error: function () {
+                     addErrorNotification();
+                }
+            });
+
+        }
+
+
+        function editData() {
+               showUpdateLoading();
+            let exam = $('#exam').val();
+            let editID = $('#editID').val();
+            if (exam.trim() === '') {
+                requiredFieldError();
+                hideLoading();
+            } else {
+
+                let data = new FormData();
+                data.append('exam', exam);
+                data.append('editID', editID);
+                data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+                $.ajax({
+                    type: 'post',
+                    url: "{% url 'managementAppAPI:edit_exam' %}",
+                    data: data,
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            addSuccessNotification(response.message, response.color);
+                            subjectTab.ajax.reload(null, false);
+                            $('#addForm').trigger('reset');
+                            hideLoading();
+                        } else {
+                            addErrorNotification();
+                            hideLoading();
+
+                        }
+
+                        return response;
+                    },
+                    error: function () {
+                        addErrorNotification();
+                        hideLoading();
+                    }
+                });
+
+
+            }
+        }
+
+         function clearAndReset() {
+            {#$('#addForm').trigger('reset');#}
+             myOwnReset();
+            $('#saveBtn').css('display', '');
+            $('#saveBtnUpdate').css('display', 'none');
+
+        }
+
+    </script>
+
+{% endblock %}

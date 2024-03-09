@@ -237,3 +237,19 @@ class Student(models.Model):
 
     class Meta:
         verbose_name_plural = 'g) Student Details'
+
+
+class Exam(models.Model):
+    name = models.CharField(max_length=500, blank=True, null=True)
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+
+    def __str__(self):
+        return self.name + self.sessionID.sessionYear
+
+    class Meta:
+        verbose_name_plural = 'h) Exam Details'
