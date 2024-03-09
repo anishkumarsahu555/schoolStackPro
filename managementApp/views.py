@@ -83,4 +83,13 @@ def manage_exams(request):
     }
     return render(request, 'managementApp/exam/addEditListExams.html', context)
 
+@login_required
+@check_groups('Admin', 'Owner')
+def assign_exams_to_class(request):
+    context = {
+    }
+    return render(request, 'managementApp/exam/assignExamToClass.html', context)
+
+
+
 

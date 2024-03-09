@@ -48,7 +48,6 @@ urlpatterns = [
     path('delete_student', delete_student, name='delete_student'),
     path('StudentListJson', StudentListJson.as_view(), name='StudentListJson'),
 
-
     # Exam
     path('add_exam', add_exam, name='add_exam'),
     path('delete_exam', delete_exam, name='delete_exam'),
@@ -57,5 +56,12 @@ urlpatterns = [
     path('get_exams_list_api', get_exams_list_api, name='get_exams_list_api'),
     path('ExamListJson', ExamListJson.as_view(), name='ExamListJson'),
 
+    # assign Exam to class
+    path('add_exam_to_class', add_exam_to_class, name='add_exam_to_class'),
+    path('delete_assign_exam_to_class', delete_assign_exam_to_class, name='delete_assign_exam_to_class'),
+    path('get_assigned_exam_to_class_detail', get_assigned_exam_to_class_detail, name='get_assigned_exam_to_class_detail'),
+    path('update_exam_to_class', update_exam_to_class, name='update_exam_to_class'),
+    # path('get_exams_to_class_assign_list_api', get_exams_to_class_assign_list_api, name='get_exams_to_class_assign_list_api'),
+    path('AssignExamToClassListJson', AssignExamToClassListJson.as_view(), name='AssignExamToClassListJson'),
 
 ]

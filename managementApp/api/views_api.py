@@ -1152,7 +1152,7 @@ def add_exam(request):
         exam = request.POST.get("exam")
         try:
             Exam.objects.get(name__iexact=exam, isDeleted=False,
-                                 sessionID_id=request.session['current_session']['Id'])
+                             sessionID_id=request.session['current_session']['Id'])
             return JsonResponse(
                 {'status': 'success', 'message': 'Exam already exists. Please change the name.', 'color': 'info'},
                 safe=False)
@@ -1172,7 +1172,7 @@ class ExamListJson(BaseDatatableView):
 
     def get_initial_queryset(self):
         return Exam.objects.select_related().filter(isDeleted__exact=False,
-                                                        sessionID_id=self.request.session["current_session"]["Id"])
+                                                    sessionID_id=self.request.session["current_session"]["Id"])
 
     def filter_queryset(self, qs):
 
@@ -1214,7 +1214,7 @@ def delete_exam(request):
         try:
             id = request.POST.get("dataID")
             instance = Exam.objects.get(pk=int(id), isDeleted=False,
-                                            sessionID_id=request.session['current_session']['Id'])
+                                        sessionID_id=request.session['current_session']['Id'])
             instance.isDeleted = True
             pre_save_with_user.send(sender=Exam, instance=instance, user=request.user.pk)
             instance.save()
@@ -1224,7 +1224,6 @@ def delete_exam(request):
         except:
             return JsonResponse({'status': 'error'}, safe=False)
     return JsonResponse({'status': 'error'}, safe=False)
-
 
 
 @login_required
@@ -1251,7 +1250,7 @@ def edit_exam(request):
         try:
             instance = Exam.objects.get(pk=int(editID))
             data = Exam.objects.filter(name__iexact=exam, isDeleted=False,
-                                           sessionID_id=request.session['current_session']['Id']).exclude(
+                                       sessionID_id=request.session['current_session']['Id']).exclude(
                 pk=int(editID))
             if data.count() > 0:
                 return JsonResponse(
@@ -1285,3 +1284,176 @@ def get_exams_list_api(request):
         data.append(data_dic)
     return JsonResponse(
         {'status': 'success', 'data': data, 'color': 'success'}, safe=False)
+
+
+# assign exam to class
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_exam_to_class(request):
+    if request.method == 'POST':
+        try:
+            standard = request.POST.get("standard")
+            exam = request.POST.get("exam")
+            fmark = request.POST.get("fmark")
+            pmark = request.POST.get("pmark")
+            sDate = request.POST.get("sDate")
+            eDate = request.POST.get("eDate")
+            subject_list = [int(x) for x in standard.split(',')]
+            for s in subject_list:
+                try:
+                    AssignExamToClass.objects.get(examID_id=int(exam), standardID_id=int(s), isDeleted=False,
+                                                  sessionID_id=request.session['current_session']['Id'])
+                except:
+                    instance = AssignExamToClass()
+                    instance.standardID_id = int(s)
+                    instance.examID_id = int(exam)
+                    instance.fullMarks = float(fmark)
+                    instance.passMarks = float(pmark)
+                    instance.startDate = datetime.strptime(sDate, '%d/%m/%Y')
+                    instance.endDate = datetime.strptime(eDate, '%d/%m/%Y')
+                    pre_save_with_user.send(sender=AssignExamToClass, instance=instance, user=request.user.pk)
+                    instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'Exam assigned successfully.', 'color': 'success'},
+                safe=False)
+        except:
+            return JsonResponse({'status': 'error'}, safe=False)
+
+
+class AssignExamToClassListJson(BaseDatatableView):
+    order_columns = ['standardID.name', 'standardID.section',
+                     'examID.name', 'fullMarks', 'passMarks', 'startDate', 'endDate', 'lastEditedBy', 'datetime']
+
+    def get_initial_queryset(self):
+        return AssignExamToClass.objects.select_related().filter(isDeleted__exact=False,
+                                                                 sessionID_id=
+                                                                 self.request.session["current_session"][
+                                                                     "Id"]).order_by(
+            'standardID__name')
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(standardID__name__icontains=search) | Q(examID__name__icontains=search)
+                | Q(fullMarks__icontains=search) | Q(passMarks__icontains=search)
+                | Q(endDate__icontains=search) | Q(
+                    standardID__section__icontains=search) | Q(
+                    startDate__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            action = '''
+              <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
+                <i class="pen icon"></i>
+              </button>
+              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
+                <i class="trash alternate icon"></i>
+              </button></td>'''.format(item.pk, item.pk),
+            if item.standardID.section:
+                section = item.standardID.section
+            else:
+                section = 'N/A'
+
+            json_data.append([
+                escape(item.standardID.name),
+                escape(section),
+                escape(item.examID.name),
+                escape(item.fullMarks),
+                escape(item.passMarks),
+                escape(item.startDate.strftime('%d-%m-%Y')),
+                escape(item.endDate.strftime('%d-%m-%Y')),
+                escape(item.lastEditedBy),
+                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                action,
+
+            ])
+
+        return json_data
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def delete_assign_exam_to_class(request):
+    if request.method == 'POST':
+        try:
+            id = request.POST.get("dataID")
+            instance = AssignExamToClass.objects.get(pk=int(id), isDeleted=False,
+                                                     sessionID_id=request.session['current_session']['Id'])
+            instance.isDeleted = True
+            pre_save_with_user.send(sender=AssignExamToClass, instance=instance, user=request.user.pk)
+            instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'Assigned Exam detail deleted successfully.',
+                 'color': 'success'}, safe=False)
+        except:
+            return JsonResponse({'status': 'error'}, safe=False)
+    return JsonResponse({'status': 'error'}, safe=False)
+
+
+@login_required
+def get_assigned_exam_to_class_detail(request, **kwargs):
+    try:
+        id = request.GET.get('id')
+        obj = AssignExamToClass.objects.get(pk=id, isDeleted=False,
+                                            sessionID_id=request.session['current_session']['Id'])
+        obj_dic = {
+            'StandardID': obj.standardID_id,
+            'ExamID': obj.examID_id,
+            'FullMarks': obj.fullMarks,
+            'PassMarks': obj.passMarks,
+            'StartDate': obj.startDate.strftime('%d/%m/%Y'),
+            'EndDate': obj.endDate.strftime('%d/%m/%Y'),
+            'ID': obj.pk,
+        }
+        return JsonResponse({'status': 'success', 'data': obj_dic}, safe=False)
+    except:
+        return JsonResponse({'status': 'error'}, safe=False)
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def update_exam_to_class(request):
+    if request.method == 'POST':
+        try:
+            editID = request.POST.get("editID")
+            standard = request.POST.get("standard")
+            exam = request.POST.get("exam")
+            fmark = request.POST.get("fmark")
+            pmark = request.POST.get("pmark")
+            sDate = request.POST.get("sDate")
+            eDate = request.POST.get("eDate")
+            subject_list = [int(x) for x in standard.split(',')]
+            instance = AssignExamToClass.objects.get(pk=int(editID))
+            for s in subject_list:
+                try:
+                    AssignExamToClass.objects.get(examID_id=int(exam), standardID_id=int(s),
+                                                  isDeleted=False,
+                                                  sessionID_id=request.session['current_session']['Id']).exclude(
+                        pk=int(editID))
+                    return JsonResponse(
+                        {'status': 'success', 'message': 'Detail already assigned.', 'color': 'info'},
+                        safe=False)
+                except:
+                    instance.standardID_id = int(s)
+                    instance.examID_id = int(exam)
+                    instance.fullMarks = float(fmark)
+                    instance.passMarks = float(pmark)
+                    instance.startDate = datetime.strptime(sDate, '%d/%m/%Y')
+                    instance.endDate = datetime.strptime(eDate, '%d/%m/%Y')
+                    pre_save_with_user.send(sender=AssignExamToClass, instance=instance, user=request.user.pk)
+                    instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'Detail updated successfully.', 'color': 'success'},
+                safe=False)
+        except:
+            return JsonResponse({'status': 'error'}, safe=False)

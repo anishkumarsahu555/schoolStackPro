@@ -1,7 +1,7 @@
 {% extends 'managementApp/index.html' %}
 {% load static %}
 {% block title %}
-    <title>Assign Subjects To Class</title>
+    <title>Assign Exam To Class</title>
 {% endblock %}
 {% block css %}
 {% endblock %}
@@ -33,7 +33,7 @@
         <div class="sixteen wide column">
             <div class="ui  pointing secondary menu">
                 <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Assign Subjects To Class
+                >Assign Exam To Class
                 </div>
 
             </div>
@@ -41,30 +41,63 @@
                 <div class="ui segment">
                     <h4 class="ui horizontal left aligned divider header">
                         <i class="left align icon"></i>
-                        Assign Subject
+                        Assign Class
                     </h4>
                     <form class="ui tiny form" id="addForm">{% csrf_token %}
                         <input type="hidden" id="editID">
 
-                        <div class="three fields">
+                        <div class="four fields">
 
-                            <div class="field required">
-                                <label>Class Name</label>
-                                <select class="ui clearable search dropdown" id="standard">
+                            <div class="three wide field required">
+                                <label>Exam Name</label>
+                                <select class="ui clearable search dropdown" id="exam">
+                                    <option value="">Search By Exam Name</option>
+                                </select>
+
+                            </div>
+
+                            <div class="seven wide field required">
+                                <label>Class - Section</label>
+                                <select class="ui fluid search dropdown" multiple="" id="standard">
                                     <option value="">Search By Class Name</option>
                                 </select>
 
                             </div>
+                            <div class="three wide field">
+                                <label>Full Mark</label>
+                                <input type="number" name="fmark" placeholder="Full Mark" id="fmark">
 
-                            <div class="field required">
-                                <label>Subject Name</label>
-                                <select class="ui fluid search dropdown" multiple="" id="subjects">
-                                    <option value="">Search By Subject Name</option>
-                                </select>
+
+                            </div>
+                            <div class="three wide field">
+                                <label>Pass Mark</label>
+                                <input type="number" name="pmark" placeholder="Pass Mark" id="pmark">
+
 
                             </div>
 
 
+                        </div>
+                        <div class="three fields">
+                            <div class="field">
+                                <label>Start Date</label>
+                                <div class="ui calendar" id="startDate">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" placeholder="Exam Start Date" id="sDate">
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="field">
+                                <label>End Date</label>
+                                <div class="ui calendar" id="endDate">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" placeholder="Exam End Date" id="eDate">
+                                    </div>
+                                </div>
+                            </div>
                             <div class="field" style="padding-top: 2.2em;">
                                 <button type="button" id="saveBtn" class="ui mini green button saveBtn"
                                         onclick="addData()">
@@ -100,8 +133,13 @@
                                style="margin-top: 5px;width: 100%">
                             <thead>
                             <tr>
-                                <th>Class-Section</th>
-                                <th>Subject</th>
+                                <th>Class</th>
+                                <th>Section</th>
+                                <th>Exam</th>
+                                <th>FullMarks</th>
+                                <th>PassMarks</th>
+                                <th>StartDate</th>
+                                <th>EndDate</th>
                                 <th>EditedBy</th>
                                 <th>AddedOn</th>
                                 <th>Actions</th>
@@ -147,9 +185,49 @@
 
 {% block js %}
     <script>
+        let today = new Date();
+        $('#startDate')
+            .calendar({
+                    {#initialDate: today.getDate() + '/' + (today.getMonth() + 1) + '/' + today.getFullYear(),#}
+                    {#initialDate: {{ obj.collectionDateTime|date:'d' }} + '/' + {{ obj.collectionDateTime|date:'m' }} + '/' + {{ obj.collectionDateTime|date:'Y' }},#}
+                    monthFirst: false,
+                    type: 'date',
+                    formatter: {
+                        date: function (date, settings) {
+
+                            if (!date) return '';
+                            var day = String(date.getDate());
+                            var month = String(date.getMonth() + 1);
+                            var year = date.getFullYear();
+                            return day + '/' + month + '/' + year;
+                        }
+                    }
+                }
+            );
+
+
+        $('#endDate')
+            .calendar({
+                    {#initialDate: today.getDate() + '/' + (today.getMonth() + 1) + '/' + today.getFullYear(),#}
+                    {#initialDate: {{ obj.collectionDateTime|date:'d' }} + '/' + {{ obj.collectionDateTime|date:'m' }} + '/' + {{ obj.collectionDateTime|date:'Y' }},#}
+                    monthFirst: false,
+                    type: 'date',
+                    formatter: {
+                        date: function (date, settings) {
+
+                            if (!date) return '';
+                            var day = String(date.getDate());
+                            var month = String(date.getMonth() + 1);
+                            var year = date.getFullYear();
+                            return day + '/' + month + '/' + year;
+                        }
+                    }
+                }
+            );
+
 
         $(getStandardList());
-        $(getSubjectsList());
+        $(getExamList());
 
 
         function getStandardList() {
@@ -183,19 +261,20 @@
 
 
         }
-           function getSubjectsList() {
+
+        function getExamList() {
             $.ajax({
                 type: 'get',
-                url: "{% url 'managementAppAPI:get_subjects_list_api' %}",
+                url: "{% url 'managementAppAPI:get_exams_list_api' %}",
 
                 success: function (response) {
 
-                    $('#subjects').html('');
-                    $('#subjects').append(' <option value="">Search By Subject Name</option>');
+                    $('#exam').html('');
+                    $('#exam').append(' <option value="">Search By Exam Name</option>');
                     var j;
                     for (j = 0; j < response.data.length; j++) {
 
-                        $('#subjects').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+                        $('#exam').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
 
                     }
 
@@ -220,20 +299,27 @@
         function addData() {
             showLoading();
             let standard = $('#standard').val();
-            let subjects = $('#subjects').val();
-            console.log(subjects.length)
-            if (standard.trim() === '' || subjects.length<=0) {
+            let exam = $('#exam').val();
+            let fmark = $('#fmark').val();
+            let pmark = $('#pmark').val();
+            let sDate = $('#sDate').val();
+            let eDate = $('#eDate').val();
+            if (exam.trim() === '' ||fmark.trim() === '' ||pmark.trim() === '' ||sDate.trim() === '' ||eDate.trim() === '' || standard.length <= 0) {
                 requiredFieldError();
                 hideLoading();
             } else {
 
                 let data = new FormData();
                 data.append('standard', standard);
-                data.append('subjects', subjects);
+                data.append('exam', exam);
+                data.append('fmark', fmark.trim());
+                data.append('pmark', pmark.trim());
+                data.append('eDate', eDate.trim());
+                data.append('sDate', sDate.trim());
                 data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
                 $.ajax({
                     type: 'post',
-                    url: "{% url 'managementAppAPI:add_subject_to_class' %}",
+                    url: "{% url 'managementAppAPI:add_exam_to_class' %}",
                     data: data,
                     contentType: false,
                     cache: false,
@@ -278,7 +364,7 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [0, 1, 2,3]
+                    columns: [0, 1, 2, 3, 4, 5, 6,7,8]
                 }
             }
                 {% comment %}      , {
@@ -290,17 +376,22 @@
             ],
             "columnDefs": [
                 {"name": "standardID.name", "targets": 0, "orderable": true},
-                {"name": "subjectID.name", "targets": 1, "orderable": true},
-                {"name": "lastEditedBy", "targets": 2, "orderable": true},
-                {"name": "datetime", "targets": 3, "orderable": true},
-                {"name": "action", "targets": 4, "orderable": false}
+                {"name": "standardID.section", "targets": 1, "orderable": true},
+                {"name": "examID.name", "targets": 2, "orderable": true},
+                {"name": "fullMarks", "targets": 3, "orderable": true},
+                {"name": "passMarks", "targets": 4, "orderable": true},
+                {"name": "startDate", "targets": 5, "orderable": true},
+                {"name": "endDate", "targets": 6, "orderable": true},
+                {"name": "lastEditedBy", "targets": 7, "orderable": true},
+                {"name": "datetime", "targets": 8, "orderable": true},
+                {"name": "action", "targets": 9, "orderable": false}
             ],
             aaSorting: [[0, 'asc']],
             "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             "pageLength": 10,
             "processing": true,
             "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:AssignSubjectToClassListJson' %}"
+            "ajax": "{% url 'managementAppAPI:AssignExamToClassListJson' %}"
         });
 
 
@@ -317,7 +408,7 @@
             data.append('dataID', id);
 
             $.ajax({
-                url: "{% url 'managementAppAPI:delete_assign_subject_to_class' %}",
+                url: "{% url 'managementAppAPI:delete_assign_exam_to_class' %}",
                 type: "post",
                 data: data,
                 contentType: false,
@@ -348,12 +439,16 @@
             $.ajax({
                 type: 'get',
                 data: {id: id},
-                url: "{% url 'managementAppAPI:get_assigned_subject_to_class_detail' %}",
+                url: "{% url 'managementAppAPI:get_assigned_exam_to_class_detail' %}",
 
                 success: function (response) {
                     if (response.status === 'success') {
                         $('#standard').val(response.data['StandardID']).change();
-                        $('#subjects').val(response.data['SubjectID']).change();
+                        $('#exam').val(response.data['ExamID']).change();
+                        $('#fmark').val(response.data['FullMarks']);
+                        $('#pmark').val(response.data['PassMarks']);
+                        $('#sDate').val(response.data['StartDate']);
+                        $('#eDate').val(response.data['EndDate']);
                         $('#editID').val(response.data['ID']);
                     } else {
                         addErrorNotification();
@@ -372,21 +467,29 @@
         function editData() {
             showUpdateLoading();
             let standard = $('#standard').val();
-            let subjects = $('#subjects').val();
+            let exam = $('#exam').val();
+            let fmark = $('#fmark').val();
+            let pmark = $('#pmark').val();
+            let sDate = $('#sDate').val();
+            let eDate = $('#eDate').val();
             let editID = $('#editID').val();
-            if (standard.trim() === '' || subjects.length<=0) {
+            if (standard === '' ||fmark.trim() === '' ||pmark.trim() === '' ||sDate.trim() === '' ||eDate.trim() === '' || exam.length <= 0) {
                 requiredFieldError();
                 hideLoading();
             } else {
 
                 let data = new FormData();
                 data.append('standard', standard);
-                data.append('subjects', subjects);
+                data.append('exam', exam);
+                data.append('fmark', fmark.trim());
+                data.append('pmark', pmark.trim());
+                data.append('sDate', sDate.trim());
+                data.append('eDate', eDate.trim());
                 data.append('editID', editID);
                 data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
                 $.ajax({
                     type: 'post',
-                    url: "{% url 'managementAppAPI:update_subject_to_class' %}",
+                    url: "{% url 'managementAppAPI:update_exam_to_class' %}",
                     data: data,
                     contentType: false,
                     cache: false,
