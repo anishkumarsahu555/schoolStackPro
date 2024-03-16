@@ -1,0 +1,236 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+{% block title %}
+    <title>Take Staff Attendance</title>
+{% endblock %}
+{% block css %}
+{% endblock %}
+{% block body %}
+
+    <style>
+
+
+        #SubjectTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #SubjectTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+    </style>
+
+    <div class="ui left aligned basic  grid">
+        <div class="sixteen wide column">
+            <div class="ui  pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user"
+                >Add Staff Attendance
+                </div>
+
+            </div>
+            <div class="ui tab " data-tab="user">
+
+
+                <div class="ui segment" id="classFormDiv" >
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="left align icon"></i>
+                        By Date
+                    </h4>
+                    <form class="ui tiny form" id="addFormByClass">{% csrf_token %}
+                        <input type="hidden" id="editID">
+
+                        <div class="three fields">
+
+                            <div class="field required">
+                                <label>Date</label>
+                                <div class="ui calendar" id="date">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" placeholder="Attendance Date" id="aDate">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field" style="padding-top: 2.2em;">
+                                <button type="button" class="ui mini green button"
+                                        onclick="searchData()">
+                                    <i class="icon search"></i>
+                                    Search
+                                </button>
+
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+                <div class="row" style="padding-left: 5px; padding-right: 5px;display: none;" id="AttendanceTableDiv">
+                    <div class="wide">
+
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                               id="SubjectTable"
+                               style="margin-top: 5px;width: 100%">
+                            <thead>
+                            <tr>
+                                <th>Photo</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>EmpCode</th>
+                                <th>IsPresent</th>
+                                <th>Reason for Absent</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+
+
+{% block js %}
+    <script>
+
+
+        let today = new Date();
+        $('#date')
+            .calendar({
+                    monthFirst: false,
+                    type: 'date',
+                    formatter: {
+                        date: function (date, settings) {
+
+                            if (!date) return '';
+                            var day = String(date.getDate());
+                            var month = String(date.getMonth() + 1);
+                            var year = date.getFullYear();
+                            return day + '/' + month + '/' + year;
+                        }
+                    }
+                }
+            );
+
+
+        let subjectTab
+
+
+        function searchData(mode) {
+            let aDate = $('#aDate').val();
+
+                if (aDate.trim() === '') {
+                requiredFieldError();
+                $('#AttendanceTableDiv').css('display', 'none');
+            } else {
+                $('#AttendanceTableDiv').css('display', 'block');
+
+                subjectTab.ajax.url('{% url 'managementAppAPI:TakeTeacherAttendanceJson' %}?aDate=' + aDate ).load();
+
+
+            }
+
+
+
+
+        }
+
+
+        // user Details
+
+        subjectTab = $('#SubjectTable').DataTable({
+            dom: 'Blfrtip',
+            "scrollY": "350px",
+            "scrollX": true,
+            stateSave: true,
+            fixedColumns: {
+                left: 1,
+                right: 1
+            },
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [1, 2, 3, 4,5]
+                }
+            }
+                {% comment %}      , {
+                          extend: 'print',
+                          exportOptions: {
+                               columns: [1, 2, 3, 4, 5, 6, 7, 8]
+                          }
+                      }{% endcomment %}
+            ],
+            "columnDefs": [
+                {"name": "teacherID.photo", "targets": 0, "orderable": true},
+                {"name": "teacherID.name", "targets": 1, "orderable": true},
+                {"name": "teacherID.staffType", "targets": 2, "orderable": true},
+                {"name": "teacherID.employeeCode", "targets": 3, "orderable": true},
+                {"name": "isPresent", "targets": 4, "orderable": true},
+                {"name": "absentReason", "targets": 5, "orderable": true},
+                {"name": "action", "targets": 6, "orderable": false}
+            ],
+            aaSorting: [[1, 'asc']],
+            "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
+            "pageLength": 100,
+            "processing": true,
+            "serverSide": true,
+            "ajax": "{% url 'managementAppAPI:TakeTeacherAttendanceJson' %}"
+        });
+
+
+
+
+        function pushAttendance(id) {
+            let isPresent = $('#isPresent'+id).prop('checked');
+            let reason = $('#reason'+id).val();
+              let data = new FormData();
+                data.append('id', id);
+                data.append('isPresent', isPresent);
+                data.append('reason', reason);
+                data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+                $.ajax({
+                    type: 'post',
+                    url: "{% url 'managementAppAPI:add_staff_attendance_api' %}",
+                    data: data,
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            addSuccessNotification(response.message, response.color);
+                            {#subjectTab.ajax.reload(null, false);#}
+                        } else {
+                            addErrorNotification();
+
+                        }
+
+                        return response;
+                    },
+                    error: function () {
+                        addErrorNotification();
+                    }
+                });
+
+
+
+
+        }
+
+    </script>
+
+{% endblock %}

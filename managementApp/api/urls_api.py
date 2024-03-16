@@ -27,6 +27,10 @@ urlpatterns = [
     path('update_subject_to_class', update_subject_to_class, name='update_subject_to_class'),
     path('get_subjects_to_class_assign_list_api', get_subjects_to_class_assign_list_api,
          name='get_subjects_to_class_assign_list_api'),
+    path('get_subjects_to_class_assign_list_with_given_class_api',
+         get_subjects_to_class_assign_list_with_given_class_api,
+         name='get_subjects_to_class_assign_list_with_given_class_api'),
+
     path('AssignSubjectToClassListJson', AssignSubjectToClassListJson.as_view(), name='AssignSubjectToClassListJson'),
 
     # subjects to teacher
@@ -46,6 +50,7 @@ urlpatterns = [
     # student
     path('add_student_api', add_student_api, name='add_student_api'),
     path('delete_student', delete_student, name='delete_student'),
+    path('get_student_list_by_class_api', get_student_list_by_class_api, name='get_student_list_by_class_api'),
     path('StudentListJson', StudentListJson.as_view(), name='StudentListJson'),
 
     # Exam
@@ -59,9 +64,25 @@ urlpatterns = [
     # assign Exam to class
     path('add_exam_to_class', add_exam_to_class, name='add_exam_to_class'),
     path('delete_assign_exam_to_class', delete_assign_exam_to_class, name='delete_assign_exam_to_class'),
-    path('get_assigned_exam_to_class_detail', get_assigned_exam_to_class_detail, name='get_assigned_exam_to_class_detail'),
+    path('get_assigned_exam_to_class_detail', get_assigned_exam_to_class_detail,
+         name='get_assigned_exam_to_class_detail'),
     path('update_exam_to_class', update_exam_to_class, name='update_exam_to_class'),
     # path('get_exams_to_class_assign_list_api', get_exams_to_class_assign_list_api, name='get_exams_to_class_assign_list_api'),
     path('AssignExamToClassListJson', AssignExamToClassListJson.as_view(), name='AssignExamToClassListJson'),
 
+    # Attendance
+    path('TakeStudentAttendanceByClassJson', TakeStudentAttendanceByClassJson.as_view(),
+         name='TakeStudentAttendanceByClassJson'),
+    path('add_student_attendance_by_class', add_student_attendance_by_class, name='add_student_attendance_by_class'),
+    path('StudentAttendanceHistoryByDateRangeJson', StudentAttendanceHistoryByDateRangeJson.as_view(),
+         name='StudentAttendanceHistoryByDateRangeJson'),
+    path('StudentAttendanceHistoryByDateRangeAndStudentJson',
+         StudentAttendanceHistoryByDateRangeAndStudentJson.as_view(),
+         name='StudentAttendanceHistoryByDateRangeAndStudentJson'),
+    path('TakeTeacherAttendanceJson', TakeTeacherAttendanceJson.as_view(), name='TakeTeacherAttendanceJson'),
+    path('add_staff_attendance_api', add_staff_attendance_api, name='add_staff_attendance_api'),
+    path('StaffAttendanceHistoryByDateRangeJson', StaffAttendanceHistoryByDateRangeJson.as_view(),
+         name='StaffAttendanceHistoryByDateRangeJson'),
+    path('StaffAttendanceHistoryByDateRangeAndStaffJson', StaffAttendanceHistoryByDateRangeAndStaffJson.as_view(),
+         name='StaffAttendanceHistoryByDateRangeAndStaffJson'),
 ]

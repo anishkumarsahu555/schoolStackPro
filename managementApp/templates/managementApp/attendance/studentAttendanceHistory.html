@@ -1,0 +1,529 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+{% block title %}
+    <title>Students Attendance History</title>
+{% endblock %}
+{% block css %}
+{% endblock %}
+{% block body %}
+
+    <style>
+
+
+        #SubjectTable_length, #byStudentTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #SubjectTable_filter,#byStudentTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+    </style>
+
+    <div class="ui left aligned basic  grid">
+        <div class="sixteen wide column">
+            <div class="ui  pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user"
+                > Student Attendance History
+                </div>
+
+            </div>
+            <div class="ui tab active " data-tab="user">
+
+                <div class="ui ">
+                    <div class="ui top attached tabular menu">
+                        <a class="item active" data-tab="dateWise">By Date Range</a>
+                        <a class="item" data-tab="studentWise">By Student</a>
+                    </div>
+                    <div class="ui bottom attached  tab segment active" data-tab="dateWise">
+
+                        <div class="ui segment" id="classFormDiv">
+                            <form class="ui tiny form" id="addFormByClass">{% csrf_token %}
+
+                                <div class="five fields">
+
+                                    <div class="four wide field required">
+
+                                        <label>Class-Section</label>
+                                        <select class="ui search dropdown" id="dateRangeStandard"
+                                                onchange="getStandardSubjectList('ByClass')">
+                                            <option value="">Search By Class Name</option>
+                                        </select>
+                                    </div>
+                                    <div class="four wide field required">
+
+                                        <label>Subject</label>
+                                        <select class="ui search dropdown" id="dateRangeSubject">
+                                            <option value="">Search By Subject Name</option>
+                                        </select>
+                                    </div>
+                                    <div class="three wide field required">
+                                        <label>Start Date</label>
+                                        <div class="ui calendar" id="cStartDate">
+                                            <div class="ui input left icon">
+                                                <i class="calendar icon"></i>
+                                                <input type="text" placeholder="Attendance Date"
+                                                       id="dateRangeStartDate">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="three wide field required">
+                                        <label>End Date</label>
+                                        <div class="ui calendar" id="cEndDate">
+                                            <div class="ui input left icon">
+                                                <i class="calendar icon"></i>
+                                                <input type="text" placeholder="Attendance Date" id="dateRangeEndDate">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="two wide field" style="padding-top: 2.2em;">
+                                        <button type="button" class="ui mini green button"
+                                                onclick="searchData('ByDateRange')">
+                                            <i class="icon search"></i>
+                                            Search
+                                        </button>
+
+                                    </div>
+                                </div>
+
+                            </form>
+                        </div>
+
+                        <div class="row" style="padding-left: 5px; padding-right: 5px;" id="AttendanceTableDiv">
+                            <div class="wide">
+
+                                <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                                       id="SubjectTable"
+                                       style="margin-top: 5px;width: 100%">
+                                    <thead>
+                                    <tr>
+                                        <th>Photo</th>
+                                        <th>StudentName</th>
+                                        <th>RollNo.</th>
+                                        <th>Present Count</th>
+                                        <th>Absent Count</th>
+                                        <th>Working Days</th>
+                                        <th>Percentage (%)</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="ui bottom attached  tab segment" data-tab="studentWise">
+
+                        <div class="ui segment" id="subjectFormDiv">
+                            <form class="ui tiny form" id="addForm">{% csrf_token %}
+
+                                <div class="six fields">
+
+                                    <div class="four wide field required">
+
+                                        <label>Class-Section</label>
+                                        <select class="ui search dropdown" id="ByStudentStandard"
+                                                onchange="getStandardSubjectList('ByStudent')">
+                                            <option value="">Search By Class Name</option>
+                                        </select>
+                                    </div>
+                                    <div class="three wide field required">
+
+                                        <label>Subject</label>
+                                        <select class="ui search dropdown" id="ByStudentSubject">
+                                            <option value="">Search By Subject Name</option>
+                                        </select>
+                                    </div>
+                                    <div class="two wide field required">
+                                        <label>Start Date</label>
+                                        <div class="ui calendar" id="cStartDateByStudent">
+                                            <div class="ui input left icon">
+                                                <i class="calendar icon"></i>
+                                                <input type="text" placeholder="Attendance Date"
+                                                       id="ByStudentStartDate">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="two wide field required">
+                                        <label>End Date</label>
+                                        <div class="ui calendar" id="cEndDateByStudent">
+                                            <div class="ui input left icon">
+                                                <i class="calendar icon"></i>
+                                                <input type="text" placeholder="Attendance Date" id="ByStudentEndDate">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="three wide field required">
+
+                                        <label>Student</label>
+                                        <select class="ui search dropdown" id="ByStudentStudent">
+                                        </select>
+                                    </div>
+
+                                    <div class="two wide field" style="padding-top: 2.2em;">
+                                        <button type="button" class="ui mini green button"
+                                                onclick="searchData('ByStudent')">
+                                            <i class="icon search"></i>
+                                            Search
+                                        </button>
+
+                                    </div>
+                                </div>
+
+
+                            </form>
+                        </div>
+                        <div class="row" style="padding-left: 5px; padding-right: 5px;" id="AttendanceTableDiv">
+                            <div class="wide">
+
+                                <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                                       id="byStudentTable"
+                                       style="margin-top: 5px;width: 100%!important;">
+                                    <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>IsPresent</th>
+                                        <th>IsAbsent</th>
+                                        <th>Reason</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+
+
+{% block js %}
+    <script>
+
+
+        $(getStandardList());
+        let today = new Date();
+        var commonFormatter = function (date, settings) {
+            if (!date) return '';
+            var day = String(date.getDate());
+            var month = String(date.getMonth() + 1);
+            var year = date.getFullYear();
+            return day + '/' + month + '/' + year;
+        };
+
+        $('#cStartDate, #cEndDate, #cStartDateByStudent, #cEndDateByStudent')
+            .calendar({
+                monthFirst: false,
+                type: 'date',
+                formatter: {
+                    date: commonFormatter
+                }
+            });
+
+        function getStandardList() {
+
+            $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppAPI:get_standard_list_api' %}",
+
+                success: function (response) {
+
+                    $('#dateRangeStandard').html('');
+                    $('#ByStudentStandard').html('');
+                    $('#dateRangeStandard').append(' <option value="">Search By Class Name</option>');
+                    $('#ByStudentStandard').append(' <option value="">Search By Class Name</option>');
+                    var j;
+                    for (j = 0; j < response.data.length; j++) {
+
+                        $('#dateRangeStandard').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+                        $('#ByStudentStandard').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+
+                    }
+
+                },
+
+                error: function () {
+                    $('body')
+                        .toast({
+                            class: 'error',
+                            message: 'An error occurred !'
+                        })
+                    ;
+                }
+            });
+
+
+        }
+        function getStudentList() {
+
+            $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppAPI:get_student_list_by_class_api' %}",
+                data :{
+                    'standard' :$('#ByStudentStandard').val()
+                },
+
+                success: function (response) {
+
+                    $('#ByStudentStudent').dropdown('clear');
+                    $('#ByStudentStudent').html('');
+                    {#$('#ByStudentStudent').append(' <option value="">Search By Student Name or Roll</option>');#}
+                    var j;
+                    for (j = 0; j < response.data.length; j++) {
+
+                        $('#ByStudentStudent').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+
+                    }
+
+                },
+
+                error: function () {
+                    $('body')
+                        .toast({
+                            class: 'error',
+                            message: 'An error occurred !'
+                        })
+                    ;
+                }
+            });
+
+
+        }
+
+
+        {#$(getStandardSubjectList());#}
+
+        function getStandardSubjectList(mode) {
+            if (mode === 'ByStudent') {
+                var standard = $('#ByStudentStandard').val();
+            } else {
+                var standard = $('#dateRangeStandard').val();
+            }
+
+            $.ajax({
+                type: 'get',
+                data: {
+                    'standard': standard
+                },
+                url: "{% url 'managementAppAPI:get_subjects_to_class_assign_list_with_given_class_api' %}",
+
+                success: function (response) {
+                    if (mode === 'ByStudent') {
+                        getStudentList();
+                        $('#ByStudentSubject').html('');
+                        $('#ByStudentSubject').append(' <option value="all" selected>All</option>');
+                    } else {
+                        $('#dateRangeSubject').html('');
+                        $('#dateRangeSubject').append(' <option value="all" selected>All</option>');
+                    }
+
+
+                    var j;
+                    for (j = 0; j < response.data.length; j++) {
+                        if (mode === 'ByStudent') {
+                            $('#ByStudentSubject').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+
+                        } else {
+                            $('#dateRangeSubject').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+
+                        }
+
+
+                    }
+
+                },
+
+                error: function () {
+                    $('body')
+                        .toast({
+                            class: 'error',
+                            message: 'An error occurred !'
+                        })
+                    ;
+                }
+            });
+
+
+        }
+
+
+        let subjectTab
+        let byStudentTab
+
+
+        function searchData(mode) {
+
+
+            if (mode === 'ByDateRange') {
+                let dateRangeStandard = $('#dateRangeStandard').val();
+                let dateRangeSubject = $('#dateRangeSubject').val();
+                let dateRangeStartDate = $('#dateRangeStartDate').val();
+                let dateRangeEndDate = $('#dateRangeEndDate').val();
+                if (dateRangeStartDate.trim() === '' || dateRangeEndDate.trim() === '' || dateRangeStandard === '' || dateRangeSubject === '') {
+                    requiredFieldError();
+                } else {
+                    subjectTab.ajax.url('{% url 'managementAppAPI:StudentAttendanceHistoryByDateRangeJson' %}?dateRangeStandard=' + dateRangeStandard + '&dateRangeSubject=' + dateRangeSubject + '&dateRangeStartDate=' + dateRangeStartDate + '&dateRangeEndDate=' + dateRangeEndDate).load();
+                }
+            } else if (mode === 'ByStudent') {
+                let ByStudentStandard = $('#ByStudentStandard').val();
+                let ByStudentSubject = $('#ByStudentSubject').val();
+                let ByStudentStartDate = $('#ByStudentStartDate').val();
+                let ByStudentEndDate = $('#ByStudentEndDate').val();
+                let ByStudentStudent = $('#ByStudentStudent').val();
+                if (ByStudentStartDate.trim() === '' || ByStudentEndDate.trim() === '' || ByStudentStandard === ''|| ByStudentSubject === ''|| ByStudentStudent === '') {
+                    requiredFieldError();
+                    {#$('#AttendanceTableDiv').css('display', 'none');#}
+                } else {
+                    {#$('#AttendanceTableDiv').css('display', 'block');#}
+                    byStudentTab.ajax.url('{% url 'managementAppAPI:StudentAttendanceHistoryByDateRangeAndStudentJson' %}?ByStudentSubject=' + ByStudentSubject + '&ByStudentStartDate=' + ByStudentStartDate + '&ByStudentEndDate=' + ByStudentEndDate+ '&ByStudentStudent=' + ByStudentStudent).load();
+
+
+                }
+            }
+
+
+        }
+
+
+        // user Details
+
+        subjectTab = $('#SubjectTable').DataTable({
+            dom: 'Blfrtip',
+            "scrollY": "350px",
+            "scrollX": true,
+            stateSave: true,
+            fixedColumns: {
+                left: 1,
+                right: 1
+            },
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [1, 2, 3, 4]
+                }
+            }
+                {% comment %}      , {
+                          extend: 'print',
+                          exportOptions: {
+                               columns: [1, 2, 3, 4, 5, 6, 7, 8]
+                          }
+                      }{% endcomment %}
+            ],
+            "columnDefs": [
+                {"name": "photo", "targets": 0, "orderable": true},
+                {"name": "name", "targets": 1, "orderable": true},
+                {"name": "roll", "targets": 2, "orderable": true},
+                {"name": "PresentCount", "targets": 3, "orderable": false},
+                {"name": "AbsentCount", "targets": 4, "orderable": false},
+                {"name": "total", "targets": 5, "orderable": false},
+                {"name": "action", "targets": 6, "orderable": false}
+            ],
+            aaSorting: [[2, 'asc']],
+            "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
+            "pageLength": 100,
+            "processing": true,
+            "serverSide": true,
+            "ajax": "{% url 'managementAppAPI:TakeStudentAttendanceByClassJson' %}"
+        });
+
+        byStudentTab = $('#byStudentTable').DataTable({
+            dom: 'Blfrtip',
+            "scrollY": "350px",
+            "scrollX": true,
+            stateSave: true,
+            fixedColumns: {
+                left: 1,
+                right: 1
+            },
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0,1, 2, 3]
+                }
+            }
+                {% comment %}      , {
+                          extend: 'print',
+                          exportOptions: {
+                               columns: [1, 2, 3, 4, 5, 6, 7, 8]
+                          }
+                      }{% endcomment %}
+            ],
+            "columnDefs": [
+                {"name": "attendanceDate", "targets": 0, "orderable": true},
+                {"name": "isPresent", "targets": 1, "orderable": true},
+                {"name": "isPresent", "targets": 2, "orderable": true},
+                {"name": "absentReason", "targets": 3, "orderable": true},
+            ],
+            aaSorting: [[0, 'asc']],
+            "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
+            "pageLength": 100,
+            "processing": true,
+            "serverSide": true,
+            "ajax": "{% url 'managementAppAPI:StudentAttendanceHistoryByDateRangeAndStudentJson' %}"
+        });
+
+
+        function clearAndReset() {
+            {#$('#addForm').trigger('reset');#}
+            myOwnReset();
+            $('#saveBtn').css('display', '');
+            $('#saveBtnUpdate').css('display', 'none');
+
+        }
+
+        function pushAttendance(id) {
+            let isPresent = $('#isPresent' + id).prop('checked');
+            let reason = $('#reason' + id).val();
+            let data = new FormData();
+            data.append('id', id);
+            data.append('isPresent', isPresent);
+            data.append('reason', reason);
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            $.ajax({
+                type: 'post',
+                url: "{% url 'managementAppAPI:add_student_attendance_by_class' %}",
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+
+                success: function (response) {
+                    if (response.status === 'success') {
+                        addSuccessNotification(response.message, response.color);
+                        {#subjectTab.ajax.reload(null, false);#}
+                    } else {
+                        addErrorNotification();
+
+                    }
+
+                    return response;
+                },
+                error: function () {
+                    addErrorNotification();
+                }
+            });
+
+
+        }
+
+    </script>
+
+{% endblock %}

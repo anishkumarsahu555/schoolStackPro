@@ -274,3 +274,40 @@ class AssignExamToClass(models.Model):
 
     class Meta:
         verbose_name_plural = 'j) Assign Exam To Class Details'
+
+
+class StudentAttendance(models.Model):
+    isPresent = models.BooleanField(default=False)
+    isHoliday = models.BooleanField(default=False)
+    bySubject = models.BooleanField(default=False)
+    studentID = models.ForeignKey(Student, blank=True, null=True, on_delete=models.CASCADE)
+    standardID = models.ForeignKey(Standard, blank=True, null=True, on_delete=models.CASCADE)
+    subjectID = models.ForeignKey(Subjects, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    attendanceDate = models.DateTimeField(blank=True, null=True)
+    absentReason = models.CharField(max_length=500, blank=True, null=True, default='')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = 'p) Student Attendance'
+
+
+class TeacherAttendance(models.Model):
+    isPresent = models.BooleanField(default=False)
+    isHoliday = models.BooleanField(default=False)
+    teacherID = models.ForeignKey(TeacherDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    attendanceDate = models.DateTimeField(blank=True, null=True)
+    absentReason = models.CharField(max_length=500, blank=True, null=True, default='')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = 'q) Teacher Attendance'

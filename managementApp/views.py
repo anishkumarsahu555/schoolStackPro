@@ -90,6 +90,34 @@ def assign_exams_to_class(request):
     }
     return render(request, 'managementApp/exam/assignExamToClass.html', context)
 
+# attendance
+@login_required
+@check_groups('Admin', 'Owner')
+def student_attendance(request):
+    context = {
+    }
+    return render(request, 'managementApp/attendance/studentAttendance.html', context)
+
+@login_required
+@check_groups('Admin', 'Owner')
+def student_attendance_history(request):
+    context = {
+    }
+    return render(request, 'managementApp/attendance/studentAttendanceHistory.html', context)
 
 
+@login_required
+@check_groups('Admin', 'Owner')
+def staff_attendance(request):
+    context = {
+    }
+    return render(request, 'managementApp/attendance/staffAttendance.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def staff_attendance_history(request):
+    context = {
+    }
+    return render(request, 'managementApp/attendance/staffAttendanceHistory.html', context)
 

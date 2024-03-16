@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
@@ -505,6 +505,25 @@ def get_subjects_to_class_assign_list_api(request):
         data_dic = {
             'ID': obj.pk,
             'Name': name
+
+        }
+        data.append(data_dic)
+    return JsonResponse(
+        {'status': 'success', 'data': data,
+         'color': 'success'}, safe=False)
+
+
+@login_required
+def get_subjects_to_class_assign_list_with_given_class_api(request):
+    standard = request.GET.get('standard')
+    objs = AssignSubjectsToClass.objects.filter(isDeleted=False, standardID_id=int(standard),
+                                                sessionID_id=request.session['current_session']['Id']).order_by(
+        'standardID__name')
+    data = []
+    for obj in objs:
+        data_dic = {
+            'ID': obj.pk,
+            'Name': obj.subjectID.name
 
         }
         data.append(data_dic)
@@ -1056,6 +1075,27 @@ def add_student_api(request):
     return JsonResponse({'status': 'error'}, safe=False)
 
 
+@login_required
+def get_student_list_by_class_api(request):
+    standard = request.GET.get('standard')
+    objs = Student.objects.filter(isDeleted=False, sessionID_id=request.session['current_session']['Id'],
+                                  standardID_id=int(standard)).order_by(
+        'roll')
+    data = []
+    for obj in objs:
+        name = obj.name + ' - ' + str(int(float(obj.roll)))
+
+        data_dic = {
+            'ID': obj.pk,
+            'Name': name
+
+        }
+        data.append(data_dic)
+    return JsonResponse(
+        {'status': 'success', 'data': data,
+         'color': 'success'}, safe=False)
+
+
 class StudentListJson(BaseDatatableView):
     order_columns = ['photo', 'name', 'standardID.name', 'gender', 'parentID.fatherName',
                      'parentID.phoneNumber', 'presentCity',
@@ -1457,3 +1497,582 @@ def update_exam_to_class(request):
                 safe=False)
         except:
             return JsonResponse({'status': 'error'}, safe=False)
+
+
+# Attendance ------------------------------------------------------------------
+
+class TakeStudentAttendanceByClassJson(BaseDatatableView):
+    order_columns = ['studentID.photo', 'studentID.name', 'studentID.roll', 'isPresent', 'absentReason']
+
+    @transaction.atomic
+    def get_initial_queryset(self):
+        try:
+            mode = self.request.GET.get("mode")
+
+            if mode == "ByClass":
+                standard = self.request.GET.get("standard")
+                aDate = self.request.GET.get("aDate")
+                aDate = datetime.strptime(aDate, '%d/%m/%Y')
+                students = Student.objects.select_related().filter(isDeleted__exact=False, standardID_id=int(standard),
+                                                                   sessionID_id=self.request.session["current_session"][
+                                                                       "Id"]).order_by('roll')
+                for s in students:
+                    try:
+                        StudentAttendance.objects.get(studentID_id=s.id, attendanceDate__icontains=aDate,
+                                                      standardID_id=int(standard), bySubject=False,
+                                                      sessionID_id=self.request.session["current_session"]["Id"])
+
+                    except:
+                        instance = StudentAttendance.objects.create(studentID_id=s.id, attendanceDate=aDate,
+                                                                    standardID_id=int(standard), isPresent=False,
+                                                                    bySubject=False, )
+                        pre_save_with_user.send(sender=StudentAttendance, instance=instance, user=self.request.user.pk)
+
+                return StudentAttendance.objects.select_related().filter(isDeleted__exact=False, bySubject=False,
+                                                                         sessionID_id=
+                                                                         self.request.session["current_session"][
+                                                                             "Id"], attendanceDate__icontains=aDate,
+                                                                         standardID_id=int(standard))
+            elif mode == "BySubject":
+                subjects = self.request.GET.get("subjects")
+
+                sDate = self.request.GET.get("sDate")
+                sDate = datetime.strptime(sDate, '%d/%m/%Y')
+                try:
+                    obj = AssignSubjectsToClass.objects.get(pk=int(subjects), isDeleted=False)
+                    students = Student.objects.select_related().filter(isDeleted__exact=False,
+                                                                       standardID_id=obj.standardID_id,
+                                                                       sessionID_id=
+                                                                       self.request.session["current_session"][
+                                                                           "Id"]).order_by('roll')
+                    for s in students:
+                        try:
+                            StudentAttendance.objects.get(studentID_id=s.id, attendanceDate__icontains=sDate,
+                                                          standardID_id=obj.standardID_id, bySubject=True,
+                                                          subjectID_id=obj.subjectID_id,
+                                                          sessionID_id=self.request.session["current_session"]["Id"])
+                        except:
+                            instance = StudentAttendance.objects.create(studentID_id=s.id, attendanceDate=sDate,
+                                                                        subjectID_id=obj.subjectID_id,
+                                                                        standardID_id=obj.standardID_id,
+                                                                        isPresent=False, bySubject=True)
+                            pre_save_with_user.send(sender=StudentAttendance, instance=instance,
+                                                    user=self.request.user.pk)
+                    return StudentAttendance.objects.select_related().filter(isDeleted__exact=False, bySubject=True,
+                                                                             sessionID_id=
+                                                                             self.request.session["current_session"][
+                                                                                 "Id"], attendanceDate__icontains=sDate,
+                                                                             subjectID_id=obj.subjectID_id,
+                                                                             standardID_id=obj.standardID_id)
+                except:
+                    return StudentAttendance.objects.none()
+            else:
+                return StudentAttendance.objects.none()
+        except:
+            return StudentAttendance.objects.none()
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(standardID__name__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            images = '<img class="ui avatar image" src="{}">'.format(item.studentID.photo.thumbnail.url)
+
+            action = '''<button class="ui mini primary button" onclick="pushAttendance({})">
+  Save
+</button>'''.format(item.pk),
+            if item.isPresent:
+                is_present = '''
+            <div class="ui checkbox">
+  <input type="checkbox" name="isPresent{}" id="isPresent{}" checked >
+  <label>Mark as Present</label>
+</div>
+            '''.format(item.pk, item.pk)
+            else:
+                is_present = '''
+                            <div class="ui checkbox">
+                  <input type="checkbox" name="isPresent{}" id="isPresent{}" >
+                  <label>Mark as Present</label>
+                </div>
+                            '''.format(item.pk, item.pk)
+
+            reason = '''<div class="ui tiny input fluid">
+  <input type="text" placeholder="Reason for Absent" name="reason{}" id="reason{}" value = "{}">
+</div>
+            '''.format(item.pk, item.pk, item.absentReason)
+
+            json_data.append([
+                images,
+                escape(item.studentID.name),
+                float(escape(item.studentID.roll)),
+                is_present,
+                reason,
+                action,
+
+            ])
+
+        return json_data
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_student_attendance_by_class(request):
+    if request.method == 'POST':
+        id = request.POST.get("id")
+        isPresent = request.POST.get("isPresent")
+        reason = request.POST.get("reason")
+        try:
+            instance = StudentAttendance.objects.get(pk=int(id))
+            if isPresent == 'true':
+                isPresent = True
+            else:
+                isPresent = False
+            instance.isPresent = isPresent
+            instance.absentReason = reason
+            pre_save_with_user.send(sender=StudentAttendance, instance=instance, user=request.user.pk)
+            instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'Attendance added successfully.', 'color': 'success'},
+                safe=False)
+        except:
+
+            return JsonResponse({'status': 'error'}, safe=False)
+
+
+class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
+    order_columns = ['photo', 'name', 'roll']
+
+    @transaction.atomic
+    def get_initial_queryset(self):
+        try:
+            dateRangeStandard = self.request.GET.get("dateRangeStandard")
+            dateRangeSubject = self.request.GET.get("dateRangeSubject")
+
+            return Student.objects.select_related().filter(isDeleted__exact=False, standardID_id=int(dateRangeStandard),
+                                                           sessionID_id=self.request.session["current_session"][
+                                                               "Id"]).order_by('roll')
+            # for s in students:
+            #     try:
+            #         StudentAttendance.objects.get(studentID_id=s.id, attendanceDate__icontains=aDate,
+            #                                       standardID_id=int(standard), bySubject=False,
+            #                                       sessionID_id=self.request.session["current_session"]["Id"])
+            #
+            #     except:
+            #         instance = StudentAttendance.objects.create(studentID_id=s.id, attendanceDate=aDate,
+            #                                                     standardID_id=int(standard), isPresent=False,
+            #                                                     bySubject=False, )
+            #         pre_save_with_user.send(sender=StudentAttendance, instance=instance, user=self.request.user.pk)
+            #
+            # return StudentAttendance.objects.select_related().filter(isDeleted__exact=False, bySubject=False,
+            #                                                          sessionID_id=
+            #                                                          self.request.session["current_session"][
+            #                                                              "Id"], attendanceDate__icontains=aDate,
+            #                                                          standardID_id=int(standard))
+
+            # if dateRangeSubject == "All":
+            #     return StudentAttendance.objects.select_related().filter(isDeleted__exact=False, bySubject=False,
+            #                                                              standardID_id=int(dateRangeStandard),
+            #                                                             sessionID_id=
+            #                                                             self.request.session["current_session"][
+            #                                                                 "Id"],
+            #                                                             attendanceDate__range=[dateRangeStartDate,
+            #                                                                                    dateRangeEndDate+timedelta(days=1)])
+            # else:
+            #     return StudentAttendance.objects.select_related().filter(isDeleted__exact=False, bySubject=True,
+            #                                                              standardID_id=int(dateRangeStandard),
+            #                                                             sessionID_id=
+            #                                                             self.request.session["current_session"][
+            #                                                                 "Id"],
+            #                                                             attendanceDate__range=[dateRangeStartDate,
+            #                                                                                    dateRangeEndDate+timedelta(days=1)],
+            #                                                             subjectID_id=int(dateRangeSubject))
+        except:
+            return Student.objects.none()
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(name__icontains=search) | Q(roll__icontains=search)
+                | Q(standardID__name__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        dateRangeStandard = self.request.GET.get("dateRangeStandard")
+        dateRangeSubject = self.request.GET.get("dateRangeSubject")
+        dateRangeStartDate = self.request.GET.get("dateRangeStartDate")
+        dateRangeEndDate = self.request.GET.get("dateRangeEndDate")
+        dateRangeStartDate = datetime.strptime(dateRangeStartDate, '%d/%m/%Y')
+        dateRangeEndDate = datetime.strptime(dateRangeEndDate, '%d/%m/%Y')
+        json_data = []
+        for item in qs:
+            images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
+            if dateRangeSubject == "all":
+                present_count = StudentAttendance.objects.filter(studentID_id=item.id, isPresent=True, bySubject=False,
+                                                                 isHoliday=False,
+                                                                 attendanceDate__range=[dateRangeStartDate,
+                                                                                        dateRangeEndDate + timedelta(
+                                                                                            days=1)],
+                                                                 standardID_id=int(dateRangeStandard)).count()
+                absent_count = StudentAttendance.objects.filter(studentID_id=item.id, isPresent=False, bySubject=False,
+                                                                isHoliday=False,
+                                                                attendanceDate__range=[dateRangeStartDate,
+                                                                                       dateRangeEndDate + timedelta(
+                                                                                           days=1)],
+                                                                standardID_id=int(dateRangeStandard)).count()
+
+            else:
+                present_count = StudentAttendance.objects.filter(studentID_id=item.id, isPresent=True, bySubject=True,
+                                                                 subjectID_id=int(dateRangeSubject),
+                                                                 isHoliday=False,
+                                                                 attendanceDate__range=[dateRangeStartDate,
+                                                                                        dateRangeEndDate + timedelta(
+                                                                                            days=1)],
+                                                                 standardID_id=int(dateRangeStandard)).count()
+                absent_count = StudentAttendance.objects.filter(studentID_id=item.id, isPresent=False, bySubject=True,
+                                                                isHoliday=False, subjectID_id=int(dateRangeSubject),
+                                                                attendanceDate__range=[dateRangeStartDate,
+                                                                                       dateRangeEndDate + timedelta(
+                                                                                           days=1)],
+                                                                standardID_id=int(dateRangeStandard)).count()
+
+            if present_count + absent_count != 0:
+                percentage = present_count / (present_count + absent_count) * 100
+            else:
+                # Handle the case when the denominator is zero
+                percentage = 0
+
+            json_data.append([
+                images,
+                escape(item.name),
+                float(escape(item.roll)),
+                present_count,
+                absent_count,
+                present_count + absent_count,
+                round(percentage, 2)
+
+            ])
+
+        return json_data
+
+
+class StudentAttendanceHistoryByDateRangeAndStudentJson(BaseDatatableView):
+    order_columns = ['attendanceDate', 'isPresent', 'isPresent', 'absentReason']
+
+    @transaction.atomic
+    def get_initial_queryset(self):
+        try:
+            ByStudentSubject = self.request.GET.get("ByStudentSubject")
+            ByStudentStudent = self.request.GET.get("ByStudentStudent")
+            ByStudentStartDate = self.request.GET.get("ByStudentStartDate")
+            ByStudentEndDate = self.request.GET.get("ByStudentEndDate")
+            ByStudentStartDate = datetime.strptime(ByStudentStartDate, '%d/%m/%Y')
+            ByStudentEndDate = datetime.strptime(ByStudentEndDate, '%d/%m/%Y')
+            if ByStudentSubject == "all":
+                return StudentAttendance.objects.select_related().filter(isDeleted__exact=False, isHoliday=False,
+                                                                         studentID_id=int(ByStudentStudent),
+                                                                         attendanceDate__range=[ByStudentStartDate,
+                                                                                                ByStudentEndDate + timedelta(
+                                                                                                    days=1)],
+                                                                         sessionID_id=
+                                                                         self.request.session["current_session"][
+                                                                             "Id"]).order_by('attendanceDate')
+            else:
+                return StudentAttendance.objects.select_related().filter(isDeleted__exact=False, isHoliday=False,
+                                                                         subjectID_id=int(ByStudentSubject),
+                                                                         studentID_id=int(ByStudentStudent),
+                                                                         attendanceDate__range=[ByStudentStartDate,
+                                                                                                ByStudentEndDate + timedelta(
+                                                                                                    days=1)],
+                                                                         sessionID_id=
+                                                                         self.request.session["current_session"][
+                                                                             "Id"]).order_by('attendanceDate')
+
+
+        except:
+            return StudentAttendance.objects.none()
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(attendanceDate__icontains=search) | Q(isPresent__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            if item.isPresent == True:
+                Present = 'Yes'
+                Absent = 'No'
+            else:
+                Present = 'No'
+                Absent = 'Yes'
+
+            json_data.append([
+                escape(item.attendanceDate.strftime('%d-%m-%Y')),
+                escape(Present),
+                escape(Absent),
+                escape(item.absentReason),
+
+            ])
+
+        return json_data
+
+
+class TakeTeacherAttendanceJson(BaseDatatableView):
+    order_columns = ['teacherID.photo', 'teacherID.name', 'teacherID.staffType', 'teacherID.employeeCode', 'isPresent',
+                     'absentReason']
+
+    @transaction.atomic
+    def get_initial_queryset(self):
+        try:
+            aDate = self.request.GET.get("aDate")
+            aDate = datetime.strptime(aDate, '%d/%m/%Y')
+            teachers = TeacherDetail.objects.select_related().filter(isDeleted__exact=False,
+                                                                     sessionID_id=
+                                                                     self.request.session["current_session"][
+                                                                         "Id"])
+            for s in teachers:
+                try:
+                    TeacherAttendance.objects.get(attendanceDate__icontains=aDate, isDeleted=False, teacherID_id=s.id,
+                                                  sessionID_id=self.request.session["current_session"]["Id"])
+
+                except:
+                    instance = TeacherAttendance.objects.create(attendanceDate=aDate, isDeleted=False,
+                                                                teacherID_id=s.id)
+                    pre_save_with_user.send(sender=TeacherAttendance, instance=instance, user=self.request.user.pk)
+
+            return TeacherAttendance.objects.select_related().filter(isDeleted__exact=False,
+                                                                     attendanceDate__icontains=aDate, isDeleted=False,
+                                                                     sessionID_id=
+                                                                     self.request.session["current_session"][
+                                                                         "Id"])
+
+        except:
+            return TeacherAttendance.objects.none()
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(teacherID__name__icontains=search)
+                | Q(teacherID__employeeCode__icontains=search)
+                | Q(teacherID__staffType__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            images = '<img class="ui avatar image" src="{}">'.format(item.teacherID.photo.thumbnail.url)
+
+            action = '''<button class="ui mini primary button" onclick="pushAttendance({})">
+  Save
+</button>'''.format(item.pk),
+            if item.isPresent:
+                is_present = '''
+            <div class="ui checkbox">
+  <input type="checkbox" name="isPresent{}" id="isPresent{}" checked >
+  <label>Mark as Present</label>
+</div>
+            '''.format(item.pk, item.pk)
+            else:
+                is_present = '''
+                            <div class="ui checkbox">
+                  <input type="checkbox" name="isPresent{}" id="isPresent{}" >
+                  <label>Mark as Present</label>
+                </div>
+                            '''.format(item.pk, item.pk)
+
+            reason = '''<div class="ui tiny input fluid">
+  <input type="text" placeholder="Reason for Absent" name="reason{}" id="reason{}" value = "{}">
+</div>
+            '''.format(item.pk, item.pk, item.absentReason)
+
+            json_data.append([
+                images,
+                escape(item.teacherID.name),
+                escape(item.teacherID.staffType),
+                float(escape(item.teacherID.employeeCode)),
+                is_present,
+                reason,
+                action,
+
+            ])
+
+        return json_data
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_staff_attendance_api(request):
+    if request.method == 'POST':
+        id = request.POST.get("id")
+        isPresent = request.POST.get("isPresent")
+        reason = request.POST.get("reason")
+        try:
+            instance = TeacherAttendance.objects.get(pk=int(id))
+            if isPresent == 'true':
+                isPresent = True
+            else:
+                isPresent = False
+            instance.isPresent = isPresent
+            instance.absentReason = reason
+            pre_save_with_user.send(sender=TeacherAttendance, instance=instance, user=request.user.pk)
+            instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'Attendance added successfully.', 'color': 'success'},
+                safe=False)
+        except:
+
+            return JsonResponse({'status': 'error'}, safe=False)
+
+
+class StaffAttendanceHistoryByDateRangeJson(BaseDatatableView):
+    order_columns = ['photo', 'name', 'staffType', 'employeeCode']
+
+    @transaction.atomic
+    def get_initial_queryset(self):
+        try:
+            return TeacherDetail.objects.select_related().filter(isDeleted__exact=False,
+                                                                 sessionID_id=self.request.session["current_session"][
+                                                                     "Id"])
+        except:
+            return TeacherDetail.objects.none()
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(name__icontains=search) | Q(staffType__icontains=search)
+                | Q(employeeCode__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        try:
+            dateRangeStartDate = self.request.GET.get("dateRangeStartDate")
+            dateRangeEndDate = self.request.GET.get("dateRangeEndDate")
+            dateRangeStartDate = datetime.strptime(dateRangeStartDate, '%d/%m/%Y')
+            dateRangeEndDate = datetime.strptime(dateRangeEndDate, '%d/%m/%Y')
+
+            for item in qs:
+                images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
+                present_count = TeacherAttendance.objects.filter(teacherID_id=item.id, isPresent=True,
+                                                                 isHoliday=False,isDeleted=False,
+                                                                 attendanceDate__range=[dateRangeStartDate,
+                                                                                        dateRangeEndDate + timedelta(
+                                                                                            days=1)],
+                                                                 ).count()
+                absent_count = TeacherAttendance.objects.filter(teacherID_id=item.id, isPresent=False,
+                                                                isHoliday=False,isDeleted=False,
+                                                                attendanceDate__range=[dateRangeStartDate,
+                                                                                       dateRangeEndDate + timedelta(
+                                                                                           days=1)]).count()
+
+                if present_count + absent_count != 0:
+                    percentage = present_count / (present_count + absent_count) * 100
+                else:
+                    # Handle the case when the denominator is zero
+                    percentage = 0
+
+                json_data.append([
+                    images,
+                    escape(item.name),
+                    escape(item.staffType),
+                    escape(item.employeeCode),
+                    present_count,
+                    absent_count,
+                    present_count + absent_count,
+                    round(percentage, 2)
+
+                ])
+
+        except:
+            pass
+        return json_data
+
+
+
+class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
+    order_columns = ['attendanceDate', 'isPresent', 'isPresent', 'absentReason']
+
+    @transaction.atomic
+    def get_initial_queryset(self):
+        try:
+            ByStaffStaff = self.request.GET.get("ByStaffStaff")
+            ByStudentStartDate = self.request.GET.get("ByStudentStartDate")
+            ByStudentEndDate = self.request.GET.get("ByStudentEndDate")
+            ByStudentStartDate = datetime.strptime(ByStudentStartDate, '%d/%m/%Y')
+            ByStudentEndDate = datetime.strptime(ByStudentEndDate, '%d/%m/%Y')
+
+            return TeacherAttendance.objects.select_related().filter(isDeleted__exact=False, isHoliday=False,
+                                                                     teacherID_id=int(ByStaffStaff),
+                                                                     attendanceDate__range=[ByStudentStartDate,
+                                                                                            ByStudentEndDate + timedelta(
+                                                                                                days=1)],
+                                                                     sessionID_id=
+                                                                     self.request.session["current_session"][
+                                                                         "Id"]).order_by('attendanceDate')
+
+
+        except:
+            return TeacherAttendance.objects.none()
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(attendanceDate__icontains=search) | Q(isPresent__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            if item.isPresent == True:
+                Present = 'Yes'
+                Absent = 'No'
+            else:
+                Present = 'No'
+                Absent = 'Yes'
+
+            json_data.append([
+                escape(item.attendanceDate.strftime('%d-%m-%Y')),
+                escape(Present),
+                escape(Absent),
+                escape(item.absentReason),
+
+            ])
+
+        return json_data

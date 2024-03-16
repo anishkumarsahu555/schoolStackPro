@@ -23,4 +23,10 @@ urlpatterns = [
     path('manage_exams/', manage_exams, name='manage_exams'),
     path('assign_exams_to_class/', assign_exams_to_class, name='assign_exams_to_class'),
 
+    # Attendance
+    path('student_attendance/', student_attendance, name='student_attendance'),
+    path('student_attendance_history/', student_attendance_history, name='student_attendance_history'),
+    path('staff_attendance/', staff_attendance, name='staff_attendance'),
+    path('staff_attendance_history/', staff_attendance_history, name='staff_attendance_history'),
+
 ]

@@ -1,0 +1,421 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+{% block title %}
+    <title>Take Student Attendance</title>
+{% endblock %}
+{% block css %}
+{% endblock %}
+{% block body %}
+
+    <style>
+
+
+        #SubjectTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #SubjectTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+    </style>
+
+    <div class="ui left aligned basic  grid">
+        <div class="sixteen wide column">
+            <div class="ui  pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user"
+                >Add Student Attendance
+                </div>
+
+            </div>
+            <div class="ui tab " data-tab="user">
+                <div class="ui segment">
+                    <form class="ui tiny form" id="chooseForm">{% csrf_token %}
+
+                        <div class="three fields">
+
+                            <div class="field">
+                                <label>Take Attendance By</label>
+                                <select class="ui fluid search dropdown" name="choose" id="choose"
+                                        onchange="attendanceForm()">
+                                    <option value="">Choose By</option>
+                                    <option value="Class-Section">Class-Section</option>
+                                    <option value="Subject">Subject</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                    </form>
+                </div>
+
+                <div class="ui segment" id="classFormDiv" style="display: none">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="left align icon"></i>
+                        By Class-Section
+                    </h4>
+                    <form class="ui tiny form" id="addFormByClass">{% csrf_token %}
+                        <input type="hidden" id="editID">
+
+                        <div class="three fields">
+
+                            <div class="field">
+
+                                <label>Class-Section</label>
+                                <select class="ui clearable search dropdown" id="standard">
+                                    <option value="">Search By Class Name</option>
+                                </select>
+                            </div>
+                            <div class="field required">
+                                <label>Date</label>
+                                <div class="ui calendar" id="date">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" placeholder="Attendance Date" id="aDate">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field" style="padding-top: 2.2em;">
+                                <button type="button" class="ui mini green button"
+                                        onclick="searchData('ByClass')">
+                                    <i class="icon search"></i>
+                                    Search
+                                </button>
+
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+                <div class="ui segment" id="subjectFormDiv" style="display: none">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="left align icon"></i>
+                        By Subject
+                    </h4>
+                    <form class="ui tiny form" id="addForm">{% csrf_token %}
+
+                        <div class="three fields">
+
+                            <div class="field required">
+                                <label>ClassName - Section - Subject</label>
+                                <select class="ui clearable search dropdown" id="subjects">
+                                    <option value="">Search By Class Name or section or subject</option>
+                                </select>
+
+                            </div>
+
+                            <div class="field required">
+                                <label>Date</label>
+                                <div class="ui calendar" id="dateSubject">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" placeholder="Attendance Date" id="sDate">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field" style="padding-top: 2.2em;">
+                                <button type="button" class="ui mini green button"
+                                        onclick="searchData('BySubject')">
+                                    <i class="icon search"></i>
+                                    Search
+                                </button>
+
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+                <div class="row" style="padding-left: 5px; padding-right: 5px;display: none;" id="AttendanceTableDiv">
+                    <div class="wide">
+
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                               id="SubjectTable"
+                               style="margin-top: 5px;width: 100%">
+                            <thead>
+                            <tr>
+                                <th>Photo</th>
+                                <th>StudentName</th>
+                                <th>RollNo.</th>
+                                <th>IsPresent</th>
+                                <th>Reason for Absent</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+
+
+{% block js %}
+    <script>
+
+        function attendanceForm() {
+            let choose = $('#choose').val();
+            if (choose === 'Class-Section') {
+                $('#classFormDiv').css('display', 'block');
+                $('#subjectFormDiv').css('display', 'none');
+                $('#AttendanceTableDiv').css('display', 'none');
+            } else if (choose === 'Subject') {
+                $('#classFormDiv').css('display', 'none');
+                $('#subjectFormDiv').css('display', 'block');
+                $('#AttendanceTableDiv').css('display', 'none');
+            } else {
+                $('#classFormDiv').css('display', 'none');
+                $('#subjectFormDiv').css('display', 'none');
+                $('#AttendanceTableDiv').css('display', 'none');
+            }
+
+        }
+
+        $(getStandardList());
+        let today = new Date();
+        $('#date')
+            .calendar({
+                    monthFirst: false,
+                    type: 'date',
+                    formatter: {
+                        date: function (date, settings) {
+
+                            if (!date) return '';
+                            var day = String(date.getDate());
+                            var month = String(date.getMonth() + 1);
+                            var year = date.getFullYear();
+                            return day + '/' + month + '/' + year;
+                        }
+                    }
+                }
+            );
+        $('#dateSubject')
+            .calendar({
+                    monthFirst: false,
+                    type: 'date',
+                    formatter: {
+                        date: function (date, settings) {
+
+                            if (!date) return '';
+                            var day = String(date.getDate());
+                            var month = String(date.getMonth() + 1);
+                            var year = date.getFullYear();
+                            return day + '/' + month + '/' + year;
+                        }
+                    }
+                }
+            );
+
+        function getStandardList() {
+
+            $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppAPI:get_standard_list_api' %}",
+
+                success: function (response) {
+
+                    $('#standard').html('');
+                    $('#standard').append(' <option value="">Search By Class Name</option>');
+                    var j;
+                    for (j = 0; j < response.data.length; j++) {
+
+                        $('#standard').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+
+                    }
+
+                },
+
+                error: function () {
+                    $('body')
+                        .toast({
+                            class: 'error',
+                            message: 'An error occurred !'
+                        })
+                    ;
+                }
+            });
+
+
+        }
+
+
+        $(getStandardSubjectList());
+
+        function getStandardSubjectList() {
+
+            $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppAPI:get_subjects_to_class_assign_list_api' %}",
+
+                success: function (response) {
+
+                    $('#subjects').html('');
+                    $('#subjects').append(' <option value="">Search By Class Name or section or subject</option>');
+                    var j;
+                    for (j = 0; j < response.data.length; j++) {
+
+                        $('#subjects').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+
+                    }
+
+                },
+
+                error: function () {
+                    $('body')
+                        .toast({
+                            class: 'error',
+                            message: 'An error occurred !'
+                        })
+                    ;
+                }
+            });
+
+
+        }
+
+
+        let subjectTab
+
+
+        function searchData(mode) {
+            let aDate = $('#aDate').val();
+            let standard = $('#standard').val();
+            let subjects = $('#subjects').val();
+            let sDate = $('#sDate').val();
+
+            if (mode === 'BySubject') {
+                if (sDate.trim() === '' || subjects === '') {
+                requiredFieldError();
+                $('#AttendanceTableDiv').css('display', 'none');
+            } else {
+                $('#AttendanceTableDiv').css('display', 'block');
+
+                subjectTab.ajax.url('{% url 'managementAppAPI:TakeStudentAttendanceByClassJson' %}?sDate=' + sDate + '&subjects=' + subjects + '&mode=' + mode).load();
+
+
+            }
+            }
+            else if (mode === 'ByClass') {
+                if (aDate.trim() === '' || standard === '') {
+                requiredFieldError();
+                $('#AttendanceTableDiv').css('display', 'none');
+            } else {
+                $('#AttendanceTableDiv').css('display', 'block');
+
+                subjectTab.ajax.url('{% url 'managementAppAPI:TakeStudentAttendanceByClassJson' %}?aDate=' + aDate + '&standard=' + standard + '&mode=' + mode).load();
+
+
+            }
+            }
+
+
+
+        }
+
+
+        // user Details
+
+        subjectTab = $('#SubjectTable').DataTable({
+            dom: 'Blfrtip',
+            "scrollY": "350px",
+            "scrollX": true,
+            stateSave: true,
+            fixedColumns: {
+                left: 1,
+                right: 1
+            },
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [1, 2, 3, 4]
+                }
+            }
+                {% comment %}      , {
+                          extend: 'print',
+                          exportOptions: {
+                               columns: [1, 2, 3, 4, 5, 6, 7, 8]
+                          }
+                      }{% endcomment %}
+            ],
+            "columnDefs": [
+                {"name": "studentID.photo", "targets": 0, "orderable": true},
+                {"name": "studentID.name", "targets": 1, "orderable": true},
+                {"name": "studentID.roll", "targets": 2, "orderable": true},
+                {"name": "isPresent", "targets": 3, "orderable": true},
+                {"name": "absentReason", "targets": 4, "orderable": true},
+                {"name": "action", "targets": 5, "orderable": false}
+            ],
+            aaSorting: [[2, 'desc']],
+            "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
+            "pageLength": 100,
+            "processing": true,
+            "serverSide": true,
+            "ajax": "{% url 'managementAppAPI:TakeStudentAttendanceByClassJson' %}"
+        });
+
+
+        function clearAndReset() {
+            {#$('#addForm').trigger('reset');#}
+            myOwnReset();
+            $('#saveBtn').css('display', '');
+            $('#saveBtnUpdate').css('display', 'none');
+
+        }
+
+        function pushAttendance(id) {
+            let isPresent = $('#isPresent'+id).prop('checked');
+            let reason = $('#reason'+id).val();
+              let data = new FormData();
+                data.append('id', id);
+                data.append('isPresent', isPresent);
+                data.append('reason', reason);
+                data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+                $.ajax({
+                    type: 'post',
+                    url: "{% url 'managementAppAPI:add_student_attendance_by_class' %}",
+                    data: data,
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            addSuccessNotification(response.message, response.color);
+                            {#subjectTab.ajax.reload(null, false);#}
+                        } else {
+                            addErrorNotification();
+
+                        }
+
+                        return response;
+                    },
+                    error: function () {
+                        addErrorNotification();
+                    }
+                });
+
+
+
+
+        }
+
+    </script>
+
+{% endblock %}
