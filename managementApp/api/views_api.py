@@ -12,6 +12,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from managementApp.models import *
 from managementApp.signals import pre_save_with_user
+from utils.conts import MONTHS_LIST
 
 
 # Class ------------------
@@ -1986,13 +1987,13 @@ class StaffAttendanceHistoryByDateRangeJson(BaseDatatableView):
             for item in qs:
                 images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
                 present_count = TeacherAttendance.objects.filter(teacherID_id=item.id, isPresent=True,
-                                                                 isHoliday=False,isDeleted=False,
+                                                                 isHoliday=False, isDeleted=False,
                                                                  attendanceDate__range=[dateRangeStartDate,
                                                                                         dateRangeEndDate + timedelta(
                                                                                             days=1)],
                                                                  ).count()
                 absent_count = TeacherAttendance.objects.filter(teacherID_id=item.id, isPresent=False,
-                                                                isHoliday=False,isDeleted=False,
+                                                                isHoliday=False, isDeleted=False,
                                                                 attendanceDate__range=[dateRangeStartDate,
                                                                                        dateRangeEndDate + timedelta(
                                                                                            days=1)]).count()
@@ -2018,7 +2019,6 @@ class StaffAttendanceHistoryByDateRangeJson(BaseDatatableView):
         except:
             pass
         return json_data
-
 
 
 class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
@@ -2076,3 +2076,123 @@ class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
             ])
 
         return json_data
+
+
+# Student fee ---------------------------------------------------------------
+class FeeByStudentJson(BaseDatatableView):
+    order_columns = ['month', 'isPaid', 'payDate', 'amount', 'note']
+
+    @transaction.atomic
+    def get_initial_queryset(self):
+        try:
+            student = self.request.GET.get("student")
+            standard = self.request.GET.get("standard")
+            for month in MONTHS_LIST:
+                try:
+                    StudentFee.objects.get(studentID_id=int(student), month__iexact=month,
+                                           standardID_id=int(standard), isDeleted=False,
+                                           sessionID_id=self.request.session["current_session"]["Id"])
+
+                except:
+                    instance = StudentFee.objects.create(studentID_id=int(student), month=month,
+                                                         standardID_id=int(standard),
+                                                         )
+                    pre_save_with_user.send(sender=StudentFee, instance=instance, user=self.request.user.pk)
+
+            return StudentFee.objects.select_related().filter(studentID_id=int(student),
+                                                              standardID_id=int(standard), isDeleted=False,
+                                                              sessionID_id=self.request.session["current_session"][
+                                                                  "Id"]).order_by('id')
+
+        except:
+            return StudentFee.objects.none()
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(month__icontains=search)
+                | Q(amount__icontains=search)
+                | Q(payDate__icontains=search)
+                | Q(isPaid__icontains=search) | Q(note__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+
+            action = '''<button class="ui mini primary button" onclick="pushFee({})">
+  Save
+</button>'''.format(item.pk),
+            if item.isPaid:
+                is_present = '''
+            <div class="ui checkbox">
+  <input type="checkbox" name="isPresent{}" id="isPresent{}" checked >
+  <label>Mark as Present</label>
+</div>
+            '''.format(item.pk, item.pk)
+            else:
+                is_present = '''
+                            <div class="ui checkbox">
+                  <input type="checkbox" name="isPresent{}" id="isPresent{}" >
+                  <label>Mark as Paid</label>
+                </div>
+                            '''.format(item.pk, item.pk)
+
+            reason = '''<div class="ui tiny input fluid">
+  <input type="text" placeholder="Remark" name="reason{}" id="reason{}" value = "{}">
+</div>
+            '''.format(item.pk, item.pk, item.note)
+            amount = '''<div class="ui tiny input fluid">
+              <input type="number" placeholder="Amount" name="amount{}" id="amount{}" value = "{}">
+            </div>
+                        '''.format(item.pk, item.pk, item.amount)
+
+            if item.payDate:
+                payDate = item.payDate.strftime('%d-%m-%Y')
+            else:
+                payDate = 'N/A'
+
+            json_data.append([
+                escape(item.month),
+                is_present,
+                payDate,
+                amount,
+                reason,
+                action,
+
+            ])
+
+        return json_data
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_student_fee_api(request):
+    if request.method == 'POST':
+        id = request.POST.get("id")
+        isPresent = request.POST.get("isPresent")
+        reason = request.POST.get("reason")
+        amount = request.POST.get("amount")
+        try:
+            instance = StudentFee.objects.get(pk=int(id))
+            if isPresent == 'true':
+                isPresent = True
+            else:
+                isPresent = False
+            instance.isPaid = isPresent
+            instance.note = reason
+            instance.amount = float(amount)
+            instance.payDate = datetime.today().date()
+            pre_save_with_user.send(sender=StudentFee, instance=instance, user=request.user.pk)
+            instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'Student fee added successfully.', 'color': 'success'},
+                safe=False)
+        except:
+
+            return JsonResponse({'status': 'error'}, safe=False)

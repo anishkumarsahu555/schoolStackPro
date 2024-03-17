@@ -29,4 +29,7 @@ urlpatterns = [
     path('staff_attendance/', staff_attendance, name='staff_attendance'),
     path('staff_attendance_history/', staff_attendance_history, name='staff_attendance_history'),
 
+    # Fee
+    path('student_fee/', student_fee, name='student_fee'),
+
 ]

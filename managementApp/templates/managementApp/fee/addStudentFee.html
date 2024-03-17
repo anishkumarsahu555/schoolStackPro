@@ -1,0 +1,295 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+{% block title %}
+    <title>Take Student Fee</title>
+{% endblock %}
+{% block css %}
+{% endblock %}
+{% block body %}
+
+    <style>
+
+
+        #SubjectTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #SubjectTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+    </style>
+
+    <div class="ui left aligned basic  grid">
+        <div class="sixteen wide column">
+            <div class="ui  pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user"
+                >Add Student Fee
+                </div>
+
+            </div>
+            <div class="ui tab " data-tab="user">
+
+
+                <div class="ui segment" id="classFormDiv">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="left align icon"></i>
+                        Add Student Fees
+                    </h4>
+                    <form class="ui tiny form" id="addFormByClass">{% csrf_token %}
+
+                        <div class="four fields">
+                            <div class="field required">
+
+                                <label>Class-Section</label>
+                                <select class="ui search dropdown" id="standard" onchange="getStudentList()">
+                                    <option value="">Search By Class Name-Section</option>
+                                </select>
+                            </div>
+
+                                 <div class="field required">
+
+                                <label>Student</label>
+                                <select class="ui search dropdown" id="student">
+                                    <option value="">Search By Student Name-Roll</option>
+                                </select>
+                            </div>
+                                <div class="field" style="padding-top: 2.2em;">
+                                    <button type="button" class="ui mini green button"
+                                            onclick="searchData()">
+                                        <i class="icon search"></i>
+                                        Search
+                                    </button>
+
+                                </div>
+                            </div>
+
+                    </form>
+                </div>
+
+                <div class="row" style="padding-left: 5px; padding-right: 5px;display: none;" id="AttendanceTableDiv">
+                    <div class="wide">
+
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                               id="SubjectTable"
+                               style="margin-top: 5px;width: 100%">
+                            <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Status</th>
+                                <th>Paid Date</th>
+                                <th>Amount</th>
+                                <th>Remark</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+
+
+{% block js %}
+    <script>
+
+        $(getStandardList());
+              function getStandardList() {
+
+            $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppAPI:get_standard_list_api' %}",
+
+                success: function (response) {
+
+                    $('#standard').html('');
+                    $('#standard').append(' <option value="">Search By Class Name</option>');
+                    var j;
+                    for (j = 0; j < response.data.length; j++) {
+
+                        $('#standard').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+
+                    }
+
+                },
+
+                error: function () {
+                    $('body')
+                        .toast({
+                            class: 'error',
+                            message: 'An error occurred !'
+                        })
+                    ;
+                }
+            });
+
+
+        }
+
+                function getStudentList() {
+
+            $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppAPI:get_student_list_by_class_api' %}",
+                data :{
+                    'standard' :$('#standard').val()
+                },
+
+                success: function (response) {
+
+                    $('#student').dropdown('clear');
+                    $('#student').html('');
+                    $('#ByStudentStudent').append(' <option value="">Search By Student Name-Roll</option>');
+                    var j;
+                    for (j = 0; j < response.data.length; j++) {
+
+                        $('#student').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+
+                    }
+
+                },
+
+                error: function () {
+                    $('body')
+                        .toast({
+                            class: 'error',
+                            message: 'An error occurred !'
+                        })
+                    ;
+                }
+            });
+
+
+        }
+
+
+
+        let today = new Date();
+        $('#date')
+            .calendar({
+                    monthFirst: false,
+                    type: 'date',
+                    formatter: {
+                        date: function (date, settings) {
+
+                            if (!date) return '';
+                            var day = String(date.getDate());
+                            var month = String(date.getMonth() + 1);
+                            var year = date.getFullYear();
+                            return day + '/' + month + '/' + year;
+                        }
+                    }
+                }
+            );
+
+
+        let subjectTab
+
+
+        function searchData() {
+            let standard = $('#standard').val();
+            let student = $('#student').val();
+
+            if (standard === '' || student === '') {
+                requiredFieldError();
+                $('#AttendanceTableDiv').css('display', 'none');
+            } else {
+                $('#AttendanceTableDiv').css('display', 'block');
+
+                subjectTab.ajax.url('{% url 'managementAppAPI:FeeByStudentJson' %}?standard=' + standard+ '&student=' + student).load();
+
+            }
+        }
+
+        // user Details
+
+        subjectTab = $('#SubjectTable').DataTable({
+            dom: 'Blfrtip',
+            "scrollY": "350px",
+            "scrollX": true,
+            stateSave: true,
+            fixedColumns: {
+                left: 1,
+                right: 1
+            },
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0,1, 2, 3, 4]
+                }
+            }
+            ],
+            "columnDefs": [
+                {"name": "month", "targets": 0, "orderable": true},
+                {"name": "isPaid", "targets": 1, "orderable": true},
+                {"name": "payDate", "targets": 2, "orderable": true},
+                {"name": "amount", "targets": 3, "orderable": true},
+                {"name": "note", "targets": 4, "orderable": true},
+                {"name": "action", "targets": 5, "orderable": false}
+            ],
+            aaSorting: [[5, 'asc']],
+            "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
+            "pageLength": 100,
+            "processing": true,
+            "serverSide": true,
+            "ajax": "{% url 'managementAppAPI:FeeByStudentJson' %}"
+        });
+
+
+        function pushFee(id) {
+            let isPresent = $('#isPresent' + id).prop('checked');
+            let reason = $('#reason' + id).val();
+            let amount = $('#amount' + id).val();
+            let data = new FormData();
+            data.append('id', id);
+            data.append('isPresent', isPresent);
+            data.append('reason', reason);
+            data.append('amount', amount);
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            $.ajax({
+                type: 'post',
+                url: "{% url 'managementAppAPI:add_student_fee_api' %}",
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+
+                success: function (response) {
+                    if (response.status === 'success') {
+                        addSuccessNotification(response.message, response.color);
+                        subjectTab.ajax.reload(null, false);
+                    } else {
+                        addErrorNotification();
+
+                    }
+
+                    return response;
+                },
+                error: function () {
+                    addErrorNotification();
+                }
+            });
+
+
+        }
+
+    </script>
+
+{% endblock %}

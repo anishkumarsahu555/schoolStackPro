@@ -85,4 +85,9 @@ urlpatterns = [
          name='StaffAttendanceHistoryByDateRangeJson'),
     path('StaffAttendanceHistoryByDateRangeAndStaffJson', StaffAttendanceHistoryByDateRangeAndStaffJson.as_view(),
          name='StaffAttendanceHistoryByDateRangeAndStaffJson'),
+
+    # user Fee
+    path('FeeByStudentJson', FeeByStudentJson.as_view(), name='FeeByStudentJson'),
+    path('add_student_fee_api', add_student_fee_api, name='add_student_fee_api'),
+
 ]

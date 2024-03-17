@@ -36,6 +36,7 @@ def assign_subjects_to_class(request):
     }
     return render(request, 'managementApp/subjects/assignSubjectsToClass.html', context)
 
+
 @login_required
 @check_groups('Admin', 'Owner')
 def assign_subjects_to_teacher(request):
@@ -52,12 +53,14 @@ def add_teacher(request):
     }
     return render(request, 'managementApp/teacher/add_teacher.html', context)
 
+
 @login_required
 @check_groups('Admin', 'Owner')
 def teacher_list(request):
     context = {
     }
     return render(request, 'managementApp/teacher/teacher_list.html', context)
+
 
 # student
 
@@ -68,12 +71,14 @@ def add_student(request):
     }
     return render(request, 'managementApp/student/add_student.html', context)
 
+
 @login_required
 @check_groups('Admin', 'Owner')
 def student_list(request):
     context = {
     }
     return render(request, 'managementApp/student/student_list.html', context)
+
 
 # Exam ----------------------------------------------
 @login_required
@@ -83,12 +88,14 @@ def manage_exams(request):
     }
     return render(request, 'managementApp/exam/addEditListExams.html', context)
 
+
 @login_required
 @check_groups('Admin', 'Owner')
 def assign_exams_to_class(request):
     context = {
     }
     return render(request, 'managementApp/exam/assignExamToClass.html', context)
+
 
 # attendance
 @login_required
@@ -97,6 +104,7 @@ def student_attendance(request):
     context = {
     }
     return render(request, 'managementApp/attendance/studentAttendance.html', context)
+
 
 @login_required
 @check_groups('Admin', 'Owner')
@@ -121,3 +129,11 @@ def staff_attendance_history(request):
     }
     return render(request, 'managementApp/attendance/staffAttendanceHistory.html', context)
 
+
+# student Fee --------------------------------------------------
+@login_required
+@check_groups('Admin', 'Owner')
+def student_fee(request):
+    context = {
+    }
+    return render(request, 'managementApp/fee/addStudentFee.html', context)

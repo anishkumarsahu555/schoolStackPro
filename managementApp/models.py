@@ -311,3 +311,22 @@ class TeacherAttendance(models.Model):
 
     class Meta:
         verbose_name_plural = 'q) Teacher Attendance'
+
+
+class StudentFee(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    studentID = models.ForeignKey(Student, blank=True, null=True, on_delete=models.CASCADE)
+    standardID = models.ForeignKey(Standard, blank=True, null=True, on_delete=models.CASCADE)
+    month = models.CharField(max_length=100, blank=True, null=True)
+    note = models.TextField(blank=True, null=True, default='')
+    amount = models.FloatField(default=0.0)
+    payDate = models.DateField(blank=True, null=True)
+    isPaid = models.BooleanField(default=False)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = 'r) Student Fee'
