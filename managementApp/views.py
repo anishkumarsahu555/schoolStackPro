@@ -137,3 +137,10 @@ def student_fee(request):
     context = {
     }
     return render(request, 'managementApp/fee/addStudentFee.html', context)
+
+@login_required
+@check_groups('Admin', 'Owner')
+def student_fee_details(request):
+    context = {
+    }
+    return render(request, 'managementApp/fee/feeDetails.html', context)

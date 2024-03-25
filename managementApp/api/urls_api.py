@@ -89,5 +89,7 @@ urlpatterns = [
     # user Fee
     path('FeeByStudentJson', FeeByStudentJson.as_view(), name='FeeByStudentJson'),
     path('add_student_fee_api', add_student_fee_api, name='add_student_fee_api'),
+    path('StudentFeeDetailsByClassJson', StudentFeeDetailsByClassJson.as_view(), name='StudentFeeDetailsByClassJson'),
+    path('StudentFeeDetailsByStudentJson', StudentFeeDetailsByStudentJson.as_view(), name='StudentFeeDetailsByStudentJson'),
 
 ]

@@ -31,5 +31,6 @@ urlpatterns = [
 
     # Fee
     path('student_fee/', student_fee, name='student_fee'),
+    path('student_fee_details/', student_fee_details, name='student_fee_details'),
 
 ]

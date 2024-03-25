@@ -2169,6 +2169,7 @@ class FeeByStudentJson(BaseDatatableView):
 
         return json_data
 
+
 @transaction.atomic
 @csrf_exempt
 @login_required
@@ -2196,3 +2197,152 @@ def add_student_fee_api(request):
         except:
 
             return JsonResponse({'status': 'error'}, safe=False)
+
+
+class StudentFeeDetailsByClassJson(BaseDatatableView):
+    order_columns = ['photo', 'name', 'roll']
+
+    @transaction.atomic
+    def get_initial_queryset(self):
+        try:
+            standard = self.request.GET.get("standard")
+
+            return Student.objects.select_related().filter(isDeleted__exact=False, standardID_id=int(standard),
+                                                           sessionID_id=self.request.session["current_session"][
+                                                               "Id"]).order_by('roll')
+        except:
+            return Student.objects.none()
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(name__icontains=search) | Q(roll__icontains=search)
+                | Q(standardID__name__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+
+        json_data = []
+        for item in qs:
+            January: str = 'Due'
+            February: str = 'Due'
+            March: str = 'Due'
+            April: str = 'Due'
+            May: str = 'Due'
+            June: str = 'Due'
+            July: str = 'Due'
+            August: str = 'Due'
+            September: str = 'Due'
+            October: str = 'Due'
+            November: str = 'Due'
+            December: str = 'Due'
+
+            for month in MONTHS_LIST:
+                obj = StudentFee.objects.filter(studentID_id=item.id, month__iexact=month, isDeleted=False, isPaid=True,
+                                                sessionID_id=self.request.session["current_session"][
+                                                    "Id"]).first()
+
+                if obj:
+                    if month == 'January':
+                        January = 'Paid'
+                    elif month == 'February':
+                        February = 'Paid'
+                    elif month == 'March':
+                        March = 'Paid'
+                    elif month == 'April':
+                        April = 'Paid'
+                    elif month == 'May':
+                        May = 'Paid'
+                    elif month == 'June':
+                        June = 'Paid'
+                    elif month == 'July':
+                        July = 'Paid'
+                    elif month == 'August':
+                        August = 'Paid'
+                    elif month == 'September':
+                        September = 'Paid'
+                    elif month == 'October':
+                        October = 'Paid'
+                    elif month == 'November':
+                        November = 'Paid'
+                    elif month == 'December':
+                        December = 'Paid'
+
+            images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
+            json_data.append([
+                images,
+                escape(item.name),
+                float(escape(item.roll)),
+                January,
+                February,
+                March,
+                April,
+                May,
+                June,
+                July,
+                August,
+                September,
+                October,
+                November,
+                December,
+
+            ])
+
+        return json_data
+
+
+class StudentFeeDetailsByStudentJson(BaseDatatableView):
+    order_columns = ['month', 'isPaid', 'payDate', 'amount', 'note']
+
+    @transaction.atomic
+    def get_initial_queryset(self):
+        try:
+            standardByStudent = self.request.GET.get("standardByStudent")
+            student = self.request.GET.get("student")
+
+            return StudentFee.objects.select_related().filter(isDeleted__exact=False, studentID_id=int(student),
+                                                              standardID_id=int(standardByStudent),
+                                                              sessionID_id=self.request.session["current_session"][
+                                                                  "Id"])
+        except:
+            return StudentFee.objects.none()
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(month__icontains=search) | Q(note__icontains=search)
+                | Q(amount__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+
+        json_data = []
+        for item in qs:
+            if item.isPaid == True:
+                status = 'Paid'
+                payDate = item.payDate.strftime('%d-%m-%Y')
+            else:
+                status = 'Due'
+                payDate = 'N/A'
+
+            json_data.append([
+
+                escape(item.month),
+                status,
+                payDate,
+                escape(item.amount),
+                escape(item.note),
+
+            ])
+
+        return json_data
