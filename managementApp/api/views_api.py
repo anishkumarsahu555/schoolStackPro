@@ -868,15 +868,15 @@ class TeacherListJson(BaseDatatableView):
         for item in qs:
             images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
 
-            action = '''<button data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button purple">
+            action = '''<a href="/management/teacher_detail/{}/" data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button purple">
                 <i class="eye icon"></i>
-              </button>
+              </a>
             <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
                 <i class="pen icon"></i>
               </button>
               <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
                 <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk, item.pk),
+              </button></td>'''.format(item.pk, item.pk, item.pk, item.pk),
 
             json_data.append([
                 images,
@@ -1129,15 +1129,15 @@ class StudentListJson(BaseDatatableView):
         for item in qs:
             images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
 
-            action = '''<button data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button purple">
+            action = '''<a href="/management/student_detail/{}/" data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button purple">
                 <i class="eye icon"></i>
-              </button>
+              </a>
             <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
                 <i class="pen icon"></i>
               </button>
               <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
                 <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk, item.pk),
+              </button></td>'''.format(item.pk, item.pk, item.pk, item.pk),
             if item.standardID.section:
                 standard = item.standardID.name + ' - ' + item.standardID.section
             else:
@@ -1498,6 +1498,28 @@ def update_exam_to_class(request):
                 safe=False)
         except:
             return JsonResponse({'status': 'error'}, safe=False)
+
+
+@login_required
+def get_exam_list_by_class_api(request):
+    standard = request.GET.get('standard')
+    objs = AssignExamToClass.objects.filter(isDeleted=False, sessionID_id=request.session['current_session']['Id'],
+                                  standardID_id=int(standard)).order_by(
+        'examID__name')
+    data = []
+    for obj in objs:
+        name = obj.examID.name
+
+        data_dic = {
+            'ID': obj.pk,
+            'Name': name
+
+        }
+        data.append(data_dic)
+    return JsonResponse(
+        {'status': 'success', 'data': data,
+         'color': 'success'}, safe=False)
+
 
 
 # Attendance ------------------------------------------------------------------
@@ -2344,5 +2366,158 @@ class StudentFeeDetailsByStudentJson(BaseDatatableView):
                 escape(item.note),
 
             ])
+
+        return json_data
+
+
+# Marks of Students by Subject ---------------------------------
+class MarksOfSubjectsByStudentJson(BaseDatatableView):
+    order_columns = ['studentID.photo', 'studentID.name', 'studentID.roll', 'examID.fullMarks', 'examID.passMarks', 'mark', 'note']
+
+    @transaction.atomic
+    def get_initial_queryset(self):
+        try:
+            standard = self.request.GET.get("standard")
+            exam = self.request.GET.get("exam")
+            subject = self.request.GET.get("subject")
+            students = Student.objects.filter(standardID_id=int(standard), isDeleted=False, sessionID_id=self.request.session["current_session"]["Id"])
+
+            for stu in students:
+                try:
+                    MarkOfStudentsByExam.objects.get(studentID_id=int(stu.pk), subjectID_id=int(subject), examID_id=int(exam),
+                                           standardID_id=int(standard), isDeleted=False,
+                                           sessionID_id=self.request.session["current_session"]["Id"])
+
+                except:
+                    instance = MarkOfStudentsByExam.objects.create(studentID_id=int(stu.pk), subjectID_id=int(subject), examID_id=int(exam),
+                                           standardID_id=int(standard)
+                                                         )
+                    pre_save_with_user.send(sender=MarkOfStudentsByExam, instance=instance, user=self.request.user.pk)
+
+            return MarkOfStudentsByExam.objects.filter(standardID_id=int(standard), isDeleted=False, sessionID_id=self.request.session["current_session"]["Id"], examID_id=int(exam), subjectID_id=int(subject))
+
+        except:
+            return MarkOfStudentsByExam.objects.none()
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(studentID__name__icontains=search)
+                |Q(examID__fullMarks__icontains=search)
+                |Q(examID__passMarks__icontains=search)
+                |Q(mark__icontains=search)
+                |Q(note__icontains=search)
+                | Q(studentID__roll__icontains=search)
+              | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+
+            action = '''<button class="ui mini primary button" onclick="pushMark({})">
+  Save
+</button>'''.format(item.pk),
+
+
+            marks_obtained = '''<div class="ui tiny input fluid">
+  <input type="number" placeholder="Mark Obtained" name="mark{}" id="mark{}" value = "{}">
+</div>
+            '''.format(item.pk, item.pk, item.mark)
+
+            note = '''<div class="ui tiny input fluid">
+              <input type="text" placeholder="Note" name="note{}" id="note{}" value = "{}">
+            </div>
+                        '''.format(item.pk, item.pk, item.note)
+            images = '<img class="ui avatar image" src="{}">'.format(item.studentID.photo.thumbnail.url)
+            json_data.append([
+                images,
+                escape(item.studentID.name),
+                float(escape(item.studentID.roll)),
+                item.examID.fullMarks,
+                item.examID.passMarks,
+                marks_obtained,
+                note,
+                action,
+
+            ])
+
+        return json_data
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_subject_mark_api(request):
+    if request.method == 'POST':
+        id = request.POST.get("id")
+        note = request.POST.get("note")
+        mark = request.POST.get("mark")
+        try:
+            instance = MarkOfStudentsByExam.objects.get(pk=int(id))
+            instance.note = note
+            instance.mark = float(mark)
+            instance.payDate = datetime.today().date()
+            pre_save_with_user.send(sender=MarkOfStudentsByExam, instance=instance, user=request.user.pk)
+            instance.save()
+            return JsonResponse(
+                {'status': 'success', 'message': 'Mark added successfully.', 'color': 'success'},
+                safe=False)
+        except:
+
+            return JsonResponse({'status': 'error'}, safe=False)
+
+
+class StudentMarksDetailsByClassAndExamJson(BaseDatatableView):
+    order_columns = ['photo', 'name', 'roll']
+
+    @transaction.atomic
+    def get_initial_queryset(self):
+        try:
+            standard = self.request.GET.get("standard")
+
+            return Student.objects.select_related().filter(isDeleted__exact=False, standardID_id=int(standard),
+                                                           sessionID_id=self.request.session["current_session"][
+                                                               "Id"]).order_by('roll')
+        except:
+            return Student.objects.none()
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(name__icontains=search) | Q(roll__icontains=search)
+                | Q(standardID__name__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        standard = self.request.GET.get("standard")
+        exam = self.request.GET.get("exam")
+
+        json_data = []
+        for item in qs:
+            subject_list = AssignSubjectsToClass.objects.filter(standardID_id=int(standard), isDeleted=False, sessionID_id=self.request.session["current_session"]["Id"])
+            subs = [i.subjectID.name for i in subject_list]
+            marks = []
+            for s in subs:
+                exam_sub_list_by_student = MarkOfStudentsByExam.objects.get(studentID_id=item.id, isDeleted=False, examID_id=int(exam), sessionID_id=self.request.session["current_session"]["Id"], subjectID__subjectID__name=s)
+                marks.append(exam_sub_list_by_student.mark)
+
+            images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
+            json_data.append([
+                images,
+                escape(item.name),
+                float(escape(item.roll)),
+
+
+            ] + marks)
 
         return json_data

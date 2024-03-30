@@ -330,3 +330,22 @@ class StudentFee(models.Model):
 
     class Meta:
         verbose_name_plural = 'r) Student Fee'
+
+
+class MarkOfStudentsByExam(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    examID = models.ForeignKey(AssignExamToClass, blank=True, null=True, on_delete=models.CASCADE)
+    studentID = models.ForeignKey(Student, blank=True, null=True, on_delete=models.CASCADE)
+    standardID = models.ForeignKey(Standard, blank=True, null=True, on_delete=models.CASCADE)
+    subjectID = models.ForeignKey(AssignSubjectsToClass, blank=True, null=True, on_delete=models.CASCADE)
+    mark = models.FloatField(default=0.0)
+    note = models.TextField(blank=True, null=True, default='')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+
+
+class Meta:
+    verbose_name_plural = 's) Mark Of Students By Exam'

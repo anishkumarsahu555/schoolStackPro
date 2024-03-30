@@ -67,7 +67,7 @@ urlpatterns = [
     path('get_assigned_exam_to_class_detail', get_assigned_exam_to_class_detail,
          name='get_assigned_exam_to_class_detail'),
     path('update_exam_to_class', update_exam_to_class, name='update_exam_to_class'),
-    # path('get_exams_to_class_assign_list_api', get_exams_to_class_assign_list_api, name='get_exams_to_class_assign_list_api'),
+    path('get_exam_list_by_class_api', get_exam_list_by_class_api, name='get_exam_list_by_class_api'),
     path('AssignExamToClassListJson', AssignExamToClassListJson.as_view(), name='AssignExamToClassListJson'),
 
     # Attendance
@@ -91,5 +91,10 @@ urlpatterns = [
     path('add_student_fee_api', add_student_fee_api, name='add_student_fee_api'),
     path('StudentFeeDetailsByClassJson', StudentFeeDetailsByClassJson.as_view(), name='StudentFeeDetailsByClassJson'),
     path('StudentFeeDetailsByStudentJson', StudentFeeDetailsByStudentJson.as_view(), name='StudentFeeDetailsByStudentJson'),
+
+    # marks
+    path('MarksOfSubjectsByStudentJson', MarksOfSubjectsByStudentJson.as_view(), name='MarksOfSubjectsByStudentJson'),
+    path('add_subject_mark_api', add_subject_mark_api, name='add_subject_mark_api'),
+    path('StudentMarksDetailsByClassAndExamJson', StudentMarksDetailsByClassAndExamJson.as_view(), name='StudentMarksDetailsByClassAndExamJson'),
 
 ]

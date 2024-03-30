@@ -1,6 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 
 from homeApp.utils import login_required
+from managementApp.models import *
 from utils.custom_decorators import check_groups
 
 
@@ -10,7 +11,7 @@ from utils.custom_decorators import check_groups
 def admin_home(request):
     context = {
     }
-    return render(request, 'managementApp/index.html', context)
+    return render(request, 'managementApp/dashboard.html', context)
 
 
 @login_required
@@ -61,6 +62,16 @@ def teacher_list(request):
     }
     return render(request, 'managementApp/teacher/teacher_list.html', context)
 
+@login_required
+@check_groups('Admin', 'Owner')
+def teacher_detail(request, id=None):
+    instance = get_object_or_404(TeacherDetail, pk=id)
+    context = {
+        'instance': instance,
+    }
+    return render(request, 'managementApp/teacher/teacher_detail.html', context)
+
+
 
 # student
 
@@ -78,6 +89,16 @@ def student_list(request):
     context = {
     }
     return render(request, 'managementApp/student/student_list.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def student_detail(request, id=None):
+    instance = get_object_or_404(Student, pk=id)
+    context = {
+        'instance': instance,
+    }
+    return render(request, 'managementApp/student/student_detail.html', context)
 
 
 # Exam ----------------------------------------------
@@ -138,9 +159,27 @@ def student_fee(request):
     }
     return render(request, 'managementApp/fee/addStudentFee.html', context)
 
+
 @login_required
 @check_groups('Admin', 'Owner')
 def student_fee_details(request):
     context = {
     }
     return render(request, 'managementApp/fee/feeDetails.html', context)
+
+
+# Marks -------------------------------------------------------
+@login_required
+@check_groups('Admin', 'Owner')
+def student_marks(request):
+    context = {
+    }
+    return render(request, 'managementApp/marks/addExamMarks.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def exam_marks_details(request):
+    context = {
+    }
+    return render(request, 'managementApp/marks/examMarksDetails.html', context)

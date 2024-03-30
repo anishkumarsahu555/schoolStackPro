@@ -1,7 +1,7 @@
 {% extends 'managementApp/index.html' %}
 {% load static %}
 {% block title %}
-    <title>Take Student Fee</title>
+    <title>Add Students Marks</title>
 {% endblock %}
 {% block css %}
 {% endblock %}
@@ -33,7 +33,7 @@
         <div class="sixteen wide column">
             <div class="ui  pointing secondary menu">
                 <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Add Student Fee
+                >Add Student Mark
                 </div>
 
             </div>
@@ -43,7 +43,7 @@
                 <div class="ui segment" id="classFormDiv">
                     <h4 class="ui horizontal left aligned divider header">
                         <i class="left align icon"></i>
-                        Add Student Fees
+                        Add Marks
                     </h4>
                     <form class="ui tiny form" id="addFormByClass">{% csrf_token %}
 
@@ -51,16 +51,23 @@
                             <div class="field required">
 
                                 <label>Class-Section</label>
-                                <select class="ui search dropdown" id="standard" onchange="getStudentList()">
+                                <select class="ui search dropdown" id="standard" onchange="getExamList()">
                                     <option value="">Search By Class Name-Section</option>
                                 </select>
                             </div>
 
                                  <div class="field required">
 
-                                <label>Student</label>
-                                <select class="ui search dropdown" id="student">
-                                    <option value="">Search By Student Name-Roll</option>
+                                <label>Exam</label>
+                                <select class="ui search dropdown" id="exam">
+                                    <option value="">Search By Exam</option>
+                                </select>
+                            </div>
+                            <div class="field required">
+
+                                <label>Subjects</label>
+                                <select class="ui search dropdown" id="subject">
+                                    <option value="">Search By Subject</option>
                                 </select>
                             </div>
                                 <div class="field" style="padding-top: 2.2em;">
@@ -84,11 +91,13 @@
                                style="margin-top: 5px;width: 100%">
                             <thead>
                             <tr>
-                                <th>Month</th>
-                                <th>Status</th>
-                                <th>Paid Date</th>
-                                <th>Amount</th>
-                                <th>Remark</th>
+                                <th>Photo</th>
+                                <th>Name</th>
+                                <th>RollNo.</th>
+                                <th>FullMark</th>
+                                <th>PassMark</th>
+                                <th>Mark</th>
+                                <th>AnyNote</th>
                                 <th>Actions</th>
                             </tr>
                             </thead>
@@ -143,24 +152,61 @@
 
         }
 
-                function getStudentList() {
+                function getExamList() {
 
             $.ajax({
                 type: 'get',
-                url: "{% url 'managementAppAPI:get_student_list_by_class_api' %}",
+                url: "{% url 'managementAppAPI:get_exam_list_by_class_api' %}",
                 data :{
                     'standard' :$('#standard').val()
                 },
 
                 success: function (response) {
 
-                    $('#student').dropdown('clear');
-                    $('#student').html('');
-                    $('#ByStudentStudent').append(' <option value="">Search By Student Name-Roll</option>');
+                    $('#exam').dropdown('clear');
+                    $('#exam').html('');
+                    $('#exam').append(' <option value="">Search By Exam</option>');
                     var j;
                     for (j = 0; j < response.data.length; j++) {
 
-                        $('#student').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+                        $('#exam').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+
+                    }
+                    getSubjectsList();
+
+                },
+
+                error: function () {
+                    $('body')
+                        .toast({
+                            class: 'error',
+                            message: 'An error occurred !'
+                        })
+                    ;
+                }
+            });
+
+
+        }
+
+          function getSubjectsList() {
+
+            $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppAPI:get_subjects_to_class_assign_list_with_given_class_api' %}",
+                data :{
+                    'standard' :$('#standard').val()
+                },
+
+                success: function (response) {
+
+                    $('#subject').dropdown('clear');
+                    $('#subject').html('');
+                    $('#subject').append(' <option value="">Search By Subject</option>');
+                    var j;
+                    for (j = 0; j < response.data.length; j++) {
+
+                        $('#subject').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
 
                     }
 
@@ -205,15 +251,16 @@
 
         function searchData() {
             let standard = $('#standard').val();
-            let student = $('#student').val();
+            let exam = $('#exam').val();
+            let subject = $('#subject').val();
 
-            if (standard === '' || student === '') {
+            if (standard === '' || exam === ''|| subject === '') {
                 requiredFieldError();
                 $('#AttendanceTableDiv').css('display', 'none');
             } else {
                 $('#AttendanceTableDiv').css('display', 'block');
 
-                subjectTab.ajax.url('{% url 'managementAppAPI:FeeByStudentJson' %}?standard=' + standard+ '&student=' + student).load();
+                subjectTab.ajax.url('{% url 'managementAppAPI:MarksOfSubjectsByStudentJson' %}?standard=' + standard+ '&exam=' + exam + '&subject=' + subject).load();
 
             }
         }
@@ -232,40 +279,40 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [0,1, 2, 3, 4]
+                    columns: [1, 2, 3, 4,5,6]
                 }
             }
             ],
             "columnDefs": [
-                {"name": "month", "targets": 0, "orderable": true},
-                {"name": "isPaid", "targets": 1, "orderable": true},
-                {"name": "payDate", "targets": 2, "orderable": true},
-                {"name": "amount", "targets": 3, "orderable": true},
-                {"name": "note", "targets": 4, "orderable": true},
-                {"name": "action", "targets": 5, "orderable": false}
+                {"name": "studentID.photo", "targets": 0, "orderable": false},
+                {"name": "studentID.name", "targets": 1, "orderable": true},
+                {"name": "studentID.roll", "targets": 2, "orderable": true},
+                {"name": "examID.fullMarks", "targets": 3, "orderable": true},
+                {"name": "examID.passMarks", "targets": 4, "orderable": true},
+                {"name": "mark", "targets": 5, "orderable": true},
+                {"name": "note", "targets": 6, "orderable": true},
+                {"name": "action", "targets": 7, "orderable": false}
             ],
-            aaSorting: [[1, 'desc']],
+            aaSorting: [[2, 'asc']],
             "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
             "pageLength": 100,
             "processing": true,
             "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:FeeByStudentJson' %}"
+            "ajax": "{% url 'managementAppAPI:MarksOfSubjectsByStudentJson' %}"
         });
 
 
-        function pushFee(id) {
-            let isPresent = $('#isPresent' + id).prop('checked');
-            let reason = $('#reason' + id).val();
-            let amount = $('#amount' + id).val();
+        function pushMark(id) {
+            let note = $('#note' + id).val();
+            let mark = $('#mark' + id).val();
             let data = new FormData();
             data.append('id', id);
-            data.append('isPresent', isPresent);
-            data.append('reason', reason);
-            data.append('amount', amount);
+            data.append('note', note);
+            data.append('mark', mark);
             data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
             $.ajax({
                 type: 'post',
-                url: "{% url 'managementAppAPI:add_student_fee_api' %}",
+                url: "{% url 'managementAppAPI:add_subject_mark_api' %}",
                 data: data,
                 contentType: false,
                 cache: false,

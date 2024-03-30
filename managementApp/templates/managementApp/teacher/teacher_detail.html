@@ -1,0 +1,231 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+{% block title %}
+    <title>Teacher Detail</title>
+{% endblock %}
+{% block css %}
+{% endblock %}
+{% block body %}
+
+    <style>
+
+        input[type=search] {
+            width: 100px !important;
+        }
+    </style>
+
+    <div class="ui left aligned basic  grid">
+        <div class="sixteen wide column">
+            <div class="ui  pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user"
+                >Teacher Detail
+                </div>
+
+            </div>
+            <div class="ui tab " data-tab="user">
+                <div class="ui grid " style="margin-top: 0;padding-bottom: 30px;">
+                    <div class="sixteen wide tablet thirteen wide computer centered column"
+                         style="margin-top: 0;padding-top: 0">
+
+                        <div class="ui grid ">
+
+                            <div class="sixteen wide tablet six wide computer column center aligned ">
+
+                                <div class="your-class">
+                                    <div><img class="ui large image zoomImg " loading="lazy"
+                                              alt="{{ instance.photo.name }}" src="{{ instance.photo.url }}"></div>
+
+                                </div>
+
+                                <div class="ui grid " style="margin-top: 1rem;">
+                                    <a style="cursor: pointer"
+                                       data-inverted=""
+                                       data-tooltip="Edit Teacher Detail" data-position="top center"
+                                       class="sixteen wide column orange  center aligned">Edit Detail</a>
+
+                                </div>
+                            </div>
+
+                            <div class="sixteen wide tablet ten wide computer column ">
+                                <div class="wrapper" style="margin-bottom: 50px;!important;">
+                                    <div class="ui grid padded">
+                                        <div class="row">
+                                            <div class="sixteen wide column">
+                                                <div class="content left aligned">
+
+                                                    <div><h2 id="pName">{{ instance.name|capfirst }}</h2></div>
+                                                    <div class="meta">
+                                                        <a>{{ instance.tagLine|capfirst }}</a>
+                                                    </div>
+                                                    <a class="ui teal circular label"
+                                                       style="margin: 2px;">EmpCode: {{ instance.employeeCode }}</a>
+
+                                                    <a class="ui teal circular label"
+                                                       style="margin: 2px;">Type: {{ instance.staffType }}</a>
+
+                                                    <a class="ui teal circular label" style="margin: 2px;">Position
+                                                        : {{ instance.currentPosition }}</a>
+
+                                                    <a class="ui teal circular label" style="margin: 2px;">Registration
+                                                        ID:
+                                                        {{ instance.registrationCode }}</a>
+
+
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                    <div class="ui divider"></div>
+                                    <div class="ui grid padded">
+                                        <div class="row ">
+
+                                            <div class="sixteen wide column"><h4>Personal Information</h4></div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">DOB:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.dob }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">Gender:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.gender }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">Blood Group:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.bloodGroup }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">Aadhar Number:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.aadhar }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">Email:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.email }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">Phone Number:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.phoneNumber }}</div>
+<div class="eight wide column left aligned"><span
+                                                    class="ui grey text">Qualification:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.qualification }}</div>
+
+                                        </div>
+                                    </div>
+
+                                    <div class="ui divider"></div>
+                                    <div class="ui grid padded">
+                                        <div class="row ">
+
+                                            <div class="sixteen wide column"><h4> Present Address</h4></div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">Address:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.presentAddress }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">City:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.presentCity }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">State:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.presentState }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">Country:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.presentCountry }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">Pincode:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.presentPinCode }}</div>
+
+
+                                        </div>
+                                    </div>
+                                    <div class="ui divider"></div>
+                                    <div class="ui grid padded">
+                                        <div class="row ">
+
+                                            <div class="sixteen wide column"><h4> Permanent Address</h4></div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">Address:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.permanentAddress }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">City:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.permanentCity }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">State:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.permanentState }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">Country:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.permanentCountry }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">Pincode:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.permanentPinCode }}</div>
+
+
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ui raised red grid segment">
+
+                            <div class="sixteen wide column">
+                                <div class="ui vertical  menu " style="width: 100%">
+                                    <a class="item" id="relatedProducts">
+                                        Internal Details
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="ui grid padded">
+                                <div class="row ">
+
+                                    <div class="eight wide column left aligned"><span
+                                            class="ui grey text">Username:</span>
+                                    </div>
+                                    <div class="eight wide column left aligned">{{ instance.username }}</div>
+                                    <div class="eight wide column left aligned"><span
+                                            class="ui grey text">Password:</span>
+                                    </div>
+                                    <div class="eight wide column left aligned">{{ instance.password }}</div>
+                                    <div class="eight wide column left aligned"><span
+                                            class="ui grey text">Active:</span>
+                                    </div>
+                                    <div class="eight wide column left aligned">{{ instance.isActive }}</div>
+                                    <div class="eight wide column left aligned"><span
+                                            class="ui grey text">Salary:</span>
+                                    </div>
+                                    <div class="eight wide column left aligned">{{ instance.salary }}</div>
+                                    <div class="eight wide column left aligned"><span
+                                            class="ui grey text">Date of Leaving:</span>
+                                    </div>
+                                    <div class="eight wide column left aligned">{{ instance.dateOfLeaving }}</div>
+
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+
+
+{% block js %}
+
+
+{% endblock %}

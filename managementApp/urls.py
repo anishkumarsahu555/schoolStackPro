@@ -3,7 +3,7 @@ from .views import *
 
 urlpatterns = [
     #admin
-    path('', admin_home, name='admin_home'),
+    path('home/', admin_home, name='admin_home'),
     path('manage-class/', manage_class, name='manage_class'),
 
     # subjects
@@ -14,10 +14,12 @@ urlpatterns = [
     # Teacher
     path('add_teacher/', add_teacher, name='add_teacher'),
     path('teacher_list/', teacher_list, name='teacher_list'),
+    path('teacher_detail/<int:id>/', teacher_detail, name='teacher_detail'),
 
     # Student
     path('add_student/', add_student, name='add_student'),
     path('student_list/', student_list, name='student_list'),
+    path('student_detail/<int:id>/', student_detail, name='student_detail'),
 
     # Exams
     path('manage_exams/', manage_exams, name='manage_exams'),
@@ -32,5 +34,9 @@ urlpatterns = [
     # Fee
     path('student_fee/', student_fee, name='student_fee'),
     path('student_fee_details/', student_fee_details, name='student_fee_details'),
+
+    #marks
+    path('student_marks/', student_marks, name='student_marks'),
+    path('exam_marks_details/', exam_marks_details, name='exam_marks_details'),
 
 ]
