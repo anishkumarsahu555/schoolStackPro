@@ -1,0 +1,80 @@
+{% extends 'homeApp/base.html' %}
+
+{% block sidebar %}
+    <div class="item">
+        <div class="header">General</div>
+        <div class="menu">
+            <a class="item" href="{% url 'studentApp:student_home' %}">
+                <div>
+                    <i class="tachometer alternate icon"></i>
+                    Dashboard
+                </div>
+            </a>
+        </div>
+    </div>
+
+
+
+
+    <div class="item">
+        <div class="header">
+            My Attendance
+        </div>
+        <div class="menu">
+            <a class="item" href="{% url 'studentApp:attendance_history' %}">
+                <div><i class="book icon"></i>Attendance History</div>
+            </a>
+        </div>
+    </div>
+
+
+
+
+    <div class="item">
+        <div class="header">
+          My Tuition Fee
+        </div>
+        <div class="menu">
+            <a class="item" href="{% url 'studentApp:fee_detail' %}">
+                <div><i class="hand holding usd icon"></i>Fee Details</div>
+            </a>
+
+        </div>
+    </div>
+
+
+    <div class="item">
+        <div class="header">
+            My Exams
+        </div>
+        <div class="menu">
+            <a class="item" href="{% url 'managementApp:manage_exams' %}">
+                <div><i class="clipboard outline icon"></i></i>Exam Details</div>
+            </a>
+
+        </div>
+    </div>
+    <div class="item">
+        <div class="header">
+            My Results
+        </div>
+        <div class="menu">
+            <a class="item" href="{% url 'managementApp:student_marks' %}">
+                <div><i class="edit outline icon"></i>Add Marks</div>
+            </a>
+
+        </div>
+    </div>
+    <div class="item">
+        <div class="header">
+            Events And Announcements
+        </div>
+        <div class="menu">
+            <a class="item" href="{% url 'managementApp:add_teacher' %}">
+                <div><i class="calendar plus outline icon"></i>Add Event</div>
+            </a>
+
+        </div>
+    </div>
+
+{% endblock %}

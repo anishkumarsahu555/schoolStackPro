@@ -25,7 +25,8 @@ urlpatterns = [
     path('/api/', include(('homeApp.api.urls_api', 'homeApp'), namespace='homeAppAPI')),
     path('management/', include(('managementApp.urls', 'managementApp'), namespace='managementApp')),
     path('management/api/', include(('managementApp.api.urls_api', 'managementApp'), namespace='managementAppAPI')),
-
+    path('student/', include(('studentApp.urls', 'studentApp'), namespace='studentApp')),
+    path('student/api/', include(('studentApp.api.urls_api', 'studentApp'), namespace='studentAppAPI')),
 ]
 
 

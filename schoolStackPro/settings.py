@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'stdimage',
     "homeApp",
     "managementApp",
+    "studentApp",
 
 
 ]

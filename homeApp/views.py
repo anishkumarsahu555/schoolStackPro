@@ -27,8 +27,8 @@ def post_login(request):
         if user is not None:
             login(request, user)
             get_all_session_list(request)
-            if 'Admin' or 'Owner' in request.user.groups.values_list('name', flat=True):
-                return JsonResponse({'message': 'success', 'data': '/home/'}, safe=False)
+            return JsonResponse({'message': 'success', 'data': '/home/'}, safe=False)
+
         else:
             return JsonResponse({'message': 'fail'}, safe=False)
     else:
@@ -40,6 +40,8 @@ def homepage(request):
             'Admin' in request.user.groups.values_list('name', flat=True) or 'Owner' in request.user.groups.values_list(
             'name', flat=True)):
         return redirect('managementApp:admin_home')
+    elif request.user.is_authenticated and 'Student' in request.user.groups.values_list('name', flat=True):
+        return redirect('studentApp:student_home')
     else:
         return render(request, 'homeApp/login.html')
 

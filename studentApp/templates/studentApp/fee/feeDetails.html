@@ -1,0 +1,115 @@
+{% extends 'studentApp/index.html' %}
+{% load static %}
+{% block title %}
+    <title>Fee Details</title>
+{% endblock %}
+{% block css %}
+{% endblock %}
+{% block body %}
+
+    <style>
+
+
+        #SubjectTable_length, #byStudentTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #SubjectTable_filter, #byStudentTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+    </style>
+
+    <div class="ui left aligned basic  grid">
+        <div class="sixteen wide column">
+            <div class="ui  pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user"
+                > Student Fee Details
+                </div>
+
+            </div>
+            <div class="ui tab active " data-tab="user">
+
+                        <div class="row" style="padding-left: 5px; padding-right: 5px;" id="AttendanceTableDiv">
+                            <div class="wide">
+
+                                <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                                       id="byStudentTable"
+                                       style="margin-top: 5px;width: 100%!important;">
+                                    <thead>
+                                    <tr>
+                                        <th>Month</th>
+                                        <th>Status</th>
+                                        <th>PayDate</th>
+                                        <th>Amount</th>
+                                        <th>Note</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+
+
+{% block js %}
+    <script>
+
+
+
+        let byStudentTab
+
+
+        byStudentTab = $('#byStudentTable').DataTable({
+            dom: 'Blfrtip',
+            "scrollY": "370px",
+            "scrollX": true,
+            stateSave: true,
+            fixedColumns: {
+                left: 1,
+                right: 1
+            },
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0,1, 2, 3,4]
+                }
+            }
+
+            ],
+            "columnDefs": [
+                {"name": "month", "targets": 0, "orderable": true},
+                {"name": "isPaid", "targets": 1, "orderable": true},
+                {"name": "payDate", "targets": 2, "orderable": true},
+                {"name": "amount", "targets": 3, "orderable": true},
+                {"name": "note", "targets": 4, "orderable": true},
+            ],
+            aaSorting: [[1, 'asc']],
+            "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
+            "pageLength": 100,
+            "processing": true,
+            "serverSide": true,
+            "ajax": "{% url 'studentAppAPI:StudentFeeDetailsJson' %}"
+        });
+
+    </script>
+
+{% endblock %}

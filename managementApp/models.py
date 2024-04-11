@@ -346,6 +346,38 @@ class MarkOfStudentsByExam(models.Model):
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
 
+    class Meta:
+        verbose_name_plural = 's) Mark Of Students By Exam'
 
-class Meta:
-    verbose_name_plural = 's) Mark Of Students By Exam'
+
+class EventType(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=500, blank=True, null=True)
+    description = models.TextField(blank=True, null=True, default='')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = 't) Events Type'
+
+
+class Event(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    eventID = models.ForeignKey(EventType, blank=True, null=True, on_delete=models.CASCADE)
+    title = models.CharField(max_length=500, blank=True, null=True)
+    message = models.TextField(blank=True, null=True)
+    startDate = models.DateField(blank=True, null=True)
+    endDate = models.DateField(blank=True, null=True)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name_plural = 'v) Event'
