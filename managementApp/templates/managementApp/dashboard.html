@@ -1,433 +1,593 @@
 {% extends 'managementApp/index.html' %}
 {% load static %}
 {% block title %}
-    <title>Dashboard</title>
+<title>Dashboard</title>
 {% endblock %}
 {% block css %}
 {% endblock %}
 {% block body %}
 
-    <style>
+<style>
+    #SubjectTable_length {
+        left: 20px;
+        position: absolute;
+    }
+
+    #SubjectTable_filter {
+        float: right;
+    }
+
+    .dt-buttons {
+        position: absolute;
+        left: 174px;
+    }
+
+    input[type=search] {
+        width: 100px !important;
+    }
+</style>
+
+<div class="ui left aligned basic  grid">
+    <div class="sixteen wide column">
 
 
-        #SubjectTable_length {
-            left: 20px;
-            position: absolute;
-        }
-
-        #SubjectTable_filter {
-            float: right;
-        }
-
-        .dt-buttons {
-            position: absolute;
-            left: 174px;
-        }
-
-        input[type=search] {
-            width: 100px !important;
-        }
-    </style>
-
-    <div class="ui left aligned basic  grid">
-        <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Dashboard
-                </div>
-
+        <div class="ui  pointing secondary menu">
+            <div style="cursor: pointer;" class="item active" data-tab="user">Dashboard
             </div>
-            <div class="ui tab " data-tab="user">
-                <div class="main">
-                    <div class="ui grid stackable padded">
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile column"
-                        >
-                            <div class="ui fluid card">
-                                <div class="content">
-                                    <div class="ui right floated header red">
-                                        <i class="icon shopping cart"></i>
-                                    </div>
-                                    <div class="header">
-                                        <div class="ui red header">
-                                            3958
-                                        </div>
-                                    </div>
-                                    <div class="meta">
-                                        orders
-                                    </div>
-                                    <div class="description">
-                                        Elliot requested permission to view your contact details
+
+        </div>
+        <div class="ui tab " data-tab="user">
+            <div class="main">
+                <div class="ui grid stackable padded">
+                    <div class="four wide computer eight wide tablet sixteen wide mobile column">
+                        <div class="ui fluid card">
+                            <div class="content">
+                                <div class="ui right floated header red">
+                                    <i class="icon shopping cart"></i>
+                                </div>
+                                <div class="header">
+                                    <div class="ui red header">
+                                        3958
                                     </div>
                                 </div>
-                                <div class="extra content">
-                                    <div class="ui two buttons">
-                                        <div class="ui red button">More Info</div>
-                                    </div>
+                                <div class="meta">
+                                    orders
+                                </div>
+                                <div class="description">
+                                    Elliot requested permission to view your contact details
                                 </div>
                             </div>
-                        </div>
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile column"
-                        >
-                            <div class="ui fluid card">
-                                <div class="content">
-                                    <div class="ui right floated header green">
-                                        <i class="icon clock"></i>
-                                    </div>
-                                    <div class="header">
-                                        <div class="ui header green">57.6%</div>
-                                    </div>
-                                    <div class="meta">
-                                        Time
-                                    </div>
-                                    <div class="description">
-                                        Elliot requested permission to view your contact details
-                                    </div>
-                                </div>
-                                <div class="extra content">
-                                    <div class="ui two buttons">
-                                        <div class="ui green button">More Info</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile column"
-                        >
-                            <div class="ui fluid card">
-                                <div class="content">
-                                    <div class="ui right floated header teal">
-                                        <i class="icon briefcase"></i>
-                                    </div>
-                                    <div class="header">
-                                        <div class="ui teal header">3112</div>
-                                    </div>
-                                    <div class="meta">
-                                        Saves
-                                    </div>
-                                    <div class="description">
-                                        Elliot requested permission to view your contact details
-                                    </div>
-                                </div>
-                                <div class="extra content">
-                                    <div class="ui two buttons">
-                                        <div class="ui teal button">More Info</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile column"
-                        >
-                            <div class="ui fluid card">
-                                <div class="content">
-                                    <div class="ui right floated header purple">
-                                        <i class="icon trophy"></i>
-                                    </div>
-                                    <div class="header">
-                                        <div class="ui purple header">9805</div>
-                                    </div>
-                                    <div class="meta">
-                                        Views
-                                    </div>
-                                    <div class="description">
-                                        Elliot requested permission to view your contact details
-                                    </div>
-                                </div>
-                                <div class="extra content">
-                                    <div class="ui two buttons">
-                                        <div class="ui purple button">More Info</div>
-                                    </div>
+                            <div class="extra content">
+                                <div class="ui two buttons">
+                                    <div class="ui red button">More Info</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="ui grid stackable padded">
-                        <div class="column">
-                            <table class="ui celled striped table">
-                                <thead>
-                                <tr>
-                                    <th colspan="3">
-                                        Git Repository
-                                    </th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr>
-                                    <td class="collapsing">
-                                        <i class="folder icon"></i> node_modules
-                                    </td>
-                                    <td>Initial commit</td>
-                                    <td class="right aligned collapsing">10 hours ago</td>
-                                </tr>
-                                <tr>
-                                    <td><i class="folder icon"></i> test</td>
-                                    <td>Initial commit</td>
-                                    <td class="right aligned">10 hours ago</td>
-                                </tr>
-                                <tr>
-                                    <td><i class="folder icon"></i> build</td>
-                                    <td>Initial commit</td>
-                                    <td class="right aligned">10 hours ago</td>
-                                </tr>
-                                <tr>
-                                    <td><i class="file outline icon"></i> package.json</td>
-                                    <td>Initial commit</td>
-                                    <td class="right aligned">10 hours ago</td>
-                                </tr>
-                                <tr>
-                                    <td><i class="file outline icon"></i> Gruntfile.js</td>
-                                    <td>Initial commit</td>
-                                    <td class="right aligned">10 hours ago</td>
-                                </tr>
-                                </tbody>
-                            </table>
+                    <div class="four wide computer eight wide tablet sixteen wide mobile column">
+                        <div class="ui fluid card">
+                            <div class="content">
+                                <div class="ui right floated header green">
+                                    <i class="icon clock"></i>
+                                </div>
+                                <div class="header">
+                                    <div class="ui header green">57.6%</div>
+                                </div>
+                                <div class="meta">
+                                    Time
+                                </div>
+                                <div class="description">
+                                    Elliot requested permission to view your contact details
+                                </div>
+                            </div>
+                            <div class="extra content">
+                                <div class="ui two buttons">
+                                    <div class="ui green button">More Info</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="ui grid stackable padded">
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile  center aligned column"
-                        >
-                            <div class="ui teal statistic">
-                                <div class="value">
-                                    5,550
+                    <div class="four wide computer eight wide tablet sixteen wide mobile column">
+                        <div class="ui fluid card">
+                            <div class="content">
+                                <div class="ui right floated header teal">
+                                    <i class="icon briefcase"></i>
                                 </div>
-                                <div class="label">
-                                    Downloads
+                                <div class="header">
+                                    <div class="ui teal header">3112</div>
+                                </div>
+                                <div class="meta">
+                                    Saves
+                                </div>
+                                <div class="description">
+                                    Elliot requested permission to view your contact details
+                                </div>
+                            </div>
+                            <div class="extra content">
+                                <div class="ui two buttons">
+                                    <div class="ui teal button">More Info</div>
                                 </div>
                             </div>
                         </div>
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile  center aligned column"
-                        >
-                            <div class="ui purple statistic">
-                                <div class="value">
-                                    50+
+                    </div>
+                    <div class="four wide computer eight wide tablet sixteen wide mobile column">
+                        <div class="ui fluid card">
+                            <div class="content">
+                                <div class="ui right floated header purple">
+                                    <i class="icon trophy"></i>
                                 </div>
-                                <div class="label">
-                                    Developers
+                                <div class="header">
+                                    <div class="ui purple header">9805</div>
                                 </div>
-                            </div>
-                        </div>
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile  center aligned column"
-                        >
-                            <div class="ui green statistic">
-                                <div class="value">
-                                    800+
+                                <div class="meta">
+                                    Views
                                 </div>
-                                <div class="label">
-                                    Commits
+                                <div class="description">
+                                    Elliot requested permission to view your contact details
                                 </div>
                             </div>
-                        </div>
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile  center aligned column"
-                        >
-                            <div class="ui purple statistic">
-                                <div class="value">
-                                    1000+
-                                </div>
-                                <div class="label">
-                                    Cups of Coffee
+                            <div class="extra content">
+                                <div class="ui two buttons">
+                                    <div class="ui purple button">More Info</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                <div class="ui grid stackable padded">
+                    <div class="four wide computer eight wide tablet sixteen wide mobile  center aligned column">
+                        <div class="ui teal statistic">
+                            <div class="value">
+                                5,550
+                            </div>
+                            <div class="label">
+                                Downloads
+                            </div>
+                        </div>
+                    </div>
+                    <div class="four wide computer eight wide tablet sixteen wide mobile  center aligned column">
+                        <div class="ui purple statistic">
+                            <div class="value">
+                                50+
+                            </div>
+                            <div class="label">
+                                Developers
+                            </div>
+                        </div>
+                    </div>
+                    <div class="four wide computer eight wide tablet sixteen wide mobile  center aligned column">
+                        <div class="ui green statistic">
+                            <div class="value">
+                                800+
+                            </div>
+                            <div class="label">
+                                Commits
+                            </div>
+                        </div>
+                    </div>
+                    <div class="four wide computer eight wide tablet sixteen wide mobile  center aligned column">
+                        <div class="ui purple statistic">
+                            <div class="value">
+                                1000+
+                            </div>
+                            <div class="label">
+                                Cups of Coffee
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+
         </div>
     </div>
+
+    <div class="ui grid stackable padded">
+        <!-- Attendance Chart -->
+        <div class="eight wide computer eight wide tablet sixteen wide mobile column">
+            <h3 class="ui header">Attendance</h3>
+            <canvas id="attendanceChart"></canvas>
+        </div>
+        <!-- Grades Chart -->
+        <div class="eight wide computer eight wide tablet sixteen wide mobile column">
+            <h3 class="ui header">Grades</h3>
+            <canvas id="gradesChart"></canvas>
+        </div>
+        <div class="eight wide computer eight wide tablet sixteen wide mobile column">
+            <h3 class="ui header">Extracurricular Activities</h3>
+            <canvas id="activitiesChart"></canvas>
+        </div>
+
+        <!-- Skill Assessments - Radar Chart -->
+        <div class="eight wide computer eight wide tablet sixteen wide mobile column">
+            <h3 class="ui header">Skill Assessments</h3>
+            <canvas id="skillsChart"></canvas>
+        </div>
+
+        <!-- Campus Resource Usage - Polar Area Chart -->
+        <div class="eight wide computer eight wide tablet sixteen wide mobile column">
+            <h3 class="ui header">Campus Resource Usage</h3>
+            <canvas id="resourcesChart"></canvas>
+        </div>
+        <div class="eight wide computer eight wide tablet sixteen wide mobile column">
+            <h3 class="ui header">Department Distribution</h3>
+            <canvas id="departmentChart"></canvas>
+        </div>
+        <!-- More charts will go here -->
+    </div>
+</div>
 {% endblock %}
 
 
 
 
 {% block js %}
-    <script>
+<script>
 
-        $(getStandardList());
+    $(getStandardList());
 
-        function getStandardList() {
+    function getStandardList() {
 
-            $.ajax({
-                type: 'get',
-                url: "{% url 'managementAppAPI:get_standard_list_api' %}",
+        $.ajax({
+            type: 'get',
+            url: "{% url 'managementAppAPI:get_standard_list_api' %}",
 
-                success: function (response) {
+            success: function (response) {
 
-                    $('#standard').html('');
-                    $('#standard').append(' <option value="">Search By Class Name</option>');
-                    var j;
-                    for (j = 0; j < response.data.length; j++) {
+                $('#standard').html('');
+                $('#standard').append(' <option value="">Search By Class Name</option>');
+                var j;
+                for (j = 0; j < response.data.length; j++) {
 
-                        $('#standard').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+                    $('#standard').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
 
-                    }
-
-                },
-
-                error: function () {
-                    $('body')
-                        .toast({
-                            class: 'error',
-                            message: 'An error occurred !'
-                        })
-                    ;
                 }
-            });
 
-
-        }
-
-        function getStudentList() {
-
-            $.ajax({
-                type: 'get',
-                url: "{% url 'managementAppAPI:get_student_list_by_class_api' %}",
-                data: {
-                    'standard': $('#standard').val()
-                },
-
-                success: function (response) {
-
-                    $('#student').dropdown('clear');
-                    $('#student').html('');
-                    $('#ByStudentStudent').append(' <option value="">Search By Student Name-Roll</option>');
-                    var j;
-                    for (j = 0; j < response.data.length; j++) {
-
-                        $('#student').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
-
-                    }
-
-                },
-
-                error: function () {
-                    $('body')
-                        .toast({
-                            class: 'error',
-                            message: 'An error occurred !'
-                        })
-                    ;
-                }
-            });
-
-
-        }
-
-
-        let today = new Date();
-        $('#date')
-            .calendar({
-                    monthFirst: false,
-                    type: 'date',
-                    formatter: {
-                        date: function (date, settings) {
-
-                            if (!date) return '';
-                            var day = String(date.getDate());
-                            var month = String(date.getMonth() + 1);
-                            var year = date.getFullYear();
-                            return day + '/' + month + '/' + year;
-                        }
-                    }
-                }
-            );
-
-
-        let subjectTab
-
-
-        function searchData() {
-            let standard = $('#standard').val();
-            let student = $('#student').val();
-
-            if (standard === '' || student === '') {
-                requiredFieldError();
-                $('#AttendanceTableDiv').css('display', 'none');
-            } else {
-                $('#AttendanceTableDiv').css('display', 'block');
-
-                subjectTab.ajax.url('{% url 'managementAppAPI:FeeByStudentJson' %}?standard=' + standard + '&student=' + student).load();
-
-            }
-        }
-
-        // user Details
-
-        subjectTab = $('#SubjectTable').DataTable({
-            dom: 'Blfrtip',
-            "scrollY": "350px",
-            "scrollX": true,
-            stateSave: true,
-            fixedColumns: {
-                left: 1,
-                right: 1
             },
-            buttons: [{
-                extend: 'excel',
-                exportOptions: {
-                    columns: [0, 1, 2, 3, 4]
-                }
+
+            error: function () {
+                $('body')
+                    .toast({
+                        class: 'error',
+                        message: 'An error occurred !'
+                    })
+                    ;
             }
-            ],
-            "columnDefs": [
-                {"name": "month", "targets": 0, "orderable": true},
-                {"name": "isPaid", "targets": 1, "orderable": true},
-                {"name": "payDate", "targets": 2, "orderable": true},
-                {"name": "amount", "targets": 3, "orderable": true},
-                {"name": "note", "targets": 4, "orderable": true},
-                {"name": "action", "targets": 5, "orderable": false}
-            ],
-            aaSorting: [[1, 'desc']],
-            "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
-            "pageLength": 100,
-            "processing": true,
-            "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:FeeByStudentJson' %}"
         });
 
 
-        function pushFee(id) {
-            let isPresent = $('#isPresent' + id).prop('checked');
-            let reason = $('#reason' + id).val();
-            let amount = $('#amount' + id).val();
-            let data = new FormData();
-            data.append('id', id);
-            data.append('isPresent', isPresent);
-            data.append('reason', reason);
-            data.append('amount', amount);
-            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
-            $.ajax({
-                type: 'post',
-                url: "{% url 'managementAppAPI:add_student_fee_api' %}",
-                data: data,
-                contentType: false,
-                cache: false,
-                processData: false,
+    }
 
-                success: function (response) {
-                    if (response.status === 'success') {
-                        addSuccessNotification(response.message, response.color);
-                        subjectTab.ajax.reload(null, false);
-                    } else {
-                        addErrorNotification();
+    function getStudentList() {
 
-                    }
+        $.ajax({
+            type: 'get',
+            url: "{% url 'managementAppAPI:get_student_list_by_class_api' %}",
+            data: {
+                'standard': $('#standard').val()
+            },
 
-                    return response;
-                },
-                error: function () {
-                    addErrorNotification();
+            success: function (response) {
+
+                $('#student').dropdown('clear');
+                $('#student').html('');
+                $('#ByStudentStudent').append(' <option value="">Search By Student Name-Roll</option>');
+                var j;
+                for (j = 0; j < response.data.length; j++) {
+
+                    $('#student').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+
                 }
-            });
 
+            },
+
+            error: function () {
+                $('body')
+                    .toast({
+                        class: 'error',
+                        message: 'An error occurred !'
+                    })
+                    ;
+            }
+        });
+
+
+    }
+
+
+    let today = new Date();
+    $('#date')
+        .calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date, settings) {
+
+                    if (!date) return '';
+                    var day = String(date.getDate());
+                    var month = String(date.getMonth() + 1);
+                    var year = date.getFullYear();
+                    return day + '/' + month + '/' + year;
+                }
+            }
+        }
+        );
+
+
+    let subjectTab
+
+
+    function searchData() {
+        let standard = $('#standard').val();
+        let student = $('#student').val();
+
+        if (standard === '' || student === '') {
+            requiredFieldError();
+            $('#AttendanceTableDiv').css('display', 'none');
+        } else {
+            $('#AttendanceTableDiv').css('display', 'block');
+
+            subjectTab.ajax.url('{% url 'managementAppAPI: FeeByStudentJson' %}?standard=' + standard + '&student=' + student).load();
 
         }
+    }
 
-    </script>
+    // user Details
+
+    subjectTab = $('#SubjectTable').DataTable({
+        dom: 'Blfrtip',
+        "scrollY": "350px",
+        "scrollX": true,
+        stateSave: true,
+        fixedColumns: {
+            left: 1,
+            right: 1
+        },
+        buttons: [{
+            extend: 'excel',
+            exportOptions: {
+                columns: [0, 1, 2, 3, 4]
+            }
+        }
+        ],
+        "columnDefs": [
+            { "name": "month", "targets": 0, "orderable": true },
+            { "name": "isPaid", "targets": 1, "orderable": true },
+            { "name": "payDate", "targets": 2, "orderable": true },
+            { "name": "amount", "targets": 3, "orderable": true },
+            { "name": "note", "targets": 4, "orderable": true },
+            { "name": "action", "targets": 5, "orderable": false }
+        ],
+        aaSorting: [[1, 'desc']],
+        "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
+        "pageLength": 100,
+        "processing": true,
+        "serverSide": true,
+        "ajax": "{% url 'managementAppAPI:FeeByStudentJson' %}"
+    });
+
+
+    function pushFee(id) {
+        let isPresent = $('#isPresent' + id).prop('checked');
+        let reason = $('#reason' + id).val();
+        let amount = $('#amount' + id).val();
+        let data = new FormData();
+        data.append('id', id);
+        data.append('isPresent', isPresent);
+        data.append('reason', reason);
+        data.append('amount', amount);
+        data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+        $.ajax({
+            type: 'post',
+            url: "{% url 'managementAppAPI:add_student_fee_api' %}",
+            data: data,
+            contentType: false,
+            cache: false,
+            processData: false,
+
+            success: function (response) {
+                if (response.status === 'success') {
+                    addSuccessNotification(response.message, response.color);
+                    subjectTab.ajax.reload(null, false);
+                } else {
+                    addErrorNotification();
+
+                }
+
+                return response;
+            },
+            error: function () {
+                addErrorNotification();
+            }
+        });
+
+
+    }
+
+</script>
+
+<script>
+    // Initialize charts
+    const initCharts = () => {
+        // Data for the charts (example data, replace with actual data)
+        const attendanceData = {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Attendance',
+                data: [75, 88, 80, 95, 100, 90],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)', // Red
+                    'rgba(54, 162, 235, 0.2)',  // Blue
+                    'rgba(255, 206, 86, 0.2)',  // Yellow
+                    'rgba(75, 192, 192, 0.2)',  // Green
+                    'rgba(153, 102, 255, 0.2)',  // Purple
+                    'rgba(255, 159, 64, 0.2)'   // Orange
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)', // Red
+                    'rgba(54, 162, 235, 1)',  // Blue
+                    'rgba(255, 206, 86, 1)',  // Yellow
+                    'rgba(75, 192, 192, 1)',  // Green
+                    'rgba(153, 102, 255, 1)',  // Purple
+                    'rgba(255, 159, 64, 1)'   // Orange
+                ],
+                borderWidth: 1
+            }]
+        };
+
+        // Chart Options with detailed tooltips
+        const chartOptions = {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            },
+            tooltips: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function (tooltipItem, data) {
+                        const dataset = data.datasets[tooltipItem.datasetIndex];
+                        const value = dataset.data[tooltipItem.index];
+                        return `${dataset.label}: ${value}%`;
+                    }
+                }
+            },
+            hover: {
+                mode: 'nearest',
+                intersect: true
+            }
+        };
+
+        // Create chart instances
+        // Attendance Chart
+        const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+        const attendanceChart = new Chart(attendanceCtx, {
+            type: 'bar',
+            data: attendanceData,
+            options: chartOptions
+        });
+
+        // Grades Chart
+        const gradesCtx = document.getElementById('gradesChart').getContext('2d');
+        const gradesData = {
+            labels: ['Math', 'Science', 'History', 'English', 'PE'],
+            datasets: [{
+                label: 'Grades',
+                data: [85, 90, 80, 70, 95],
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        };
+        const gradesChart = new Chart(gradesCtx, {
+            type: 'line',
+            data: gradesData,
+            options: chartOptions
+        });
+
+        // ... initialize more charts here
+
+        const activitiesCtx = document.getElementById('activitiesChart').getContext('2d');
+        const activitiesData = {
+            labels: ['Sports', 'Arts', 'Music', 'Clubs', 'Volunteering'],
+            datasets: [{
+                data: [300, 50, 100, 40, 120],
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF'
+                ],
+                hoverBackgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF'
+                ]
+            }]
+        };
+        const activitiesChart = new Chart(activitiesCtx, {
+            type: 'pie',
+            data: activitiesData
+        });
+
+        // Skill Assessments - Radar Chart
+        const skillsCtx = document.getElementById('skillsChart').getContext('2d');
+        const skillsData = {
+            labels: ['Communication', 'Critical Thinking', 'Collaboration', 'Creativity'],
+            datasets: [{
+                label: 'Student A',
+                backgroundColor: 'rgba(179,181,198,0.2)',
+                borderColor: 'rgba(179,181,198,1)',
+                pointBackgroundColor: 'rgba(179,181,198,1)',
+                data: [65, 59, 90, 81]
+            }, {
+                label: 'Student B',
+                backgroundColor: 'rgba(255,99,132,0.2)',
+                borderColor: 'rgba(255,99,132,1)',
+                pointBackgroundColor: 'rgba(255,99,132,1)',
+                data: [28, 48, 40, 19]
+            }]
+        };
+        const skillsChart = new Chart(skillsCtx, {
+            type: 'radar',
+            data: skillsData
+        });
+
+        // Campus Resource Usage - Polar Area Chart
+        const resourcesCtx = document.getElementById('resourcesChart').getContext('2d');
+        const resourcesData = {
+            labels: ['Library', 'Gym', 'Cafeteria', 'Laboratory', 'Auditorium'],
+            datasets: [{
+                data: [10, 20, 30, 40, 50],
+                backgroundColor: [
+                    '#FF6384',
+                    '#4BC0C0',
+                    '#FFCE56',
+                    '#E7E9ED',
+                    '#36A2EB'
+                ],
+                label: 'Resource Usage'
+            }]
+        };
+        const resourcesChart = new Chart(resourcesCtx, {
+            type: 'polarArea',
+            data: resourcesData
+        });
+        const departmentCtx = document.getElementById('departmentChart').getContext('2d');
+        const departmentData = {
+            labels: ['Mathematics', 'Science', 'Humanities', 'Arts', 'Physical Education'],
+            datasets: [{
+                data: [120, 150, 100, 70, 60],
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF'
+                ],
+                hoverBackgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0',
+                    '#9966FF'
+                ]
+            }]
+        };
+        const departmentChart = new Chart(departmentCtx, {
+            type: 'doughnut',
+            data: departmentData
+        });
+    };
+
+    // Call the function to initialize charts when the window loads
+    window.onload = initCharts;
+</script>
 
 {% endblock %}
