@@ -2519,5 +2519,4 @@ class StudentMarksDetailsByClassAndExamJson(BaseDatatableView):
 
 
             ] + marks)
-        print(json_data)
         return json_data
