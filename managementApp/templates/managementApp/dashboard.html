@@ -327,7 +327,6 @@
         } else {
             $('#AttendanceTableDiv').css('display', 'block');
 
-            subjectTab.ajax.url('{% url 'managementAppAPI: FeeByStudentJson' %}?standard=' + standard + '&student=' + student).load();
 
         }
     }
