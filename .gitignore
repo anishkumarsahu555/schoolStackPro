@@ -6,4 +6,4 @@ migrations/
 .vscode/
 logs/
 db.sqlite3
-
+.vscode
