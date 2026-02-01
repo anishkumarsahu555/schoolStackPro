@@ -13,12 +13,18 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from managementApp.models import *
 from managementApp.signals import pre_save_with_user
 from utils.conts import MONTHS_LIST
+from utils.get_school_detail import get_school_id
 
+from utils.json_validator import validate_input
+from utils.logger import logger
+from utils.custom_response import SuccessResponse, ErrorResponse
+from utils.cache_modfier import add_item_to_existing_cache, delete_item_from_existing_cache, update_item_in_existing_cache
 
 # Class ------------------
 @transaction.atomic
 @csrf_exempt
 @login_required
+@validate_input(["className","classLocation","hasSection","startRoll0","endRoll0"])
 def add_class(request):
     if request.method == 'POST':
         try:
@@ -32,7 +38,8 @@ def add_class(request):
             if hasSection == "No":
                 try:
                     Standard.objects.get(name__iexact=className, hasSection=hasSection, isDeleted=False,
-                                         sessionID_id=request.session['currentSessionYear'])
+                                         sessionID_id=request.session["current_session"]["Id"])
+                    logger.info( f"Class already exists {request.session["current_session"]["Id"]}- {className}")                     
                     return JsonResponse(
                         {'status': 'success', 'message': 'Class already exists. Please change the name.',
                          'color': 'info'}, safe=False)
@@ -45,6 +52,13 @@ def add_class(request):
                     instance.endingRoll = endRoll0
                     pre_save_with_user.send(sender=Standard, instance=instance, user=request.user.pk)
                     instance.save()
+                    new_data = {
+                        "ID": instance.pk,
+                        "Name": instance.name
+
+                    }
+                    add_item_to_existing_cache("standard_list"+str(request.session["current_session"]["Id"]), new_data)
+                    logger.info( f"Class created successfully {request.session["current_session"]["Id"]}- {instance.name}")
                     return JsonResponse(
                         {'status': 'success', 'message': 'New class created successfully.', 'color': 'success'},
                         safe=False)
@@ -63,8 +77,10 @@ def add_class(request):
                     for i in result:
                         try:
                             Standard.objects.get(name__iexact=className, hasSection=hasSection, section__iexact=i[0],
-                                                 isDeleted=False)
-                            pass
+                                                 isDeleted=False,sessionID_id=request.session["current_session"]["Id"])
+                            return JsonResponse(
+                                {'status': 'success', 'message': 'Class already exists. Please change the name.',
+                                'color': 'info'}, safe=False)
                         except:
                             instance = Standard()
                             instance.name = className
@@ -75,23 +91,74 @@ def add_class(request):
                             instance.section = i[0]
                             pre_save_with_user.send(sender=Standard, instance=instance, user=request.user.pk)
                             instance.save()
+                            new_data = {
+                            'ID': instance.pk,
+                            'Name': instance.name + ' - ' + instance.section if instance.section else instance.name
+
+                            }
+                            add_item_to_existing_cache("standard_list"+str(request.session["current_session"]["Id"]), new_data)
+                            logger.info( f"Class created successfully {request.session["current_session"]["Id"]}- {instance.name}-{instance.section}")
+
                     return JsonResponse(
                         {'status': 'success', 'message': 'New classes created successfully.', 'color': 'success'},
                         safe=False)
-                except:
+                except Exception as e:
+                    logger.error(f"Error creating classes: {e}")
                     return JsonResponse({'status': 'error'}, safe=False)
             return JsonResponse({'status': 'error'}, safe=False)
-        except:
+        except Exception as e:
+            logger.error(f"Error in add_class: {e}")
             return JsonResponse({'status': 'error'}, safe=False)
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+# @validate_input()
+def update_class(request):
+    if request.method != 'POST':
+        logger.error("Method not allowed")
+        return ErrorResponse("Method not allowed").to_json_response()
+
+    data = request.POST.dict()
+    try:
+        obj = Standard.objects.get(pk=data['dataIDEdit'], isDeleted = False)
+
+        obj.name = data["classNameEdit"]
+        obj.location = data["classLocationEdit"]
+        obj.startingRoll = int(data["startRoll0Edit"]) or 0
+        obj.endingRoll = int(data["endRoll0Edit"]) or 0
+        obj.section = data["section0Edit"]
+        obj.classTeacher_id = data["teacherEdit"] if isinstance(data["teacherEdit"], int) else None
+        obj.save()
+
+        new_data = {
+                    'ID': obj.pk,
+                'Name': obj.name + ' - ' + obj.section if obj.section else obj.name
+                }
+        update_item_in_existing_cache("standard_list"+str(request.session['current_session']['Id']), obj.pk, new_data)
+        logger.info("Class detail updated successfully")
+        return SuccessResponse("Class detail updated successfully").to_json_response()
+
+    except Standard.DoesNotExist:
+        logger.error("Class not found")
+        return ErrorResponse("Class not found").as_json_response()       
+    except Exception as e:
+        logger.error(f"Error in update_class: {e}")
+        return ErrorResponse("Error in updating Class details").to_json_response()
+    
 
 
 class StandardListJson(BaseDatatableView):
     order_columns = ['name', 'section', 'classTeacher', 'startingRoll', 'endingRoll', 'classLocation', 'lastEditedBy',
-                     'datetime']
+                     'datetime']             
 
     def get_initial_queryset(self):
-        return Standard.objects.select_related().filter(isDeleted__exact=False,
-                                                        sessionID_id=self.request.session["current_session"]["Id"])
+        return Standard.objects.select_related().filter(
+            isDeleted__exact=False,
+            sessionID_id=self.request.session["current_session"]["Id"],
+            # schoolID_id=school_id
+        )
 
     def filter_queryset(self, qs):
 
@@ -176,33 +243,15 @@ def delete_class(request):
             instance.isDeleted = True
             pre_save_with_user.send(sender=Standard, instance=instance, user=request.user.pk)
             instance.save()
-            return JsonResponse(
-                {'status': 'success', 'message': 'Class detail deleted successfully.',
-                 'color': 'success'}, safe=False)
-        except:
-            return JsonResponse({'status': 'error'}, safe=False)
-    return JsonResponse({'status': 'error'}, safe=False)
-
-
-@login_required
-def get_standard_list_api(request):
-    objs = Standard.objects.filter(isDeleted=False, sessionID_id=request.session['current_session']['Id']).order_by(
-        'name')
-    data = []
-    for obj in objs:
-        if obj.section:
-            name = obj.name + ' - ' + obj.section
-        else:
-            name = obj.name
-        data_dic = {
-            'ID': obj.pk,
-            'Name': name
-
-        }
-        data.append(data_dic)
-    return JsonResponse(
-        {'status': 'success', 'data': data,
-         'color': 'success'}, safe=False)
+            delete_item_from_existing_cache('standard_list'+str(request.session['current_session']['Id']), id)
+            logger.info(f"Class detail deleted successfully {request.session['current_session']['Id']} class name {instance.name}")
+            return SuccessResponse("Class detail deleted successfully.").to_json_response()
+        except Exception as e:
+            logger.error(f"Error in delete_class: {e}")
+            return ErrorResponse("Error in deleting Class details").to_json_response()
+    else:
+        logger.error("Method not allowed")
+        return ErrorResponse("Method not allowed").to_json_response()        
 
 
 # subjects -----------------------------------
@@ -226,6 +275,12 @@ def add_subject(request):
             instance.name = subject_name
             pre_save_with_user.send(sender=Subjects, instance=instance, user=request.user.pk)
             instance.save()
+            new_item = {
+                'ID': instance.pk,
+                'Name': instance.name
+            }
+            # add a new item to the cache
+            add_item_to_existing_cache('subjects_list'+str(request.session['current_session']['Id']), new_item)
             return JsonResponse(
                 {'status': 'success', 'message': 'New subject created successfully.', 'color': 'success'},
                 safe=False)
@@ -282,6 +337,7 @@ def delete_subject(request):
                                             sessionID_id=request.session['current_session']['Id'])
             instance.isDeleted = True
             pre_save_with_user.send(sender=Subjects, instance=instance, user=request.user.pk)
+            delete_item_from_existing_cache("subjects_list"+str(request.session['current_session']['Id']), id)
             instance.save()
             return JsonResponse(
                 {'status': 'success', 'message': 'Subject detail deleted successfully.',
@@ -327,6 +383,11 @@ def edit_subject(request):
                 instance.name = subject_name
                 pre_save_with_user.send(sender=Subjects, instance=instance, user=request.user.pk)
                 instance.save()
+                new_data = {
+                    'ID': instance.pk,
+                'Name': instance.name
+                }
+                update_item_in_existing_cache("subjects_list"+str(request.session['current_session']['Id']), editID, new_data)
                 return JsonResponse(
                     {'status': 'success', 'message': 'Subject name updated successfully.', 'color': 'success'},
                     safe=False)
@@ -334,21 +395,6 @@ def edit_subject(request):
 
             return JsonResponse({'status': 'error'}, safe=False)
 
-
-@login_required
-def get_subjects_list_api(request):
-    objs = Subjects.objects.filter(isDeleted=False, sessionID_id=request.session['current_session']['Id']).order_by(
-        'name')
-    data = []
-    for obj in objs:
-        data_dic = {
-            'ID': obj.pk,
-            'Name': obj.name
-
-        }
-        data.append(data_dic)
-    return JsonResponse(
-        {'status': 'success', 'data': data, 'color': 'success'}, safe=False)
 
 
 # assign subjects to class------------------------------------------------------------------
@@ -819,23 +865,121 @@ def add_teacher_api(request):
 
                 instance.save()
 
-                try:
-                    g = Group.objects.get(name="Staff")
-                    g.user_set.add(new_user.pk)
-                    g.save()
-
-                except:
-                    g = Group()
-                    g.name = "Staff"
-                    g.save()
-                    g.user_set.add(new_user.pk)
-                    g.save()
+                # Handle group assignment more efficiently
+            try:
+                group, created = Group.objects.get_or_create(name=staffType)
+                if created:
+                    logger.info(f"Created new group: {staffType}")
+                
+                # Only add user to group if not already a member
+                if not group.user_set.filter(id=new_user.pk).exists():
+                    group.user_set.add(new_user.pk)
+                    logger.info(f"Added user {new_user.pk} to group {staffType}")
+            except Exception as e:
+                logger.error(f"Error handling group assignment: {e}")
+                # Continue with teacher update even if group assignment fails
             pre_save_with_user.send(sender=TeacherDetail, instance=instance, user=request.user.pk)
             instance.save()
             return JsonResponse(
                 {'status': 'success', 'message': 'New Teacher added successfully.', 'color': 'success'},
                 safe=False)
     return JsonResponse({'status': 'error'}, safe=False)
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def update_teacher_api(request):
+    if request.method == 'POST':
+        name = request.POST.get("name")
+        email = request.POST.get("email")
+        bloodGroup = request.POST.get("bloodGroup")
+        gender = request.POST.get("gender")
+        phone = request.POST.get("phone")
+        dob = request.POST.get("dob")
+        aadhar = request.POST.get("aadhar")
+        qualification = request.POST.get("qualification")
+        imageUpload = request.FILES.get("imageUpload")
+        address = request.POST.get("address")
+        city = request.POST.get("city")
+        state = request.POST.get("state")
+        country = request.POST.get("country")
+        pincode = request.POST.get("pincode")
+        addressP = request.POST.get("addressP")
+        cityP = request.POST.get("cityP")
+        stateP = request.POST.get("stateP")
+        countryP = request.POST.get("countryP")
+        pincodeP = request.POST.get("pincodeP")
+        empCode = request.POST.get("empCode")
+        staffType = request.POST.get("staffType")
+        doj = request.POST.get("doj")
+        salary = request.POST.get("salary")
+        additionalDetails = request.POST.get("additionalDetails")
+        id = request.POST.get("id")
+
+        try:
+            instance = TeacherDetail.objects.get(id=id, isDeleted=False,
+                                      sessionID_id=request.session['current_session']['Id'])
+            instance.name = name
+            instance.email = email
+            instance.bloodGroup = bloodGroup
+            instance.gender = gender
+            instance.dob = datetime.strptime(dob, '%d/%m/%Y')
+            instance.dateOfJoining = datetime.strptime(doj, '%d/%m/%Y')
+            instance.phoneNumber = phone
+            instance.aadhar = aadhar
+            instance.qualification = qualification
+            if imageUpload:
+                instance.photo = imageUpload
+            instance.presentAddress = address
+            instance.presentCity = city
+            instance.presentState = state
+            instance.presentCountry = country
+            instance.presentPinCode = pincode
+            instance.permanentAddress = addressP
+            instance.permanentCity = cityP
+            instance.permanentState = stateP
+            instance.permanentCountry = countryP
+            instance.permanentPinCode = pincodeP
+            instance.employeeCode = empCode
+            instance.staffType = staffType
+            instance.salary = salary
+            instance.additionalDetails = additionalDetails
+
+            user = User.objects.get(id=instance.userID_id)
+
+            # Handle group assignment more efficiently
+            try:
+                group, created = Group.objects.get_or_create(name=staffType)
+                if created:
+                    logger.info(f"Created new group: {staffType}")
+                
+                # Only add user to group if not already a member
+                if not group.user_set.filter(id=user.pk).exists():
+                    group.user_set.add(user.pk)
+                    logger.info(f"Added user {user.pk} to group {staffType}")
+            except Exception as e:
+                logger.error(f"Error handling group assignment: {e}")
+                # Continue with teacher update even if group assignment fails
+            pre_save_with_user.send(sender=TeacherDetail, instance=instance, user=request.user.pk)
+            instance.save()
+            logger.info("Teacher details updated successfully.")
+            return SuccessResponse(
+                    'Teacher details updated successfully.'
+                    ).to_json_response()
+        except TeacherDetail.DoesNotExist:
+            logger.info("Teacher details not found.")
+            return ErrorResponse(
+                    'Teacher details not found.'
+                    ).to_json_response()  
+        except Exception as e:
+            logger.error("Error updating teacher details: " + str(e))
+            return ErrorResponse(
+                    str(e)
+                    ).to_json_response()          
+    return ErrorResponse(
+            'Invalid request.'
+            ).to_json_response()
+
 
 
 class TeacherListJson(BaseDatatableView):
@@ -871,12 +1015,12 @@ class TeacherListJson(BaseDatatableView):
             action = '''<a href="/management/teacher_detail/{}/" data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button purple">
                 <i class="eye icon"></i>
               </a>
-            <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
+            <a href="/management/edit_teacher/{}/" data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
                 <i class="pen icon"></i>
-              </button>
+              </a>
               <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
                 <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk, item.pk, item.pk),
+              </button></td>'''.format(item.pk,item.pk, item.pk, item.pk, item.pk),
 
             json_data.append([
                 images,
@@ -946,135 +1090,131 @@ def get_teacher_list_api(request):
 @csrf_exempt
 @login_required
 def add_student_api(request):
-    if request.method == 'POST':
-        name = request.POST.get("name")
-        email = request.POST.get("email")
-        bloodGroup = request.POST.get("bloodGroup")
-        gender = request.POST.get("gender")
-        phone = request.POST.get("phone")
-        dob = request.POST.get("dob")
-        aadhar = request.POST.get("aadhar")
-        fname = request.POST.get("fname")
-        mname = request.POST.get("mname")
-        contactNumber = request.POST.get("contactNumber")
-        cEmail = request.POST.get("cEmail")
-        occupation = request.POST.get("occupation")
-        registrationCode = request.POST.get("registrationCode")
-        standard = request.POST.get("standard")
-        imageUpload = request.FILES["imageUpload"]
-        address = request.POST.get("address")
-        city = request.POST.get("city")
-        state = request.POST.get("state")
-        country = request.POST.get("country")
-        pincode = request.POST.get("pincode")
-        addressP = request.POST.get("addressP")
-        cityP = request.POST.get("cityP")
-        stateP = request.POST.get("stateP")
-        countryP = request.POST.get("countryP")
-        pincodeP = request.POST.get("pincodeP")
-        roll = request.POST.get("roll")
-        tuitionFee = request.POST.get("tuitionFee")
-        admissionFee = request.POST.get("admissionFee")
-        doj = request.POST.get("doj")
-        parent_id = ''
 
-        try:
-            parent_obj = Parent.objects.get(phoneNumber__icontains=contactNumber, isDeleted=False)
-            parent_id = parent_obj.pk
+    if request.method != 'POST':
+        return ErrorResponse("Method not allowed").to_json_response()
+
+    post_data = request.POST.dict()
+    files_data = request.FILES
 
 
-        except:
-            parent_obj = Parent()
-            parent_obj.fatherName = fname
-            parent_obj.motherName = mname
-            parent_obj.phoneNumber = contactNumber
-            parent_obj.email = cEmail
-            parent_obj.profession = occupation
-            pre_save_with_user.send(sender=Parent, instance=parent_obj, user=request.user.pk)
-            parent_obj.save()
-            parent_id = parent_obj.pk
+    # ---------- PARENT ----------
+    parent_obj, _ = Parent.objects.get_or_create(
+        fatherName = post_data.get("fname"),
+        motherName = post_data.get("mname"),
+        fatherOccupation = post_data.get("FatherOccupation"),
+        motherOccupation = post_data.get("MotherOccupation"),
+        fatherPhone = post_data.get("fatherContactNumber"),
+        motherPhone = post_data.get("MotherContactNumber"),
+        fatherAddress = post_data.get("FatherAddress"),
+        motherAddress = post_data.get("MotherAddress"),
+        guardianName = post_data.get("guardianName"),
+        guardianOccupation = post_data.get("guardianOccupation"),
+        guardianPhone = post_data.get("guardianPhoneNumber"),
+        familyType = post_data.get("familyType"),
+        totalFamilyMembers = float(post_data.get("numberOfMembers")) if post_data.get("numberOfMembers") else 0,
+        annualIncome = float(post_data.get("familyAnnualIncome")) if post_data.get("familyAnnualIncome") else 0,
+        phoneNumber = post_data.get("parentsPhoneNumber"),
+        fatherEmail = post_data.get("fatherEmail"),
+        motherEmail = post_data.get("motherEmail"),
+        isDeleted = False,
+        defaults={}
+    )
 
-        try:
-            Student.objects.get(registrationCode__iexact=registrationCode, isDeleted=False,
-                                sessionID_id=request.session['current_session']['Id'])
-            return JsonResponse(
-                {'status': 'success', 'message': 'Student already exists. Please change the name.', 'color': 'info'},
-                safe=False)
+    pre_save_with_user.send(sender=Parent, instance=parent_obj, user=request.user.pk)
+    parent_obj.save()
 
-        except:
-            instance = Student()
-            instance.parentID_id = parent_id
-            instance.name = name
-            instance.email = email
-            instance.bloodGroup = bloodGroup
-            instance.gender = gender
-            instance.dob = datetime.strptime(dob, '%d/%m/%Y')
-            instance.dateOfJoining = datetime.strptime(doj, '%d/%m/%Y')
-            instance.phoneNumber = phone
-            instance.aadhar = aadhar
-            instance.photo = imageUpload
-            instance.presentAddress = address
-            instance.presentCity = city
-            instance.presentState = state
-            instance.presentCountry = country
-            instance.presentPinCode = pincode
-            instance.permanentAddress = addressP
-            instance.permanentCity = cityP
-            instance.permanentState = stateP
-            instance.permanentCountry = countryP
-            instance.permanentPinCode = pincodeP
-            instance.registrationCode = registrationCode
-            instance.standardID_id = int(standard)
-            try:
-                instance.roll = float(roll)
 
-            except:
-                pass
+    # ---------- STUDENT EXIST CHECK ----------
+    if Student.objects.filter(
+        registrationCode__iexact = post_data.get("registrationCode"),
+        sessionID_id = request.session['current_session']['Id'],
+        isDeleted = False
+    ).exists():
+        return JsonResponse(
+            {'status': 'success', 'message': 'Student already exists.', 'color': 'info'},
+            safe=False
+        )
 
-            try:
-                instance.tuitionFee = float(tuitionFee)
-            except:
-                pass
 
-            try:
-                instance.admissionFee = float(admissionFee)
-            except:
-                pass
 
-            username = 'STU' + get_random_string(length=5, allowed_chars='1234567890')
-            password = get_random_string(length=8, allowed_chars='1234567890')
-            while User.objects.select_related().filter(username__exact=username).count() > 0:
-                username = 'STU' + get_random_string(length=5, allowed_chars='1234567890')
-            else:
-                new_user = User()
-                new_user.username = username
-                new_user.set_password(password)
+    # ---------- STUDENT CREATION ----------
+    student_obj = Student.objects.create(
+        registrationCode = post_data.get("registrationCode"),
+        name = post_data.get("name"),
+        email = post_data.get("email"),
+        phoneNumber = post_data.get("phone"),
+        bloodGroup = post_data.get("bloodGroup"),
+        gender = post_data.get("gender"),
+        aadhar = post_data.get("aadhar"),
+        idMark = post_data.get("idMark"),
+        penNumber = post_data.get("penNumber"),
+        caste = post_data.get("caste"),
+        tribe = post_data.get("tribe"),
+        religion = post_data.get("religion"),
+        motherTongue = post_data.get("motherTongue"),
+        otherLanguages = post_data.get("otherLanguages"),
+        hobbies = post_data.get("hobbies"),
+        aimInLife = post_data.get("aimInLife"),
+        milOption = post_data.get("milOptions"),
 
-                new_user.save()
-                instance.username = username
-                instance.password = password
-                instance.userID_id = new_user.pk
+        familyCode = post_data.get("familyCode"),
+        siblingsCount = int(post_data.get("siblings")) if post_data.get("siblings") else 0,
+        roll = post_data.get("roll"),
 
-                instance.save()
+        # Previous School
+        lastSchoolName = post_data.get("previousSchoolName"),
+        lastSchoolAddress = post_data.get("previousSchoolAddress"),
+        lastClass = post_data.get("previousSchoolClass"),
+        lastResult = post_data.get("previousSchoolResult"),
+        lastDivision = post_data.get("previousSchoolDivision"),
+        lastRollNo = post_data.get("previousSchoolRollNumber"),
 
-                try:
-                    g = Group.objects.get(name="Student")
-                    g.user_set.add(new_user.pk)
-                    g.save()
+        # Fees
+        admissionFee = float(post_data.get("admissionFee")) if post_data.get("admissionFee") else 0,
+        tuitionFee = float(post_data.get("tuitionFee")) if post_data.get("tuitionFee") else 0,
+        miscFee = float(post_data.get("miscFee")) if post_data.get("miscFee") else 0,
+        totalFee = float(post_data.get("totalFee")) if post_data.get("totalFee") else 0,
 
-                except:
-                    g = Group()
-                    g.name = "Student"
-                    g.save()
-                    g.user_set.add(new_user.pk)
-                    g.save()
-            pre_save_with_user.send(sender=Student, instance=instance, user=request.user.pk)
-            instance.save()
-            return JsonResponse(
-                {'status': 'success', 'message': 'New Student added successfully.', 'color': 'success'},
-                safe=False)
-    return JsonResponse({'status': 'error'}, safe=False)
+        # Foreign keys
+        standardID_id = post_data.get("standard"),
+        parentID = parent_obj,
+        schoolID_id = request.session['current_session']['SchoolID'],
+        sessionID_id = request.session['current_session']['Id'],
 
+        isDeleted = False,
+    )
+
+    # ---------- DATE HANDLING ----------
+    if post_data.get("dob"):
+        student_obj.dob = datetime.strptime(post_data["dob"], "%d/%m/%Y")
+
+    if post_data.get("doj"):
+        student_obj.dateOfJoining = datetime.strptime(post_data["doj"], "%d/%m/%Y")
+
+    # ---------- IMAGE ----------
+    if "imageUpload" in files_data:
+        student_obj.photo = files_data["imageUpload"]
+
+    # ---------- USER ----------
+    username = 'STU' + get_random_string(5, '1234567890')
+    password = get_random_string(8, '1234567890')
+
+    new_user = User.objects.create_user(username=username, password=password)
+    student_obj.username = username
+    student_obj.password = password
+    student_obj.userID = new_user
+
+    # ---------- FINAL SAVE ----------
+    pre_save_with_user.send(sender=Student, instance=student_obj, user=request.user.pk)
+    student_obj.save()
+
+    Group.objects.get_or_create(name="Student")[0].user_set.add(new_user)
+
+    return SuccessResponse(
+        "New Student added successfully.",
+        data={'status': 'success', 'message': 'New Student added successfully.', 'color': 'success'},
+    ).to_json_response()
 
 @login_required
 def get_student_list_by_class_api(request):
@@ -1132,12 +1272,12 @@ class StudentListJson(BaseDatatableView):
             action = '''<a href="/management/student_detail/{}/" data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button purple">
                 <i class="eye icon"></i>
               </a>
-            <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
+            <a href="/management/edit_student/{}/" data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
                 <i class="pen icon"></i>
-              </button>
+              </a>
               <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
                 <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk, item.pk, item.pk),
+              </button></td>'''.format(item.pk, item.pk,item.pk, item.pk, item.pk),
             if item.standardID.section:
                 standard = item.standardID.name + ' - ' + item.standardID.section
             else:
@@ -1183,6 +1323,129 @@ def delete_student(request):
             return JsonResponse({'status': 'error'}, safe=False)
     return JsonResponse({'status': 'error'}, safe=False)
 
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def edit_student_api(request):
+    try:
+
+        if request.method != 'POST':
+            return ErrorResponse("Method not allowed").to_json_response()
+
+        post_data = request.POST.dict()
+        files_data = request.FILES
+
+
+        # ---------- PARENT ----------
+        parent_obj, _ = Parent.objects.get_or_create(
+            fatherName = post_data.get("fname"),
+            motherName = post_data.get("mname"),
+            fatherOccupation = post_data.get("FatherOccupation"),
+            motherOccupation = post_data.get("MotherOccupation"),
+            fatherPhone = post_data.get("fatherContactNumber"),
+            motherPhone = post_data.get("MotherContactNumber"),
+            fatherAddress = post_data.get("FatherAddresx₹s"),
+            motherAddress = post_data.get("MotherAddress"),
+            guardianName = post_data.get("guardianName"),
+            guardianOccupation = post_data.get("guardianOccupation"),
+            guardianPhone = post_data.get("guardianPhoneNumber"),
+            familyType = post_data.get("familyType"),
+            totalFamilyMembers = float(post_data.get("numberOfMembers")) if post_data.get("numberOfMembers") else 0,
+            annualIncome = float(post_data.get("familyAnnualIncome")) if post_data.get("familyAnnualIncome") else 0,
+            phoneNumber = post_data.get("parentsPhoneNumber"),
+            isDeleted = False,
+            fatherEmail = post_data.get("fatherEmail"),
+            motherEmail = post_data.get("motherEmail"),
+            defaults={}
+        )
+
+        pre_save_with_user.send(sender=Parent, instance=parent_obj, user=request.user.pk)
+        parent_obj.save()
+
+
+        # ---------- STUDENT EXIST CHECK ----------
+        if Student.objects.filter(
+            registrationCode__iexact = post_data.get("registrationCode"),
+            sessionID_id = request.session['current_session']['Id'],
+            isDeleted = False
+        ).exclude(pk = post_data.get("editID")).exists():
+            return JsonResponse(
+                {'status': 'success', 'message': 'Student already exists.', 'color': 'info'},
+                safe=False
+            )
+
+
+
+        # ---------- STUDENT UPDATE ----------
+        student_obj = Student.objects.get(pk=post_data.get("editID"))
+        student_obj.registrationCode = post_data.get("registrationCode")
+        student_obj.name = post_data.get("name")
+        student_obj.email = post_data.get("email")
+        student_obj.phoneNumber = post_data.get("phone")
+        student_obj.bloodGroup = post_data.get("bloodGroup")
+        student_obj.gender = post_data.get("gender")
+        student_obj.aadhar = post_data.get("aadhar")
+        student_obj.idMark = post_data.get("idMark")
+        student_obj.penNumber = post_data.get("penNumber")
+        student_obj.caste = post_data.get("caste")
+        student_obj.tribe = post_data.get("tribe")
+        student_obj.religion = post_data.get("religion")
+        student_obj.motherTongue = post_data.get("motherTongue")
+        student_obj.otherLanguages = post_data.get("otherLanguages")
+        student_obj.hobbies = post_data.get("hobbies")
+        student_obj.aimInLife = post_data.get("aimInLife")
+        student_obj.milOption = post_data.get("milOptions")
+
+        student_obj.familyCode = post_data.get("familyCode")
+        student_obj.siblingsCount = int(post_data.get("siblings")) if post_data.get("siblings") else 0
+        student_obj.roll = post_data.get("roll")
+
+        # Previous School
+        student_obj.lastSchoolName = post_data.get("previousSchoolName")
+        student_obj.lastSchoolAddress = post_data.get("previousSchoolAddress")
+        student_obj.lastClass = post_data.get("previousSchoolClass")
+        student_obj.lastResult = post_data.get("previousSchoolResult")
+        student_obj.lastDivision = post_data.get("previousSchoolDivision")
+        student_obj.lastRollNo = post_data.get("previousSchoolRollNumber")
+
+        # Fees
+        student_obj.admissionFee = float(post_data.get("admissionFee")) if post_data.get("admissionFee") else 0
+        student_obj.tuitionFee = float(post_data.get("tuitionFee")) if post_data.get("tuitionFee") else 0
+        student_obj.miscFee = float(post_data.get("miscFee")) if post_data.get("miscFee") else 0
+        student_obj.totalFee = float(post_data.get("totalFee")) if post_data.get("totalFee") else 0
+
+        # Foreign keys
+        student_obj.standardID_id = post_data.get("standard")
+        student_obj.parentID = parent_obj
+        student_obj.schoolID_id = request.session['current_session']['SchoolID']
+        student_obj.sessionID_id = request.session['current_session']['Id']
+
+        student_obj.isDeleted = False
+
+        # ---------- DATE HANDLING ----------
+        if post_data.get("dob"):
+            student_obj.dob = datetime.strptime(post_data["dob"], "%d/%m/%Y")
+
+        if post_data.get("doj"):
+            student_obj.dateOfJoining = datetime.strptime(post_data["doj"], "%d/%m/%Y")
+
+        # ---------- IMAGE ----------
+        if "imageUpload" in files_data:
+            student_obj.photo = files_data["imageUpload"]
+
+        # ---------- FINAL SAVE ----------
+        pre_save_with_user.send(sender=Student, instance=student_obj, user=request.user.pk)
+        student_obj.save()
+
+        logger.info("Student details updated successfully.")
+        return SuccessResponse(
+            "Student details updated successfully.",
+            data={'status': 'success', 'message': 'Student details updated successfully.', 'color': 'success'},
+        ).to_json_response()
+    except Exception as e:
+        logger.error(f"Error in updating student details: {str(e)}")
+        return ErrorResponse(str(e)).to_json_response()
 
 # ---------------------Exam -------------------------------------------------
 @transaction.atomic
@@ -2520,3 +2783,12 @@ class StudentMarksDetailsByClassAndExamJson(BaseDatatableView):
 
             ] + marks)
         return json_data
+
+
+# Events ------------------------------------------------------
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_event_api(request):
+    if request.method == 'POST':
+        return JsonResponse({'status': 'success', 'message': 'Event added successfully.', 'color': 'success'}, safe=False)

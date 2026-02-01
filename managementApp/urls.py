@@ -13,6 +13,7 @@ urlpatterns = [
 
     # Teacher
     path('add_teacher/', add_teacher, name='add_teacher'),
+    path('edit_teacher/<int:id>/', edit_teacher, name='edit_teacher'),
     path('teacher_list/', teacher_list, name='teacher_list'),
     path('teacher_detail/<int:id>/', teacher_detail, name='teacher_detail'),
 
@@ -20,6 +21,7 @@ urlpatterns = [
     path('add_student/', add_student, name='add_student'),
     path('student_list/', student_list, name='student_list'),
     path('student_detail/<int:id>/', student_detail, name='student_detail'),
+    path('edit_student/<int:id>/', edit_student_detail, name='edit_student_detail'),
 
     # Exams
     path('manage_exams/', manage_exams, name='manage_exams'),
@@ -38,5 +40,9 @@ urlpatterns = [
     #marks
     path('student_marks/', student_marks, name='student_marks'),
     path('exam_marks_details/', exam_marks_details, name='exam_marks_details'),
+
+    #events
+    path('add_event/', add_event, name='add_event'),
+    # path('event_list/', event_list, name='event_list'),
 
 ]

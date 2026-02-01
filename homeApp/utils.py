@@ -8,7 +8,12 @@ def init_session(func):
         current = SchoolSession.objects.get(isCurrent__exact=True, isDeleted=False)
         session_data = {
             'currentSessionYear': current.sessionYear,
-            'Id': current.pk
+            'Id': current.pk,
+            'SchoolID': current.schoolID_id,
+            'SchoolName': current.schoolID.schoolName,
+            'SchoolLogo': current.schoolID.logo.url if current.schoolID.logo else None,
+
+
         }
         request.session['current_session'] = session_data
         # Call the decorated function
@@ -47,3 +52,7 @@ def get_all_session_list(request):
         }
         session_list.append(session_data)
     request.session['session_list'] = session_list
+
+
+def get_user_school_id(request):
+    return request.user.schoolID_id

@@ -1,3 +1,9 @@
-.idea
+.idea/
 creds
 __pycache__
+.venv
+migrations/
+.vscode/
+logs/
+db.sqlite3
+

@@ -168,6 +168,7 @@ class AssignSubjectsToTeacher(models.Model):
 
 
 class Parent(models.Model):
+    # ================= EXISTING FIELDS (UNCHANGED) =================
     fatherName = models.CharField(max_length=500, blank=True, null=True)
     motherName = models.CharField(max_length=500, blank=True, null=True)
     email = models.CharField(max_length=500, blank=True, null=True)
@@ -180,14 +181,45 @@ class Parent(models.Model):
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
 
+    # ================= NEW FIELDS (FROM PDF) =================
+    fatherOccupation = models.CharField(max_length=500, blank=True, null=True)
+    motherOccupation = models.CharField(max_length=500, blank=True, null=True)
+
+    fatherAddress = models.TextField(blank=True, null=True)
+    motherAddress = models.TextField(blank=True, null=True)
+
+    fatherPhone = models.CharField(max_length=20, blank=True, null=True)
+    motherPhone = models.CharField(max_length=20, blank=True, null=True)
+
+    guardianName = models.CharField(max_length=500, blank=True, null=True)
+    guardianOccupation = models.CharField(max_length=500, blank=True, null=True)
+    guardianPhone = models.CharField(max_length=20, blank=True, null=True)
+
+    fatherEmail = models.CharField(max_length=500, blank=True, null=True)
+    motherEmail = models.CharField(max_length=500, blank=True, null=True)
+    # ================= NEW FIELDS (FROM PDF) =================
+    familyType = models.CharField(
+        max_length=50,
+        choices=[
+            ('Single Parent', 'Single Parent'),
+            ('Nuclear Family', 'Nuclear Family'),
+            ('Joint Family', 'Joint Family'),
+        ],
+        blank=True,
+        null=True
+    )
+
+    totalFamilyMembers = models.PositiveIntegerField(blank=True, null=True)
+    annualIncome = models.FloatField(default=0.0)
+
     def __str__(self):
         return self.fatherName + ' - ' + self.sessionID.sessionYear
 
     class Meta:
         verbose_name_plural = 'j)Parent Details'
 
-
 class Student(models.Model):
+    # ================= EXISTING FIELDS (UNCHANGED) =================
     sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
     schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
     parentID = models.ForeignKey(Parent, blank=True, null=True, on_delete=models.CASCADE)
@@ -211,13 +243,15 @@ class Student(models.Model):
     permanentCountry = models.CharField(max_length=500, blank=True, null=True)
     phoneNumber = models.CharField(max_length=15, blank=True, null=True)
     email = models.CharField(max_length=500, blank=True, null=True)
-    photo = StdImageField(upload_to=UPLOAD_TO_PATTERNS,
-                          variations={
-                              'thumbnail': (100, 100, True),
-                              'medium': (250, 250),
-                          },
-                          delete_orphans=True,
-                          blank=True, )
+    photo = StdImageField(
+        upload_to=UPLOAD_TO_PATTERNS,
+        variations={
+            'thumbnail': (100, 100, True),
+            'medium': (250, 250),
+        },
+        delete_orphans=True,
+        blank=True,
+    )
     username = models.CharField(max_length=500, blank=True, null=True)
     password = models.CharField(max_length=500, blank=True, null=True)
     userID = models.ForeignKey(User, blank=True, null=True, on_delete=models.CASCADE)
@@ -231,6 +265,52 @@ class Student(models.Model):
     tuitionFee = models.FloatField(default=0.0)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+
+    # ================= NEW FIELDS (FROM PDF) =================
+    idMark = models.CharField(max_length=500, blank=True, null=True)
+
+    caste = models.CharField(
+        max_length=50,
+        choices=[('ST','ST'),('SC','SC'),('GEN','GEN'),('OBC','OBC'),('OTH','OTH')],
+        blank=True,
+        null=True
+    )
+    languageKnown = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Languages known by the student (comma separated)"
+    )
+    tribe = models.CharField(max_length=500, blank=True, null=True)
+    religion = models.CharField(max_length=500, blank=True, null=True)
+
+    penNumber = models.CharField(max_length=100, blank=True, null=True)
+
+    isStayingWithParents = models.BooleanField(default=True)
+
+    lastSchoolName = models.CharField(max_length=500, blank=True, null=True)
+    lastSchoolAddress = models.TextField(blank=True, null=True)
+    lastClass = models.CharField(max_length=100, blank=True, null=True)
+    lastResult = models.CharField(
+        max_length=10,
+        choices=[('PASS','PASS'),('FAIL','FAIL')],
+        blank=True,
+        null=True
+    )
+    lastDivision = models.CharField(max_length=100, blank=True, null=True)
+    lastRollNo = models.CharField(max_length=100, blank=True, null=True)
+
+    motherTongue = models.CharField(max_length=200, blank=True, null=True)
+    otherLanguages = models.TextField(blank=True, null=True)
+    hobbies = models.TextField(blank=True, null=True)
+    aimInLife = models.TextField(blank=True, null=True)
+    milOption = models.CharField(max_length=500, blank=True, null=True)
+
+    familyCode = models.CharField(max_length=200, blank=True, null=True)
+    siblingsCount = models.PositiveIntegerField(default=0)
+
+    januaryTuitionFee = models.FloatField(default=0.0)
+    miscFee = models.FloatField(default=0.0)
+    totalFee = models.FloatField(default=0.0)
 
     def __str__(self):
         return self.name

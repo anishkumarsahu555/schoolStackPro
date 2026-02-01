@@ -1,166 +1,134 @@
 {% extends 'homeApp/base.html' %}
 
 {% block sidebar %}
-    <div class="item">
-        <div class="header">General</div>
-        <div class="menu">
-            <a class="item" href="{% url 'managementApp:admin_home' %}">
-                <div>
-                    <i class="tachometer alternate icon"></i>
-                    Dashboard
-                </div>
-            </a>
-        </div>
+<div class="material-sidenav">
+
+    <!-- BRAND -->
+    <div class="sidenav-header">
+        <span class="app-name">School Admin</span>
     </div>
 
-    <div class="item">
-        <div class="header">
-            Classes
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'managementApp:manage_class' %}">
-                <div><i class="chalkboard icon"></i>Manage Class</div>
-            </a>
+    <!-- GENERAL -->
+    <div class="nav-section">General</div>
+    <a class="nav-item {% if request.resolver_match.url_name == 'admin_home' %}active{% endif %}"
+       href="{% url 'managementApp:admin_home' %}">
+        <i class="tachometer alternate icon"></i>
+        <span>Dashboard</span>
+    </a>
 
-        </div>
-    </div>
-    <div class="item">
-        <div class="header">
-            Manage Teachers
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'managementApp:add_teacher' %}">
-                <div><i class="chalkboard teacher icon"></i>Add Teacher</div>
-            </a>
-            <a class="item" href="{% url 'managementApp:teacher_list' %}">
-                <div><i class="list alternate outline icon"></i></i>Teacher List</div>
-            </a>
+    <!-- CLASSES -->
+    <div class="nav-section">Classes</div>
+    <a class="nav-item" href="{% url 'managementApp:manage_class' %}">
+        <i class="chalkboard icon"></i>
+        <span>Manage Classes</span>
+    </a>
 
-        </div>
-    </div>
+    <!-- TEACHERS -->
+    <div class="nav-section">Teachers</div>
+    <a class="nav-item" href="{% url 'managementApp:add_teacher' %}">
+        <i class="chalkboard teacher icon"></i>
+        <span>Add Teacher</span>
+    </a>
+    <a class="nav-item" href="{% url 'managementApp:teacher_list' %}">
+        <i class="list alternate outline icon"></i>
+        <span>Teacher List</span>
+    </a>
 
-    <div class="item">
-        <div class="header">
-            Manage Subjects
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'managementApp:manage_subjects' %}">
-                <div><i class="book icon"></i>Add Subjects</div>
-            </a>
-            <a class="item" href="{% url 'managementApp:assign_subjects_to_class' %}">
-                <div><i class="linkify icon"></i>Assign Subjects To Class</div>
-            </a>
-            <a class="item" href="{% url 'managementApp:assign_subjects_to_teacher' %}">
-                <div><i class="linkify icon"></i>Assign Subjects to Teacher</div>
-            </a>
+    <!-- SUBJECTS -->
+    <div class="nav-section">Subjects</div>
+    <a class="nav-item" href="{% url 'managementApp:manage_subjects' %}">
+        <i class="book icon"></i>
+        <span>Add Subjects</span>
+    </a>
+    <a class="nav-item" href="{% url 'managementApp:assign_subjects_to_class' %}">
+        <i class="linkify icon"></i>
+        <span>Assign to Class</span>
+    </a>
+    <a class="nav-item" href="{% url 'managementApp:assign_subjects_to_teacher' %}">
+        <i class="linkify icon"></i>
+        <span>Assign to Teacher</span>
+    </a>
 
-        </div>
-    </div>
+    <!-- STUDENTS -->
+    <div class="nav-section">Students</div>
+    <a class="nav-item" href="{% url 'managementApp:add_student' %}">
+        <i class="users icon"></i>
+        <span>Add Student</span>
+    </a>
+    <a class="nav-item" href="{% url 'managementApp:student_list' %}">
+        <i class="list alternate outline icon"></i>
+        <span>Student List</span>
+    </a>
 
+    <!-- PARENTS -->
+    <div class="nav-section">Parents</div>
+    <a class="nav-item" href="#">
+        <i class="users icon"></i>
+        <span>Parents List</span>
+    </a>
 
+    <!-- ATTENDANCE -->
+    <div class="nav-section">Attendance</div>
+    <a class="nav-item" href="{% url 'managementApp:student_attendance' %}">
+        <i class="tasks icon"></i>
+        <span>Add Student Attendance</span>
+    </a>
+    <a class="nav-item" href="{% url 'managementApp:student_attendance_history' %}">
+        <i class="list alternate outline icon"></i>
+        <span>Student Attendance History</span>
+    </a>
+    <a class="nav-item" href="{% url 'managementApp:staff_attendance' %}">
+        <i class="tasks icon"></i>
+        <span>Add Staff Attendance</span>
+    </a>
+    <a class="nav-item" href="{% url 'managementApp:staff_attendance_history' %}">
+        <i class="list alternate outline icon"></i>
+        <span>Staff Attendance History</span>
+    </a>
 
-    <div class="item">
-        <div class="header">
-            Manage Students
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'managementApp:add_student' %}">
-                <div><i class="users icon"></i>Add Student</div>
-            </a>
-            <a class="item" href="{% url 'managementApp:student_list' %}">
-                <div><i class="list alternate outline icon"></i>Students List</div>
-            </a>
+    <!-- FEES -->
+    <div class="nav-section">Fees</div>
+    <a class="nav-item" href="{% url 'managementApp:student_fee' %}">
+        <i class="hand holding usd icon"></i>
+        <span>Add Fees</span>
+    </a>
+    <a class="nav-item" href="{% url 'managementApp:student_fee_details' %}">
+        <i class="list alternate outline icon"></i>
+        <span>Fee Details</span>
+    </a>
 
-        </div>
-    </div>
+    <!-- EXAMS -->
+    <div class="nav-section">Exams</div>
+    <a class="nav-item" href="{% url 'managementApp:manage_exams' %}">
+        <i class="clipboard outline icon"></i>
+        <span>Add Exam</span>
+    </a>
+    <a class="nav-item" href="{% url 'managementApp:assign_exams_to_class' %}">
+        <i class="linkify icon"></i>
+        <span>Assign Exam to Class</span>
+    </a>
 
-    <div class="item">
-        <div class="header">
-            Manage Parents
-        </div>
-        <div class="menu">
-            <a class="item" href="#">
-                <div><i class="list alternate outline icon"></i>Parents List</div>
-            </a>
+    <!-- MARKS -->
+    <div class="nav-section">Marks</div>
+    <a class="nav-item" href="{% url 'managementApp:student_marks' %}">
+        <i class="edit outline icon"></i>
+        <span>Add Marks</span>
+    </a>
+    <a class="nav-item" href="{% url 'managementApp:exam_marks_details' %}">
+        <i class="list alternate outline icon"></i>
+        <span>Marks Details</span>
+    </a>
 
-        </div>
-    </div>
+    <!-- EVENTS -->
+    <div class="nav-section">Events</div>
+    <a class="nav-item" href="{% url 'managementApp:add_event' %}">
+        <i class="calendar plus outline icon"></i>
+        <span>Add Event</span>
+    </a>
+    <a class="nav-item" href="#">
+        <i class="list alternate outline icon"></i>
+        <span>Events List</span>
+    </a>
 
-    <div class="item">
-        <div class="header">
-            Manage Attendance
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'managementApp:student_attendance' %}">
-                <div><i class="tasks icon"></i>Add Student Attendance</div>
-            </a>
-            <a class="item" href="{% url 'managementApp:student_attendance_history' %}">
-                <div><i class="list alternate outline icon"></i>Student Attendance Details</div>
-            </a>
-            <a class="item" href="{% url 'managementApp:staff_attendance' %}">
-                <div><i class="list alternate outline icon"></i>Add Staff Attendance</div>
-            </a>  <a class="item" href="{% url 'managementApp:staff_attendance_history' %}">
-                <div><i class="list alternate outline icon"></i>Staff Attendance History</div>
-            </a>
-
-        </div>
-    </div>
-
-    <div class="item">
-        <div class="header">
-            Manage Fee
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'managementApp:student_fee' %}">
-                <div><i class="hand holding usd icon"></i>Add Fees</div>
-            </a>
-            <a class="item" href="{% url 'managementApp:student_fee_details' %}">
-                <div><i class="list alternate outline icon"></i>Fee Details</div>
-            </a>
-
-        </div>
-    </div>
-    <div class="item">
-        <div class="header">
-            Manage Exams
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'managementApp:manage_exams' %}">
-                <div><i class="clipboard outline icon"></i></i>Add Exam</div>
-            </a>
-            <a class="item" href="{% url 'managementApp:assign_exams_to_class' %}">
-                <div><i class="linkify icon"></i>Assign Exam to Class</div>
-            </a>
-
-        </div>
-    </div>
-    <div class="item">
-        <div class="header">
-            Manage Marks
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'managementApp:student_marks' %}">
-                <div><i class="edit outline icon"></i>Add Marks</div>
-            </a>
-            <a class="item" href="{% url 'managementApp:exam_marks_details' %}">
-                <div><i class="list alternate outline icon"></i>Marks Details</div>
-            </a>
-
-        </div>
-    </div>
-    <div class="item">
-        <div class="header">
-            Manage Events
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'managementApp:add_teacher' %}">
-                <div><i class="calendar plus outline icon"></i>Add Event</div>
-            </a>
-            <a class="item" href="#">
-                <div><i class="list alternate outline icon"></i>Events List</div>
-            </a>
-
-        </div>
-    </div>
-
+</div>
 {% endblock %}

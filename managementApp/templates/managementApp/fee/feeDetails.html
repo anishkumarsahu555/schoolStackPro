@@ -198,7 +198,7 @@
 
             $.ajax({
                 type: 'get',
-                url: "{% url 'managementAppAPI:get_standard_list_api' %}",
+                url: "{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}",
 
                 success: function (response) {
 

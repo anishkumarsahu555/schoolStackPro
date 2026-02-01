@@ -1,7 +1,7 @@
 {% extends 'managementApp/index.html' %}
 {% load static %}
 {% block title %}
-    <title>Add Student</title>
+    <title>Edit Student</title>
 {% endblock %}
 {% block css %}
 {% endblock %}
@@ -11,7 +11,7 @@
         <div class="sixteen wide column">
             <div class="ui  pointing secondary menu">
                 <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Add Student
+                >Edit Student
                 </div>
                 {% comment %} <div style=" position: absolute;right: 1.5rem;top: 18px;">
                     <button class="ui green mini plus button right" onclick="showClassModal()">
@@ -61,7 +61,8 @@
                                         </div>
                                         <div class="avatar-preview">
                                             <div id="cImg"
-                                                 style="background-image: url({% static 'images/add_photo.svg' %});">
+                                            style="background-image: url({% if instance.photo.thumbnail.url %}{{ instance.photo.thumbnail.url }}{% else %}{% static 'images/add_photo.svg' %}{% endif %});">
+
                                             </div>
                                         </div>
                                     </div>
@@ -80,19 +81,19 @@
                         <div class="field required">
                             <label>Name</label>
                             <div class="ui input">
-                                <input type="text" name="name" id="name" placeholder="Name">
+                                <input type="text" name="name" id="name" placeholder="Name" value="{{instance.name}}">
                             </div>
                         </div>
                         <div class="field">
                             <label>Email</label>
                             <div class="ui input">
-                                <input type="text" name="email" id="email" placeholder="Email">
+                                <input type="text" name="email" id="email" placeholder="Email" value="{{instance.email}}">
                             </div>
                         </div>
                         <div class="field required">
                             <label>Phone Number</label>
                             <div class="ui input">
-                                <input type="number" name="phone" id="phone" placeholder="Phone Number">
+                                <input type="number" name="phone" id="phone" placeholder="Phone Number" value="{{instance.phoneNumber}}">
                             </div>
                         </div>
                     </div>
@@ -127,7 +128,7 @@
                             <div class="ui calendar" id="dobCal">
                                 <div class="ui input left icon">
                                     <i class="calendar icon"></i>
-                                    <input type="text" placeholder="Date of birth" id="dob">
+                                    <input type="text" placeholder="Date of birth" id="dob" value={{instance.dob}}>
                                 </div>
                             </div>
                         </div>
@@ -136,19 +137,19 @@
                         <div class="field required">
                             <label>Aadhar Number</label>
                             <div class="ui input">
-                                <input type="number" name="aadhar" id="aadhar" placeholder="Aadhar Number">
+                                <input type="number" name="aadhar" id="aadhar" placeholder="Aadhar Number" value="{{instance.aadhar}}">
                             </div>
                         </div>
                         <div class="field ">
                             <label>Identity Mark</label>
                             <div class="ui input">
-                                <input type="text" name="idMark" id="idMark" placeholder="Identity Mark">
+                                <input type="text" name="idMark" id="idMark" placeholder="Identity Mark" value="{{instance.idMark}}">
                             </div>
                         </div>
                         <div class="field">
                             <label>PEN Number</label>
                             <div class="ui input">
-                                <input type="text" name="penNumber" id="penNumber" placeholder="PEN Number">
+                                <input type="text" name="penNumber" id="penNumber" placeholder="PEN Number" value="{{instance.penNumber}}">
                             </div>
                         </div>
                         
@@ -172,13 +173,13 @@
                         <div class="field ">
                             <label>Tribe</label>
                             <div class="ui input">
-                                <input type="text" name="tribe" id="tribe" placeholder="Tribe">
+                                <input type="text" name="tribe" id="tribe" placeholder="Tribe" value="{{instance.tribe}}">
                             </div>
                         </div>
                         <div class="field">
                             <label>Religion</label>
                             <div class="ui input">
-                                <input type="text" name="religion" id="religion" placeholder="Religion">
+                                <input type="text" name="religion" id="religion" placeholder="Religion" value="{{instance.religion}}">
                             </div>
                         </div>
                             
@@ -201,13 +202,13 @@
                         <div class="field">
                             <label>Number of Members</label>
                             <div class="ui input">
-                                <input type="number" name="numberOfMembers" id="numberOfMembers" placeholder="Number of Members" value="0">
+                                <input type="number" name="numberOfMembers" id="numberOfMembers" placeholder="Number of Members" value="{{instance.parentID.totalFamilyMembers}}">
                             </div>
                         </div>
                         <div class="field">
                             <label>Family Annual Income</label>
                             <div class="ui input">
-                                <input type="number" name="familyAnnualIncome" id="familyAnnualIncome" placeholder="Family Annual Income" value="0">
+                                <input type="number" name="familyAnnualIncome" id="familyAnnualIncome" placeholder="Family Annual Income" value="{{instance.parentID.annualIncome}}">
                             </div>
                         </div>
                     </div>
@@ -216,20 +217,19 @@
                         <div class="field required">
                             <label>Father Name</label>
                             <div class="ui input">
-                                <input type="text" name="fname" id="fname" placeholder="Father Name">
+                                <input type="text" name="fname" id="fname" placeholder="Father Name" value="{{instance.parentID.fatherName}}">
                             </div>
                         </div>
                         <div class="field required">
                             <label>Father Occupation</label>
                             <div class="ui input">
-                                <input type="text" name="FatherOccupation" id="FatherOccupation" placeholder="Father Occupation">
+                                <input type="text" name="FatherOccupation" id="FatherOccupation" placeholder="Father Occupation" value="{{instance.parentID.fatherOccupation}}">
                             </div>
                         </div>
                         <div class="field required">
                             <label>Father Contact Number</label>
                             <div class="ui input">
-                                <input type="number" name="fatherContactNumber" id="fatherContactNumber"
-                                       placeholder="Father Contact Number">
+                                <input type="number" name="fatherContactNumber" id="fatherContactNumber" placeholder="Father Contact Number" value="{{ instance.parentID.fatherPhone}}">
                             </div>
                         </div>
                     </div>
@@ -237,13 +237,13 @@
                         <div class="field">
                             <label>Father Address</label>
                             <div class="ui input">
-                                <input type="text" name="FatherAddress" id="FatherAddress" placeholder="Father Address">
+                                <input type="text" name="FatherAddress" id="FatherAddress" placeholder="Father Address" value="{{instance.parentID.fatherAddress}}">
                             </div>
                         </div>
                         <div class="field">
                             <label>Father Email</label>
                             <div class="ui input">
-                                <input type="text" name="FatherEmail" id="FatherEmail" placeholder="Father Email">
+                                <input type="text" name="FatherEmail" id="FatherEmail" placeholder="Father Email" value="{{instance.parentID.fatherEmail}}">
                             </div>
                         </div>
                     </div>
@@ -252,20 +252,19 @@
                         <div class="field">
                             <label>Mother Name</label>
                             <div class="ui input">
-                                <input type="text" name="mname" id="mname" placeholder="Mother  Name">
+                                <input type="text" name="mname" id="mname" placeholder="Mother  Name" value="{{instance.parentID.motherName}}">
                             </div>
                         </div>
                         <div class="field">
                             <label>Mother Occupation</label>
                             <div class="ui input">
-                                <input type="text" name="MotherOccupation" id="MotherOccupation" placeholder="Mother Occupation">
+                                <input type="text" name="MotherOccupation" id="MotherOccupation" placeholder="Mother Occupation" value="{{instance.parentID.motherOccupation}}">
                             </div>
                         </div>
                         <div class="field required">
                             <label>Mother Contact Number</label>
                             <div class="ui input">
-                                <input type="number" name="MotherContactNumber" id="MotherContactNumber"
-                                       placeholder="Mother Contact Number">
+                                <input type="number" name="MotherContactNumber" id="MotherContactNumber" placeholder="Mother Contact Number" value="{{instance.parentID.motherPhone}}">
                             </div>
                         </div>
                     </div>
@@ -274,13 +273,13 @@
                         <div class="field">
                             <label>Mother Address</label>
                             <div class="ui input">
-                                <input type="text" name="MotherAddress" id="MotherAddress" placeholder="Mother Address">
+                                <input type="text" name="MotherAddress" id="MotherAddress" placeholder="Mother Address" value="{{instance.parentID.motherAddress}}">
                             </div>
                         </div>
                         <div class="field">
                             <label>Mother Email</label>
                             <div class="ui input">
-                                <input type="text" name="MotherEmail" id="MotherEmail" placeholder="Mother Email">
+                                <input type="text" name="MotherEmail" id="MotherEmail" placeholder="Mother Email" value="{{instance.parentID.motherEmail}}">
                             </div>
                         </div>
                     </div>
@@ -290,13 +289,13 @@
                         <div class="field">
                             <label>Guardian Name</label>
                             <div class="ui input">
-                                <input type="text" name="guardianName" id="guardianName" placeholder="Guardian Name">
+                                <input type="text" name="guardianName" id="guardianName" placeholder="Guardian Name" value="{{instance.parentID.guardianName}}">
                             </div>
                         </div>
                         <div class="field">
                             <label>Guardian Occupation</label>
                             <div class="ui input">
-                                <input type="text" name="guardianOccupation" id="guardianOccupation" placeholder="Guardian Occupation">
+                                <input type="text" name="guardianOccupation" id="guardianOccupation" placeholder="Guardian Occupation" value="{{instance.parentID.guardianOccupation}}">
                             </div>
                         </div>
                     </div>
@@ -304,13 +303,13 @@
                         <div class="field">
                             <label>Guardian PhoneNumber</label>
                             <div class="ui input">
-                                <input type="number" name="guardianPhoneNumber" id="guardianPhoneNumber" placeholder="Guardian Phone Number">
+                                <input type="number" name="guardianPhoneNumber" id="guardianPhoneNumber" placeholder="Guardian Phone Number" value="{{instance.parentID.guardianPhone}}">
                             </div>
                         </div>
                         <div class="field">
                             <label>Parents PhoneNumber</label>
                             <div class="ui input">
-                                <input type="number" name="parentsPhoneNumber" id="parentsPhoneNumber" placeholder="Parents Phone Number">
+                                <input type="number" name="parentsPhoneNumber" id="parentsPhoneNumber" placeholder="Parents Phone Number" value="{{instance.parentID.phoneNumber}}">
                             </div>
                         </div>
                     </div>
@@ -319,13 +318,13 @@
                         <div class="field">
                             <label>Previous School Name</label>
                             <div class="ui input">
-                                <input type="text" name="previousSchoolName" id="previousSchoolName" placeholder="Previous School Name">
+                                <input type="text" name="previousSchoolName" id="previousSchoolName" placeholder="Previous School Name" value="{{instance.lastSchoolName}}">
                             </div>
                         </div>
                         <div class="field">
                             <label>Previous School Address</label>
                             <div class="ui input">
-                                <input type="text" name="previousSchoolAddress" id="previousSchoolAddress" placeholder="Previous School Address">
+                                <input type="text" name="previousSchoolAddress" id="previousSchoolAddress" placeholder="Previous School Address" value="{{instance.lastSchoolAddress}}"         >
                             </div>
                         </div>
                     </div>
@@ -333,27 +332,27 @@
                         <div class="field">
                             <label>Previous School Class</label>
                             <div class="ui input">
-                                <input type="text" name="previousSchoolClass" id="previousSchoolClass" placeholder="Previous School Class">
+                                <input type="text" name="previousSchoolClass" id="previousSchoolClass" placeholder="Previous School Class" value="{{instance.lastClass}}">
                             </div>
                         </div>
                             <div class="field">
                                 <label>Result</label>
-                               <select class="ui dropdown" id="previousSchoolResult">
+                               <select class="ui dropdown" id="previousSchoolResult" value="{{instance.previousSchoolResult}}">
                                 <option value="">Select Result</option>
-                                <option value="Pass">Pass</option>
-                                <option value="Fail">Fail</option>
+                                <option value="PASS">PASS</option>
+                                <option value="FAIL">FAIL</option>
                             </select>
                             </div>
                              <div class="field">
                                 <label>Division</label>
                                 <div class="ui input">
-                                    <input type="text" name="previousSchoolDivision" id="previousSchoolDivision" placeholder="Previous School Division">
+                                    <input type="text" name="previousSchoolDivision" id="previousSchoolDivision" placeholder="Previous School Division" value="{{instance.lastDivision}}">
                                 </div>
                             </div>
                              <div class="field">
                                 <label>Roll Number</label>
                                 <div class="ui input">
-                                    <input type="number" name="previousSchoolRollNumber" id="previousSchoolRollNumber" placeholder="Previous School Roll Number">
+                                    <input type="number" name="previousSchoolRollNumber" id="previousSchoolRollNumber" placeholder="Previous School Roll Number" value="{{instance.lastRollNo}}">
                                 </div>
                             </div>
                     </div>
@@ -363,13 +362,13 @@
                         <div class="field">
                             <label>Mother Tongue</label>
                             <div class="ui input">
-                                <input type="text" name="motherTongue" id="motherTongue" placeholder="Mother Tongue">
+                                <input type="text" name="motherTongue" id="motherTongue" placeholder="Mother Tongue" value="{{instance.motherTongue}}">
                             </div>
                         </div>
                         <div class="field">
                             <label>Other Languages</label>
                             <div class="ui input">
-                                <input type="text" name="otherLanguages" id="otherLanguages" placeholder="Other Languages">
+                                <input type="text" name="otherLanguages" id="otherLanguages" placeholder="Other Languages" value="{{instance.otherLanguages}}">
                             </div>
                         </div>
                     </div>
@@ -377,13 +376,13 @@
                         <div class="field">
                             <label>Hobbies</label>
                             <div class="ui input">
-                                <input type="text" name="hobbies" id="hobbies" placeholder="Hobbies">
+                                <input type="text" name="hobbies" id="hobbies" placeholder="Hobbies" value="{{instance.hobbies}}">
                             </div>
                         </div>
                         <div class="field">
                             <label>Aim In Life</label>
                             <div class="ui input">
-                                <input type="text" name="aimInLife" id="aimInLife" placeholder="Aim In Life">
+                                <input type="text" name="aimInLife" id="aimInLife" placeholder="Aim In Life" value="{{instance.aimInLife}}">
                             </div>
                         </div>
                     </div>
@@ -391,7 +390,7 @@
                         <div class="field">
                             <label>M.I.L Options in Class IX and X:</label>
                             <div class="ui input">
-                                <input type="text" name="milOptions" id="milOptions" placeholder="M.I.L Options">
+                                <input type="text" name="milOptions" id="milOptions" placeholder="M.I.L Options" value="{{instance.milOption}}">
                             </div>
                         </div>
                     
@@ -483,18 +482,15 @@
                     <div class="five fields">
                         <div class="field required">
                             <label>Registration Code</label>
-                            <input type="text" name="registrationCode" id="registrationCode"
-                                   placeholder="Registration Code">
+                            <input type="text" name="registrationCode" id="registrationCode" placeholder="Registration Code" value="{{instance.registrationCode}}">
                         </div>
                         <div class="field required">
                             <label>Family Code</label>
-                            <input type="text" name="familyCode" id="familyCode"
-                                   placeholder="Family Code">
+                            <input type="text" name="familyCode" id="familyCode" placeholder="Family Code" value="{{instance.familyCode}}">
                         </div>
                         <div class="field required">
                             <label>No. of siblings Attended</label>
-                            <input type="number" name="siblings" id="siblings"
-                                   placeholder="No. of siblings Attended" value="0">
+                            <input type="number" name="siblings" id="siblings" placeholder="No. of siblings Attended" value="{{instance.siblingsCount}}">
                         </div>
                         <div class="field required">
                             <label>Class - Section</label>
@@ -509,7 +505,7 @@
                             <div class="ui calendar" id="dojCal">
                                 <div class="ui input left icon">
                                     <i class="calendar icon"></i>
-                                    <input type="text" placeholder="Date of joining" id="doj">
+                                    <input type="text" placeholder="Date of joining" id="doj" value="{{instance.dateOfJoining}}">
                                 </div>
                             </div>
                         </div>
@@ -517,25 +513,26 @@
                     <div class="five fields">
                         <div class="field">
                             <label>Roll Number</label>
-                            <input type="number" name="roll" id="roll" placeholder="Roll Number">
+                            <input type="number" name="roll" id="roll" placeholder="Roll Number" value="{{instance.roll}}">
                         </div>
                         <div class="field">
                             <label>Admission Fee</label>
-                            <input type="number" name="admissionFee" id="admissionFee" placeholder="Admission Fee" >
+                            <input type="number" name="admissionFee" id="admissionFee" placeholder="Admission Fee" value="{{instance.admissionFee}}">
                         </div>
                         <div class="field">
                             <label>Tuition Fee</label>
-                            <input type="number" name="tuitionFee" id="tuitionFee" placeholder="Tuition Fee">
+                            <input type="number" name="tuitionFee" id="tuitionFee" placeholder="Tuition Fee" value="{{instance.tuitionFee}}">
                         </div>
                          <div class="field">
                             <label>Misc. Fees</label>
-                            <input type="number" name="miscFee" id="miscFee" placeholder="Misc. Fees">
+                            <input type="number" name="miscFee" id="miscFee" placeholder="Misc. Fees" value="{{instance.miscFee}}">
                         </div>
                         <div class="field">
                             <label>Total</label>
-                            <input type="number" name="totalFee" id="totalFee" placeholder="Total Fees">
+                            <input type="number" name="totalFee" id="totalFee" placeholder="Total Fees" value="{{instance.totalFee}}">
                         </div>
                     </div>
+                    <input type="hidden" name="editID" id="editID" value="{{instance.id}}">
 
 
                 </form>
@@ -543,7 +540,7 @@
                     <button type="button" id="saveBtn" class="ui mini green button saveBtn"
                             onclick="addStudentData()">
                         <i class="icon plus square"></i>
-                        Add
+                        Update
                     </button>
                     <button style="display: none" type="button" id="saveBtnUpdate"
                             onclick="editData()"
@@ -555,10 +552,10 @@
                         Saving ...
                         <i class="checkmark icon"></i>
                     </button>
-                    <button class="ui mini red button" type="button" onclick="myOwnReset()">
+                    {% comment %} <button class="ui mini red button" type="button" onclick="myOwnReset()">
                         <i class="icon times circle"></i>
                         Clear
-                    </button>
+                    </button> {% endcomment %}
                 </div>
             </div>
         </div>
@@ -567,6 +564,20 @@
 
 {% block js %}
     <script>
+
+        $(document).ready(function () {
+            $('#bloodGroup').val('{{instance.bloodGroup}}').change();
+            $('#gender').val('{{instance.gender}}').change();
+            $('#country').val('{{instance.country}}').change();
+            $('#countryP').val('{{instance.countryP}}').change();
+            $('#caste').val('{{instance.caste}}').change();
+             $('#familyType').val('{{instance.parentID.familyType}}').change();
+             $('#previousSchoolResult').val('{{instance.lastResult}}').change();
+
+             
+
+
+        });
 
         $(getStandardList());
 
@@ -587,6 +598,9 @@
                         $('#standard').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
 
                     }
+                    
+                    // Set the standard value after dropdown is populated
+                    $('#standard').val('{{instance.standardID.pk}}').change();
 
                 },
 
@@ -725,7 +739,7 @@ function addStudentData() {
     const requiredIds = [
         'name', 'gender',
         'dob', 'registrationCode',
-        'standard', 'imageUpload', 'idMark','caste',
+        'standard', 'idMark','caste',
         'religion', 'familyType','fname','FatherOccupation','fatherContactNumber','FatherAddress',
         'mname','MotherOccupation','MotherContactNumber','MotherAddress',
         'standard','doj','admissionFee','tuitionFee','miscFee','totalFee'
@@ -749,7 +763,7 @@ function addStudentData() {
     // ---------- AJAX ----------
     $.ajax({
         type: 'POST',
-        url: "{% url 'managementAppAPI:add_student_api' %}",
+        url: "{% url 'managementAppAPI:edit_student_api' %}",
         data: data,
         contentType: false,
         processData: false,
@@ -758,19 +772,20 @@ function addStudentData() {
         success: function (response) {
             if (response.status) {
                 addSuccessNotification(response.message, 'green');
-                $('#addForm').trigger('reset');
                 $('#cImg').css(
                     'background-image',
                     "url({% static 'images/add_photo.svg' %})"
                 );
+                window.location.href = "{% url 'managementApp:student_list' %}";
+
             } else {
-                addErrorNotification(response.message);
+                addErrorNotification();
             }
             hideLoading();
         },
 
         error: function () {
-            addErrorNotification('An error occurred !');
+            addErrorNotification();
             hideLoading();
         }
     });

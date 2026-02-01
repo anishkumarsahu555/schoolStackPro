@@ -9,7 +9,16 @@ from utils.custom_decorators import check_groups
 
 @check_groups('Admin', 'Owner')
 def admin_home(request):
+    totalStudent = Student.objects.filter(isDeleted=False, sessionID_id = request.session['current_session']['Id']).count()
+    totalTeacher = TeacherDetail.objects.filter(isDeleted=False, sessionID_id = request.session['current_session']['Id']).count()
+    totalClass = Standard.objects.filter(isDeleted=False, sessionID_id = request.session['current_session']['Id']).count()
+    totalSubject = Subjects.objects.filter(isDeleted=False, sessionID_id = request.session['current_session']['Id']).count()
+
     context = {
+        'total_students': totalStudent,
+        'total_teachers': totalTeacher,
+        'total_classes': totalClass,
+        'total_subjects': totalSubject,
     }
     return render(request, 'managementApp/dashboard.html', context)
 
@@ -54,6 +63,29 @@ def add_teacher(request):
     }
     return render(request, 'managementApp/teacher/add_teacher.html', context)
 
+@login_required
+@check_groups('Admin', 'Owner')
+def edit_teacher(request,id=None):
+    instance = get_object_or_404(TeacherDetail, pk=id)
+    
+    # Convert image to base64 if it exists
+    photo_base64 = None
+    if instance.photo:
+        import base64
+        
+        # Read the image file and encode to base64
+        with instance.photo.open('rb') as image_file:
+            photo_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+    
+    # Add base64 data to instance
+    instance.photo_base64 = photo_base64
+    
+    context = {
+        'instance': instance,
+    }
+    return render(request, 'managementApp/teacher/edit_teacher.html', context)
+
+
 
 @login_required
 @check_groups('Admin', 'Owner')
@@ -95,10 +127,21 @@ def student_list(request):
 @check_groups('Admin', 'Owner')
 def student_detail(request, id=None):
     instance = get_object_or_404(Student, pk=id)
+    parent = instance.parentID
+    context = {
+        'instance': instance,
+        'parent': parent,
+    }
+    return render(request, 'managementApp/student/student_detail.html', context)
+
+@login_required
+@check_groups('Admin', 'Owner')
+def edit_student_detail(request, id=None):
+    instance = get_object_or_404(Student, pk=id)
     context = {
         'instance': instance,
     }
-    return render(request, 'managementApp/student/student_detail.html', context)
+    return render(request, 'managementApp/student/edit_student.html', context)
 
 
 # Exam ----------------------------------------------
@@ -183,3 +226,12 @@ def exam_marks_details(request):
     context = {
     }
     return render(request, 'managementApp/marks/examMarksDetails.html', context)
+
+
+#events------------------------------------------------------
+@login_required
+@check_groups('Admin', 'Owner')
+def add_event(request):
+    context = {
+    }
+    return render(request, 'managementApp/events/add_event.html', context)

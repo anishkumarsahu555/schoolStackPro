@@ -1,7 +1,7 @@
 {% extends 'managementApp/index.html' %}
 {% load static %}
 {% block title %}
-    <title>Assign Subjects To Class</title>
+    <title>Manage Events</title>
 {% endblock %}
 {% block css %}
 {% endblock %}
@@ -10,12 +10,12 @@
     <style>
 
 
-        #SubjectTable_length {
+        #EventTable_length {
             left: 20px;
             position: absolute;
         }
 
-        #SubjectTable_filter {
+        #EventTable_filter {
             float: right;
         }
 
@@ -33,7 +33,7 @@
         <div class="sixteen wide column">
             <div class="ui  pointing secondary menu">
                 <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Assign Subjects To Class
+                >Manage Events
                 </div>
 
             </div>
@@ -41,31 +41,36 @@
                 <div class="ui segment">
                     <h4 class="ui horizontal left aligned divider header">
                         <i class="left align icon"></i>
-                        Assign Subject
+                        Add/Edit Event
                     </h4>
                     <form class="ui tiny form" id="addForm">{% csrf_token %}
                         <input type="hidden" id="editID">
 
-                        <div class="three fields">
+                        <div class="five fields">
 
-                            <div class="field required">
-                                <label>Class Name</label>
-                                <select class="ui clearable search dropdown" id="standard">
-                                    <option value="">Search By Class Name</option>
-                                </select>
+                            <div class="field">
+                                <label>Event Title</label>
+                                <input type="text" name="title" id="title" placeholder="Event Title">
+
+                            </div>
+                            <div class="field">
+                                <label>Start Date</label>
+                                <input type="date" name="start_date" id="start_date" placeholder="Start Date">
+
+                            </div>
+                            <div class="field">
+                                <label>End Date</label>
+                                <input type="date" name="end_date" id="end_date" placeholder="End Date">
+
+                            </div>
+                            <div class="field">
+                                <label>Message</label>
+                                <input type="text" name="message" id="message" placeholder="Message">
 
                             </div>
 
-                            <div class="field required">
-                                <label>Subject Name</label>
-                                <select class="ui fluid search dropdown" multiple="" id="subjects">
-                                    <option value="">Search By Subject Name</option>
-                                </select>
 
-                            </div>
-
-
-                            <div class="field" style="padding-top: 2.2em;">
+                            <div class="field" style="padding-top: 2em;">
                                 <button type="button" id="saveBtn" class="ui mini green button saveBtn"
                                         onclick="addData()">
                                     <i class="icon plus square"></i>
@@ -96,12 +101,13 @@
                     <div class="wide">
 
                         <table class="ui unstackable tiny sortable celled very nowrap very compact table"
-                               id="SubjectTable"
+                               id="EventTable"
                                style="margin-top: 5px;width: 100%">
                             <thead>
                             <tr>
-                                <th>Class-Section</th>
-                                <th>Subject</th>
+                                <th>Title</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
                                 <th>EditedBy</th>
                                 <th>AddedOn</th>
                                 <th>Actions</th>
@@ -117,10 +123,10 @@
                 <div class="ui basic modal custom" id="deleteDataModal">
                     <div class="ui icon header">
                         <i class="trash alternate icon red"></i>
-                        Assigned Details will be Deleted
+                        Event Details will be Deleted
                     </div>
                     <div class="content">
-                        <p style="text-align: center">The Assigned Subject will be deleted, are you sure to delete this
+                        <p style="text-align: center">The Event will be deleted, are you sure to delete this
                             entry?</p>
                     </div>
                     <div class="actions">
@@ -148,92 +154,28 @@
 {% block js %}
     <script>
 
-        $(getStandardList());
-        $(getSubjectsList());
-
-
-        function getStandardList() {
-
-            $.ajax({
-                type: 'get',
-                url: "{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}",
-
-                success: function (response) {
-
-                    $('#standard').html('');
-                    $('#standard').append(' <option value="">Search By Class Name</option>');
-                    var j;
-                    for (j = 0; j < response.data.length; j++) {
-
-                        $('#standard').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
-
-                    }
-
-                },
-
-                error: function () {
-                    $('body')
-                        .toast({
-                            class: 'error',
-                            message: 'An error occurred !'
-                        })
-                    ;
-                }
-            });
-
-
-        }
-           function getSubjectsList() {
-            $.ajax({
-                type: 'get',
-                url: "{% url 'managementAppCachedAPI:get_cached_subjects_list_api' %}",
-
-                success: function (response) {
-
-                    $('#subjects').html('');
-                    $('#subjects').append(' <option value="">Search By Subject Name</option>');
-                    var j;
-                    for (j = 0; j < response.data.length; j++) {
-
-                        $('#subjects').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
-
-                    }
-
-                },
-
-                error: function () {
-                    $('body')
-                        .toast({
-                            class: 'error',
-                            message: 'An error occurred !'
-                        })
-                    ;
-                }
-            });
-
-
-        }
-
-
-        let subjectTab
+        let eventTab
 
         function addData() {
             showLoading();
-            let standard = $('#standard').val();
-            let subjects = $('#subjects').val();
-            console.log(subjects.length)
-            if (standard.trim() === '' || subjects.length<=0) {
+            let title = $('#title').val();
+            let start_date = $('#start_date').val();
+            let end_date = $('#end_date').val();
+            let message = $('#message').val();
+            if (title.trim() === '' || start_date.trim() === '' || end_date.trim() === '') {
                 requiredFieldError();
                 hideLoading();
             } else {
 
                 let data = new FormData();
-                data.append('standard', standard);
-                data.append('subjects', subjects);
+                data.append('title', title);
+                data.append('start_date', start_date);
+                data.append('end_date', end_date);
+                data.append('message', message);
                 data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
                 $.ajax({
                     type: 'post',
-                    url: "{% url 'managementAppAPI:add_subject_to_class' %}",
+                    // url: "{% url 'managementAppAPI:add_event_api' %}",
                     data: data,
                     contentType: false,
                     cache: false,
@@ -242,8 +184,8 @@
                     success: function (response) {
                         if (response.status === 'success') {
                             addSuccessNotification(response.message, response.color);
-                            subjectTab.ajax.reload(null, false);
-                            clearAndReset();
+                            eventTab.ajax.reload(null, false);
+                            $('#addForm').trigger('reset');
                             hideLoading();
                         } else {
                             addErrorNotification();
@@ -266,7 +208,7 @@
 
         // user Details
 
-        subjectTab = $('#SubjectTable').DataTable({
+        eventTab = $('#EventTable').DataTable({
             dom: 'Blfrtip',
             "scrollY": "350px",
             "scrollX": true,
@@ -278,29 +220,30 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [0, 1, 2,3]
+                    columns: [0, 1, 2]
                 }
             }
-                {% comment %}      , {
-                          extend: 'print',
-                          exportOptions: {
-                               columns: [1, 2, 3, 4, 5, 6, 7, 8]
-                          }
-                      }{% endcomment %}
+                // {% comment %}      , {
+                //           extend: 'print',
+                //           exportOptions: {
+                //                columns: [1, 2, 3, 4, 5, 6, 7, 8]
+                //           }
+                //       }{% endcomment %}
             ],
             "columnDefs": [
-                {"name": "standardID.name", "targets": 0, "orderable": true},
-                {"name": "subjectID.name", "targets": 1, "orderable": true},
-                {"name": "lastEditedBy", "targets": 2, "orderable": true},
-                {"name": "datetime", "targets": 3, "orderable": true},
-                {"name": "action", "targets": 4, "orderable": false}
+                {"name": "title", "targets": 0, "orderable": true},
+                {"name": "startDate", "targets": 1, "orderable": true},
+                {"name": "endDate", "targets": 2, "orderable": true},
+                {"name": "lastEditedBy", "targets": 3, "orderable": true},
+                {"name": "datetime", "targets": 4, "orderable": true},
+                {"name": "action", "targets": 5, "orderable": false}
             ],
-            aaSorting: [[0, 'asc']],
+            aaSorting: [[4, 'desc']],
             "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             "pageLength": 10,
             "processing": true,
             "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:AssignSubjectToClassListJson' %}"
+            // "ajax": "#"
         });
 
 
@@ -317,7 +260,7 @@
             data.append('dataID', id);
 
             $.ajax({
-                url: "{% url 'managementAppAPI:delete_assign_subject_to_class' %}",
+                url: "#",
                 type: "post",
                 data: data,
                 contentType: false,
@@ -325,41 +268,14 @@
                 processData: false,
 
                 success: function (response) {
-                    if (response.status) {
-                        addSuccessNotification(response.message, "green");
-                        subjectTab.ajax.reload(null, false);
-                        $('#deleteDataModal').modal('toggle');
-                    } else {
-                        addErrorNotification(response.message);
-                    }
-                    return response;
-                },
-                error: function () {
-                    addErrorNotification("Something went wrong");
-                }
-            });
-
-        }
-
-        function GetDataDetails(id) {
-            myOwnReset();
-            $('#saveBtn').css('display', 'none');
-            $('#saveBtnUpdate').css('display', '');
-            $.ajax({
-                type: 'get',
-                data: {id: id},
-                url: "{% url 'managementAppAPI:get_assigned_subject_to_class_detail' %}",
-
-                success: function (response) {
                     if (response.status === 'success') {
-                        $('#standard').val(response.data['StandardID']).change();
-                        $('#subjects').val(response.data['SubjectID']).change();
-                        $('#editID').val(response.data['ID']);
+                        addSuccessNotification(response.message, response.color);
+                        eventTab.ajax.reload(null, false);
+                        $('#deleteDataModal').modal('toggle');
                     } else {
                         addErrorNotification();
                     }
-
-
+                    return response;
                 },
                 error: function () {
                     addErrorNotification();
@@ -368,25 +284,58 @@
 
         }
 
+         function GetDataDetails(id) {
+            $('#saveBtn').css('display', 'none');
+            $('#saveBtnUpdate').css('display', '');
+            $.ajax({
+                type: 'get',
+                 data: {id: id},
+                url: "#",
+
+                success: function (response) {
+                    if (response.status === 'success') {
+                        $('#title').val(response.data['title']);
+                        $('#start_date').val(response.data['startDate']);
+                        $('#end_date').val(response.data['endDate']);
+                        $('#message').val(response.data['message']);
+                        $('#editID').val(response.data['ID']);
+                    }
+                    else{
+                        addErrorNotification();
+                    }
+
+
+                },
+                error: function () {
+                     addErrorNotification();
+                }
+            });
+
+        }
+
 
         function editData() {
-            showUpdateLoading();
-            let standard = $('#standard').val();
-            let subjects = $('#subjects').val();
+               showUpdateLoading();
+            let title = $('#title').val();
+            let start_date = $('#start_date').val();
+            let end_date = $('#end_date').val();
+            let message = $('#message').val();
             let editID = $('#editID').val();
-            if (standard.trim() === '' || subjects.length<=0) {
+            if (title.trim() === '' || start_date.trim() === '' || end_date.trim() === '') {
                 requiredFieldError();
                 hideLoading();
             } else {
 
                 let data = new FormData();
-                data.append('standard', standard);
-                data.append('subjects', subjects);
+                data.append('title', title);
+                data.append('start_date', start_date);
+                data.append('end_date', end_date);
+                data.append('message', message);
                 data.append('editID', editID);
                 data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
                 $.ajax({
                     type: 'post',
-                    url: "{% url 'managementAppAPI:update_subject_to_class' %}",
+                    url: "#",
                     data: data,
                     contentType: false,
                     cache: false,
@@ -395,8 +344,8 @@
                     success: function (response) {
                         if (response.status === 'success') {
                             addSuccessNotification(response.message, response.color);
-                            subjectTab.ajax.reload(null, false);
-                            clearAndReset();
+                            eventTab.ajax.reload(null, false);
+                            $('#addForm').trigger('reset');
                             hideLoading();
                         } else {
                             addErrorNotification();
@@ -416,9 +365,9 @@
             }
         }
 
-        function clearAndReset() {
-            {#$('#addForm').trigger('reset');#}
-            myOwnReset();
+         function clearAndReset() {
+            // {#$('#addForm').trigger('reset');#}
+             myOwnReset();
             $('#saveBtn').css('display', '');
             $('#saveBtnUpdate').css('display', 'none');
 

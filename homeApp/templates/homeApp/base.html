@@ -1,5 +1,5 @@
 {% load static %}
-{#{% load pwa %}#}
+{% load pwa %}
 {#{% load custom_has_group_tag %}#}
 <!DOCTYPE html>
 <html lang="en">
@@ -8,10 +8,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0,  user-scalable=0"/>
     <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
     {% block title %}
-        <title>SCHOOL-STACK</title>
+        <title>SCHOOLS-STACK</title>
     {% endblock %}
 
-    {#    {% progressive_web_app_meta %}#}
+    {% progressive_web_app_meta %}
 
     <link rel="icon" href="{% static 'sw/images/favicon.ico' %}" sizes="any">
     <link rel="apple-touch-icon" href="{% static 'sw/images/apple-touch-icon.png' %}">
@@ -35,29 +35,132 @@
             scroll-behavior: smooth;
         }
 
-        .sidenav {
-            height: 100%;
-            width: 200px;
-            position: fixed;
-            z-index: 1;
-            top: 40px;
-            left: 0;
-            background-color: #000000;
-            overflow-x: hidden;
-            padding-top: 10px;
-        }
+       .material-sidenav {
+    width: 280px;
+    {% comment %} height: 100vh; {% endcomment %}
+    background: #ffffff;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+    padding: 12px 0;
+    font-family: 'Roboto', sans-serif;
+}
 
-        .sidenav a {
-            padding: 15px 12px 15px 16px;
-            text-decoration: none;
-            font-size: 18px;
-            color: #818181;
-            display: block;
-        }
+.sidenav-header {
+    padding: 16px 24px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a73e8;
+}
 
-        .sidenav a:hover {
-            color: #f1f1f1;
-        }
+.nav-section {
+    padding: 16px 24px 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #5f6368;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 24px;
+    color: #3c4043;
+    font-size: 14px;
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: background .2s ease;
+}
+
+.nav-item i {
+    margin-right: 16px;
+    font-size: 18px;
+    color: #5f6368;
+}
+
+.nav-item:hover {
+    background: #f1f3f4;
+}
+
+.nav-item.active {
+    background: #e8f0fe;
+    border-left: 3px solid #1a73e8;
+    color: #1a73e8;
+    font-weight: 500;
+}
+
+.nav-item.active i {
+    color: #1a73e8;
+}
+.material-navbar {
+    width: 100%;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    padding: 0 20px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'Roboto', sans-serif;
+}
+
+/* LEFT SECTION */
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.nav-logo {
+    width: 34px;
+    height: 34px;
+}
+
+.nav-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a73e8;
+}
+
+/* RIGHT SECTION */
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* NAV ITEM (from your sidenav design) */
+.material-navbar .nav-item {
+    display: flex !important;
+    align-items: center;
+    padding: 10px 16px !important;
+    color: #3c4043 !important;
+    font-size: 14px;
+    border-bottom: 3px solid transparent;
+    transition: background 0.2s ease;
+}
+
+/* Icons */
+.material-navbar .nav-item i.icon {
+    margin-right: 10px;
+    color: #5f6368 !important;
+}
+
+/* Hover */
+.material-navbar .nav-item:hover {
+    background: #f1f3f4 !important;
+    border-radius: 6px;
+}
+
+/* Active Style (same theme) */
+.material-navbar .nav-item.active {
+    background: #e8f0fe !important;
+    border-bottom: 3px solid #1a73e8;
+    color: #1a73e8 !important;
+}
+
+.material-navbar .nav-item.active i.icon {
+    color: #1a73e8 !important;
+}
 
         .preloader {
             align-items: center;
@@ -211,7 +314,7 @@
 
 <body>
 <!-- sidebar -->
-<div class="ui sidebar inverted bgColor vertical menu sidebar-menu" id="sidebar">
+<div class="ui sidebar material-sidenav vertical menu sidebar-menu" id="sidebar">
 
     {% block sidebar %}
 
@@ -234,13 +337,13 @@
     </div>
 
 
-    <div class="ui segment bgColor inverted">
-        <div class="ui tiny olive inverted progress">
+    <div class="ui segment">
+        <div class="ui tiny olive progress">
             <div class="bar" style="width: 54%"></div>
             <div class="label">Developed By Ziva Infotech</div>
         </div>
 
-        <div class="ui tiny teal inverted progress">
+        <div class="ui tiny teal progress">
             <div class="bar" style="width:78%"></div>
             <div class="label">v 1.0.2</div>
         </div>
@@ -250,15 +353,15 @@
 <!-- sidebar -->
 <!-- top nav -->
 
-<nav class="ui top fixed inverted bgColor menu">
+<nav class="ui top fixed menu">
     <div class="left menu">
         <a href="#" class="sidebar-menu-toggler item" data-target="#sidebar">
             <i class="sidebar icon"></i>
         </a>
-        <img class="logo logoImg" src="{% static 'sw/images/icon-192.png' %}">
+        <img class="logo logoImg" src="{% if request.session.current_session.SchoolLogo %}{{ request.session.current_session.SchoolLogo }}{% else %}{% static 'sw/images/icon-192.png' %}{% endif %}">
         <a href="#" class="header item">
 
-            SCHOOL-STACK
+            SCHOOLS-STACK
         </a>
     </div>
 
@@ -366,7 +469,7 @@
         $('body')
             .toast({
                 class: 'orange',
-                message: '* fields are required.'
+                message: 'Highlighted fields are required.'
             });
     }
 
@@ -379,11 +482,11 @@
 
     }
 
-    function addErrorNotification() {
+    function addErrorNotification(message) {
         $('body')
             .toast({
                 class: 'error',
-                message: 'An error occurred ! Please try again.'
+                message: message
             })
         ;
 
@@ -417,6 +520,9 @@
 <script src="https://cdn.datatables.net/fixedcolumns/4.1.0/js/dataTables.fixedColumns.min.js"></script>
 
 <script>
+          $('.ui.accordion')
+            .accordion()
+        ;
     $.fn.DataTable.ext.pager.numbers_length = 4;
     $(document).ready(function () {
         // initialize the form an fields
@@ -491,6 +597,10 @@
         }
 
     }
+
+    $('#addForm input, #addForm select, #addForm textarea').on('input change', function () {
+    $(this).closest('.field').removeClass('error').popup('destroy');
+});
 
 
 </script>

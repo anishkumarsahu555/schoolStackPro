@@ -40,3 +40,5 @@ admin.site.register(Standard, StandardAdmin)
 #
 # admin.site.register(AssignTeacherToClassOrSection, AssignTeacherToClassOrSectionAdmin)
 #
+admin.site.register(Student)
+admin.site.register(Parent)

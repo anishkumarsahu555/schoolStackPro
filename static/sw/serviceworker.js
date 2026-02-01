@@ -1,102 +1,159 @@
-var version = 'v1.3.5::';
-self.addEventListener("install", function (event) {
-    console.log('WORKER: install event in progress.');
+// ================== CONFIGURATION ================== //
+const APP_VERSION = 'v1.0.45'; // Increment this to force update
+const MAX_CACHE_ITEMS = 50;   // Keep only 50 most recent files
+const CACHE_KEYS = {
+    PRECACHE: `precache-${APP_VERSION}`,
+    RUNTIME: `runtime-${APP_VERSION}`
+};
+
+// Files that must load instantly.
+// KEEP THIS LIST SHORT to avoid "Request failed" errors.
+const PRECACHE_URLS = [
+    'https://code.jquery.com/jquery-3.7.1.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.4/semantic.min.css',
+    'https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.4/semantic.min.js',
+    'https://cdn.datatables.net/2.3.2/css/dataTables.semanticui.min.css',
+    'https://cdn.datatables.net/fixedcolumns/5.0.0/css/fixedColumns.dataTables.min.css',
+    'https://cdn.datatables.net/2.3.2/js/dataTables.min.js',
+    'https://cdn.datatables.net/2.3.2/js/dataTables.semanticui.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js'
+];
+
+// Embedded Offline Page
+const OFFLINE_HTML = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline</title>
+  <style>
+    body{font-family:-apple-system, system-ui, sans-serif; text-align:center; padding:40px 20px; color:#333; background:#f9f9f9;}
+    h1{color:#e0245e; margin-bottom:10px;}
+    button{background:#007bff; color:white; border:none; padding:12px 24px; border-radius:6px; font-size:16px; cursor:pointer;}
+  </style>
+</head>
+<body>
+  <h1>You are Offline</h1>
+  <p>We couldn't connect to the server.</p>
+  <button onclick="window.location.reload()">Retry Connection</button>
+</body>
+</html>`;
+
+// ================== INSTALL & ACTIVATE ================== //
+
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
+
     event.waitUntil(
-        caches
-            .open(version + 'fundamentals')
-            .then(function (cache) {
-                return cache.addAll([
-                    'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js',
-                    'https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.0/semantic.min.css',
-                    'https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.0/semantic.min.js',
-                    'https://cdn.datatables.net/1.12.1/css/dataTables.semanticui.min.css',
-                    'https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js',
-                    'https://cdn.datatables.net/1.12.1/js/dataTables.semanticui.min.js',
-                    'https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js',
-                    'https://cdn.datatables.net/buttons/2.2.2/js/buttons.semanticui.min.js',
-                    'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js',
-                    'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js',
-                    'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js',
-                    'https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js',
-                    'https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js',
-                    'https://cdn.datatables.net/buttons/2.2.2/js/buttons.colVis.min.js',
-                    'https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic&subset=latin'
-                ]);
-            })
-            .then(function () {
-                console.log('WORKER: install completed');
-            })
+        caches.open(CACHE_KEYS.PRECACHE)
+            .then(cache => cache.addAll(PRECACHE_URLS))
+            .then(() => console.log(`[SW] Precached ${PRECACHE_URLS.length} files`))
+            .catch(err => console.error('[SW] Precache failed:', err))
     );
 });
 
-function get_url_extension(url) {
-    return url.split(/[#?]/)[0].split('.').pop().trim();
-}
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        (async () => {
+            if (self.registration.navigationPreload) {
+                await self.registration.navigationPreload.enable();
+            }
+            await clients.claim();
 
-self.addEventListener("fetch", function (event) {
-    console.log('WORKER: fetch event in progress.');
-    if (event.request.method !== 'GET') {
-        return;
-    }
-    event.respondWith(
-        caches
-            .match(event.request)
-            .then(function (cached) {
-                var networked = fetch(event.request)
-                    .then(fetchedFromNetwork, unableToResolve)
-                    .catch(unableToResolve);
-                // console.log('WORKER: fetch event', cached ? '(cached)' : '(network)', event.request.url);
-                return cached || networked;
+            // Cleanup old versions
+            const keys = await caches.keys();
+            await Promise.all(
+                keys.map(key => {
+                    if (!Object.values(CACHE_KEYS).includes(key)) {
+                        return caches.delete(key);
+                    }
+                })
+            );
+        })()
+    );
+});
 
-                function fetchedFromNetwork(response) {
-                    var cacheCopy = response.clone();
-                    caches
-                        .open(version + 'pages')
-                        .then(function add(cache) {
-                            var img = get_url_extension(event.request.url);
-                            if (img.toLowerCase() === 'png' || img.toLowerCase() === 'jpg' || img.toLowerCase() === 'jpeg' || img.toLowerCase() === 'svg') {
-                                cache.put(event.request, cacheCopy);
-                            }
-                        })
-                        .then(function () {
-                            // console.log('WORKER: fetch response stored in cache.', event.request.url);
-                        });
-                    return response;
-                }
+// ================== FETCH ENGINE ================== //
 
-                function unableToResolve() {
-                    // console.log('WORKER: fetch request failed in both cache and network.');
-                    return new Response('<h1>Service Unavailable</h1>', {
-                        status: 503,
-                        statusText: 'Service Unavailable',
-                        headers: new Headers({
-                            'Content-Type': 'text/html'
-                        })
+self.addEventListener('fetch', (event) => {
+    const { request } = event;
+    const url = new URL(request.url);
+
+    if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+
+    // STRATEGY 1: HTML Pages (Navigation) -> Network First + Save to Cache
+    if (request.mode === 'navigate') {
+        event.respondWith(
+            (async () => {
+                try {
+                    // A. Try Preload
+                    const preloadResponse = await event.preloadResponse;
+                    if (preloadResponse) return preloadResponse;
+
+                    // B. Try Network
+                    const networkResponse = await fetch(request);
+
+                    // C. SAVE NETWORK RESPONSE TO CACHE (Critical Fix)
+                    // This ensures that if the user goes offline later, they can revisit this page.
+                    const cache = await caches.open(CACHE_KEYS.RUNTIME);
+                    cache.put(request, networkResponse.clone());
+
+                    return networkResponse;
+                } catch (error) {
+                    // D. Network Failed -> Try Cache
+                    const cache = await caches.open(CACHE_KEYS.RUNTIME); // Check runtime cache first
+                    const cachedResponse = await cache.match(request);
+                    if (cachedResponse) return cachedResponse;
+
+                    // E. Try Precache (fallback)
+                    const precache = await caches.open(CACHE_KEYS.PRECACHE);
+                    const preCachedResponse = await precache.match(request);
+                    if (preCachedResponse) return preCachedResponse;
+
+                    // F. Offline Page
+                    return new Response(OFFLINE_HTML, {
+                        headers: { 'Content-Type': 'text/html' }
                     });
                 }
+            })()
+        );
+        return;
+    }
+
+    // STRATEGY 2: Static Assets -> Stale-While-Revalidate + Auto Cleanup
+    if (isAsset(url)) {
+        event.respondWith(
+            caches.open(CACHE_KEYS.RUNTIME).then(async (cache) => {
+                const cachedResponse = await cache.match(request);
+
+                const fetchPromise = fetch(request).then(networkResponse => {
+                    if (networkResponse.ok) {
+                        // Update Cache
+                        cache.put(request, networkResponse.clone());
+                        // Limit Size (Prevent phone storage full)
+                        limitCacheSize(CACHE_KEYS.RUNTIME, MAX_CACHE_ITEMS);
+                    }
+                    return networkResponse;
+                }).catch(() => { /* mute errors */ });
+
+                return cachedResponse || fetchPromise;
             })
-    );
-});
-self.addEventListener("activate", function (event) {
-    console.log('WORKER: activate event in progress.');
-    event.waitUntil(
-        caches
-            .keys()
-            .then(function (keys) {
-                return Promise.all(
-                    keys
-                        .filter(function (key) {
-                            return !key.startsWith(version);
-                        })
-                        .map(function (key) {
-                            return caches.delete(key);
-                        })
-                );
-            })
-            .then(function () {
-                console.log('WORKER: activate completed.');
-            })
-    );
+        );
+    }
 });
 
+// ================== HELPERS ================== //
 
+function isAsset(url) {
+    return /\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2|json|webp)$/i.test(url.pathname);
+}
+
+// Memory Management Helper
+async function limitCacheSize(cacheName, maxItems) {
+    const cache = await caches.open(cacheName);
+    const keys = await cache.keys();
+    if (keys.length > maxItems) {
+        await cache.delete(keys[0]); // Remove oldest
+        limitCacheSize(cacheName, maxItems); // Recursively check again
+    }
+}

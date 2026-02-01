@@ -43,23 +43,23 @@
                         <div class="ui fluid card">
                             <div class="content">
                                 <div class="ui right floated header red">
-                                    <i class="icon shopping cart"></i>
+                                   <i class="user tie icon"></i>
                                 </div>
                                 <div class="header">
                                     <div class="ui red header">
-                                        3958
+                                        {% if total_students %}{{total_students}}{% else %}0{% endif %}
                                     </div>
                                 </div>
                                 <div class="meta">
-                                    orders
+                                    {{ request.session.current_session.currentSessionYear }}
                                 </div>
                                 <div class="description">
-                                    Elliot requested permission to view your contact details
+                                    Total Students
                                 </div>
                             </div>
                             <div class="extra content">
                                 <div class="ui two buttons">
-                                    <div class="ui red button">More Info</div>
+                                    <a href="{% url 'managementApp:student_list' %}" class="ui red button">More Info</a>
                                 </div>
                             </div>
                         </div>
@@ -68,21 +68,21 @@
                         <div class="ui fluid card">
                             <div class="content">
                                 <div class="ui right floated header green">
-                                    <i class="icon clock"></i>
+                                   <i class="chalkboard teacher icon"></i>
                                 </div>
                                 <div class="header">
-                                    <div class="ui header green">57.6%</div>
+                                    <div class="ui header green">{% if total_teachers %}{{total_teachers}}{% else %}0{% endif %}</div>
                                 </div>
                                 <div class="meta">
-                                    Time
+                                    {{ request.session.current_session.currentSessionYear }}
                                 </div>
                                 <div class="description">
-                                    Elliot requested permission to view your contact details
+                                    Total Teachers
                                 </div>
                             </div>
                             <div class="extra content">
                                 <div class="ui two buttons">
-                                    <div class="ui green button">More Info</div>
+                                    <a href="{% url 'managementApp:teacher_list' %}" class="ui green button">More Info</a>
                                 </div>
                             </div>
                         </div>
@@ -91,21 +91,21 @@
                         <div class="ui fluid card">
                             <div class="content">
                                 <div class="ui right floated header teal">
-                                    <i class="icon briefcase"></i>
+                                    <i class="book icon"></i>
                                 </div>
                                 <div class="header">
-                                    <div class="ui teal header">3112</div>
+                                    <div class="ui teal header">{% if total_subjects %}{{total_subjects}}{% else %}0{% endif %}</div>
                                 </div>
                                 <div class="meta">
-                                    Saves
+                                    {{request.session.current_session.currentSessionYear}}
                                 </div>
                                 <div class="description">
-                                    Elliot requested permission to view your contact details
+                                    Total Subjects
                                 </div>
                             </div>
                             <div class="extra content">
                                 <div class="ui two buttons">
-                                    <div class="ui teal button">More Info</div>
+                                    <a href="{% url 'managementApp:manage_subjects' %}" class="ui teal button">More Info</a>
                                 </div>
                             </div>
                         </div>
@@ -114,28 +114,28 @@
                         <div class="ui fluid card">
                             <div class="content">
                                 <div class="ui right floated header purple">
-                                    <i class="icon trophy"></i>
+                                    <i class="laptop house icon"></i>
                                 </div>
                                 <div class="header">
-                                    <div class="ui purple header">9805</div>
+                                    <div class="ui purple header">{% if total_classes %}{{total_classes}}{% else %}0{% endif %}</div>
                                 </div>
                                 <div class="meta">
-                                    Views
+                                    {{request.session.current_session.currentSessionYear}}
                                 </div>
                                 <div class="description">
-                                    Elliot requested permission to view your contact details
+                                    Total Classes
                                 </div>
                             </div>
                             <div class="extra content">
                                 <div class="ui two buttons">
-                                    <div class="ui purple button">More Info</div>
+                                    <a href="{% url 'managementApp:manage_class' %}" class="ui purple button">More Info</a>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="ui grid stackable padded">
+                {% comment %} <div class="ui grid stackable padded">
                     <div class="four wide computer eight wide tablet sixteen wide mobile  center aligned column">
                         <div class="ui teal statistic">
                             <div class="value">
@@ -176,7 +176,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> {% endcomment %}
             </div>
 
         </div>
@@ -185,7 +185,7 @@
     <div class="ui grid stackable padded">
         <!-- Attendance Chart -->
         <div class="eight wide computer eight wide tablet sixteen wide mobile column">
-            <h3 class="ui header">Attendance</h3>
+            <h3 class="ui header">StudentAttendance</h3>
             <canvas id="attendanceChart"></canvas>
         </div>
         <!-- Grades Chart -->
@@ -193,26 +193,26 @@
             <h3 class="ui header">Grades</h3>
             <canvas id="gradesChart"></canvas>
         </div>
-        <div class="eight wide computer eight wide tablet sixteen wide mobile column">
+         <div class="eight wide computer eight wide tablet sixteen wide mobile column">
             <h3 class="ui header">Extracurricular Activities</h3>
             <canvas id="activitiesChart"></canvas>
         </div>
 
         <!-- Skill Assessments - Radar Chart -->
-        <div class="eight wide computer eight wide tablet sixteen wide mobile column">
-            <h3 class="ui header">Skill Assessments</h3>
-            <canvas id="skillsChart"></canvas>
-        </div>
+            {% comment %} <div class="eight wide computer eight wide tablet sixteen wide mobile column">
+                <h3 class="ui header">Skill Assessments</h3>
+                <canvas id="skillsChart"></canvas>
+            </div> {% endcomment %}
 
         <!-- Campus Resource Usage - Polar Area Chart -->
-        <div class="eight wide computer eight wide tablet sixteen wide mobile column">
+        {% comment %} <div class="eight wide computer eight wide tablet sixteen wide mobile column">
             <h3 class="ui header">Campus Resource Usage</h3>
             <canvas id="resourcesChart"></canvas>
         </div>
         <div class="eight wide computer eight wide tablet sixteen wide mobile column">
             <h3 class="ui header">Department Distribution</h3>
             <canvas id="departmentChart"></canvas>
-        </div>
+        </div>  {% endcomment %}
         <!-- More charts will go here -->
     </div>
 </div>
@@ -230,7 +230,7 @@
 
         $.ajax({
             type: 'get',
-            url: "{% url 'managementAppAPI:get_standard_list_api' %}",
+                url: "{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}",
 
             success: function (response) {
 

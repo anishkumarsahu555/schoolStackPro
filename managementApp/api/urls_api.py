@@ -9,14 +9,15 @@ urlpatterns = [
 
     path('get_class_detail', get_class_detail, name='get_class_detail'),
     path('delete_class', delete_class, name='delete_class'),
-    path('get_standard_list_api', get_standard_list_api, name='get_standard_list_api'),
+#     path('get_standard_list_api', get_standard_list_api, name='get_standard_list_api'),
+    path('update_class', update_class, name='update_class'),
 
     # subject api
     path('add_subject', add_subject, name='add_subject'),
     path('delete_subject', delete_subject, name='delete_subject'),
     path('get_subject_detail', get_subject_detail, name='get_subject_detail'),
     path('edit_subject', edit_subject, name='edit_subject'),
-    path('get_subjects_list_api', get_subjects_list_api, name='get_subjects_list_api'),
+#     path('get_subjects_list_api', get_subjects_list_api, name='get_subjects_list_api'),
     path('SubjectListJson', SubjectListJson.as_view(), name='SubjectListJson'),
 
     # subjects to class
@@ -46,12 +47,14 @@ urlpatterns = [
     path('delete_teacher', delete_teacher, name='delete_teacher'),
     path('get_teacher_list_api', get_teacher_list_api, name='get_teacher_list_api'),
     path('TeacherListJson', TeacherListJson.as_view(), name='TeacherListJson'),
+    path('update_teacher_api', update_teacher_api, name='update_teacher_api'),
 
     # student
     path('add_student_api', add_student_api, name='add_student_api'),
     path('delete_student', delete_student, name='delete_student'),
     path('get_student_list_by_class_api', get_student_list_by_class_api, name='get_student_list_by_class_api'),
     path('StudentListJson', StudentListJson.as_view(), name='StudentListJson'),
+    path('edit_student_api', edit_student_api, name='edit_student_api'),
 
     # Exam
     path('add_exam', add_exam, name='add_exam'),
@@ -96,5 +99,9 @@ urlpatterns = [
     path('MarksOfSubjectsByStudentJson', MarksOfSubjectsByStudentJson.as_view(), name='MarksOfSubjectsByStudentJson'),
     path('add_subject_mark_api', add_subject_mark_api, name='add_subject_mark_api'),
     path('StudentMarksDetailsByClassAndExamJson', StudentMarksDetailsByClassAndExamJson.as_view(), name='StudentMarksDetailsByClassAndExamJson'),
+
+    # events
+    path('add_event_api',add_event_api, name='add_event_api')
+
 
 ]

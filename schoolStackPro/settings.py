@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "homeApp",
     "managementApp",
     "studentApp",
+    "pwa",
 
 
 ]
@@ -79,12 +80,27 @@ WSGI_APPLICATION = 'schoolStackPro.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+
+USE_MYSQL = os.getenv('USE_MYSQL', 'false').lower() == 'true'
+
+if USE_MYSQL:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'schoolstack',
+            'USER': os.getenv('DB_USER', 'root'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'pass'),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': '3306',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -136,3 +152,54 @@ MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "media_cdn")
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+PWA_APP_NAME = "SchoolsStack"
+PWA_APP_SHORT_NAME = "SchoolsStack"
+PWA_APP_DESCRIPTION = "SchoolsStack App."
+
+PWA_APP_THEME_COLOR = "#1a73e8"
+PWA_APP_BACKGROUND_COLOR = "#1a73e8"
+
+PWA_APP_DISPLAY = "standalone"
+PWA_APP_ORIENTATION = "portrait"
+PWA_APP_START_URL = "/"
+
+PWA_APP_ICONS = [
+    {"src": "/static/sw/images/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/static/sw/images/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {
+        "src": "/static/sw/images/icon-192-maskable.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "maskable",
+    },
+    {
+        "src": "/static/sw/images/icon-512-maskable.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "maskable",
+    },
+]
+
+PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'schoolStackPro', '../static/sw/serviceworker.js')
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+
+CORS_ALLOWED_ORIGINS = [
+    'https://schoolsstack.in',
+    'https://www.schoolsstack.in',
+]
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://schoolsstack.in",
+    "https://www.schoolsstack.in",
+]

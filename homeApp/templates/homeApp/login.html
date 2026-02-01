@@ -1,228 +1,267 @@
 {% load static %}
-{#{% load pwa %}#}
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
-          content="width=device-width,  initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="icon" href="{% static 'sw/images/favicon.ico' %}" sizes="any">
-    <link rel="apple-touch-icon" href="{% static 'sw/images/apple-touch-icon.png' %}">
-    <title>Login</title>
-{#    {% progressive_web_app_meta %}#}
-    {#    <link rel="stylesheet" type="text/css" href="{% static 'cssMain/semantic.min.css' %}">#}
-    {#     <script src="{% static 'jsMain/jquery.min.js' %}"></script>#}
-    {#    <script src="{% static 'jsMain/semantic.min.js' %}"></script>#}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
-            integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
-            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.8/semantic.min.css"
-          integrity="sha512-pbLYRiE96XJxmJgF8oWBfa9MdKwuXhlV7vgs2LLlapHLXceztfcta0bdeOgA4reIf0WH67ThWzA684JwkM3zfQ=="
-          crossorigin="anonymous" referrerpolicy="no-referrer"/>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.8/semantic.min.js"
-            integrity="sha512-t5mAtfZZmR2gl5LK7WEkJoyHCfyzoy10MlerMGhxsXl3J7uSSNTAW6FK/wvGBC8ua9AFazwMaC0LxsMTMiM5gg=="
-            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="{% static 'sw/app.js' %}"></script>
+          content="width=device-width,initial-scale=1.0,maximum-scale=5.0,minimum-scale=1.0">
 
+    <title>Login</title>
+
+    <link rel="icon" href="{% static 'sw/images/favicon.ico' %}">
+    <link rel="apple-touch-icon" href="{% static 'sw/images/apple-touch-icon.png' %}">
+
+    <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+    <!-- Semantic UI (toast support) -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.8/semantic.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.8.8/semantic.min.js"></script>
+
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!-- Roboto Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+          rel="stylesheet">
 
     <style>
+        /* Page background */
         body {
-            background: rgba(71, 255, 163, 0.50);
-            background: -webkit-linear-gradient(0deg, rgba(71, 255, 163, 0.5) 0%, rgba(71, 172, 255, 0.5) 100%);
-            background: linear-gradient(0deg, rgba(71, 255, 163, 0.5) 0%, rgba(71, 172, 255, 0.5) 100%);
-        }
-
-        fieldset {
-            border: none;
-        }
-
-        .container {
-            padding-top: 4rem;
-        }
-
-        .ui.grid {
+           background: linear-gradient(135deg, #e3eafdff, #E8F5E9);
+            height: 100vh;
+            margin: 0;
             display: flex;
+            flex-direction: column;
+            font-family: 'Roboto', sans-serif;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Main card */
+        .login-card {
+            width: 780px;
+            display: flex;
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(14px);
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .15);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+        }
+
+        /* Left section */
+        .left-panel {
+            width: 50%;
+            padding: 30px 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(14px);
+        }
+
+        .left-panel img {
+            width: 110px;
+            height: 110px;
+            margin-top: 20px;
+        }
+
+        .left-panel .title {
+            margin-top: 18px;
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a73e8;
+            letter-spacing: 1px;
+        }
+
+        /* Right section */
+        .right-panel {
+            width: 50%;
+            padding: 40px 30px 25px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
             justify-content: center;
         }
 
-        header {
-            background-color: #3c3a3a;
-            color: #ffffff;
-            display: block;
-            padding: 1em;
+        .login-header {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1a73e8;
+            margin-bottom: 25px;
             text-align: center;
-            font-size: 16px;
+            letter-spacing: .5px;
         }
 
-        .input-wrapper {
+        /* Material input */
+        .material-input {
             position: relative;
-            display: block;
-            margin: 1em auto;
-            border-bottom: 1px solid #4caf50;
-            border-radius: 3px;
-            width: 300px;
-            padding-left: 20px;
-            font-size: 20px;
+            margin: 20px 0;
         }
 
-        input {
+        .material-input input {
             width: 100%;
-            line-height: 1;
-            background-color: transparent;
+            padding: 12px 12px 12px 44px;
+            font-size: 15px;
+            border-radius: 8px;
+            border: 1px solid #d2d2d2;
+            outline: none;
+            transition: .2s;
+            background: #fafafa;
+        }
+
+        .material-input input:focus {
+            border-color: #1a73e8;
+            background: white;
+            box-shadow: 0 2px 6px rgba(26, 115, 232, 0.25);
+        }
+
+        .material-input i {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            font-size: 22px;
+            color: #5f6368;
+        }
+
+        /* Login button */
+        .login-btn {
+            width: 100%;
+            padding: 14px 0;
+            margin-top: 25px;
+            background: #1a73e8;
             border: none;
-            padding: .6em .5em;
-            outline: 0;
+            border-radius: 8px;
             color: white;
+            font-size: 15px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(26, 115, 232, 0.25);
+            transition: .2s;
         }
 
-        .column_1 {
-            width: 300px;
-           background: rgba(255,255,255,0.5);
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.25);
-            border-radius: 5px;
-
+        .login-btn:hover {
+            background: #155fc2;
         }
 
-        .column_2 {
-            width: 300px;
-            background-color: #272E38;
-            border-radius: 5px;
-        }
-
-        button {
-            outline: 0;
-            font-size: 12px;
-            letter-spacing: 0.1em;
-            background-color: #4caf50;
-            color: #fff;
-            border: none;
-            border-radius: 3px;
-            width: 200px;
-            padding: 1.2em 0;
-            margin: 4em auto;
-            display: block;
-            border-top: 2px solid transparent;
-            border-bottom: 2px solid transparent;
-        }
-
-        hover {
-            border-bottom-color: darkgoldenrod;
-        }
-
-        p.hd {
-            text-align: center;
-            font-variant: small-caps;
-            font-weight: bold;
-            font-family: "Times New Roman", Times, serif;
-            font-size: 30px;
-            color: #3c3a3a;
-        }
-
+        /* Credit */
         .credit {
             text-align: center;
-            font-size: 15px;
-            padding-top: 20px;
+            font-size: 14px;
+            color: #444;
+            margin-top: 18px;
+            width: 100%;
+        }
+
+        .credit a {
+            color: #1a73e8;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 780px) {
+            .login-card {
+                width: 90%;
+                flex-direction: column;
+            }
+
+            .left-panel, .right-panel {
+                width: 100%;
+            }
         }
     </style>
-</head>
-<body>
-<div class="container">
-    <div class="ui equal width center aligned padded grid">
-        <div class="ui raised segment" style="background-color: transparent;">
-            <div class="ui two column centered grid" style="background-color: transparent;padding: 1rem">
-                <div class="column_1" style="width: 350px; padding: 05px">
-                    <img class="ui centered medium circular image" src="{% static 'sw/images/icon-192.png' %}"
-                         style="width: 100px;height: 100px;margin-top: 30px" alt="Logo">
-                    <br>
-                    <p class="hd">SCHOOL-STACK</p>
 
-                </div>
-                <div class="column_2" style="width: 350px; padding: 05px">
-                    <form id="userLoginForm" action="{% url 'homeApp:post_login' %}" method="post">{% csrf_token %}
-                        <div class="login-form-container">
-                            <header>LOGIN</header>
-                            <fieldset>
-                                <div class="input-wrapper">
-                                    <input type="text" placeholder="Username" name="userName" id="userName"/>
-                                </div>
-                                <div class="input-wrapper">
-                                    <input type="password" placeholder="Password " name="password" id="password"/>
-                                </div>
-                                <button style="cursor: pointer" id="continue" type="button" onclick="UserLogin()">
-                                    CONTINUE
-                                </button>
-                            </fieldset>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+</head>
+
+
+<body>
+
+<div class="login-card">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+        <img src="{% static 'sw/images/icon-192.png' %}" alt="Logo">
+        <div class="title">SCHOOLS-STACK</div>
     </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+        <form id="userLoginForm" action="{% url 'homeApp:post_login' %}" method="post">
+            {% csrf_token %}
+
+            <div class="login-header">LOGIN</div>
+
+            <div class="material-input">
+                <i class="material-icons">person</i>
+                <input type="text" id="userName" name="userName" placeholder="Username">
+            </div>
+
+            <div class="material-input">
+                <i class="material-icons">lock</i>
+                <input type="password" id="password" name="password" placeholder="Password">
+            </div>
+
+            <button class="login-btn" type="button" onclick="UserLogin()">CONTINUE</button>
+        </form>
+    </div>
+
 </div>
-<p class="credit" style="">Developed by <a href="http://zivainfotech.com" target="_blank">Ziva Infotech</a></p>
+
+<p class="credit">
+    Developed by <a href="http://zivainfotech.com" target="_blank">Ziva Infotech</a>
+</p>
+
+<!-- JS Login Logic (unchanged) -->
 <script>
     function UserLogin() {
         var username = $('#userName').val();
         var password = $('#password').val();
 
         if (username === "" || password === "") {
-
-
-            $('body')
-                .toast({
-                    class: 'error',
-                    message: 'Username and Password is required !'
-                })
-            ;
-
+            $('body').toast({
+                class: 'error',
+                message: 'Username and Password is required !'
+            });
         } else {
-            data = new FormData();
-            data.append('userName', username);
-            data.append('password', password);
+            let data = new FormData();
+            data.append("userName", username);
+            data.append("password", password);
 
             $.ajax({
-                type: 'post',
-                url: '{% url 'homeApp:post_login' %}',
+                type: "POST",
+                url: "{% url 'homeApp:post_login' %}",
                 data: data,
                 contentType: false,
-                cache: false,
                 processData: false,
 
-
                 success: function (response) {
-                    if (response.message === 'success') {
-                        $('body')
-                            .toast({
-                                class: 'success',
-                                message: 'Login Successful.'
-                            });
-                        document.location.href = "" + response.data;
+                    if (response.message === "success") {
+                        $('body').toast({
+                            class: 'success',
+                            message: 'Login Successful.'
+                        });
+                        document.location.href = response.data;
                     } else {
-                        $('body')
-                            .toast({
-                                class: 'warning',
-                                message: 'Incorrect username or password. Please try again.'
-                            })
-                        ;
-
+                        $('body').toast({
+                            class: 'warning',
+                            message: 'Incorrect username or password.'
+                        });
                     }
-
-                    return response;
                 },
+
                 error: function () {
-                    $('body')
-                        .toast({
-                            class: 'error',
-                            message: 'An error occurred !'
-                        })
-                    ;
+                    $('body').toast({
+                        class: 'error',
+                        message: 'An error occurred!'
+                    });
                 }
             });
         }
     }
 </script>
+
 </body>
 </html>

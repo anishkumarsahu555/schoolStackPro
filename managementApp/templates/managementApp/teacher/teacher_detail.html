@@ -38,7 +38,7 @@
                                 </div>
 
                                 <div class="ui grid " style="margin-top: 1rem;">
-                                    <a style="cursor: pointer"
+                                    <a href="{% url 'managementApp:edit_teacher' instance.id %}" style="cursor: pointer"
                                        data-inverted=""
                                        data-tooltip="Edit Teacher Detail" data-position="top center"
                                        class="sixteen wide column orange  center aligned">Edit Detail</a>
@@ -106,10 +106,14 @@
                                                     class="ui grey text">Phone Number:</span>
                                             </div>
                                             <div class="eight wide column left aligned">{{ instance.phoneNumber }}</div>
-<div class="eight wide column left aligned"><span
+                                            <div class="eight wide column left aligned"><span
                                                     class="ui grey text">Qualification:</span>
                                             </div>
                                             <div class="eight wide column left aligned">{{ instance.qualification }}</div>
+                                            <div class="eight wide column left aligned"><span
+                                                    class="ui grey text">Additional Details:</span>
+                                            </div>
+                                            <div class="eight wide column left aligned">{{ instance.additionalDetails }}</div>
 
                                         </div>
                                     </div>

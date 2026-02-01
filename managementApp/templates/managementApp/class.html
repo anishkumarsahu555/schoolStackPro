@@ -180,33 +180,31 @@
                             <div class="three fields">
                                     <div class="field required">
                                         <label>Class Name</label>
-                                        <input type="text" name="Name" placeholder="Class Name" id="classNameEdit">
+                                        <input type="text" name="NameEdit" placeholder="Class Name" id="classNameEdit">
                                     </div>
                                     <div class="field required">
                                         <label>Class Location</label>
-                                        <input type="text" name="Location" id="classLocationEdit" placeholder="Class Location">
+                                        <input type="text" name="LocationEdit" id="classLocationEdit" placeholder="Class Location">
                                     </div>
                                     <div class="field">
                                         <label>Class Teacher</label>
                                         <select class="ui fluid dropdown" id="teacherEdit" >
-                                            <option value="None" selected>Select Teacher</option>
-                                            <option value="Yes">Yes</option>
-
+                                            <option value="" selected>Select Teacher</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="four fields">
                                     <div class="field required">
                                         <label>Start Roll</label>
-                                        <input type="number" name="startRoll0" id="startRoll0Edit" placeholder="Start Roll">
+                                        <input type="number" name="startRoll0Edit" id="startRoll0Edit" placeholder="Start Roll">
                                     </div>
                                     <div class="field required">
                                         <label>End Roll</label>
-                                        <input type="number" name="endRoll0" id="endRoll0Edit" placeholder="End Roll">
+                                        <input type="number" name="endRoll0Edit" id="endRoll0Edit" placeholder="End Roll">
                                     </div>
                                     <div class="field required" style="display: none" id="sectionDiveEdit">
                                         <label>Section</label>
-                                        <input type="text" name="section" id="section0Edit" placeholder="Section">
+                                        <input type="text" name="sectionEdit" id="section0Edit" placeholder="Section">
                                     </div>
                                      <div class="field"> </div>
 
@@ -219,7 +217,7 @@
 
                         <div class="actions" style="padding-top: 20px; padding-bottom: 20px ;float: right">
                             <div class="ui cancel button">Cancel</div>
-                            <button class="ui right labeled icon button green saveBtn" onclick="editData()">
+                            <button class="ui right labeled icon button green saveBtn" onclick="updateData()">
                                 Update
                                 <i class="checkmark icon"></i>
                             </button>
@@ -271,88 +269,143 @@
 
         let classTab
 
-        function addData() {
-            showLoading();
-            let className = $('#className').val();
-            let classLocation = $('#classLocation').val();
-            let hasSection = $('#hasSection').val();
-            let startRoll0 = $('#startRoll0').val();
-            let endRoll0 = $('#endRoll0').val();
-            let SecDetail = "";
-            let allCorrect = true;
+       function addData() {
+    showLoading();
 
-            if (className === '' || classLocation === '' || startRoll0 ==='' || endRoll0 === '') {
-               requiredFieldError();
-                hideLoading();
-                allCorrect = false;
-            }
+    let data = new FormData();
 
-            else {
-                if ( hasSection === 'Yes') {
-                sectionArray.forEach(function(value) {
-                     let secName = $('#section' + value).val();
-                    let secStartRoll = $('#startRoll' + value).val();
-                    let secEndRoll = $('#endRoll' + value).val();
-                    if (!secName || !secStartRoll || !secEndRoll) {
-                        allCorrect = false;
-                        requiredFieldError();
-                        hideLoading();
-                        return false;
-                    } else {
-                        SecDetail += secName + '|' + secStartRoll + '|' + secEndRoll + '@';
-                    }
+    // ---------- COLLECT ALL INPUTS BY ID ----------
+    $('#addForm input, #addForm select, #addForm textarea')
+        .each(function () {
+            const id = $(this).attr('id');
+            if (!id) return;
 
-
-                    });
-
-                 }
-                    if (allCorrect === true) {
-
-                        let data = new FormData();
-                        data.append('className', className);
-                        data.append('classLocation', classLocation);
-                        data.append('hasSection', hasSection);
-                        data.append('startRoll0', startRoll0);
-                        data.append('endRoll0', endRoll0);
-                        data.append('secDetail', SecDetail);
-                        data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
-                     $.ajax({
-                        type: 'post',
-                        url: "{% url 'managementAppAPI:add_class' %}",
-                        data: data,
-                        contentType: false,
-                        cache: false,
-                        processData: false,
-
-
-                        success: function (response) {
-                            if (response.status === 'success') {
-                               addSuccessNotification(response.message, response.color);
-                                classTab.ajax.reload(null, false);
-                                $('#addForm').trigger('reset');
-                                $('#addModal').modal('toggle');
-                                hideLoading();
-                            } else {
-                                addErrorNotification();
-                                hideLoading();
-
-                            }
-
-                            return response;
-                        },
-                        error: function () {
-                            addErrorNotification();
-                            hideLoading();
-                        }
-                    });
-
+            if (this.type === 'file') {
+                if (this.files.length > 0) {
+                    data.append(id, this.files[0]);
                 }
-
-
-
-
             }
+            else if (this.type === 'checkbox') {
+                data.append(id, $(this).is(':checked'));
+            }
+            else if (this.type === 'radio') {
+                if ($(this).is(':checked')) {
+                    data.append(id, $(this).val());
+                }
+            }
+            else {
+                data.append(id, $(this).val());
+            }
+        });
+
+    // ---------- PROCESS SECTION DETAILS ----------
+    let hasSection = data.get('hasSection');
+    let SecDetail = "";
+
+    if (hasSection === 'Yes') {
+        let errorFound = false;
+
+        sectionArray.forEach(function (value) {
+            let secName = $('#section' + value).val();
+            let secStartRoll = $('#startRoll' + value).val();
+            let secEndRoll = $('#endRoll' + value).val();
+
+            if (!secName || !secStartRoll || !secEndRoll) {
+                errorFound = true;
+
+                $('#section' + value).closest('.field').addClass('error');
+                $('#startRoll' + value).closest('.field').addClass('error');
+                $('#endRoll' + value).closest('.field').addClass('error');
+            } else {
+                SecDetail += secName + '|' + secStartRoll + '|' + secEndRoll + '@';
+            }
+        });
+
+        if (errorFound) {
+            requiredFieldError();
+            hideLoading();
+            return;
         }
+    }
+
+    data.append('secDetail', SecDetail);
+
+    // ---------- CSRF ----------
+    data.append(
+        'csrfmiddlewaretoken',
+        $("input[name='csrfmiddlewaretoken']").val()
+    );
+
+    // ---------- DEBUG ----------
+    console.log("Collected Add-Data:");
+    for (let pair of data.entries()) {
+        console.log(pair[0] + ": " + pair[1]);
+    }
+
+    // ---------- BASIC REQUIRED VALIDATION ----------
+    const requiredIds = [
+        'className', 'classLocation', 'startRoll0', 'endRoll0'
+    ];
+
+    let hasError = false;
+    requiredIds.forEach(id => {
+        if (!data.get(id)) {
+            $(`#${id}`).closest('.field').addClass('error');
+            hasError = true;
+        }
+    });
+
+    if (hasError) {
+        requiredFieldError();
+        hideLoading();
+        return;
+    }
+
+    // ---------- AJAX ----------
+    $.ajax({
+        type: 'POST',
+        url: "{% url 'managementAppAPI:add_class' %}",
+        data: data,
+        contentType: false,
+        processData: false,
+        cache: false,
+
+        success: function (response) {
+            console.log(response);
+
+            if (response.status === 'success') {
+                addSuccessNotification(response.message, response.color);
+                classTab.ajax.reload(null, false);
+                $('#addForm').trigger('reset');
+                $('#addModal').modal('toggle');
+            } else {
+                addErrorNotification(response.message || "Something went wrong.");
+            }
+
+            hideLoading();
+        },
+
+        error: function (xhr) {
+            console.log("ERROR:", xhr);
+
+            let msg = "Request failed. Please check your inputs.";
+
+            if (xhr.responseJSON) {
+                msg = xhr.responseJSON.message || xhr.responseJSON.error || msg;
+            }
+            else if (xhr.responseText) {
+                try {
+                    msg = JSON.parse(xhr.responseText).message;
+                } catch (e) {
+                    msg = xhr.responseText;
+                }
+            }
+
+            addErrorNotification(msg);
+            hideLoading();
+        }
+    });
+}
 
 
         function showClassModal() {
@@ -430,12 +483,12 @@
                 processData: false,
 
                 success: function (response) {
-                    if (response.status === 'success') {
-                            addSuccessNotification(response.message, response.color);
+                    if (response.status) {
+                            addSuccessNotification(response.message, 'green');
                             classTab.ajax.reload(null, false);
                             $('#deleteDataModal').modal('toggle');
                         } else {
-                                  addErrorNotification();
+                                  addErrorNotification(response.messsage);
                         }
                         return response;
                     },
@@ -481,112 +534,121 @@
             });
         }
 
-        function editData() {
-           showLoading();
-            var EditUserId = $('#EditUserId').val();
-            var CompanyUserName = $('#CompanyUserNameEdit').val();
-            var UserPhoneNo = $('#UserPhoneNoEdit').val();
-            var UserEmail = $('#UserEmailEdit').val();
-            var UserAddress = $('#UserAddressEdit').val();
-            var UserGroup = $('#UserGroupEdit').val();
-            {#var PartyGroup = $('#PartyGroupEdit').val();#}
-            var UserStatus = $('#UserStatusEdit').val();
-            var UserPwd = $('#UserPwdEdit').val();
-            var ConfirmPwd = $('#ConfirmPwdEdit').val();
+function updateData() {
+    showLoading();
 
+    let data = new FormData();
 
-            if (CompanyUserName === '' || UserPhoneNo === '' ||
-                UserAddress === '' || UserPwd === '' || ConfirmPwd === '' || UserGroup === '' || UserStatus === '') {
-                $('body')
-                    .toast({
-                        class: 'orange',
-                        message: 'User Name, Phone Number, Photo, Address ... are required !. Also ensure that password is matched'
-                    })
-                ;
-                hideLoading();
-            } else {
+    // ---------- COLLECT ALL INPUTS BY ID ----------
+    $('#EditForm input, #EditForm select, #EditForm textarea')
+        .each(function () {
+            const id = $(this).attr('id');
 
-                var csrfmiddlewaretoken = $("input[name='csrfmiddlewaretoken']").val();
+            if (!id) return; // skip elements without id
 
-                data = new FormData();
-                data.append('EditUserId', EditUserId);
-                data.append('CompanyUserName', CompanyUserName);
-                data.append('UserPhoneNo', UserPhoneNo);
-                data.append('UserEmail', UserEmail);
-                data.append('UserAddress', UserAddress);
-                data.append('UserGroup', UserGroup);
-                data.append('UserStatus', UserStatus);
-                data.append('UserPwd', UserPwd);
-                data.append('imageUpload', imageUpload);
-                data.append('imageUploadID', imageUploadID);
-                {#data.append('PartyGroup', PartyGroup);#}
-
-
-                data.append('csrfmiddlewaretoken', csrfmiddlewaretoken);
-
-
-                if (UserPwd !== ConfirmPwd) {
-                    $('body')
-                        .toast({
-                            class: 'orange',
-                            message: 'Password not matched!'
-                        })
-                    ;
-                    hideLoading();
-                } else {
-
-
-                    $.ajax({
-                        type: 'post',
-                        url: '#',
-                        data: data,
-                        contentType: false,
-                        cache: false,
-                        processData: false,
-
-
-                        success: function (response) {
-                            if (response.message === 'success') {
-                                $('body')
-                                    .toast({
-                                        class: 'success',
-                                        message: 'User detail updated Successfully.'
-                                    })
-                                ;
-
-
-                                userTab.ajax.reload(null, false);
-                                $('#EditForm').trigger('reset');
-                                $('#userModal').modal('toggle');
-                                hideLoading();
-                            } else {
-                                $('body')
-                                    .toast({
-                                        class: 'error',
-                                        message: 'An error occurred !'
-                                    })
-                                ;
-                                hideLoading();
-
-                            }
-
-                            return response;
-                        },
-                        error: function () {
-                            $('body')
-                                .toast({
-                                    class: 'error',
-                                    message: 'An error occurred !'
-                                })
-                            ;
-                            hideLoading();
-                        }
-                    });
+            // Handle file input
+            if (this.type === 'file') {
+                if (this.files.length > 0) {
+                    data.append(id, this.files[0]);
                 }
-
             }
+            // Handle checkbox
+            else if (this.type === 'checkbox') {
+                data.append(id, $(this).is(':checked'));
+            }
+            // Handle radio
+            else if (this.type === 'radio') {
+                if ($(this).is(':checked')) {
+                    data.append(id, $(this).val());
+                }
+            }
+            // Normal input/select/textarea
+            else {
+                data.append(id, $(this).val());
+            }
+        });
 
+    // ---------- CSRF ----------
+    data.append(
+        'csrfmiddlewaretoken',
+        $("input[name='csrfmiddlewaretoken']").val()
+    );
+
+    // ---------- DEBUG ----------
+    console.log("Collected Data (by ID):");
+    for (let pair of data.entries()) {
+        console.log(pair[0]);
+    }
+
+    // ---------- BASIC REQUIRED CHECK ----------
+    const requiredIds = [
+    'dataIDEdit', 'classNameEdit', 'classLocationEdit', 'endRoll0Edit', 'teacherEdit'
+    ];
+
+    let hasError = false;
+    requiredIds.forEach(id => {
+        if (!data.get(id)) {
+            console.log(id);
+             $(`#${id}`).closest('.field').addClass('error');
+            hasError = true;
         }
+    });
+
+    if (hasError) {
+       requiredFieldError();
+       hideLoading();
+       return;
+    }
+
+    // ---------- AJAX ----------
+ $.ajax({
+    type: 'POST',
+    url: "{% url 'managementAppAPI:update_class' %}",
+    data: data,
+    contentType: false,
+    processData: false,
+    cache: false,
+
+    success: function (response) {
+        console.log(response);
+
+        if (response.status) {
+            classTab.ajax.reload(null, false);
+            addSuccessNotification(response.message, 'green');
+            $('#EditForm').trigger('reset');
+            $('#editModal').modal('toggle');
+        } else {
+            addErrorNotification(response.message || "Something went wrong.");
+        }
+
+        hideLoading();
+    },
+
+    error: function (xhr) {
+        console.log("ERROR RESPONSE:", xhr);
+
+        // Extract message if backend sent JSON
+        let msg = "Request failed. Please check your inputs.";
+
+        if (xhr.responseJSON) {
+            msg = xhr.responseJSON.message || xhr.responseJSON.error || msg;
+        } 
+        else if (xhr.responseText) {
+            try {
+                let parsed = JSON.parse(xhr.responseText);
+                msg = parsed.message || parsed.error || msg;
+            } catch (e) {
+                msg = xhr.responseText;
+            }
+        }
+
+        addErrorNotification(msg);
+        hideLoading();
+    }
+});
+}
+
+
 
     </script>
 
