@@ -1096,7 +1096,7 @@ def add_student_api(request):
 
     post_data = request.POST.dict()
     files_data = request.FILES
-
+    print(request.session['current_session'])
 
     # ---------- PARENT ----------
     parent_obj, _ = Parent.objects.get_or_create(
@@ -1179,7 +1179,8 @@ def add_student_api(request):
         # Foreign keys
         standardID_id = post_data.get("standard"),
         parentID = parent_obj,
-        schoolID_id = request.session['current_session']['SchoolID'],
+        
+        # schoolID_id = request.session['current_session']['SchoolID'],
         sessionID_id = request.session['current_session']['Id'],
 
         isDeleted = False,
@@ -1418,7 +1419,7 @@ def edit_student_api(request):
         # Foreign keys
         student_obj.standardID_id = post_data.get("standard")
         student_obj.parentID = parent_obj
-        student_obj.schoolID_id = request.session['current_session']['SchoolID']
+        # student_obj.schoolID_id = request.session['current_session']['SchoolID']
         student_obj.sessionID_id = request.session['current_session']['Id']
 
         student_obj.isDeleted = False

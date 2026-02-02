@@ -23,7 +23,7 @@ def update_fields_from_signal(sender, instance, **kwargs):
     # Check if the instance is being created (has no primary key yet)
     # if instance.pk is None:
     request = kwargs.get('user', None)
-    extra_detail = get_current_school_session()
+    extra_detail = get_current_school_session(request)
     action_by = action_taken_by(request)
     instance.sessionID_id = extra_detail['SessionID']
     instance.schoolID_id = extra_detail['SchoolID']
