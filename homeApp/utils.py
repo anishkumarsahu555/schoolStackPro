@@ -35,7 +35,7 @@ def init_session(request):
 
 
 def get_current_school_session(request):
-    current = SchoolSession.objects.get(isCurrent__exact=True, isDeleted=False, schoolID__ownerID__userID_id=request.user.id)
+    current = SchoolSession.objects.get(isCurrent__exact=True, isDeleted=False, schoolID__ownerID__userID_id=request)
     return {'currentSessionYear': current.sessionYear, 'SessionID': current.pk, 'SchoolID': current.schoolID_id}
 
 
