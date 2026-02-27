@@ -10,12 +10,14 @@
     <style>
 
 
+       
         #EventTable_length {
             left: 20px;
             position: absolute;
         }
 
         #EventTable_filter {
+            width: 50%;
             float: right;
         }
 
@@ -48,24 +50,34 @@
 
                         <div class="five fields">
 
-                            <div class="field">
+                            <div class="field required" >
                                 <label>Event Title</label>
                                 <input type="text" name="title" id="title" placeholder="Event Title">
 
                             </div>
-                            <div class="field">
-                                <label>Start Date</label>
-                                <input type="date" name="start_date" id="start_date" placeholder="Start Date">
-
+                             <div class="field required">
+                            <label>Start Date</label>
+                            <div class="ui calendar" id="start_dateCal">
+                                <div class="ui input left icon">
+                                    <i class="calendar icon"></i>
+                                    <input type="text" placeholder="Start Date" id="start_date">
+                                </div>
                             </div>
-                            <div class="field">
-                                <label>End Date</label>
-                                <input type="date" name="end_date" id="end_date" placeholder="End Date">
-
+                        </div>
+                          <div class="field required">
+                            <label>End Date</label>
+                            <div class="ui calendar" id="end_dateCal">
+                                <div class="ui input left icon">
+                                    <i class="calendar icon"></i>
+                                    <input type="text" placeholder="End Date" id="end_date">
+                                </div>
                             </div>
-                            <div class="field">
-                                <label>Message</label>
-                                <input type="text" name="message" id="message" placeholder="Message">
+                        </div>
+
+                         
+                            <div class="field required">
+                                <label>Description</label>
+                                <input type="text" name="description" id="description" placeholder="Description">
 
                             </div>
 
@@ -108,13 +120,14 @@
                                 <th>Title</th>
                                 <th>Start Date</th>
                                 <th>End Date</th>
-                                <th>EditedBy</th>
+                                <th>Description</th>
                                 <th>AddedOn</th>
                                 <th>Actions</th>
                             </tr>
                             </thead>
                             <tbody>
                             </tbody>
+                            
                         </table>
                     </div>
 
@@ -154,58 +167,138 @@
 {% block js %}
     <script>
 
-        let eventTab
+let today = new Date();
+        $('#start_dateCal')
+            .calendar({
+                    monthFirst: false,
+                    type: 'date',
+                    formatter: {
+                        date: function (date, settings) {
+
+                            if (!date) return '';
+                            var day = String(date.getDate());
+                            var month = String(date.getMonth() + 1);
+                            var year = date.getFullYear();
+                            return day + '/' + month + '/' + year;
+                        }
+                    }
+                }
+            );
+
+        $('#end_dateCal').calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date, settings) {
+
+                    if (!date) return '';
+                    var day = String(date.getDate());
+                    var month = String(date.getMonth() + 1);
+                    var year = date.getFullYear();
+                    return day + '/' + month + '/' + year;
+                }
+            }
+        });
 
         function addData() {
-            showLoading();
-            let title = $('#title').val();
-            let start_date = $('#start_date').val();
-            let end_date = $('#end_date').val();
-            let message = $('#message').val();
-            if (title.trim() === '' || start_date.trim() === '' || end_date.trim() === '') {
-                requiredFieldError();
-                hideLoading();
-            } else {
+    showLoading();
 
-                let data = new FormData();
-                data.append('title', title);
-                data.append('start_date', start_date);
-                data.append('end_date', end_date);
-                data.append('message', message);
-                data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
-                $.ajax({
-                    type: 'post',
-                    // url: "{% url 'managementAppAPI:add_event_api' %}",
-                    data: data,
-                    contentType: false,
-                    cache: false,
-                    processData: false,
+    let data = new FormData();
 
-                    success: function (response) {
-                        if (response.status === 'success') {
-                            addSuccessNotification(response.message, response.color);
-                            eventTab.ajax.reload(null, false);
-                            $('#addForm').trigger('reset');
-                            hideLoading();
-                        } else {
-                            addErrorNotification();
-                            hideLoading();
+    // ---------- COLLECT ALL INPUTS BY ID ----------
+    $('#addForm input, #addForm select, #addForm textarea')
+        .each(function () {
+            const id = $(this).attr('id');
 
-                        }
+            if (!id) return; // skip elements without id
 
-                        return response;
-                    },
-                    error: function () {
-                        addErrorNotification();
-                        hideLoading();
-                    }
-                });
-
-
+            // Handle file input
+            if (this.type === 'file') {
+                if (this.files.length > 0) {
+                    data.append(id, this.files[0]);
+                }
             }
+            // Handle checkbox
+            else if (this.type === 'checkbox') {
+                data.append(id, $(this).is(':checked'));
+            }
+            // Handle radio
+            else if (this.type === 'radio') {
+                if ($(this).is(':checked')) {
+                    data.append(id, $(this).val());
+                }
+            }
+            // Normal input/select/textarea
+            else {
+                data.append(id, $(this).val());
+            }
+        });
+
+    // ---------- CSRF ----------
+    data.append(
+        'csrfmiddlewaretoken',
+        $("input[name='csrfmiddlewaretoken']").val()
+    );
+
+    // ---------- DEBUG ----------
+    console.log("Collected Data (by ID):");
+    for (let pair of data.entries()) {
+        console.log(pair[0]);
+    }
+
+    // ---------- BASIC REQUIRED CHECK ----------
+    const requiredIds = [
+        'title', 'start_date',
+        'end_date', 'description',
+    ];
+
+    let hasError = false;
+    requiredIds.forEach(id => {
+        if (!data.get(id)) {
+            console.log(id);
+             $(`#${id}`).closest('.field').addClass('error');
+            hasError = true;
         }
+    });
+
+    if (hasError) {
+       requiredFieldError();
+       hideLoading();
+       return;
+    }
+
+    // ---------- AJAX ----------
+    $.ajax({
+        type: 'POST',
+        url: "{% url 'managementAppAPI:add_event_api' %}",
+        data: data,
+        contentType: false,
+        processData: false,
+        cache: false,
+
+        success: function (response) {
+            debugger;
+            if (response.success) {
+                addSuccessNotification(response.message, 'green');
+                $('#addForm').trigger('reset');
+                eventTab.ajax.reload(null, false);
+            } else {
+                addErrorNotification(response.message);
+            }
+            hideLoading();
+        },
+
+        error: function () {
+            addErrorNotification('An error occurred !');
+            hideLoading();
+        }
+    });
+}
 
 
+        // user Details
+
+      let eventTab
         // user Details
 
         eventTab = $('#EventTable').DataTable({
@@ -220,31 +313,26 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [0, 1, 2]
+                    columns: [1, 2, 3, 4, 5, 6, 7,8,9]
                 }
             }
-                // {% comment %}      , {
-                //           extend: 'print',
-                //           exportOptions: {
-                //                columns: [1, 2, 3, 4, 5, 6, 7, 8]
-                //           }
-                //       }{% endcomment %}
             ],
             "columnDefs": [
                 {"name": "title", "targets": 0, "orderable": true},
                 {"name": "startDate", "targets": 1, "orderable": true},
                 {"name": "endDate", "targets": 2, "orderable": true},
-                {"name": "lastEditedBy", "targets": 3, "orderable": true},
+                {"name": "message", "targets": 3, "orderable": true},
                 {"name": "datetime", "targets": 4, "orderable": true},
                 {"name": "action", "targets": 5, "orderable": false}
             ],
-            aaSorting: [[4, 'desc']],
+            aaSorting: [[1, 'asc']],
             "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             "pageLength": 10,
             "processing": true,
             "serverSide": true,
-            // "ajax": "#"
+            "ajax": "{% url 'managementAppAPI:EventListJson' %}"
         });
+
 
 
         function delData(id) {
@@ -260,7 +348,7 @@
             data.append('dataID', id);
 
             $.ajax({
-                url: "#",
+                url: "{% url 'managementAppAPI:delete_event' %}",
                 type: "post",
                 data: data,
                 contentType: false,
@@ -268,8 +356,8 @@
                 processData: false,
 
                 success: function (response) {
-                    if (response.status === 'success') {
-                        addSuccessNotification(response.message, response.color);
+                    if (response.success) {
+                        addSuccessNotification(response.message, 'green');
                         eventTab.ajax.reload(null, false);
                         $('#deleteDataModal').modal('toggle');
                     } else {
@@ -290,14 +378,14 @@
             $.ajax({
                 type: 'get',
                  data: {id: id},
-                url: "#",
+                url: "{% url 'managementAppAPI:get_event_detail' %}",
 
                 success: function (response) {
-                    if (response.status === 'success') {
+                    if (response.success) {
                         $('#title').val(response.data['title']);
                         $('#start_date').val(response.data['startDate']);
                         $('#end_date').val(response.data['endDate']);
-                        $('#message').val(response.data['message']);
+                        $('#description').val(response.data['message']);
                         $('#editID').val(response.data['ID']);
                     }
                     else{
@@ -314,56 +402,6 @@
         }
 
 
-        function editData() {
-               showUpdateLoading();
-            let title = $('#title').val();
-            let start_date = $('#start_date').val();
-            let end_date = $('#end_date').val();
-            let message = $('#message').val();
-            let editID = $('#editID').val();
-            if (title.trim() === '' || start_date.trim() === '' || end_date.trim() === '') {
-                requiredFieldError();
-                hideLoading();
-            } else {
-
-                let data = new FormData();
-                data.append('title', title);
-                data.append('start_date', start_date);
-                data.append('end_date', end_date);
-                data.append('message', message);
-                data.append('editID', editID);
-                data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
-                $.ajax({
-                    type: 'post',
-                    url: "#",
-                    data: data,
-                    contentType: false,
-                    cache: false,
-                    processData: false,
-
-                    success: function (response) {
-                        if (response.status === 'success') {
-                            addSuccessNotification(response.message, response.color);
-                            eventTab.ajax.reload(null, false);
-                            $('#addForm').trigger('reset');
-                            hideLoading();
-                        } else {
-                            addErrorNotification();
-                            hideLoading();
-
-                        }
-
-                        return response;
-                    },
-                    error: function () {
-                        addErrorNotification();
-                        hideLoading();
-                    }
-                });
-
-
-            }
-        }
 
          function clearAndReset() {
             // {#$('#addForm').trigger('reset');#}
@@ -372,6 +410,94 @@
             $('#saveBtnUpdate').css('display', 'none');
 
         }
+
+        function editData() {
+    showLoading();
+
+    let data = new FormData();
+
+    // ---------- COLLECT ALL INPUTS BY ID ----------
+    $('#addForm input, #addForm select, #addForm textarea')
+        .each(function () {
+            const id = $(this).attr('id');
+
+            if (!id) return; // skip elements without id
+
+            // Handle file input
+            if (this.type === 'file') {
+                if (this.files.length > 0) {
+                    data.append(id, this.files[0]);
+                }
+            }
+            // Handle checkbox
+            else if (this.type === 'checkbox') {
+                data.append(id, $(this).is(':checked'));
+            }
+            // Handle radio
+            else if (this.type === 'radio') {
+                if ($(this).is(':checked')) {
+                    data.append(id, $(this).val());
+                }
+            }
+            // Normal input/select/textarea
+            else {
+                data.append(id, $(this).val());
+            }
+        });
+
+    // ---------- CSRF ----------
+    data.append(
+        'csrfmiddlewaretoken',
+        $("input[name='csrfmiddlewaretoken']").val()
+    );
+
+    // ---------- BASIC REQUIRED CHECK ----------
+    const requiredIds = [
+        'title', 'start_date',
+        'end_date', 'description',
+    ];
+
+    let hasError = false;
+    requiredIds.forEach(id => {
+        if (!data.get(id)) {
+            console.log(id);
+             $(`#${id}`).closest('.field').addClass('error');
+            hasError = true;
+        }
+    });
+
+    if (hasError) {
+       requiredFieldError();
+       hideLoading(true);
+       return;
+    }
+
+    // ---------- AJAX ----------
+    $.ajax({
+        type: 'POST',
+        url: "{% url 'managementAppAPI:update_event_api' %}",
+        data: data,
+        contentType: false,
+        processData: false,
+        cache: false,
+
+        success: function (response) {
+            if (response.success) {
+                addSuccessNotification(response.message, 'green');
+                $('#addForm').trigger('reset');
+                eventTab.ajax.reload(null, false);
+            } else {
+                addErrorNotification(response.message);
+            }
+            hideLoading();
+        },
+
+        error: function () {
+            addErrorNotification('An error occurred !');
+            hideLoading();
+        }
+    });
+}
 
     </script>
 

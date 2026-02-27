@@ -27,7 +27,13 @@ def post_login(request):
             login(request, user)
             get_all_session_list(request)
             init_session(request)
-            return JsonResponse({'message': 'success', 'data': '/home/'}, safe=False)
+
+            if 'Admin' in user.groups.values_list('name', flat=True) or 'Owner' in user.groups.values_list('name', flat=True):
+                return JsonResponse({'message': 'success', 'data': '/home/'}, safe=False)
+            elif 'Teaching' in user.groups.values_list('name', flat=True):
+                return JsonResponse({'message': 'success', 'data': '/student/'}, safe=False)
+            else:
+                return redirect('homeApp:homepage')
 
         else:
             return JsonResponse({'message': 'fail'}, safe=False)

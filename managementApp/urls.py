@@ -42,7 +42,10 @@ urlpatterns = [
     path('exam_marks_details/', exam_marks_details, name='exam_marks_details'),
 
     #events
-    path('add_event/', add_event, name='add_event'),
+    path('manage_event/', manage_event, name='manage_event'),
     # path('event_list/', event_list, name='event_list'),
+
+    #parents
+    path('manage_parents/', manage_parents, name='manage_parents'),
 
 ]

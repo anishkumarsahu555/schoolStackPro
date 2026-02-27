@@ -1096,7 +1096,7 @@ def add_student_api(request):
 
     post_data = request.POST.dict()
     files_data = request.FILES
-    print(request.session['current_session'])
+
 
     # ---------- PARENT ----------
     parent_obj, _ = Parent.objects.get_or_create(
@@ -1346,7 +1346,7 @@ def edit_student_api(request):
             motherOccupation = post_data.get("MotherOccupation"),
             fatherPhone = post_data.get("fatherContactNumber"),
             motherPhone = post_data.get("MotherContactNumber"),
-            fatherAddress = post_data.get("FatherAddresx₹s"),
+            fatherAddress = post_data.get("FatherAddress"),
             motherAddress = post_data.get("MotherAddress"),
             guardianName = post_data.get("guardianName"),
             guardianOccupation = post_data.get("guardianOccupation"),
@@ -2792,4 +2792,204 @@ class StudentMarksDetailsByClassAndExamJson(BaseDatatableView):
 @login_required
 def add_event_api(request):
     if request.method == 'POST':
-        return JsonResponse({'status': 'success', 'message': 'Event added successfully.', 'color': 'success'}, safe=False)
+        try:
+            post_data = request.POST.dict()
+            obj = Event.objects.create(
+            title  = post_data.get("title"),
+            startDate = datetime.strptime(post_data["start_date"], "%d/%m/%Y"),
+            endDate = datetime.strptime(post_data["end_date"], "%d/%m/%Y"),
+            message = post_data.get("description"),
+            sessionID_id = request.session['current_session']['Id'],
+            )
+            pre_save_with_user.send(sender=Event, instance=obj, user=request.user.pk)
+
+            
+            logger.info("Event added successfully")
+            return SuccessResponse('Event added successfully.').to_json_response()
+        except Exception as e:
+            logger.error(f"Error adding event: {str(e)}")
+            return ErrorResponse('Failed to add event.').to_json_response()
+    else:
+        logger.error("Invalid request method")
+        return ErrorResponse('Invalid request method.').to_json_response()    
+
+
+class EventListJson(BaseDatatableView):
+    order_columns = ['title', 'startDate',
+                     'endDate', 'message', 'datetime']
+
+    def get_initial_queryset(self):
+        return Event.objects.select_related().filter(isDeleted__exact=False,
+                                                                 sessionID_id=
+                                                                 self.request.session["current_session"][
+                                                                     "Id"])
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search) | Q(
+                    startDate__icontains=search)| Q(
+                    endDate__icontains=search)| Q(
+                    message__icontains=search)
+                |  Q(datetime__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            action = '''
+              <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
+                <i class="pen icon"></i>
+              </button>
+              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
+                <i class="trash alternate icon"></i>
+              </button></td>'''.format(item.pk, item.pk),
+            json_data.append([
+                escape(item.title),
+                escape(item.startDate.strftime('%d-%m-%Y')),
+                escape(item.endDate.strftime('%d-%m-%Y')),
+                escape(item.message),
+                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                action,
+
+            ])
+
+        return json_data
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def delete_event(request):
+    if request.method == 'POST':
+        try:
+            id = request.POST.get("dataID")
+            instance = Event.objects.get(pk=int(id), isDeleted=False,
+                                            sessionID_id=request.session['current_session']['Id'])
+            instance.isDeleted = True
+            pre_save_with_user.send(sender=Event, instance=instance, user=request.user.pk)
+            instance.save()
+            logger.info(f"Event detail deleted successfully {request.session['current_session']['Id']} event title {instance.title}")
+            return SuccessResponse("Event detail deleted successfully.").to_json_response()
+        except Exception as e:
+            logger.error(f"Error in deleting event: {e}")
+            return ErrorResponse("Error in deleting Event details").to_json_response()
+    else:
+        logger.error("Method not allowed")
+        return ErrorResponse("Method not allowed").to_json_response()        
+
+
+@login_required
+def get_event_detail(request, **kwargs):
+    try:
+        id = request.GET.get('id')
+        obj = Event.objects.get(pk=id, isDeleted=False, sessionID_id=request.session['current_session']['Id'])
+        obj_dic = {
+            'ID': obj.pk,
+            'title': obj.title,
+            'startDate': obj.startDate.strftime('%d/%m/%Y'),
+            'endDate': obj.endDate.strftime('%d/%m/%Y'),
+            'message': obj.message
+        }
+        logger.info(f"Event detail fetched successfully {request.session['current_session']['Id']} event title {obj.title}")
+        return SuccessResponse("Event detail fetched successfully.", data=obj_dic).to_json_response()
+    except Exception as e:
+        logger.error(f"Error in fetching event details: {e}")
+        return ErrorResponse("Error in fetching event details").to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def update_event_api(request):
+    if request.method == 'POST':
+        try:
+            post_data = request.POST.dict()
+            obj = Event.objects.get(pk=int(post_data.get("editID")), isDeleted=False,
+                                   sessionID_id=request.session['current_session']['Id'])
+            obj.title = post_data.get("title")
+            obj.startDate = datetime.strptime(post_data["start_date"], "%d/%m/%Y")
+            obj.endDate = datetime.strptime(post_data["end_date"], "%d/%m/%Y")
+            obj.message = post_data.get("description")
+            obj.save()
+            pre_save_with_user.send(sender=Event, instance=obj, user=request.user.pk)
+
+            logger.info("Event detail updated successfully")
+            return SuccessResponse('Event detail updated successfully.').to_json_response()
+        except Exception as e:
+            logger.error(f"Error updating event: {str(e)}")
+            return ErrorResponse('Failed to update event.').to_json_response()
+    else:
+        logger.error("Invalid request method")
+        return ErrorResponse('Invalid request method.').to_json_response()    
+
+# Parents API --------------
+class ParentsListJson(BaseDatatableView):
+    order_columns = ['fatherName', 'fatherPhone',
+                     'motherName', 'motherPhone', 
+                     'guardianName', 'guardianPhone',
+                     'totalFamilyMembers',
+                     'datetime']
+
+    def get_initial_queryset(self):
+        return Parent.objects.select_related().filter(isDeleted__exact=False,
+                                                                 sessionID_id=
+                                                                 self.request.session["current_session"][
+                                                                     "Id"])
+
+    def filter_queryset(self, qs):
+
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(fatherName__icontains=search) | Q(
+                    fatherPhone__icontains=search)| Q(
+                    motherName__icontains=search)| Q(
+                    motherPhone__icontains=search)
+                |  Q(guardianName__icontains=search) | Q(guardianPhone__icontains=search)
+                |  Q(totalFamilyMembers__icontains=search) | Q(datetime__icontains=search)
+            )
+
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            action = '''
+              <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
+                <i class="pen icon"></i>
+              </button>
+              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
+                <i class="trash alternate icon"></i>
+              </button></td>'''.format(item.pk, item.pk),
+            students = Student.objects.filter(parentID__pk=item.pk)
+            student_html = ""
+            if students.exists():
+                for s in students:
+                    student_html += f'''
+                    <a class="ui blue image label">
+                    <img src="{s.photo.thumbnail.url if s.photo else ''}">
+                    {s.name}
+                    <div class="detail">Roll: {s.roll} Class: {s.standardID.name} { "-"+s.standardID.section if s.standardID.hasSection == "Yes" else ''}</div>
+                    </a>
+                    '''
+
+            json_data.append([
+                escape(item.fatherName),
+                escape(item.fatherPhone if item.fatherPhone else 'N/A'),
+                escape(item.motherName),
+                escape(item.motherPhone if item.motherPhone else 'N/A'),
+                escape(item.guardianName),
+                escape(item.guardianPhone if item.guardianPhone else 'N/A'),
+                escape(item.totalFamilyMembers if item.totalFamilyMembers else '1'),
+                student_html,
+                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                action,
+
+            ])
+
+        return json_data

@@ -231,7 +231,15 @@ def exam_marks_details(request):
 #events------------------------------------------------------
 @login_required
 @check_groups('Admin', 'Owner')
-def add_event(request):
+def manage_event(request):
     context = {
     }
     return render(request, 'managementApp/events/add_event.html', context)
+
+# ----Parents -------------------
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_parents(request):
+    context = {
+    }
+    return render(request, 'managementApp/parents/parents_list.html', context)

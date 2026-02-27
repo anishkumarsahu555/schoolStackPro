@@ -52,10 +52,10 @@
 }
 
 .nav-section {
-    padding: 16px 24px 6px;
+        padding: 10px 10px 6px;
     font-size: 12px;
-    font-weight: 500;
-    color: #5f6368;
+    font-weight: bold;
+    color: #000000;
     text-transform: uppercase;
     letter-spacing: .05em;
 }
@@ -63,9 +63,9 @@
 .nav-item {
     display: flex;
     align-items: center;
-    padding: 12px 24px;
+    padding: 10px 10px;
     color: #3c4043;
-    font-size: 14px;
+    font-size: 12px;
     text-decoration: none;
     border-left: 3px solid transparent;
     transition: background .2s ease;
@@ -73,7 +73,7 @@
 
 .nav-item i {
     margin-right: 16px;
-    font-size: 18px;
+    font-size: 15px;
     color: #5f6368;
 }
 
@@ -457,10 +457,16 @@
 
     }
 
-    function hideLoading() {
-        $('.saveBtn').css('display', '');
+    function hideLoading(isupdate=false) {
+        if(isupdate){
+            $('.saveBtnUpdate').css('display', '');
+             $('.saveBtn').css('display', 'none');
+        }
+        else{
+            $('.saveBtn').css('display', '');
+            $('.saveBtnUpdate').css('display', 'none');
+        }
         $('.saveBtnLoad').css('display', 'none');
-        $('.saveBtnUpdate').css('display', 'none');
 
     }
 
@@ -500,11 +506,24 @@
             // if the current path is like this link, make it active
             if ($this.attr('href').indexOf(current) !== -1) {
                 $this.addClass('active');
+                // Scroll to active item
+                setTimeout(function() {
+                    var sidebar = $('.sidebar');
+                    var activeItem = sidebar.find('a.active');
+                    if (activeItem.length > 0) {
+                        var sidebarHeight = sidebar.height();
+                        var itemTop = activeItem.position().top;
+                        var itemHeight = activeItem.outerHeight();
+                        var scrollTop = sidebar.scrollTop();
+                        var targetScrollTop = scrollTop + itemTop - (sidebarHeight / 2) + (itemHeight / 2);
+                        
+                        sidebar.animate({
+                            scrollTop: targetScrollTop
+                        }, 500, 'swing');
+                    }
+                }, 100);
             }
         })
-
-
-
     })
 </script>
 <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>

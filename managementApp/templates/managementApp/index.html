@@ -62,7 +62,7 @@
 
     <!-- PARENTS -->
     <div class="nav-section">Parents</div>
-    <a class="nav-item" href="#">
+    <a class="nav-item" href="{% url 'managementApp:manage_parents' %}">
         <i class="users icon"></i>
         <span>Parents List</span>
     </a>
@@ -121,14 +121,14 @@
 
     <!-- EVENTS -->
     <div class="nav-section">Events</div>
-    <a class="nav-item" href="{% url 'managementApp:add_event' %}">
+    <a class="nav-item" href="{% url 'managementApp:manage_event' %}">
         <i class="calendar plus outline icon"></i>
-        <span>Add Event</span>
+        <span>Manage Event</span>
     </a>
-    <a class="nav-item" href="#">
+    {% comment %} <a class="nav-item" href="#">
         <i class="list alternate outline icon"></i>
         <span>Events List</span>
-    </a>
+    </a> {% endcomment %}
 
 </div>
 {% endblock %}

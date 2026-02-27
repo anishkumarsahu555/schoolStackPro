@@ -101,7 +101,14 @@ urlpatterns = [
     path('StudentMarksDetailsByClassAndExamJson', StudentMarksDetailsByClassAndExamJson.as_view(), name='StudentMarksDetailsByClassAndExamJson'),
 
     # events
-    path('add_event_api',add_event_api, name='add_event_api')
+    path('add_event_api',add_event_api, name='add_event_api'),
+    path('EventListJson', EventListJson.as_view(), name='EventListJson'),
+    path('delete_event', delete_event, name='delete_event'),
+    path('get_event_detail', get_event_detail, name='get_event_detail'),
+    path('update_event_api', update_event_api, name='update_event_api'),
+
+    #parent
+    path('ParentsListJson', ParentsListJson.as_view(), name='ParentsListJson'),
 
 
 ]
