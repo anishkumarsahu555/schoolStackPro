@@ -770,7 +770,7 @@ function addStudentData() {
         cache: false,
 
         success: function (response) {
-            if (response.status) {
+            if (response.success) {
                 addSuccessNotification(response.message, 'green');
                 $('#cImg').css(
                     'background-image',

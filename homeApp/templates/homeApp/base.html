@@ -593,7 +593,7 @@
                 processData: false,
 
                 success: function (response) {
-                    if (response.status === 'success') {
+                    if (response.success) {
                         addSuccessNotification(response.message, response.color);
                         $('#sessionModal').modal('toggle');
                         setTimeout(location.reload.bind(location), 1500);

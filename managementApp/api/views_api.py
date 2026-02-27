@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.db import transaction
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import JsonResponse as DjangoJsonResponse
 from django.utils.crypto import get_random_string
 from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
@@ -19,6 +19,31 @@ from utils.json_validator import validate_input
 from utils.logger import logger
 from utils.custom_response import SuccessResponse, ErrorResponse
 from utils.cache_modfier import add_item_to_existing_cache, delete_item_from_existing_cache, update_item_in_existing_cache
+
+
+def _api_response(payload, safe=False, status=200):
+    if isinstance(payload, dict):
+        response_type = payload.get("status")
+        message = payload.get("message")
+        data = payload.get("data")
+        extra = {k: v for k, v in payload.items() if k not in {"status", "message", "data"}}
+
+        if response_type == "success":
+            return SuccessResponse(
+                message or "Request processed successfully.",
+                status_code=status,
+                data=data,
+                extra=extra,
+            ).to_json_response()
+        if response_type == "error":
+            return ErrorResponse(
+                message or "Request failed.",
+                status_code=status,
+                data=data,
+                extra=extra,
+            ).to_json_response()
+
+    return DjangoJsonResponse(payload, safe=safe, status=status)
 
 # Class ------------------
 @transaction.atomic
@@ -40,7 +65,7 @@ def add_class(request):
                     Standard.objects.get(name__iexact=className, hasSection=hasSection, isDeleted=False,
                                          sessionID_id=request.session["current_session"]["Id"])
                     logger.info( f"Class already exists {request.session["current_session"]["Id"]}- {className}")                     
-                    return JsonResponse(
+                    return _api_response(
                         {'status': 'success', 'message': 'Class already exists. Please change the name.',
                          'color': 'info'}, safe=False)
                 except:
@@ -59,7 +84,7 @@ def add_class(request):
                     }
                     add_item_to_existing_cache("standard_list"+str(request.session["current_session"]["Id"]), new_data)
                     logger.info( f"Class created successfully {request.session["current_session"]["Id"]}- {instance.name}")
-                    return JsonResponse(
+                    return _api_response(
                         {'status': 'success', 'message': 'New class created successfully.', 'color': 'success'},
                         safe=False)
             elif hasSection == 'Yes':
@@ -78,7 +103,7 @@ def add_class(request):
                         try:
                             Standard.objects.get(name__iexact=className, hasSection=hasSection, section__iexact=i[0],
                                                  isDeleted=False,sessionID_id=request.session["current_session"]["Id"])
-                            return JsonResponse(
+                            return _api_response(
                                 {'status': 'success', 'message': 'Class already exists. Please change the name.',
                                 'color': 'info'}, safe=False)
                         except:
@@ -99,16 +124,16 @@ def add_class(request):
                             add_item_to_existing_cache("standard_list"+str(request.session["current_session"]["Id"]), new_data)
                             logger.info( f"Class created successfully {request.session["current_session"]["Id"]}- {instance.name}-{instance.section}")
 
-                    return JsonResponse(
+                    return _api_response(
                         {'status': 'success', 'message': 'New classes created successfully.', 'color': 'success'},
                         safe=False)
                 except Exception as e:
                     logger.error(f"Error creating classes: {e}")
-                    return JsonResponse({'status': 'error'}, safe=False)
-            return JsonResponse({'status': 'error'}, safe=False)
+                    return _api_response({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
         except Exception as e:
             logger.error(f"Error in add_class: {e}")
-            return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
 
 
 @transaction.atomic
@@ -142,7 +167,7 @@ def update_class(request):
 
     except Standard.DoesNotExist:
         logger.error("Class not found")
-        return ErrorResponse("Class not found").as_json_response()       
+        return ErrorResponse("Class not found").to_json_response()
     except Exception as e:
         logger.error(f"Error in update_class: {e}")
         return ErrorResponse("Error in updating Class details").to_json_response()
@@ -226,9 +251,9 @@ def get_class_detail(request, **kwargs):
             'Teacher': teacher,
             'TeacherID': str(teacherID)
         }
-        return JsonResponse({'status': 'success', 'data': obj_dic}, safe=False)
+        return _api_response({'status': 'success', 'data': obj_dic}, safe=False)
     except:
-        return JsonResponse({'status': 'error'}, safe=False)
+        return _api_response({'status': 'error'}, safe=False)
 
 
 @transaction.atomic
@@ -267,7 +292,7 @@ def add_subject(request):
         try:
             Subjects.objects.get(name__iexact=subject_name, isDeleted=False,
                                  sessionID_id=request.session['current_session']['Id'])
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Subject already exists. Please change the name.', 'color': 'info'},
                 safe=False)
         except:
@@ -281,10 +306,10 @@ def add_subject(request):
             }
             # add a new item to the cache
             add_item_to_existing_cache('subjects_list'+str(request.session['current_session']['Id']), new_item)
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'New subject created successfully.', 'color': 'success'},
                 safe=False)
-    return JsonResponse({'status': 'error'}, safe=False)
+    return _api_response({'status': 'error'}, safe=False)
 
 
 class SubjectListJson(BaseDatatableView):
@@ -339,12 +364,12 @@ def delete_subject(request):
             pre_save_with_user.send(sender=Subjects, instance=instance, user=request.user.pk)
             delete_item_from_existing_cache("subjects_list"+str(request.session['current_session']['Id']), id)
             instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Subject detail deleted successfully.',
                  'color': 'success'}, safe=False)
         except:
-            return JsonResponse({'status': 'error'}, safe=False)
-    return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
+    return _api_response({'status': 'error'}, safe=False)
 
 
 @login_required
@@ -356,9 +381,9 @@ def get_subject_detail(request, **kwargs):
             'ID': obj.pk,
             'SubjectName': obj.name,
         }
-        return JsonResponse({'status': 'success', 'data': obj_dic}, safe=False)
+        return _api_response({'status': 'success', 'data': obj_dic}, safe=False)
     except:
-        return JsonResponse({'status': 'error'}, safe=False)
+        return _api_response({'status': 'error'}, safe=False)
 
 
 @transaction.atomic
@@ -374,7 +399,7 @@ def edit_subject(request):
                                            sessionID_id=request.session['current_session']['Id']).exclude(
                 pk=int(editID))
             if data.count() > 0:
-                return JsonResponse(
+                return _api_response(
                     {'status': 'success', 'message': 'Subject already exists. Please change the name.',
                      'color': 'info'},
                     safe=False)
@@ -388,12 +413,12 @@ def edit_subject(request):
                 'Name': instance.name
                 }
                 update_item_in_existing_cache("subjects_list"+str(request.session['current_session']['Id']), editID, new_data)
-                return JsonResponse(
+                return _api_response(
                     {'status': 'success', 'message': 'Subject name updated successfully.', 'color': 'success'},
                     safe=False)
         except:
 
-            return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
 
 
 
@@ -418,11 +443,11 @@ def add_subject_to_class(request):
                     instance.subjectID_id = int(s)
                     pre_save_with_user.send(sender=AssignSubjectsToClass, instance=instance, user=request.user.pk)
                     instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'New subject created successfully.', 'color': 'success'},
                 safe=False)
         except:
-            return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
 
 
 class AssignSubjectToClassListJson(BaseDatatableView):
@@ -485,12 +510,12 @@ def delete_assign_subject_to_class(request):
             instance.isDeleted = True
             pre_save_with_user.send(sender=AssignSubjectsToClass, instance=instance, user=request.user.pk)
             instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Assigned Subject detail deleted successfully.',
                  'color': 'success'}, safe=False)
         except:
-            return JsonResponse({'status': 'error'}, safe=False)
-    return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
+    return _api_response({'status': 'error'}, safe=False)
 
 
 @login_required
@@ -504,9 +529,9 @@ def get_assigned_subject_to_class_detail(request, **kwargs):
             'SubjectID': obj.subjectID.pk,
             'ID': obj.pk,
         }
-        return JsonResponse({'status': 'success', 'data': obj_dic}, safe=False)
+        return _api_response({'status': 'success', 'data': obj_dic}, safe=False)
     except:
-        return JsonResponse({'status': 'error'}, safe=False)
+        return _api_response({'status': 'error'}, safe=False)
 
 
 @transaction.atomic
@@ -531,11 +556,11 @@ def update_subject_to_class(request):
                     instance.subjectID_id = int(s)
                     pre_save_with_user.send(sender=AssignSubjectsToClass, instance=instance, user=request.user.pk)
                     instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Detail updated successfully.', 'color': 'success'},
                 safe=False)
         except:
-            return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
 
 
 @login_required
@@ -555,7 +580,7 @@ def get_subjects_to_class_assign_list_api(request):
 
         }
         data.append(data_dic)
-    return JsonResponse(
+    return _api_response(
         {'status': 'success', 'data': data,
          'color': 'success'}, safe=False)
 
@@ -574,7 +599,7 @@ def get_subjects_to_class_assign_list_with_given_class_api(request):
 
         }
         data.append(data_dic)
-    return JsonResponse(
+    return _api_response(
         {'status': 'success', 'data': data,
          'color': 'success'}, safe=False)
 
@@ -594,7 +619,7 @@ def add_subject_to_teacher(request):
                 AssignSubjectsToTeacher.objects.get(assignedSubjectID_id=int(standard), teacherID_id=int(teachers),
                                                     subjectBranch__iexact=branch, isDeleted=False,
                                                     sessionID_id=request.session['current_session']['Id'])
-                return JsonResponse(
+                return _api_response(
                     {'status': 'success', 'message': 'Subject already assigned successfully.', 'color': 'info'},
                     safe=False)
             except:
@@ -604,11 +629,11 @@ def add_subject_to_teacher(request):
                 instance.subjectBranch = branch
                 pre_save_with_user.send(sender=AssignSubjectsToTeacher, instance=instance, user=request.user.pk)
                 instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Subject assigned successfully.', 'color': 'success'},
                 safe=False)
         except:
-            return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
 
 
 class AssignSubjectToTeacherListJson(BaseDatatableView):
@@ -727,12 +752,12 @@ def delete_assign_teacher_to_subject(request):
             instance.isDeleted = True
             pre_save_with_user.send(sender=AssignSubjectsToTeacher, instance=instance, user=request.user.pk)
             instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Assigned Teacher detail deleted successfully.',
                  'color': 'success'}, safe=False)
         except:
-            return JsonResponse({'status': 'error'}, safe=False)
-    return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
+    return _api_response({'status': 'error'}, safe=False)
 
 
 @login_required
@@ -747,9 +772,9 @@ def get_assigned_subject_to_teacher_detail(request, **kwargs):
             'branch': obj.subjectBranch,
             'ID': obj.pk,
         }
-        return JsonResponse({'status': 'success', 'data': obj_dic}, safe=False)
+        return _api_response({'status': 'success', 'data': obj_dic}, safe=False)
     except:
-        return JsonResponse({'status': 'error'}, safe=False)
+        return _api_response({'status': 'error'}, safe=False)
 
 
 @transaction.atomic
@@ -771,7 +796,7 @@ def update_subject_to_teacher(request):
                                                     isDeleted=False,
                                                     sessionID_id=request.session['current_session']['Id']).exclude(
                     pk=int(editID))
-                return JsonResponse(
+                return _api_response(
                     {'status': 'success', 'message': 'Detail already assigned.', 'color': 'info'},
                     safe=False)
             except:
@@ -781,11 +806,11 @@ def update_subject_to_teacher(request):
                 instance.subjectBranch = branch
                 pre_save_with_user.send(sender=AssignSubjectsToTeacher, instance=instance, user=request.user.pk)
                 instance.save()
-                return JsonResponse(
+                return _api_response(
                     {'status': 'success', 'message': 'Detail updated successfully.', 'color': 'success'},
                     safe=False)
         except:
-            return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
 
 
 # Teachers ---------------------------------------------------------------------------------------
@@ -821,7 +846,7 @@ def add_teacher_api(request):
         try:
             TeacherDetail.objects.get(phoneNumber__iexact=phone, isDeleted=False,
                                       sessionID_id=request.session['current_session']['Id'])
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Teacher already exists. Please change the name.', 'color': 'info'},
                 safe=False)
         except:
@@ -880,10 +905,10 @@ def add_teacher_api(request):
                 # Continue with teacher update even if group assignment fails
             pre_save_with_user.send(sender=TeacherDetail, instance=instance, user=request.user.pk)
             instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'New Teacher added successfully.', 'color': 'success'},
                 safe=False)
-    return JsonResponse({'status': 'error'}, safe=False)
+    return _api_response({'status': 'error'}, safe=False)
 
 @transaction.atomic
 @csrf_exempt
@@ -1057,12 +1082,12 @@ def delete_teacher(request):
             user.save()
             pre_save_with_user.send(sender=TeacherDetail, instance=instance, user=request.user.pk)
             instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Teacher/Staff detail deleted successfully.',
                  'color': 'success'}, safe=False)
         except:
-            return JsonResponse({'status': 'error'}, safe=False)
-    return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
+    return _api_response({'status': 'error'}, safe=False)
 
 
 @login_required
@@ -1080,7 +1105,7 @@ def get_teacher_list_api(request):
 
         }
         data.append(data_dic)
-    return JsonResponse(
+    return _api_response(
         {'status': 'success', 'data': data,
          'color': 'success'}, safe=False)
 
@@ -1131,7 +1156,7 @@ def add_student_api(request):
         sessionID_id = request.session['current_session']['Id'],
         isDeleted = False
     ).exists():
-        return JsonResponse(
+        return _api_response(
             {'status': 'success', 'message': 'Student already exists.', 'color': 'info'},
             safe=False
         )
@@ -1233,7 +1258,7 @@ def get_student_list_by_class_api(request):
 
         }
         data.append(data_dic)
-    return JsonResponse(
+    return _api_response(
         {'status': 'success', 'data': data,
          'color': 'success'}, safe=False)
 
@@ -1317,12 +1342,12 @@ def delete_student(request):
             user.save()
             pre_save_with_user.send(sender=Student, instance=instance, user=request.user.pk)
             instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Student detail deleted successfully.',
                  'color': 'success'}, safe=False)
         except:
-            return JsonResponse({'status': 'error'}, safe=False)
-    return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
+    return _api_response({'status': 'error'}, safe=False)
 
 
 @transaction.atomic
@@ -1371,7 +1396,7 @@ def edit_student_api(request):
             sessionID_id = request.session['current_session']['Id'],
             isDeleted = False
         ).exclude(pk = post_data.get("editID")).exists():
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Student already exists.', 'color': 'info'},
                 safe=False
             )
@@ -1458,7 +1483,7 @@ def add_exam(request):
         try:
             Exam.objects.get(name__iexact=exam, isDeleted=False,
                              sessionID_id=request.session['current_session']['Id'])
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Exam already exists. Please change the name.', 'color': 'info'},
                 safe=False)
         except:
@@ -1466,10 +1491,10 @@ def add_exam(request):
             instance.name = exam
             pre_save_with_user.send(sender=Exam, instance=instance, user=request.user.pk)
             instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'New Exam created successfully.', 'color': 'success'},
                 safe=False)
-    return JsonResponse({'status': 'error'}, safe=False)
+    return _api_response({'status': 'error'}, safe=False)
 
 
 class ExamListJson(BaseDatatableView):
@@ -1523,12 +1548,12 @@ def delete_exam(request):
             instance.isDeleted = True
             pre_save_with_user.send(sender=Exam, instance=instance, user=request.user.pk)
             instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Exam detail deleted successfully.',
                  'color': 'success'}, safe=False)
         except:
-            return JsonResponse({'status': 'error'}, safe=False)
-    return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
+    return _api_response({'status': 'error'}, safe=False)
 
 
 @login_required
@@ -1540,9 +1565,9 @@ def get_exam_detail(request, **kwargs):
             'ID': obj.pk,
             'ExamName': obj.name,
         }
-        return JsonResponse({'status': 'success', 'data': obj_dic}, safe=False)
+        return _api_response({'status': 'success', 'data': obj_dic}, safe=False)
     except:
-        return JsonResponse({'status': 'error'}, safe=False)
+        return _api_response({'status': 'error'}, safe=False)
 
 
 @transaction.atomic
@@ -1558,7 +1583,7 @@ def edit_exam(request):
                                        sessionID_id=request.session['current_session']['Id']).exclude(
                 pk=int(editID))
             if data.count() > 0:
-                return JsonResponse(
+                return _api_response(
                     {'status': 'success', 'message': 'Exam already exists. Please change the name.',
                      'color': 'info'},
                     safe=False)
@@ -1567,12 +1592,12 @@ def edit_exam(request):
                 instance.name = exam
                 pre_save_with_user.send(sender=Exam, instance=instance, user=request.user.pk)
                 instance.save()
-                return JsonResponse(
+                return _api_response(
                     {'status': 'success', 'message': 'Exam name updated successfully.', 'color': 'success'},
                     safe=False)
         except:
 
-            return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
 
 
 @login_required
@@ -1587,7 +1612,7 @@ def get_exams_list_api(request):
 
         }
         data.append(data_dic)
-    return JsonResponse(
+    return _api_response(
         {'status': 'success', 'data': data, 'color': 'success'}, safe=False)
 
 
@@ -1619,11 +1644,11 @@ def add_exam_to_class(request):
                     instance.endDate = datetime.strptime(eDate, '%d/%m/%Y')
                     pre_save_with_user.send(sender=AssignExamToClass, instance=instance, user=request.user.pk)
                     instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Exam assigned successfully.', 'color': 'success'},
                 safe=False)
         except:
-            return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
 
 
 class AssignExamToClassListJson(BaseDatatableView):
@@ -1696,12 +1721,12 @@ def delete_assign_exam_to_class(request):
             instance.isDeleted = True
             pre_save_with_user.send(sender=AssignExamToClass, instance=instance, user=request.user.pk)
             instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Assigned Exam detail deleted successfully.',
                  'color': 'success'}, safe=False)
         except:
-            return JsonResponse({'status': 'error'}, safe=False)
-    return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
+    return _api_response({'status': 'error'}, safe=False)
 
 
 @login_required
@@ -1719,9 +1744,9 @@ def get_assigned_exam_to_class_detail(request, **kwargs):
             'EndDate': obj.endDate.strftime('%d/%m/%Y'),
             'ID': obj.pk,
         }
-        return JsonResponse({'status': 'success', 'data': obj_dic}, safe=False)
+        return _api_response({'status': 'success', 'data': obj_dic}, safe=False)
     except:
-        return JsonResponse({'status': 'error'}, safe=False)
+        return _api_response({'status': 'error'}, safe=False)
 
 
 @transaction.atomic
@@ -1745,7 +1770,7 @@ def update_exam_to_class(request):
                                                   isDeleted=False,
                                                   sessionID_id=request.session['current_session']['Id']).exclude(
                         pk=int(editID))
-                    return JsonResponse(
+                    return _api_response(
                         {'status': 'success', 'message': 'Detail already assigned.', 'color': 'info'},
                         safe=False)
                 except:
@@ -1757,11 +1782,11 @@ def update_exam_to_class(request):
                     instance.endDate = datetime.strptime(eDate, '%d/%m/%Y')
                     pre_save_with_user.send(sender=AssignExamToClass, instance=instance, user=request.user.pk)
                     instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Detail updated successfully.', 'color': 'success'},
                 safe=False)
         except:
-            return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
 
 
 @login_required
@@ -1780,7 +1805,7 @@ def get_exam_list_by_class_api(request):
 
         }
         data.append(data_dic)
-    return JsonResponse(
+    return _api_response(
         {'status': 'success', 'data': data,
          'color': 'success'}, safe=False)
 
@@ -1928,12 +1953,12 @@ def add_student_attendance_by_class(request):
             instance.absentReason = reason
             pre_save_with_user.send(sender=StudentAttendance, instance=instance, user=request.user.pk)
             instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Attendance added successfully.', 'color': 'success'},
                 safe=False)
         except:
 
-            return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
 
 
 class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
@@ -2230,12 +2255,12 @@ def add_staff_attendance_api(request):
             instance.absentReason = reason
             pre_save_with_user.send(sender=TeacherAttendance, instance=instance, user=request.user.pk)
             instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Attendance added successfully.', 'color': 'success'},
                 safe=False)
         except:
 
-            return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
 
 
 class StaffAttendanceHistoryByDateRangeJson(BaseDatatableView):
@@ -2477,12 +2502,12 @@ def add_student_fee_api(request):
             instance.payDate = datetime.today().date()
             pre_save_with_user.send(sender=StudentFee, instance=instance, user=request.user.pk)
             instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Student fee added successfully.', 'color': 'success'},
                 safe=False)
         except:
 
-            return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
 
 
 class StudentFeeDetailsByClassJson(BaseDatatableView):
@@ -2728,12 +2753,12 @@ def add_subject_mark_api(request):
             instance.payDate = datetime.today().date()
             pre_save_with_user.send(sender=MarkOfStudentsByExam, instance=instance, user=request.user.pk)
             instance.save()
-            return JsonResponse(
+            return _api_response(
                 {'status': 'success', 'message': 'Mark added successfully.', 'color': 'success'},
                 safe=False)
         except:
 
-            return JsonResponse({'status': 'error'}, safe=False)
+            return _api_response({'status': 'error'}, safe=False)
 
 
 class StudentMarksDetailsByClassAndExamJson(BaseDatatableView):

@@ -427,7 +427,7 @@
                     processData: false,
 
                     success: function (response) {
-                        if (response.status) {
+                        if (response.success) {
                             addSuccessNotification(response.message, "green");
                             {#subjectTab.ajax.reload(null, false);#}
                             hideLoading();

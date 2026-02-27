@@ -373,7 +373,7 @@
         success: function (response) {
             console.log(response);
 
-            if (response.status === 'success') {
+            if (response.success) {
                 addSuccessNotification(response.message, response.color);
                 classTab.ajax.reload(null, false);
                 $('#addForm').trigger('reset');
@@ -483,7 +483,7 @@
                 processData: false,
 
                 success: function (response) {
-                    if (response.status) {
+                    if (response.success) {
                             addSuccessNotification(response.message, 'green');
                             classTab.ajax.reload(null, false);
                             $('#deleteDataModal').modal('toggle');
@@ -508,7 +508,7 @@
                 url: '{% url "managementAppAPI:get_class_detail" %}',
 
                 success: function (response) {
-                     if (response.status === 'success') {
+                     if (response.success) {
                                console.log(response);
                     $('#dataIDEdit').val(response.data['ClassID']);
                     $('#classNameEdit').val(response.data['Class']);
@@ -612,7 +612,7 @@ function updateData() {
     success: function (response) {
         console.log(response);
 
-        if (response.status) {
+        if (response.success) {
             classTab.ajax.reload(null, false);
             addSuccessNotification(response.message, 'green');
             $('#EditForm').trigger('reset');

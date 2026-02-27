@@ -168,7 +168,7 @@
                 processData: false,
 
                 success: function (response) {
-                    if (response.status === 'success') {
+                    if (response.success) {
                             addSuccessNotification(response.message, response.color);
                             teacherTab.ajax.reload(null, false);
                             $('#deleteDataModal').modal('toggle');

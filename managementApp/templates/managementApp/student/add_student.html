@@ -756,7 +756,7 @@ function addStudentData() {
         cache: false,
 
         success: function (response) {
-            if (response.status) {
+            if (response.success) {
                 addSuccessNotification(response.message, 'green');
                 $('#addForm').trigger('reset');
                 $('#cImg').css(

@@ -326,7 +326,7 @@
                     processData: false,
 
                     success: function (response) {
-                        if (response.status === 'success') {
+                        if (response.success) {
                             addSuccessNotification(response.message, response.color);
                             subjectTab.ajax.reload(null, false);
                             clearAndReset();
@@ -416,7 +416,7 @@
                 processData: false,
 
                 success: function (response) {
-                    if (response.status === 'success') {
+                    if (response.success) {
                         addSuccessNotification(response.message, response.color);
                         subjectTab.ajax.reload(null, false);
                         $('#deleteDataModal').modal('toggle');
@@ -442,7 +442,7 @@
                 url: "{% url 'managementAppAPI:get_assigned_exam_to_class_detail' %}",
 
                 success: function (response) {
-                    if (response.status === 'success') {
+                    if (response.success) {
                         $('#standard').val(response.data['StandardID']).change();
                         $('#exam').val(response.data['ExamID']).change();
                         $('#fmark').val(response.data['FullMarks']);
@@ -496,7 +496,7 @@
                     processData: false,
 
                     success: function (response) {
-                        if (response.status === 'success') {
+                        if (response.success) {
                             addSuccessNotification(response.message, response.color);
                             subjectTab.ajax.reload(null, false);
                             clearAndReset();

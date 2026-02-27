@@ -159,7 +159,7 @@
                     processData: false,
 
                     success: function (response) {
-                        if (response.status === 'success') {
+                        if (response.success) {
                             addSuccessNotification(response.message, response.color);
                             subjectTab.ajax.reload(null, false);
                             $('#addForm').trigger('reset');
@@ -243,7 +243,7 @@
                 processData: false,
 
                 success: function (response) {
-                    if (response.status === 'success') {
+                    if (response.success) {
                         addSuccessNotification(response.message, response.color);
                         subjectTab.ajax.reload(null, false);
                         $('#deleteDataModal').modal('toggle');
@@ -268,7 +268,7 @@
                 url: "{% url 'managementAppAPI:get_subject_detail' %}",
 
                 success: function (response) {
-                    if (response.status === 'success') {
+                    if (response.success) {
                         $('#subject_name').val(response.data['SubjectName']);
                         $('#editID').val(response.data['ID']);
                     }
@@ -308,7 +308,7 @@
                     processData: false,
 
                     success: function (response) {
-                        if (response.status === 'success') {
+                        if (response.success) {
                             addSuccessNotification(response.message, response.color);
                             subjectTab.ajax.reload(null, false);
                             $('#addForm').trigger('reset');
