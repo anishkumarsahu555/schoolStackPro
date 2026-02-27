@@ -7,6 +7,14 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0,  user-scalable=0"/>
     <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    <script>
+        (function () {
+            var storedTheme = localStorage.getItem('theme');
+            var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var theme = storedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     {% block title %}
         <title>SCHOOLS-STACK</title>
     {% endblock %}
@@ -31,6 +39,35 @@
 
     {% endblock %}
     <style>
+        :root {
+            --app-bg: #f5f7fa;
+            --app-text: #1f2937;
+            --app-surface: #ffffff;
+            --app-border: #dfe3ea;
+            --app-muted: #5f6368;
+            --app-icon: #58667a;
+            --app-hover: #f1f3f4;
+            --app-active: #e8f0fe;
+            --app-brand: #1a73e8;
+        }
+
+        html[data-theme="dark"] {
+            --app-bg: #12161d;
+            --app-text: #e5e7eb;
+            --app-surface: #1a1f28;
+            --app-border: #2c3440;
+            --app-muted: #c0c7d1;
+            --app-icon: #d0d7e2;
+            --app-hover: #242b36;
+            --app-active: #22354f;
+            --app-brand: #74a9ff;
+        }
+
+        body {
+            background: var(--app-bg);
+            color: var(--app-text);
+        }
+
         html {
             scroll-behavior: smooth;
         }
@@ -38,24 +75,25 @@
        .material-sidenav {
     width: 280px;
     {% comment %} height: 100vh; {% endcomment %}
-    background: #ffffff;
+    background: var(--app-surface);
     box-shadow: 2px 0 8px rgba(0,0,0,0.05);
     padding: 12px 0;
     font-family: 'Roboto', sans-serif;
+    border-right: 1px solid var(--app-border);
 }
 
 .sidenav-header {
     padding: 16px 24px;
     font-size: 18px;
     font-weight: 600;
-    color: #1a73e8;
+    color: var(--app-brand);
 }
 
 .nav-section {
         padding: 10px 10px 6px;
     font-size: 12px;
     font-weight: bold;
-    color: #000000;
+    color: var(--app-text);
     text-transform: uppercase;
     letter-spacing: .05em;
 }
@@ -64,7 +102,7 @@
     display: flex;
     align-items: center;
     padding: 10px 10px;
-    color: #3c4043;
+    color: var(--app-text);
     font-size: 12px;
     text-decoration: none;
     border-left: 3px solid transparent;
@@ -74,26 +112,26 @@
 .nav-item i {
     margin-right: 16px;
     font-size: 15px;
-    color: #5f6368;
+    color: var(--app-muted);
 }
 
 .nav-item:hover {
-    background: #f1f3f4;
+    background: var(--app-hover);
 }
 
 .nav-item.active {
-    background: #e8f0fe;
-    border-left: 3px solid #1a73e8;
-    color: #1a73e8;
+    background: var(--app-active);
+    border-left: 3px solid var(--app-brand);
+    color: var(--app-brand);
     font-weight: 500;
 }
 
 .nav-item.active i {
-    color: #1a73e8;
+    color: var(--app-brand);
 }
 .material-navbar {
     width: 100%;
-    background: #ffffff;
+    background: var(--app-surface);
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     padding: 0 20px;
     height: 60px;
@@ -118,7 +156,7 @@
 .nav-title {
     font-size: 18px;
     font-weight: 600;
-    color: #1a73e8;
+    color: var(--app-brand);
 }
 
 /* RIGHT SECTION */
@@ -133,7 +171,7 @@
     display: flex !important;
     align-items: center;
     padding: 10px 16px !important;
-    color: #3c4043 !important;
+    color: var(--app-text) !important;
     font-size: 14px;
     border-bottom: 3px solid transparent;
     transition: background 0.2s ease;
@@ -142,25 +180,663 @@
 /* Icons */
 .material-navbar .nav-item i.icon {
     margin-right: 10px;
-    color: #5f6368 !important;
+    color: var(--app-muted) !important;
 }
 
 /* Hover */
 .material-navbar .nav-item:hover {
-    background: #f1f3f4 !important;
+    background: var(--app-hover) !important;
     border-radius: 6px;
 }
 
 /* Active Style (same theme) */
 .material-navbar .nav-item.active {
-    background: #e8f0fe !important;
-    border-bottom: 3px solid #1a73e8;
-    color: #1a73e8 !important;
+    background: var(--app-active) !important;
+    border-bottom: 3px solid var(--app-brand);
+    color: var(--app-brand) !important;
 }
 
 .material-navbar .nav-item.active i.icon {
-    color: #1a73e8 !important;
+    color: var(--app-brand) !important;
 }
+
+        .ui.top.fixed.menu,
+        .ui.sidebar.vertical.menu,
+        .ui.segment,
+        .ui.basic.segment,
+        .ui.raised.segment,
+        .ui.attached.segment,
+        .ui.modal,
+        .ui.message,
+        .ui.menu,
+        .ui.tab.segment,
+        .ui.card,
+        .ui.cards > .card,
+        .ui.table,
+        .ui.form input:not([type]),
+        .ui.form input[type="text"],
+        .ui.form input[type="password"],
+        .ui.form input[type="email"],
+        .ui.form input[type="number"],
+        .ui.form input[type="date"],
+        .ui.form input[type="datetime-local"],
+        .ui.form input[type="time"],
+        .ui.form input[type="tel"],
+        .ui.form input[type="search"],
+        .ui.form textarea,
+        .ui.form select,
+        .ui.dropdown .menu {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        .main-content,
+        .pusher {
+            background: var(--app-bg) !important;
+            color: var(--app-text) !important;
+        }
+
+        .ui.form input::placeholder,
+        .ui.form textarea::placeholder {
+            color: var(--app-muted) !important;
+            opacity: 1;
+        }
+
+        .ui.card > .content,
+        .ui.cards > .card > .content,
+        .ui.card > .extra,
+        .ui.cards > .card > .extra {
+            background: var(--app-surface) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        .ui.form input:focus,
+        .ui.form textarea:focus,
+        .ui.form select:focus,
+        .ui.selection.dropdown:focus,
+        .ui.selection.dropdown.active {
+            border-color: var(--app-brand) !important;
+            box-shadow: 0 0 0 1px var(--app-brand) inset !important;
+        }
+
+        .ui.form input[readonly],
+        .ui.form textarea[readonly],
+        .ui.form select[readonly],
+        .ui.form input:disabled,
+        .ui.form textarea:disabled,
+        .ui.form select:disabled,
+        .ui.disabled.input > input,
+        .ui.disabled.dropdown {
+            background: var(--app-hover) !important;
+            color: var(--app-muted) !important;
+            opacity: 1 !important;
+        }
+
+        .ui.menu .item,
+        .ui.menu .header.item,
+        .ui.dropdown .text,
+        .ui.header,
+        .ui.modal > .header,
+        .ui.modal > .content,
+        .ui.modal > .actions,
+        .ui.card > .content > .header,
+        .ui.cards > .card > .content > .header,
+        .ui.card > .content > .description,
+        .ui.cards > .card > .content > .description,
+        .ui.card > .extra,
+        .ui.cards > .card > .extra,
+        .ui.table,
+        .ui.table th,
+        .ui.table td,
+        .ui.form label {
+            color: var(--app-text) !important;
+        }
+
+        .ui.message .header,
+        .ui.message p,
+        .ui.message {
+            color: var(--app-text) !important;
+        }
+
+        html[data-theme="dark"] .ui.menu:not(.inverted),
+        html[data-theme="dark"] .ui.segment:not(.inverted),
+        html[data-theme="dark"] .ui.message:not(.inverted),
+        html[data-theme="dark"] .ui.modal > .header,
+        html[data-theme="dark"] .ui.modal > .content,
+        html[data-theme="dark"] .ui.modal > .actions {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        .ui.card .meta,
+        .ui.cards > .card .meta {
+            color: var(--app-muted) !important;
+        }
+
+        .ui.pointing.secondary.menu,
+        .ui.secondary.menu,
+        .ui.tabular.menu {
+            border-color: var(--app-border) !important;
+            background: transparent !important;
+        }
+
+        .ui.pointing.secondary.menu .item,
+        .ui.secondary.menu .item,
+        .ui.tabular.menu .item {
+            color: var(--app-text) !important;
+        }
+
+        .ui.pointing.secondary.menu .item:hover,
+        .ui.secondary.menu .item:hover,
+        .ui.tabular.menu .item:hover {
+            background: var(--app-hover) !important;
+            color: var(--app-text) !important;
+            border-radius: 6px;
+        }
+
+        .ui.pointing.secondary.menu .active.item,
+        .ui.secondary.menu .active.item,
+        .ui.tabular.menu .active.item {
+            color: var(--app-brand) !important;
+            border-color: var(--app-brand) !important;
+            background: var(--app-active) !important;
+            border-radius: 6px;
+        }
+
+        .ui.tab {
+            color: var(--app-text);
+        }
+
+        html[data-theme="dark"] .ui.pointing.secondary.menu .active.item,
+        html[data-theme="dark"] .ui.secondary.pointing.menu .active.item,
+        html[data-theme="dark"] .ui.secondary.menu .active.item,
+        html[data-theme="dark"] .ui.tabular.menu .active.item {
+            color: #9ec5ff !important;
+            background: #263549 !important;
+            border-color: #6ea8ff !important;
+            box-shadow: inset 0 -2px 0 #6ea8ff !important;
+        }
+
+        html[data-theme="dark"] .ui.pointing.secondary.menu .active.item:hover,
+        html[data-theme="dark"] .ui.secondary.pointing.menu .active.item:hover,
+        html[data-theme="dark"] .ui.secondary.menu .active.item:hover,
+        html[data-theme="dark"] .ui.tabular.menu .active.item:hover {
+            color: #c3dcff !important;
+            background: #2d3f57 !important;
+            border-color: #88b8ff !important;
+        }
+
+        html[data-theme="dark"] .ui.tabular.menu .item {
+            background: transparent !important;
+            border-color: var(--app-border) !important;
+            color: var(--app-text) !important;
+        }
+
+        html[data-theme="dark"] .ui.tabular.menu .item:not(.active):hover {
+            background: #1f2b3a !important;
+            color: #d7e7ff !important;
+        }
+
+        .ui.form select,
+        .ui.selection.dropdown,
+        .ui.selection.dropdown > .text,
+        .ui.selection.dropdown > .dropdown.icon {
+            color: var(--app-text) !important;
+            background: var(--app-surface) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        .ui.dropdown .menu > .item {
+            color: var(--app-text) !important;
+            background: var(--app-surface) !important;
+        }
+
+        .ui.dropdown .menu > .item:hover,
+        .ui.dropdown .menu > .selected.item {
+            background: var(--app-hover) !important;
+            color: var(--app-text) !important;
+        }
+
+        nav.ui.top.fixed.menu .right.menu .ui.dropdown.item,
+        nav.ui.top.fixed.menu .right.menu .ui.dropdown.item > span,
+        nav.ui.top.fixed.menu .right.menu .ui.dropdown.item > i.icon {
+            color: var(--app-text) !important;
+            opacity: 1 !important;
+        }
+
+        nav.ui.top.fixed.menu .right.menu .ui.dropdown.item:hover {
+            background: var(--app-hover) !important;
+        }
+
+        nav.ui.top.fixed.menu .right.menu .ui.dropdown .menu {
+            background: var(--app-surface) !important;
+            border: 1px solid var(--app-border) !important;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25) !important;
+        }
+
+        nav.ui.top.fixed.menu .right.menu .ui.dropdown .menu .item {
+            color: var(--app-text) !important;
+        }
+
+        nav.ui.top.fixed.menu .right.menu .ui.dropdown .menu .item:hover,
+        nav.ui.top.fixed.menu .right.menu .ui.dropdown .menu .selected.item {
+            background: var(--app-hover) !important;
+            color: var(--app-text) !important;
+        }
+
+        .ui.form .field > label,
+        .ui.checkbox label,
+        .ui.radio.checkbox label,
+        .ui.toggle.checkbox label {
+            color: var(--app-text) !important;
+        }
+
+        .ui.icon,
+        i.icon,
+        .ui.button > .icon:not(.dropdown),
+        .ui.input > i.icon,
+        .ui.menu .item > i.icon,
+        .ui.table i.icon {
+            color: var(--app-icon) !important;
+            opacity: 1 !important;
+        }
+
+        .dataTables_wrapper i.icon,
+        .dataTables_wrapper .ui.button > .icon:not(.dropdown),
+        .dataTables_wrapper .ui.table i.icon {
+            color: #ffffff !important;
+            opacity: 1 !important;
+        }
+
+        .ui.form .ui.button > .icon:not(.dropdown) {
+            color: #ffffff !important;
+            opacity: 1 !important;
+        }
+
+        .dashboard-stat-card .dashboard-icon i.icon {
+            color: #ffffff !important;
+            opacity: 1 !important;
+        }
+
+        .ui.checkbox input:checked ~ .box:before,
+        .ui.checkbox input:checked ~ label:before {
+            background: var(--app-active) !important;
+            border-color: var(--app-brand) !important;
+        }
+
+        .ui.checkbox input:checked ~ .box:after,
+        .ui.checkbox input:checked ~ label:after {
+            color: var(--app-brand) !important;
+        }
+
+        .ui.checkbox .box:before,
+        .ui.checkbox label:before,
+        .ui.radio.checkbox .box:before,
+        .ui.radio.checkbox label:before {
+            background: var(--app-surface) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        .ui.radio.checkbox input:checked ~ .box:before,
+        .ui.radio.checkbox input:checked ~ label:before {
+            background: var(--app-surface) !important;
+            border-color: var(--app-brand) !important;
+        }
+
+        .ui.radio.checkbox input:checked ~ .box:after,
+        .ui.radio.checkbox input:checked ~ label:after {
+            background: var(--app-brand) !important;
+            color: var(--app-brand) !important;
+            opacity: 1 !important;
+        }
+
+        .ui.checkbox input:focus ~ .box:before,
+        .ui.checkbox input:focus ~ label:before,
+        .ui.radio.checkbox input:focus ~ .box:before,
+        .ui.radio.checkbox input:focus ~ label:before {
+            border-color: var(--app-brand) !important;
+            box-shadow: 0 0 0 1px var(--app-brand) !important;
+        }
+
+        html[data-theme="dark"] .ui.checkbox .box:before,
+        html[data-theme="dark"] .ui.checkbox label:before {
+            background: #1b2430 !important;
+            border-color: #5b6a7f !important;
+        }
+
+        html[data-theme="dark"] .ui.checkbox input.hidden:focus + label:before,
+        html[data-theme="dark"] .ui.checkbox input:focus ~ label:before {
+            border-color: #88b8ff !important;
+            box-shadow: 0 0 0 1px #88b8ff !important;
+        }
+
+        html[data-theme="dark"] .ui.checkbox input.hidden:checked + label:before,
+        html[data-theme="dark"] .ui.checkbox input:checked ~ label:before,
+        html[data-theme="dark"] .ui.checkbox input:checked ~ .box:before {
+            background: #6ea8ff !important;
+            border-color: #6ea8ff !important;
+        }
+
+        html[data-theme="dark"] .ui.checkbox input.hidden:checked + label:after,
+        html[data-theme="dark"] .ui.checkbox input:checked ~ label:after,
+        html[data-theme="dark"] .ui.checkbox input:checked ~ .box:after {
+            color: #0f1724 !important;
+            opacity: 1 !important;
+        }
+
+        html[data-theme="dark"] .ui.checkbox input.hidden:checked + label,
+        html[data-theme="dark"] .ui.checkbox input:checked ~ label,
+        html[data-theme="dark"] .ui.checkbox.checked label {
+            color: #e6edf8 !important;
+        }
+
+        html[data-theme="dark"] .ui.checkbox input.hidden[disabled] + label,
+        html[data-theme="dark"] .ui.checkbox input:disabled ~ label {
+            color: #7f8a99 !important;
+        }
+
+        html[data-theme="dark"] .ui.checkbox input.hidden[disabled] + label:before,
+        html[data-theme="dark"] .ui.checkbox input:disabled ~ label:before {
+            background: #141a23 !important;
+            border-color: #3f4a5a !important;
+        }
+
+        .ui.form .field.error input,
+        .ui.form .field.error textarea,
+        .ui.form .field.error select,
+        .ui.form .fields.error .field input,
+        .ui.form .fields.error .field textarea,
+        .ui.form .fields.error .field select {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border-color: #db2828 !important;
+        }
+
+        .ui.form .field.error .ui.selection.dropdown {
+            background: var(--app-surface) !important;
+            border-color: #db2828 !important;
+            color: var(--app-text) !important;
+        }
+
+        .ui.form .error.message,
+        .ui.form .prompt.label {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border-color: #db2828 !important;
+        }
+
+        .ui.table thead th,
+        table.dataTable thead th,
+        table.dataTable thead td {
+            background: var(--app-hover) !important;
+            color: var(--app-text) !important;
+            border-bottom: 1px solid var(--app-border) !important;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            color: var(--app-text) !important;
+        }
+
+        .dataTables_wrapper .dataTables_filter {
+            float: right !important;
+            text-align: right !important;
+        }
+
+        .dataTables_wrapper .dataTables_info {
+            float: right !important;
+            clear: both !important;
+            text-align: right !important;
+            width: 100%;
+            margin-bottom: 6px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate {
+            float: right !important;
+            clear: right !important;
+            text-align: right !important;
+        }
+
+        .dataTables_wrapper .dataTables_filter input,
+        .dataTables_wrapper .dataTables_length select {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border: 1px solid var(--app-border) !important;
+            border-radius: 6px !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border: 1px solid var(--app-border) !important;
+            border-radius: 6px !important;
+            margin: 0 2px !important;
+            padding: .4em .8em !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: var(--app-hover) !important;
+            color: var(--app-text) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+            background: var(--app-active) !important;
+            color: var(--app-brand) !important;
+            border-color: var(--app-brand) !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+            opacity: 0.5;
+            cursor: not-allowed !important;
+        }
+
+        .dataTables_wrapper .ui.pagination.menu {
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+
+        .dataTables_wrapper .ui.pagination.menu .item {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border: 1px solid var(--app-border) !important;
+        }
+
+        .dataTables_wrapper .ui.pagination.menu .item:hover {
+            background: var(--app-hover) !important;
+            color: var(--app-text) !important;
+        }
+
+        .dataTables_wrapper .ui.pagination.menu .active.item {
+            background: var(--app-active) !important;
+            color: var(--app-brand) !important;
+            border-color: var(--app-brand) !important;
+        }
+
+        .dataTables_wrapper .ui.pagination.menu .disabled.item {
+            opacity: 0.5;
+        }
+
+        .dataTables_wrapper .dataTables_processing {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border: 1px solid var(--app-border) !important;
+        }
+
+        .dataTables_wrapper .ui.form,
+        .dataTables_wrapper .ui.form .field > label,
+        .dataTables_wrapper .ui.form .fields > .field > label {
+            color: var(--app-text) !important;
+        }
+
+        .dataTables_wrapper .ui.form input:not([type]),
+        .dataTables_wrapper .ui.form input[type="text"],
+        .dataTables_wrapper .ui.form input[type="password"],
+        .dataTables_wrapper .ui.form input[type="email"],
+        .dataTables_wrapper .ui.form input[type="number"],
+        .dataTables_wrapper .ui.form input[type="date"],
+        .dataTables_wrapper .ui.form input[type="datetime-local"],
+        .dataTables_wrapper .ui.form input[type="time"],
+        .dataTables_wrapper .ui.form input[type="tel"],
+        .dataTables_wrapper .ui.form input[type="search"],
+        .dataTables_wrapper .ui.form textarea,
+        .dataTables_wrapper .ui.form select,
+        .dataTables_wrapper .ui.selection.dropdown {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        .dataTables_wrapper .ui.form input::placeholder,
+        .dataTables_wrapper .ui.form textarea::placeholder,
+        .dataTables_wrapper .ui.selection.dropdown > .text.default {
+            color: var(--app-muted) !important;
+            opacity: 1;
+        }
+
+        .dataTables_wrapper .ui.selection.dropdown > .text,
+        .dataTables_wrapper .ui.selection.dropdown > .dropdown.icon {
+            color: var(--app-text) !important;
+        }
+
+        .dataTables_wrapper .ui.dropdown .menu,
+        .dataTables_wrapper .ui.dropdown .menu > .item {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        .dataTables_wrapper .ui.dropdown .menu > .item:hover,
+        .dataTables_wrapper .ui.dropdown .menu > .selected.item {
+            background: var(--app-hover) !important;
+            color: var(--app-text) !important;
+        }
+
+        .dataTables_wrapper .ui.checkbox label,
+        .dataTables_wrapper .ui.radio.checkbox label {
+            color: var(--app-text) !important;
+        }
+
+        .dataTables_wrapper .ui.checkbox label:before,
+        .dataTables_wrapper .ui.radio.checkbox label:before {
+            background: var(--app-surface) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        .dataTables_wrapper .ui.checkbox input:checked ~ label:before,
+        .dataTables_wrapper .ui.radio.checkbox input:checked ~ label:before {
+            background: var(--app-active) !important;
+            border-color: var(--app-brand) !important;
+        }
+
+        .dataTables_wrapper .ui.checkbox input:checked ~ label:after {
+            color: var(--app-brand) !important;
+            opacity: 1 !important;
+        }
+
+        .dataTables_wrapper .ui.radio.checkbox input:checked ~ label:after {
+            background: var(--app-brand) !important;
+            color: var(--app-brand) !important;
+            opacity: 1 !important;
+        }
+
+        .dataTables_wrapper .ui.form .prompt.label,
+        .dataTables_wrapper .ui.form .error.message {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border-color: #db2828 !important;
+        }
+
+        .dataTables_wrapper table.dataTable tbody input[type="text"],
+        .dataTables_wrapper table.dataTable tbody input[type="number"],
+        .dataTables_wrapper table.dataTable tbody input[type="date"],
+        .dataTables_wrapper table.dataTable tbody input[type="search"],
+        .dataTables_wrapper table.dataTable tbody textarea,
+        .dataTables_wrapper table.dataTable tbody select {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border: 1px solid var(--app-border) !important;
+            border-radius: 6px !important;
+        }
+
+        .dataTables_wrapper table.dataTable tbody input::placeholder,
+        .dataTables_wrapper table.dataTable tbody textarea::placeholder {
+            color: var(--app-muted) !important;
+            opacity: 1;
+        }
+
+        .dataTables_wrapper table.dataTable tbody input:focus,
+        .dataTables_wrapper table.dataTable tbody textarea:focus,
+        .dataTables_wrapper table.dataTable tbody select:focus {
+            border-color: var(--app-brand) !important;
+            box-shadow: 0 0 0 1px var(--app-brand) inset !important;
+            outline: none !important;
+        }
+
+        .dataTables_wrapper table.dataTable tbody input[type="checkbox"] {
+            accent-color: var(--app-brand);
+            width: 18px;
+            height: 18px;
+            background: var(--app-surface);
+            border: 1px solid var(--app-border);
+            border-radius: 4px;
+            vertical-align: middle;
+        }
+
+        html[data-theme="dark"] table.dataTable thead th,
+        html[data-theme="dark"] table.dataTable tbody td {
+            border-color: var(--app-border) !important;
+        }
+
+        html[data-theme="dark"] table.dataTable thead .sorting:before,
+        html[data-theme="dark"] table.dataTable thead .sorting:after,
+        html[data-theme="dark"] table.dataTable thead .sorting_asc:before,
+        html[data-theme="dark"] table.dataTable thead .sorting_asc:after,
+        html[data-theme="dark"] table.dataTable thead .sorting_desc:before,
+        html[data-theme="dark"] table.dataTable thead .sorting_desc:after {
+            color: var(--app-muted) !important;
+            opacity: 1 !important;
+        }
+
+        html[data-theme="dark"] .dtfc-fixed-left,
+        html[data-theme="dark"] .dtfc-fixed-right {
+            background: var(--app-surface) !important;
+        }
+
+        html[data-theme="dark"] .ui.inverted.menu .active.item {
+            background: #2a3442 !important;
+            color: #8fc1ff !important;
+        }
+
+        #themeToggleBtn i {
+            margin-right: 0;
+        }
+
+        #themeToggleBtn,
+        #themeToggleBtn:hover,
+        #themeToggleBtn:focus,
+        #themeToggleBtn:active {
+            text-decoration: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            border: 0 !important;
+        }
+
+        #themeToggleBtn:hover {
+            background: var(--app-hover) !important;
+            border-radius: 6px !important;
+        }
+
+        #themeToggleBtn:before {
+            display: none !important;
+        }
 
         .preloader {
             align-items: center;
@@ -223,7 +899,7 @@
         }
 
         .bgColor {
-            background-color: #2A3F54 !important;
+            background-color: var(--app-surface) !important;
         }
 
         .logoImg {
@@ -235,8 +911,8 @@
         }
 
         .ui.inverted.menu .active.item {
-            background: #3d3e3f;
-            color: #4cebb8 !important;
+            background: var(--app-active) !important;
+            color: var(--app-brand) !important;
         }
 
         .dataTables_scroll {
@@ -267,7 +943,7 @@
             height: 25px;
             margin-bottom: 0;
             border-radius: 100%;
-            background: #FFFFFF;
+            background: var(--app-surface);
             border: 1px solid transparent;
             box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.12);
             cursor: pointer;
@@ -276,12 +952,12 @@
         }
 
         .avatar-upload .avatar-edit input + label:hover {
-            background: #f1f1f1;
-            border-color: #d6d6d6;
+            background: var(--app-hover);
+            border-color: var(--app-border);
         }
 
         .avatar-upload .avatar-edit input + label:after {
-            color: #757575;
+            color: var(--app-muted);
             position: absolute;
             top: 10px;
             left: 0;
@@ -296,8 +972,45 @@
             height: 100px;
             position: relative;
             border-radius: 100%;
-            border: 6px solid #F8F8F8;
+            border: 6px solid var(--app-border);
             box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.1);
+        }
+
+        html[data-theme="dark"] .ui.grey.text,
+        html[data-theme="dark"] .ui.disabled.text {
+            color: var(--app-muted) !important;
+        }
+
+        html[data-theme="dark"] .ui.popup,
+        html[data-theme="dark"] .ui.popup:before,
+        html[data-theme="dark"] .ui.calendar.popup {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        html[data-theme="dark"] .ui.calendar.popup .ui.table,
+        html[data-theme="dark"] .ui.calendar.popup .ui.table th,
+        html[data-theme="dark"] .ui.calendar.popup .ui.table td {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        html[data-theme="dark"] .ui.calendar.popup .link.item,
+        html[data-theme="dark"] .ui.calendar.popup .item {
+            color: var(--app-text) !important;
+        }
+
+        html[data-theme="dark"] .ui.calendar.popup .link.item:hover,
+        html[data-theme="dark"] .ui.calendar.popup .item:hover {
+            background: var(--app-hover) !important;
+        }
+
+        html[data-theme="dark"] .ui.calendar.popup .link.active.item,
+        html[data-theme="dark"] .ui.calendar.popup .active.item {
+            background: var(--app-active) !important;
+            color: var(--app-brand) !important;
         }
 
         .avatar-upload .avatar-preview > div {
@@ -308,6 +1021,39 @@
             background-repeat: no-repeat;
             background-position: center;
 
+        }
+
+        .app-meta {
+            margin-top: 8px !important;
+            background: var(--app-surface) !important;
+            border: 1px solid var(--app-border) !important;
+            border-radius: 10px !important;
+            padding: 10px 12px !important;
+        }
+
+        .app-meta .meta-line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 6px 0;
+            font-size: 12px;
+            color: var(--app-text);
+        }
+
+        .app-meta .meta-line + .meta-line {
+            border-top: 1px solid var(--app-border);
+        }
+
+        .app-meta .meta-label {
+            color: var(--app-muted);
+            font-weight: 600;
+            letter-spacing: .02em;
+        }
+
+        .app-meta .meta-value {
+            color: var(--app-text);
+            font-weight: 700;
         }
     </style>
 </head>
@@ -337,15 +1083,14 @@
     </div>
 
 
-    <div class="ui segment">
-        <div class="ui tiny olive progress">
-            <div class="bar" style="width: 54%"></div>
-            <div class="label">Developed By Ziva Infotech</div>
+    <div class="ui segment app-meta">
+        <div class="meta-line">
+            <span class="meta-label">Developed By</span>
+            <span class="meta-value">Ziva Infotech</span>
         </div>
-
-        <div class="ui tiny teal progress">
-            <div class="bar" style="width:78%"></div>
-            <div class="label">v 1.0.2</div>
+        <div class="meta-line">
+            <span class="meta-label">Version</span>
+            <span class="meta-value">v 1.0.2</span>
         </div>
     </div>
 </div>
@@ -366,6 +1111,9 @@
     </div>
 
     <div class="right menu">
+        <a href="#" class="item" id="themeToggleBtn" data-tooltip="Toggle theme" data-position="bottom center" data-variation="tiny">
+            <i class="moon icon" id="themeToggleIcon"></i>
+        </a>
 
         <div class="ui dropdown item">
             <i class="calendar check icon"></i>
@@ -442,6 +1190,29 @@
 
 <script>
     $('.menu .item').tab();
+
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        var icon = document.getElementById('themeToggleIcon');
+        if (icon) {
+            icon.className = (theme === 'dark' ? 'sun icon' : 'moon icon');
+        }
+    }
+
+    (function initThemeToggle() {
+        var currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        applyTheme(currentTheme);
+        var toggleBtn = document.getElementById('themeToggleBtn');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                var activeTheme = document.documentElement.getAttribute('data-theme') || 'light';
+                applyTheme(activeTheme === 'dark' ? 'light' : 'dark');
+            });
+        }
+    })();
+
     $(window).on("load", function () {
         $(".preloader").fadeOut(50);
     });

@@ -25,6 +25,68 @@
     input[type=search] {
         width: 100px !important;
     }
+
+    .dashboard-cards .column {
+        display: flex;
+    }
+
+    .dashboard-stat-card {
+        width: 100%;
+        border: 1px solid var(--app-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+        overflow: hidden;
+    }
+
+    .dashboard-stat-card .content {
+        padding: 18px !important;
+    }
+
+    .dashboard-icon {
+        float: right;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #fff;
+    }
+
+    .dashboard-icon.red { background: #db2828; }
+    .dashboard-icon.green { background: #21ba45; }
+    .dashboard-icon.teal { background: #00b5ad; }
+    .dashboard-icon.purple { background: #a333c8; }
+
+    .dashboard-value {
+        font-size: 2rem;
+        line-height: 1;
+        font-weight: 700;
+        color: var(--app-text);
+        margin: 8px 0 10px;
+    }
+
+    .dashboard-meta {
+        color: var(--app-muted);
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-label {
+        color: var(--app-text);
+        font-weight: 600;
+        min-height: 24px;
+    }
+
+    .dashboard-stat-card .extra.content {
+        background: var(--app-surface);
+        border-top: 1px solid var(--app-border);
+    }
+
+    .dashboard-stat-card .ui.button {
+        border-radius: 8px !important;
+    }
 </style>
 
 <div class="ui left aligned basic  grid">
@@ -38,22 +100,20 @@
         </div>
         <div class="ui tab " data-tab="user">
             <div class="main">
-                <div class="ui grid stackable padded">
+                <div class="ui grid stackable padded dashboard-cards">
                     <div class="four wide computer eight wide tablet sixteen wide mobile column">
-                        <div class="ui fluid card">
+                        <div class="ui fluid card dashboard-stat-card">
                             <div class="content">
-                                <div class="ui right floated header red">
+                                <div class="dashboard-icon red">
                                    <i class="user tie icon"></i>
                                 </div>
-                                <div class="header">
-                                    <div class="ui red header">
-                                        {% if total_students %}{{total_students}}{% else %}0{% endif %}
-                                    </div>
+                                <div class="dashboard-value">
+                                    {% if total_students %}{{total_students}}{% else %}0{% endif %}
                                 </div>
-                                <div class="meta">
+                                <div class="dashboard-meta">
                                     {{ request.session.current_session.currentSessionYear }}
                                 </div>
-                                <div class="description">
+                                <div class="dashboard-label">
                                     Total Students
                                 </div>
                             </div>
@@ -65,18 +125,16 @@
                         </div>
                     </div>
                     <div class="four wide computer eight wide tablet sixteen wide mobile column">
-                        <div class="ui fluid card">
+                        <div class="ui fluid card dashboard-stat-card">
                             <div class="content">
-                                <div class="ui right floated header green">
+                                <div class="dashboard-icon green">
                                    <i class="chalkboard teacher icon"></i>
                                 </div>
-                                <div class="header">
-                                    <div class="ui header green">{% if total_teachers %}{{total_teachers}}{% else %}0{% endif %}</div>
-                                </div>
-                                <div class="meta">
+                                <div class="dashboard-value">{% if total_teachers %}{{total_teachers}}{% else %}0{% endif %}</div>
+                                <div class="dashboard-meta">
                                     {{ request.session.current_session.currentSessionYear }}
                                 </div>
-                                <div class="description">
+                                <div class="dashboard-label">
                                     Total Teachers
                                 </div>
                             </div>
@@ -88,18 +146,16 @@
                         </div>
                     </div>
                     <div class="four wide computer eight wide tablet sixteen wide mobile column">
-                        <div class="ui fluid card">
+                        <div class="ui fluid card dashboard-stat-card">
                             <div class="content">
-                                <div class="ui right floated header teal">
+                                <div class="dashboard-icon teal">
                                     <i class="book icon"></i>
                                 </div>
-                                <div class="header">
-                                    <div class="ui teal header">{% if total_subjects %}{{total_subjects}}{% else %}0{% endif %}</div>
-                                </div>
-                                <div class="meta">
+                                <div class="dashboard-value">{% if total_subjects %}{{total_subjects}}{% else %}0{% endif %}</div>
+                                <div class="dashboard-meta">
                                     {{request.session.current_session.currentSessionYear}}
                                 </div>
-                                <div class="description">
+                                <div class="dashboard-label">
                                     Total Subjects
                                 </div>
                             </div>
@@ -111,18 +167,16 @@
                         </div>
                     </div>
                     <div class="four wide computer eight wide tablet sixteen wide mobile column">
-                        <div class="ui fluid card">
+                        <div class="ui fluid card dashboard-stat-card">
                             <div class="content">
-                                <div class="ui right floated header purple">
+                                <div class="dashboard-icon purple">
                                     <i class="laptop house icon"></i>
                                 </div>
-                                <div class="header">
-                                    <div class="ui purple header">{% if total_classes %}{{total_classes}}{% else %}0{% endif %}</div>
-                                </div>
-                                <div class="meta">
+                                <div class="dashboard-value">{% if total_classes %}{{total_classes}}{% else %}0{% endif %}</div>
+                                <div class="dashboard-meta">
                                     {{request.session.current_session.currentSessionYear}}
                                 </div>
-                                <div class="description">
+                                <div class="dashboard-label">
                                     Total Classes
                                 </div>
                             </div>
