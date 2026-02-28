@@ -1,4 +1,4 @@
-{% extends 'managementApp/index.html' %}
+{% extends base_template|default:'managementApp/index.html' %}
 {% load static %}
 {% block title %}
 <title>Student Detail</title>
@@ -28,10 +28,12 @@
 
         <div class="ui divider"></div>
 
-        <a href="{% url 'managementApp:edit_student_detail' instance.id %}" class="ui orange labeled icon button">
-            <i class="edit icon"></i>
-            Edit Details
-        </a>
+        {% if not is_teacher_view %}
+            <a href="{% url 'managementApp:edit_student_detail' instance.id %}" class="ui orange labeled icon button">
+                <i class="edit icon"></i>
+                Edit Details
+            </a>
+        {% endif %}
     </div>
 
 
@@ -172,23 +174,25 @@
 
 
     <!-- ================= INTERNAL DETAILS ================= -->
-    <div class="ui raised segment">
-        <h4 class="ui header"><i class="key icon"></i> Internal Details</h4>
+    {% if not is_teacher_view %}
+        <div class="ui raised segment">
+            <h4 class="ui header"><i class="key icon"></i> Internal Details</h4>
 
-        <div class="ui divided relaxed list">
-            <div class="item"><strong>Username:</strong> {{ instance.username }}</div>
-            <div class="item"><strong>Password:</strong> {{ instance.password }}</div>
-            <div class="item"><strong>Status:</strong> {{ instance.isActive }}</div>
+            <div class="ui divided relaxed list">
+                <div class="item"><strong>Username:</strong> {{ instance.username }}</div>
+                <div class="item"><strong>Password:</strong> {{ instance.password }}</div>
+                <div class="item"><strong>Status:</strong> {{ instance.isActive }}</div>
 
-            <div class="item"><strong>Admission Fee:</strong> ₹{{ instance.admissionFee }}</div>
-            <div class="item"><strong>Tuition Fee:</strong> ₹{{ instance.tuitionFee }}</div>
-            <div class="item"><strong>Misc Fee:</strong> ₹{{ instance.miscFee }}</div>
-            <div class="item"><strong>Total Fee:</strong> ₹{{ instance.totalFee }}</div>
+                <div class="item"><strong>Admission Fee:</strong> ₹{{ instance.admissionFee }}</div>
+                <div class="item"><strong>Tuition Fee:</strong> ₹{{ instance.tuitionFee }}</div>
+                <div class="item"><strong>Misc Fee:</strong> ₹{{ instance.miscFee }}</div>
+                <div class="item"><strong>Total Fee:</strong> ₹{{ instance.totalFee }}</div>
 
-            <div class="item"><strong>Date of Joining:</strong> {{ instance.dateOfJoining }}</div>
-            <div class="item"><strong>Date of Leaving:</strong> {{ instance.dateOfLeaving }}</div>
+                <div class="item"><strong>Date of Joining:</strong> {{ instance.dateOfJoining }}</div>
+                <div class="item"><strong>Date of Leaving:</strong> {{ instance.dateOfLeaving }}</div>
+            </div>
         </div>
-    </div>
+    {% endif %}
 
 </div>
 

@@ -1,0 +1,60 @@
+{% extends 'teacherApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Student Detail</title>
+{% endblock %}
+
+{% block body %}
+    <div class="ui container">
+        <div class="ui raised segment center aligned">
+            <div class="ui small centered image">
+                {% if instance.photo %}
+                    <img src="{{ instance.photo.url }}" alt="Student Photo">
+                {% else %}
+                    <i class="huge circular user icon"></i>
+                {% endif %}
+            </div>
+            <h2 class="ui header">{{ instance.name|default:'N/A' }}</h2>
+            <div class="ui labels">
+                <a class="ui label">Class: {{ instance.standardID.name|default:'N/A' }}</a>
+                <a class="ui label">Section: {{ instance.standardID.section|default:'N/A' }}</a>
+                <a class="ui label">Roll: {{ instance.roll|default:'N/A' }}</a>
+                <a class="ui teal label">Reg ID: {{ instance.registrationCode|default:'N/A' }}</a>
+            </div>
+        </div>
+
+        <div class="ui raised segment">
+            <h4 class="ui header"><i class="user icon"></i> Personal Information</h4>
+            <div class="ui divided relaxed list">
+                <div class="item"><strong>DOB:</strong> {{ instance.dob|default:'N/A' }}</div>
+                <div class="item"><strong>Gender:</strong> {{ instance.gender|default:'N/A' }}</div>
+                <div class="item"><strong>Blood Group:</strong> {{ instance.bloodGroup|default:'N/A' }}</div>
+                <div class="item"><strong>Phone:</strong> {{ instance.phoneNumber|default:'N/A' }}</div>
+                <div class="item"><strong>Email:</strong> {{ instance.email|default:'N/A' }}</div>
+                <div class="item"><strong>Aadhar:</strong> {{ instance.aadhar|default:'N/A' }}</div>
+            </div>
+        </div>
+
+        <div class="ui raised segment">
+            <h4 class="ui header"><i class="users icon"></i> Parent Information</h4>
+            <div class="ui divided relaxed list">
+                <div class="item"><strong>Father Name:</strong> {{ instance.parentID.fatherName|default:'N/A' }}</div>
+                <div class="item"><strong>Mother Name:</strong> {{ instance.parentID.motherName|default:'N/A' }}</div>
+                <div class="item"><strong>Phone:</strong> {{ instance.parentID.phoneNumber|default:'N/A' }}</div>
+                <div class="item"><strong>Email:</strong> {{ instance.parentID.email|default:'N/A' }}</div>
+            </div>
+        </div>
+
+        <div class="ui raised segment">
+            <h4 class="ui header"><i class="map marker alternate icon"></i> Address</h4>
+            <div class="ui divided relaxed list">
+                <div class="item"><strong>Present:</strong> {{ instance.presentAddress|default:'N/A' }}</div>
+                <div class="item"><strong>City:</strong> {{ instance.presentCity|default:'N/A' }}</div>
+                <div class="item"><strong>State:</strong> {{ instance.presentState|default:'N/A' }}</div>
+                <div class="item"><strong>Country:</strong> {{ instance.presentCountry|default:'N/A' }}</div>
+                <div class="item"><strong>Pincode:</strong> {{ instance.presentPinCode|default:'N/A' }}</div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,360 @@
+{% extends 'teacherApp/index.html' %}
+
+{% block title %}
+    <title>Teacher Dashboard</title>
+{% endblock %}
+
+{% block css %}
+    <style>
+        .teacher-dashboard .hero {
+            background: linear-gradient(135deg, rgba(32, 90, 230, 0.15), rgba(8, 132, 187, 0.1));
+            border: 1px solid var(--app-border);
+            border-radius: 14px;
+            padding: 1.2rem 1.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .teacher-dashboard .hero-title {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--app-text);
+        }
+
+        .teacher-dashboard .hero-subtitle {
+            margin-top: 0.4rem;
+            color: var(--app-muted);
+            font-size: 0.92rem;
+        }
+
+        .teacher-dashboard .kpi-card {
+            border: 1px solid var(--app-border) !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            height: 100%;
+        }
+
+        .teacher-dashboard .kpi-value {
+            font-size: 1.65rem;
+            font-weight: 700;
+            color: var(--app-text);
+            line-height: 1.2;
+            margin-top: 0.2rem;
+        }
+
+        .teacher-dashboard .kpi-label {
+            color: var(--app-muted);
+            font-size: 0.88rem;
+            letter-spacing: 0.02em;
+        }
+
+        .teacher-dashboard .block-card {
+            border: 1px solid var(--app-border) !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            margin-top: 1rem;
+        }
+
+        .teacher-dashboard .meta-title {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--app-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .teacher-dashboard .meta-value {
+            font-weight: 600;
+            color: var(--app-text);
+        }
+
+        .teacher-dashboard .empty-note {
+            color: var(--app-muted);
+            font-size: 0.92rem;
+            text-align: center;
+            padding: 1rem 0.2rem;
+        }
+
+        .teacher-dashboard .chart-wrap {
+            position: relative;
+            height: 280px;
+        }
+
+        @media (max-width: 767px) {
+            .teacher-dashboard .hero {
+                padding: 1rem;
+            }
+
+            .teacher-dashboard .kpi-value {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="teacher-dashboard ui left aligned basic grid">
+        <div class="sixteen wide column">
+            {% if missing_teacher_profile %}
+                <div class="ui warning message">
+                    <div class="header">Teacher profile not found</div>
+                    <p>Please contact admin to map your user with teacher details.</p>
+                </div>
+            {% else %}
+                <div class="hero">
+                    <h2 class="hero-title">Welcome, {{ teacher.name|default:request.user.username }}</h2>
+                    <div class="hero-subtitle">
+                        Session: {{ current_session_year }}{% if teacher.currentPosition %} | {{ teacher.currentPosition }}{% endif %}
+                    </div>
+                </div>
+
+                <div class="ui stackable three column grid">
+                    <div class="column">
+                        <div class="ui segment kpi-card">
+                            <div class="kpi-label">Assigned Subjects</div>
+                            <div class="kpi-value">{{ subject_count }}</div>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="ui segment kpi-card">
+                            <div class="kpi-label">Assigned Classes</div>
+                            <div class="kpi-value">{{ class_count }}</div>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="ui segment kpi-card">
+                            <div class="kpi-label">Students In Classes</div>
+                            <div class="kpi-value">{{ student_count }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui stackable two column grid">
+                    <div class="column">
+                        <div class="ui segment block-card">
+                            <h4 class="ui header">
+                                <i class="id badge icon"></i>
+                                <div class="content">Teacher Details</div>
+                            </h4>
+                            <div class="ui stackable two column grid">
+                                <div class="column">
+                                    <div class="meta-title">Employee Code</div>
+                                    <div class="meta-value">{{ teacher.employeeCode|default:"N/A" }}</div>
+                                </div>
+                                <div class="column">
+                                    <div class="meta-title">Phone</div>
+                                    <div class="meta-value">{{ teacher.phoneNumber|default:"N/A" }}</div>
+                                </div>
+                                <div class="column">
+                                    <div class="meta-title">Email</div>
+                                    <div class="meta-value">{{ teacher.email|default:"N/A" }}</div>
+                                </div>
+                                <div class="column">
+                                    <div class="meta-title">Qualification</div>
+                                    <div class="meta-value">{{ teacher.qualification|default:"N/A" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column">
+                        <div class="ui segment block-card">
+                            <h4 class="ui header">
+                                <i class="calendar check icon"></i>
+                                <div class="content">Upcoming Events (30 Days)</div>
+                            </h4>
+                            {% if upcoming_events %}
+                                <div class="ui relaxed divided list">
+                                    {% for event in upcoming_events %}
+                                        <div class="item">
+                                            <i class="calendar outline middle aligned icon"></i>
+                                            <div class="content">
+                                                <div class="header">{{ event.title|default:"Untitled Event" }}</div>
+                                                <div class="description">
+                                                    {{ event.startDate|date:'d M Y' }}{% if event.endDate %} to {{ event.endDate|date:'d M Y' }}{% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="empty-note">No upcoming events in current session.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui stackable two column grid">
+                    <div class="column">
+                        <div class="ui segment block-card">
+                            <h4 class="ui header">
+                                <i class="chart bar icon"></i>
+                                <div class="content">Students By Class</div>
+                            </h4>
+                            <div class="chart-wrap">
+                                <canvas id="studentsByClassChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="ui segment block-card">
+                            <h4 class="ui header">
+                                <i class="chart pie icon"></i>
+                                <div class="content">Subject Allocation</div>
+                            </h4>
+                            <div class="chart-wrap">
+                                <canvas id="subjectLoadChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui stackable two column grid">
+                    <div class="column">
+                        <div class="ui segment block-card">
+                            <h4 class="ui header">
+                                <i class="venus mars icon"></i>
+                                <div class="content">Student Gender Split</div>
+                            </h4>
+                            <div class="chart-wrap">
+                                <canvas id="genderSplitChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="ui segment block-card">
+                            <h4 class="ui header">
+                                <i class="book icon"></i>
+                                <div class="content">Recent Subject Assignments</div>
+                            </h4>
+                            {% if recent_assignments %}
+                                <table class="ui very basic compact table">
+                                    <thead>
+                                    <tr>
+                                        <th>Class</th>
+                                        <th>Subject</th>
+                                        <th>Branch</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for row in recent_assignments %}
+                                        <tr>
+                                            <td>{{ row.class_name }}</td>
+                                            <td>{{ row.subject_name }}</td>
+                                            <td>{{ row.branch }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <div class="empty-note">No subject assignments yet.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="column">
+                        <div class="ui segment block-card">
+                            <h4 class="ui header">
+                                <i class="compass outline icon"></i>
+                                <div class="content">Quick Actions</div>
+                            </h4>
+                            <div class="ui vertical fluid menu">
+                                <a class="item" href="{% url 'teacherApp:teacher_assigned_subjects' %}">
+                                    <i class="book icon"></i> View Assigned Subjects
+                                </a>
+                                <a class="item" href="{% url 'teacherApp:teacher_students_list' %}">
+                                    <i class="users icon"></i> View Students List
+                                </a>
+                                <a class="item" href="{% url 'teacherApp:teacher_student_attendance' %}">
+                                    <i class="tasks icon"></i> Take Attendance
+                                </a>
+                                <a class="item" href="{% url 'teacherApp:teacher_add_marks' %}">
+                                    <i class="edit outline icon"></i> Add Marks
+                                </a>
+                                <a class="item" href="{% url 'teacherApp:teacher_marks_details' %}">
+                                    <i class="list alternate outline icon"></i> View Marks Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    {% if not missing_teacher_profile %}
+        <script>
+            (function () {
+                const classLabels = {{ chart_class_labels|safe }};
+                const classValues = {{ chart_class_values|safe }};
+                const subjectLabels = {{ chart_subject_labels|safe }};
+                const subjectValues = {{ chart_subject_values|safe }};
+                const genderLabels = {{ chart_gender_labels|safe }};
+                const genderValues = {{ chart_gender_values|safe }};
+
+                const surfaceText = getComputedStyle(document.documentElement).getPropertyValue('--app-text').trim() || '#1f2937';
+                const gridLine = getComputedStyle(document.documentElement).getPropertyValue('--app-border').trim() || '#dfe3ea';
+
+                if (document.getElementById('studentsByClassChart')) {
+                    new Chart(document.getElementById('studentsByClassChart').getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: classLabels.length ? classLabels : ['No Data'],
+                            datasets: [{
+                                label: 'Students',
+                                data: classValues.length ? classValues : [0],
+                                backgroundColor: 'rgba(26, 115, 232, 0.65)',
+                                borderColor: 'rgba(26, 115, 232, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            maintainAspectRatio: false,
+                            legend: {display: false},
+                            scales: {
+                                yAxes: [{ticks: {beginAtZero: true, fontColor: surfaceText}, gridLines: {color: gridLine}}],
+                                xAxes: [{ticks: {fontColor: surfaceText}, gridLines: {color: gridLine}}]
+                            }
+                        }
+                    });
+                }
+
+                if (document.getElementById('subjectLoadChart')) {
+                    new Chart(document.getElementById('subjectLoadChart').getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: subjectLabels.length ? subjectLabels : ['No Data'],
+                            datasets: [{
+                                data: subjectValues.length ? subjectValues : [1],
+                                backgroundColor: ['#1a73e8', '#0f9d58', '#f29900', '#db4437', '#7b61ff', '#00acc1']
+                            }]
+                        },
+                        options: {
+                            maintainAspectRatio: false,
+                            legend: {labels: {fontColor: surfaceText}}
+                        }
+                    });
+                }
+
+                if (document.getElementById('genderSplitChart')) {
+                    new Chart(document.getElementById('genderSplitChart').getContext('2d'), {
+                        type: 'pie',
+                        data: {
+                            labels: genderLabels,
+                            datasets: [{
+                                data: genderValues,
+                                backgroundColor: ['#4285f4', '#ea4335', '#fbbc05', '#9aa0a6']
+                            }]
+                        },
+                        options: {
+                            maintainAspectRatio: false,
+                            legend: {labels: {fontColor: surfaceText}}
+                        }
+                    });
+                }
+            })();
+        </script>
+    {% endif %}
+{% endblock %}

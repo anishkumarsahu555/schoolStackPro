@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 
 from homeApp.models import SchoolOwner, SchoolDetail
-from homeApp.utils import init_session, get_all_session_list, custom_login_required
+from homeApp.utils import init_session, get_all_session_list, custom_login_required, login_required
 from managementApp.models import TeacherDetail, Student
 from utils.custom_decorators import check_groups
 
@@ -29,10 +29,13 @@ def post_login(request):
             login(request, user)
             get_all_session_list(request)
             init_session(request)
+            groups = set(user.groups.values_list('name', flat=True))
 
-            if 'Admin' in user.groups.values_list('name', flat=True) or 'Owner' in user.groups.values_list('name', flat=True):
+            if 'Admin' in groups or 'Owner' in groups:
                 return JsonResponse({'message': 'success', 'data': '/home/'}, safe=False)
-            elif 'Teaching' in user.groups.values_list('name', flat=True):
+            elif 'Teaching' in groups:
+                return JsonResponse({'message': 'success', 'data': '/teacher/home/'}, safe=False)
+            elif 'Student' in groups:
                 return JsonResponse({'message': 'success', 'data': '/student/'}, safe=False)
             else:
                 return redirect('homeApp:homepage')
@@ -48,6 +51,8 @@ def homepage(request):
             'Admin' in request.user.groups.values_list('name', flat=True) or 'Owner' in request.user.groups.values_list(
             'name', flat=True)):
         return redirect('managementApp:admin_home')
+    elif request.user.is_authenticated and 'Teaching' in request.user.groups.values_list('name', flat=True):
+        return redirect('teacherApp:teacher_home')
     elif request.user.is_authenticated and 'Student' in request.user.groups.values_list('name', flat=True):
         return redirect('studentApp:student_home')
     else:
@@ -69,7 +74,7 @@ def manage_class(request):
     return render(request, 'managementApp/class.html', context)
 
 
-@custom_login_required
+@login_required
 def profile_page(request):
     user = request.user
     groups = set(user.groups.values_list('name', flat=True))
@@ -89,7 +94,7 @@ def profile_page(request):
             profile_email = student.email or profile_email
             profile_phone = student.phoneNumber or 'N/A'
             if student.photo:
-                profile_photo_url = student.photo.thumbnail.url
+                profile_photo_url = student.photo.medium.url
             extra_rows = [
                 ('Class', str(student.standardID) if student.standardID else 'N/A'),
                 ('Roll', student.roll or 'N/A'),
@@ -104,7 +109,7 @@ def profile_page(request):
             profile_email = teacher.email or profile_email
             profile_phone = teacher.phoneNumber or 'N/A'
             if teacher.photo:
-                profile_photo_url = teacher.photo.thumbnail.url
+                profile_photo_url = teacher.photo.medium.url
             extra_rows = [
                 ('Employee Code', teacher.employeeCode or 'N/A'),
                 ('Staff Type', teacher.staffType or 'N/A'),
@@ -136,4 +141,6 @@ def profile_page(request):
     }
     if role_label == 'Student':
         return render(request, 'studentApp/profile.html', context)
+    if role_label == 'Teacher':
+        return render(request, 'teacherApp/profile.html', context)
     return render(request, 'managementApp/profile.html', context)

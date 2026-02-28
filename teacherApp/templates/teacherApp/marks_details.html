@@ -1,4 +1,4 @@
-{% extends base_template|default:'managementApp/index.html' %}
+{% extends 'teacherApp/index.html' %}
 {% load static %}
 
 {% block title %}
@@ -7,14 +7,12 @@
 
 {% block css %}
     <style>
-        #MarksDetailTable_length,
-        #MarksByStudentTable_length {
+        #MarksDetailTable_length {
             left: 20px;
             position: absolute;
         }
 
-        #MarksDetailTable_filter,
-        #MarksByStudentTable_filter {
+        #MarksDetailTable_filter {
             float: right;
         }
 
@@ -33,16 +31,16 @@
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
             <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active">Student Marks Details</div>
+                <div style="cursor: pointer;" class="item active" data-tab="user">Student Marks Details</div>
             </div>
 
-            <div class="ui top attached tabular menu">
-                <a class="item active" data-tab="byClass">By Class</a>
-                <a class="item" data-tab="byStudent">By Student</a>
-            </div>
-
-            <div class="ui bottom attached tab segment active" data-tab="byClass">
+            <div class="ui tab active" data-tab="user">
                 <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="left align icon"></i>
+                        By Class & Exam
+                    </h4>
+
                     <form class="ui tiny form">
                         <div class="three fields">
                             <div class="field required">
@@ -59,12 +57,12 @@
                             </div>
                             <div class="field" style="padding-top: 2.2em;">
                                 <div class="ui mini buttons">
-                                    <button type="button" class="ui green button" onclick="searchByClass()">
+                                    <button type="button" class="ui green button" onclick="searchData()">
                                         <i class="icon search"></i>
                                         Search
                                     </button>
                                     <div class="or"></div>
-                                    <button type="button" class="ui red button" onclick="clearByClass()">
+                                    <button type="button" class="ui red button" onclick="clearFilters()">
                                         <i class="icon times circle"></i>
                                         Clear
                                     </button>
@@ -85,61 +83,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="ui bottom attached tab segment" data-tab="byStudent">
-                <div class="ui segment">
-                    <form class="ui tiny form">
-                        <div class="three fields">
-                            <div class="field required">
-                                <label>Class-Section</label>
-                                <select class="ui search dropdown" id="standardByStudent" onchange="getStudentList()">
-                                    <option value="">Search By Class Name</option>
-                                </select>
-                            </div>
-                            <div class="field required">
-                                <label>Student</label>
-                                <select class="ui search dropdown" id="student">
-                                    <option value="">Search By Student</option>
-                                </select>
-                            </div>
-                            <div class="field" style="padding-top: 2.2em;">
-                                <div class="ui mini buttons">
-                                    <button type="button" class="ui green button" onclick="searchByStudent()">
-                                        <i class="icon search"></i>
-                                        Search
-                                    </button>
-                                    <div class="or"></div>
-                                    <button type="button" class="ui red button" onclick="clearByStudent()">
-                                        <i class="icon times circle"></i>
-                                        Clear
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="row" style="padding-left: 5px; padding-right: 5px; display: none;" id="MarksByStudentDiv">
-                    <div class="wide">
-                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
-                               id="MarksByStudentTable"
-                               style="margin-top: 5px; width: 100%">
-                            <thead>
-                            <tr>
-                                <th>Exam</th>
-                                <th>Subject</th>
-                                <th>Full Mark</th>
-                                <th>Pass Mark</th>
-                                <th>Mark Obtained</th>
-                                <th>Note</th>
-                                <th>Updated On</th>
-                            </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 {% endblock %}
@@ -147,12 +90,9 @@
 {% block js %}
     <script>
         let marksTable = null;
-        let marksByStudentTable = null;
 
         $(document).ready(function () {
-            $('.menu .item').tab();
             getStandardList();
-            initByStudentTable();
         });
 
         function getStandardList() {
@@ -164,17 +104,11 @@
                         addErrorNotification(response.message || 'Unable to load classes');
                         return;
                     }
-
                     $('#standard').html('<option value="">Search By Class Name</option>');
-                    $('#standardByStudent').html('<option value="">Search By Class Name</option>');
-
                     for (let j = 0; j < response.data.length; j++) {
-                        const option = '<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>';
-                        $('#standard').append(option);
-                        $('#standardByStudent').append(option);
+                        $('#standard').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
                     }
                     $('#standard').dropdown('refresh');
-                    $('#standardByStudent').dropdown('refresh');
                 },
                 error: function () {
                     addErrorNotification();
@@ -210,34 +144,6 @@
             });
         }
 
-        function getStudentList() {
-            const standard = $('#standardByStudent').val();
-            $('#student').html('<option value="">Search By Student</option>');
-            if (!standard) {
-                $('#student').dropdown('refresh');
-                return;
-            }
-
-            $.ajax({
-                type: 'get',
-                url: "{% url 'managementAppAPI:get_student_list_by_class_api' %}",
-                data: {standard: standard},
-                success: function (response) {
-                    if (!response.success || !Array.isArray(response.data)) {
-                        addErrorNotification(response.message || 'Unable to load students');
-                        return;
-                    }
-                    for (let j = 0; j < response.data.length; j++) {
-                        $('#student').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
-                    }
-                    $('#student').dropdown('refresh');
-                },
-                error: function () {
-                    addErrorNotification();
-                }
-            });
-        }
-
         function buildColumns(subjects) {
             const baseColumns = [
                 {title: 'Photo', data: 0},
@@ -259,7 +165,7 @@
             $('#marksHead').html(head);
         }
 
-        function searchByClass() {
+        function searchData() {
             const standard = $('#standard').val();
             const exam = $('#exam').val();
             if (!standard || !exam) {
@@ -292,7 +198,9 @@
                         scrollY: '350px',
                         scrollX: true,
                         stateSave: true,
-                        buttons: [{extend: 'excel'}],
+                        buttons: [{
+                            extend: 'excel'
+                        }],
                         aaSorting: [[2, 'asc']],
                         lengthMenu: [[50, 100, 200, -1], [50, 100, 200, 'All']],
                         pageLength: 50,
@@ -308,60 +216,13 @@
             });
         }
 
-        function clearByClass() {
+        function clearFilters() {
             $('#standard').dropdown('clear');
             $('#exam').dropdown('clear');
             $('#MarksTableDiv').hide();
             if (marksTable) {
                 marksTable.clear().draw();
             }
-        }
-
-        function initByStudentTable() {
-            marksByStudentTable = $('#MarksByStudentTable').DataTable({
-                dom: 'Blfrtip',
-                scrollY: '350px',
-                scrollX: true,
-                stateSave: true,
-                buttons: [{extend: 'excel'}],
-                columnDefs: [
-                    {name: 'examID__examID__name', targets: 0, orderable: true},
-                    {name: 'subjectID__subjectID__name', targets: 1, orderable: true},
-                    {name: 'examID__fullMarks', targets: 2, orderable: true},
-                    {name: 'examID__passMarks', targets: 3, orderable: true},
-                    {name: 'mark', targets: 4, orderable: true},
-                    {name: 'note', targets: 5, orderable: true},
-                    {name: 'lastUpdatedOn', targets: 6, orderable: true}
-                ],
-                aaSorting: [[6, 'desc']],
-                lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'All']],
-                pageLength: 25,
-                processing: true,
-                serverSide: true,
-                ajax: "{% url 'managementAppAPI:StudentMarksDetailsByStudentJson' %}"
-            });
-        }
-
-        function searchByStudent() {
-            const standardByStudent = $('#standardByStudent').val();
-            const student = $('#student').val();
-            if (!standardByStudent || !student) {
-                requiredFieldError();
-                $('#MarksByStudentDiv').hide();
-                return;
-            }
-
-            $('#MarksByStudentDiv').show();
-            marksByStudentTable.ajax.url(
-                "{% url 'managementAppAPI:StudentMarksDetailsByStudentJson' %}?standardByStudent=" + standardByStudent + "&student=" + student
-            ).load();
-        }
-
-        function clearByStudent() {
-            $('#standardByStudent').dropdown('clear');
-            $('#student').dropdown('clear');
-            $('#MarksByStudentDiv').hide();
-            marksByStudentTable.clear().draw();
         }
     </script>
 {% endblock %}

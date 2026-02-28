@@ -1,0 +1,171 @@
+{% extends 'teacherApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Students List</title>
+{% endblock %}
+
+{% block css %}
+    <style>
+        #TeacherStudentTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #TeacherStudentTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic  grid">
+        <div class="sixteen wide column">
+            <div class="ui  pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">Students List</div>
+            </div>
+            <div class="ui tab " data-tab="user">
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="users icon"></i>
+                        Students Filter
+                    </h4>
+                    <form class="ui tiny form">
+                        <div class="three fields">
+                            <div class="field required">
+                                <label>Class Name</label>
+                                <select id="classFilter" class="ui clearable search dropdown">
+                                    <option value="">Search By Class Name</option>
+                                </select>
+                            </div>
+                            <div class="field" style="padding-top: 2.2em;">
+                                <div class="ui mini buttons">
+                                    <button type="button" class="ui green button" id="searchClassFilter">
+                                        <i class="icon search"></i>
+                                        Search
+                                    </button>
+                                    <div class="or"></div>
+                                    <button type="button" class="ui red button" id="clearClassFilter">
+                                        <i class="icon times circle"></i>
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="row" style="padding-left: 5px; padding-right: 5px">
+                    <div class="wide">
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                               id="TeacherStudentTable"
+                               style="margin-top: 5px;width: 100%">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Roll</th>
+                                <th>Class-Section</th>
+                                <th>Gender</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let teacherStudentTab;
+
+        $(document).ready(function () {
+            getClassList();
+            initTable();
+        });
+
+        function getClassList() {
+            $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}",
+                success: function (response) {
+                    if (!response.success || !Array.isArray(response.data)) {
+                        addErrorNotification(response.message || 'Unable to load classes');
+                        return;
+                    }
+                    $('#classFilter').html('');
+                    $('#classFilter').append('<option value="">Search By Class Name</option>');
+                    for (let j = 0; j < response.data.length; j++) {
+                        $('#classFilter').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
+                    }
+                    $('#classFilter').dropdown('refresh');
+                },
+                error: function () {
+                    addErrorNotification();
+                }
+            });
+        }
+
+        function initTable() {
+            teacherStudentTab = $('#TeacherStudentTable').DataTable({
+                dom: 'Blfrtip',
+                scrollY: '350px',
+                scrollX: true,
+                stateSave: true,
+                fixedColumns: {
+                    left: 1,
+                    right: 1
+                },
+                buttons: [{
+                    extend: 'excel',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5]
+                    }
+                }],
+                columnDefs: [
+                    {name: 'name', targets: 0, orderable: true},
+                    {name: 'roll', targets: 1, orderable: true},
+                    {name: 'standardID__name', targets: 2, orderable: true},
+                    {name: 'gender', targets: 3, orderable: true},
+                    {name: 'phoneNumber', targets: 4, orderable: true},
+                    {name: 'email', targets: 5, orderable: true},
+                    {name: 'action', targets: 6, orderable: false}
+                ],
+                aaSorting: [[0, 'asc']],
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                pageLength: 10,
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "{% url 'teacherAppAPI:TeacherStudentsListJson' %}",
+                    data: function (d) {
+                        d.standard = $('#classFilter').val();
+                    }
+                }
+            });
+
+            $('#searchClassFilter').on('click', function () {
+                teacherStudentTab.ajax.reload(null, false);
+            });
+
+            $('#clearClassFilter').on('click', function () {
+                $('#classFilter').dropdown('clear');
+                teacherStudentTab.ajax.reload(null, false);
+            });
+        }
+    </script>
+{% endblock %}

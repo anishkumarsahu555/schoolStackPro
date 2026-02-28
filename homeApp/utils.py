@@ -35,8 +35,41 @@ def init_session(request):
 
 
 def get_current_school_session(request):
-    current = SchoolSession.objects.get(isCurrent__exact=True, isDeleted=False, schoolID__ownerID__userID_id=request)
-    return {'currentSessionYear': current.sessionYear, 'SessionID': current.pk, 'SchoolID': current.schoolID_id}
+    try:
+        current = SchoolSession.objects.get(
+            isCurrent__exact=True,
+            isDeleted=False,
+            schoolID__ownerID__userID_id=request,
+        )
+        return {'currentSessionYear': current.sessionYear, 'SessionID': current.pk, 'SchoolID': current.schoolID_id}
+    except Exception:
+        pass
+
+    teacher = TeacherDetail.objects.filter(userID_id=request, isDeleted=False).order_by('-datetime').first()
+    if teacher:
+        current = SchoolSession.objects.filter(
+            isCurrent=True,
+            isDeleted=False,
+            schoolID_id=teacher.schoolID_id,
+        ).order_by('-datetime').first()
+        if not current and teacher.sessionID_id:
+            current = SchoolSession.objects.filter(pk=teacher.sessionID_id, isDeleted=False).first()
+        if current:
+            return {'currentSessionYear': current.sessionYear, 'SessionID': current.pk, 'SchoolID': current.schoolID_id}
+
+    student = Student.objects.filter(userID_id=request, isDeleted=False).order_by('-datetime').first()
+    if student:
+        current = SchoolSession.objects.filter(
+            isCurrent=True,
+            isDeleted=False,
+            schoolID_id=student.schoolID_id,
+        ).order_by('-datetime').first()
+        if not current and student.sessionID_id:
+            current = SchoolSession.objects.filter(pk=student.sessionID_id, isDeleted=False).first()
+        if current:
+            return {'currentSessionYear': current.sessionYear, 'SessionID': current.pk, 'SchoolID': current.schoolID_id}
+
+    raise SchoolSession.DoesNotExist('No active school session found for this user')
 
 
 def action_taken_by(user):

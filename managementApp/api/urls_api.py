@@ -99,6 +99,7 @@ urlpatterns = [
     path('MarksOfSubjectsByStudentJson', MarksOfSubjectsByStudentJson.as_view(), name='MarksOfSubjectsByStudentJson'),
     path('add_subject_mark_api', add_subject_mark_api, name='add_subject_mark_api'),
     path('StudentMarksDetailsByClassAndExamJson', StudentMarksDetailsByClassAndExamJson.as_view(), name='StudentMarksDetailsByClassAndExamJson'),
+    path('StudentMarksDetailsByStudentJson', StudentMarksDetailsByStudentJson.as_view(), name='StudentMarksDetailsByStudentJson'),
 
     # events
     path('add_event_api',add_event_api, name='add_event_api'),

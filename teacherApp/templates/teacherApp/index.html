@@ -1,0 +1,56 @@
+{% extends 'homeApp/base.html' %}
+
+{% block sidebar %}
+    <div class="material-sidenav">
+        <div class="sidenav-header">
+            <span class="app-name">Teacher Panel</span>
+        </div>
+
+        <div class="nav-section">General</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_home' or request.resolver_match.url_name == 'teacher_root' %}active{% endif %}"
+           href="{% url 'teacherApp:teacher_home' %}">
+            <i class="tachometer alternate icon"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <div class="nav-section">Students</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_students_list' or request.resolver_match.url_name == 'teacher_student_detail' %}active{% endif %}"
+           href="{% url 'teacherApp:teacher_students_list' %}">
+            <i class="users icon"></i>
+            <span>Students List</span>
+        </a>
+
+        <div class="nav-section">Subjects</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_assigned_subjects' %}active{% endif %}"
+           href="{% url 'teacherApp:teacher_assigned_subjects' %}">
+            <i class="book icon"></i>
+            <span>Assigned Subjects</span>
+        </a>
+
+        <div class="nav-section">Attendance</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_student_attendance' %}active{% endif %}"
+           href="{% url 'teacherApp:teacher_student_attendance' %}">
+            <i class="tasks icon"></i>
+            <span>Student Attendance</span>
+        </a>
+
+        <div class="nav-section">Marks</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_add_marks' %}active{% endif %}"
+           href="{% url 'teacherApp:teacher_add_marks' %}">
+            <i class="edit outline icon"></i>
+            <span>Add Marks</span>
+        </a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_marks_details' %}active{% endif %}"
+           href="{% url 'teacherApp:teacher_marks_details' %}">
+            <i class="list alternate outline icon"></i>
+            <span>Marks Details</span>
+        </a>
+
+        <div class="nav-section">Events</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_manage_event' %}active{% endif %}"
+           href="{% url 'teacherApp:teacher_manage_event' %}">
+            <i class="calendar plus outline icon"></i>
+            <span>Events List</span>
+        </a>
+    </div>
+{% endblock %}

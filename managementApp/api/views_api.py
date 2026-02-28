@@ -1897,7 +1897,10 @@ class TakeStudentAttendanceByClassJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            images = '<img class="ui avatar image" src="{}">'.format(item.studentID.photo.thumbnail.url)
+            if item.studentID and item.studentID.photo:
+                images = '<img class="ui avatar image" src="{}">'.format(item.studentID.photo.thumbnail.url)
+            else:
+                images = '<i class="user circle icon" style="font-size: 1.4rem;"></i>'
 
             action = '''<button class="ui mini primary button" onclick="pushAttendance({})">
   Save
@@ -1925,7 +1928,7 @@ class TakeStudentAttendanceByClassJson(BaseDatatableView):
             json_data.append([
                 images,
                 escape(item.studentID.name),
-                float(escape(item.studentID.roll)),
+                escape(item.studentID.roll or 'N/A'),
                 is_present,
                 reason,
                 action,
@@ -2722,11 +2725,14 @@ class MarksOfSubjectsByStudentJson(BaseDatatableView):
               <input type="text" placeholder="Note" name="note{}" id="note{}" value = "{}">
             </div>
                         '''.format(item.pk, item.pk, item.note)
-            images = '<img class="ui avatar image" src="{}">'.format(item.studentID.photo.thumbnail.url)
+            if item.studentID and item.studentID.photo:
+                images = '<img class="ui avatar image" src="{}">'.format(item.studentID.photo.thumbnail.url)
+            else:
+                images = '<i class="user circle icon" style="font-size: 1.4rem;"></i>'
             json_data.append([
                 images,
                 escape(item.studentID.name),
-                float(escape(item.studentID.roll)),
+                escape(item.studentID.roll or 'N/A'),
                 item.examID.fullMarks,
                 item.examID.passMarks,
                 marks_obtained,
@@ -2797,17 +2803,98 @@ class StudentMarksDetailsByClassAndExamJson(BaseDatatableView):
             subs = [i.subjectID.name for i in subject_list]
             marks = []
             for s in subs:
-                exam_sub_list_by_student = MarkOfStudentsByExam.objects.get(studentID_id=item.id, isDeleted=False, examID_id=int(exam), sessionID_id=self.request.session["current_session"]["Id"], subjectID__subjectID__name=s)
-                marks.append(exam_sub_list_by_student.mark)
+                exam_sub_list_by_student = MarkOfStudentsByExam.objects.filter(
+                    studentID_id=item.id,
+                    isDeleted=False,
+                    examID_id=int(exam),
+                    sessionID_id=self.request.session["current_session"]["Id"],
+                    subjectID__subjectID__name=s,
+                ).first()
+                marks.append(exam_sub_list_by_student.mark if exam_sub_list_by_student else 0)
 
-            images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
+            if item.photo:
+                images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
+            else:
+                images = '<i class="user circle icon" style="font-size: 1.4rem;"></i>'
             json_data.append([
                 images,
                 escape(item.name),
-                float(escape(item.roll)),
+                escape(item.roll or 'N/A'),
 
 
             ] + marks)
+        return json_data
+
+
+class StudentMarksDetailsByStudentJson(BaseDatatableView):
+    order_columns = [
+        'examID__examID__name',
+        'subjectID__subjectID__name',
+        'examID__fullMarks',
+        'examID__passMarks',
+        'mark',
+        'note',
+        'lastUpdatedOn',
+    ]
+
+    @transaction.atomic
+    def get_initial_queryset(self):
+        try:
+            standard = self.request.GET.get("standardByStudent")
+            student = self.request.GET.get("student")
+            return MarkOfStudentsByExam.objects.select_related(
+                'examID',
+                'examID__examID',
+                'subjectID',
+                'subjectID__subjectID',
+            ).filter(
+                isDeleted=False,
+                sessionID_id=self.request.session["current_session"]["Id"],
+                standardID_id=int(standard),
+                studentID_id=int(student),
+            ).order_by('examID__examID__name', 'subjectID__subjectID__name')
+        except Exception:
+            return MarkOfStudentsByExam.objects.none()
+
+    def filter_queryset(self, qs):
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(examID__examID__name__icontains=search)
+                | Q(subjectID__subjectID__name__icontains=search)
+                | Q(examID__fullMarks__icontains=search)
+                | Q(examID__passMarks__icontains=search)
+                | Q(mark__icontains=search)
+                | Q(note__icontains=search)
+                | Q(lastUpdatedOn__icontains=search)
+            )
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            exam_name = 'N/A'
+            subject_name = 'N/A'
+            full_mark = 0
+            pass_mark = 0
+
+            if item.examID and item.examID.examID:
+                exam_name = item.examID.examID.name or 'N/A'
+                full_mark = item.examID.fullMarks if item.examID.fullMarks is not None else 0
+                pass_mark = item.examID.passMarks if item.examID.passMarks is not None else 0
+
+            if item.subjectID and item.subjectID.subjectID:
+                subject_name = item.subjectID.subjectID.name or 'N/A'
+
+            json_data.append([
+                escape(exam_name),
+                escape(subject_name),
+                escape(full_mark),
+                escape(pass_mark),
+                escape(item.mark if item.mark is not None else 0),
+                escape(item.note or ''),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
+            ])
         return json_data
 
 

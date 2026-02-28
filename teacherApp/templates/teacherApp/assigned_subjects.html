@@ -1,0 +1,93 @@
+{% extends 'teacherApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Assigned Subjects</title>
+{% endblock %}
+
+{% block css %}
+    <style>
+        #TeacherAssignedSubjectTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #TeacherAssignedSubjectTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic  grid">
+        <div class="sixteen wide column">
+            <div class="ui  pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">Assigned Subjects</div>
+            </div>
+            <div class="ui tab " data-tab="user">
+                <div class="row" style="padding-left: 5px; padding-right: 5px">
+                    <div class="wide">
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                               id="TeacherAssignedSubjectTable"
+                               style="margin-top: 5px;width: 100%">
+                            <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Section</th>
+                                <th>Subject</th>
+                                <th>Branch</th>
+                                <th>Assigned On</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let teacherAssignedSubjectTab;
+
+        teacherAssignedSubjectTab = $('#TeacherAssignedSubjectTable').DataTable({
+            dom: 'Blfrtip',
+            scrollY: '350px',
+            scrollX: true,
+            stateSave: true,
+            fixedColumns: {
+                left: 1
+            },
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4]
+                }
+            }],
+            columnDefs: [
+                {name: 'assignedSubjectID__standardID__name', targets: 0, orderable: true},
+                {name: 'assignedSubjectID__standardID__section', targets: 1, orderable: true},
+                {name: 'assignedSubjectID__subjectID__name', targets: 2, orderable: true},
+                {name: 'subjectBranch', targets: 3, orderable: true},
+                {name: 'datetime', targets: 4, orderable: true}
+            ],
+            aaSorting: [[0, 'asc']],
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            pageLength: 10,
+            processing: true,
+            serverSide: true,
+            ajax: "{% url 'teacherAppAPI:TeacherAssignedSubjectsListJson' %}"
+        });
+    </script>
+{% endblock %}
