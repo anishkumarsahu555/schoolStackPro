@@ -1,3 +1,5 @@
+import json
+
 from django.shortcuts import render, get_object_or_404
 
 from homeApp.utils import login_required
@@ -9,16 +11,20 @@ from utils.custom_decorators import check_groups
 
 @check_groups('Admin', 'Owner')
 def admin_home(request):
-    totalStudent = Student.objects.filter(isDeleted=False, sessionID_id = request.session['current_session']['Id']).count()
-    totalTeacher = TeacherDetail.objects.filter(isDeleted=False, sessionID_id = request.session['current_session']['Id']).count()
-    totalClass = Standard.objects.filter(isDeleted=False, sessionID_id = request.session['current_session']['Id']).count()
-    totalSubject = Subjects.objects.filter(isDeleted=False, sessionID_id = request.session['current_session']['Id']).count()
+    current_session_id = request.session['current_session']['Id']
+
+    totalStudent = Student.objects.filter(isDeleted=False, sessionID_id=current_session_id).count()
+    totalTeacher = TeacherDetail.objects.filter(isDeleted=False, sessionID_id=current_session_id).count()
+    totalClass = Standard.objects.filter(isDeleted=False, sessionID_id=current_session_id).count()
+    totalSubject = Subjects.objects.filter(isDeleted=False, sessionID_id=current_session_id).count()
 
     context = {
         'total_students': totalStudent,
         'total_teachers': totalTeacher,
         'total_classes': totalClass,
         'total_subjects': totalSubject,
+        'summary_labels_json': json.dumps(['Students', 'Teachers', 'Subjects', 'Classes']),
+        'summary_values_json': json.dumps([totalStudent, totalTeacher, totalSubject, totalClass]),
     }
     return render(request, 'managementApp/dashboard.html', context)
 

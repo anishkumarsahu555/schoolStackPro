@@ -1029,6 +1029,36 @@
             color: var(--app-text) !important;
         }
 
+        .ui.calendar.popup td.adjacent,
+        .ui.calendar.popup td.disabled,
+        .ui.calendar.popup .item.adjacent,
+        .ui.calendar.popup .item.disabled,
+        .ui.calendar.popup .link.item.disabled {
+            color: var(--app-muted) !important;
+            opacity: 0.65 !important;
+        }
+
+        .ui.calendar.popup td.adjacent .link,
+        .ui.calendar.popup td.disabled .link,
+        .ui.calendar.popup td.adjacent .item,
+        .ui.calendar.popup td.disabled .item {
+            color: var(--app-muted) !important;
+            opacity: 0.65 !important;
+        }
+
+        html[data-theme="dark"] .ui.calendar.popup td.adjacent,
+        html[data-theme="dark"] .ui.calendar.popup td.disabled,
+        html[data-theme="dark"] .ui.calendar.popup .item.adjacent,
+        html[data-theme="dark"] .ui.calendar.popup .item.disabled,
+        html[data-theme="dark"] .ui.calendar.popup .link.item.disabled,
+        html[data-theme="dark"] .ui.calendar.popup td.adjacent .link,
+        html[data-theme="dark"] .ui.calendar.popup td.disabled .link,
+        html[data-theme="dark"] .ui.calendar.popup td.adjacent .item,
+        html[data-theme="dark"] .ui.calendar.popup td.disabled .item {
+            color: var(--app-muted) !important;
+            opacity: 0.55 !important;
+        }
+
         html[data-theme="dark"] .ui.calendar.popup .link.item:hover,
         html[data-theme="dark"] .ui.calendar.popup .item:hover {
             background: var(--app-hover) !important;
