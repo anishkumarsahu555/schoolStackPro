@@ -6,6 +6,7 @@ urlpatterns = [
     path('logout/', user_logout, name='user_logout'),
     path('post_login/', post_login, name='post_login'),
     path('home/', homepage, name='homepage'),
+    path('profile/', profile_page, name='profile_page'),
 
     #admin
     path('admin_home/', admin_home, name='admin_home'),

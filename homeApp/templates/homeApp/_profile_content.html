@@ -1,0 +1,74 @@
+<style>
+    .profile-shell { border: 1px solid var(--app-border); border-radius: 14px; background: var(--app-surface); padding: 14px; }
+    .profile-title { margin: 0; font-size: 22px; font-weight: 800; color: var(--app-text); }
+    .profile-role-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background: var(--app-active); color: var(--app-brand); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+    .profile-layout { display:grid; grid-template-columns: 1.1fr .9fr; gap: 14px; }
+    .profile-card { border:1px solid var(--app-border); border-radius:14px; background: var(--app-surface); overflow:hidden; }
+    .profile-card-head { padding: 12px 14px; border-bottom:1px solid var(--app-border); font-size:20px; font-weight:700; color: var(--app-text); }
+    .profile-head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .profile-card-body { padding: 14px; }
+    .profile-avatar { width:100%; max-height:280px; object-fit:cover; border-radius:10px; border:1px solid var(--app-border); background: var(--app-hover); }
+    .profile-avatar-fallback { height:220px; border:1px dashed var(--app-border); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:8px; color: var(--app-muted); background: var(--app-hover); }
+    .kv { display:grid; grid-template-columns: 130px 1fr; gap:10px; padding:9px 0; border-bottom:1px solid var(--app-border); }
+    .kv:last-child { border-bottom:0; }
+    .k { color: var(--app-muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; font-weight:700; }
+    .v { color: var(--app-text); font-size:15px; font-weight:600; word-break:break-word; }
+    .stack { display:grid; gap:14px; }
+    @media (max-width: 900px) {
+        .profile-layout { grid-template-columns: 1fr; }
+        .profile-head-row { align-items:center; justify-content:space-between; flex-direction:row; }
+        .profile-role-badge { font-size: 10px; padding: 5px 9px; width: fit-content; max-width: 100%; white-space: normal; line-height: 1.2; }
+        .kv { grid-template-columns: 1fr; gap:4px; }
+    }
+</style>
+
+<div class="ui segment profile-shell">
+    <div class="profile-layout">
+        <div class="profile-card">
+            <div class="profile-card-head">
+                <div class="profile-head-row">
+                    <span>My Profile</span>
+                    <div class="profile-role-badge">
+                        <i class="shield alternate icon"></i>
+                        {{ role_label }}
+                    </div>
+                </div>
+            </div>
+            <div class="profile-card-body">
+                {% if profile_photo_url %}
+                    <img src="{{ profile_photo_url }}" class="ui image profile-avatar" alt="Profile Photo" />
+                {% else %}
+                    <div class="profile-avatar-fallback">
+                        <i class="user circle icon"></i>
+                        <span>No profile photo</span>
+                    </div>
+                {% endif %}
+
+                <div style="margin-top:12px;">
+                    <div class="kv"><div class="k">Name</div><div class="v">{{ profile_name }}</div></div>
+                    <div class="kv"><div class="k">Username</div><div class="v">{{ profile_username }}</div></div>
+                    <div class="kv"><div class="k">Email</div><div class="v">{{ profile_email }}</div></div>
+                    <div class="kv"><div class="k">Phone</div><div class="v">{{ profile_phone }}</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stack">
+            <div class="profile-card">
+                <div class="profile-card-head">Account Summary</div>
+                <div class="profile-card-body">
+                    {% if extra_rows %}
+                        {% for label, value in extra_rows %}
+                            <div class="kv">
+                                <div class="k">{{ label }}</div>
+                                <div class="v">{{ value }}</div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="v">No additional account details available.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

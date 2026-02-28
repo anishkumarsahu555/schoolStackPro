@@ -1,0 +1,13 @@
+{% extends 'studentApp/index.html' %}
+
+{% block title %}
+    <title>My Profile</title>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            {% include 'homeApp/_profile_content.html' %}
+        </div>
+    </div>
+{% endblock %}

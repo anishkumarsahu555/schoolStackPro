@@ -299,6 +299,31 @@
             color: var(--app-text) !important;
         }
 
+        /* Keep sidebar link behavior consistent (blue hover + active) */
+        #sidebar .nav-item:hover,
+        #sidebar .menu > .item:hover {
+            background: var(--app-active) !important;
+            color: var(--app-brand) !important;
+        }
+
+        #sidebar .nav-item:hover i.icon,
+        #sidebar .menu > .item:hover i.icon {
+            color: var(--app-brand) !important;
+        }
+
+        #sidebar .nav-item.active,
+        #sidebar .menu > .item.active {
+            background: var(--app-active) !important;
+            color: var(--app-brand) !important;
+            border-left: 3px solid var(--app-brand) !important;
+            font-weight: 600;
+        }
+
+        #sidebar .nav-item.active i.icon,
+        #sidebar .menu > .item.active i.icon {
+            color: var(--app-brand) !important;
+        }
+
         html[data-theme="dark"] .ui.menu:not(.inverted),
         html[data-theme="dark"] .ui.segment:not(.inverted),
         html[data-theme="dark"] .ui.message:not(.inverted),
@@ -860,6 +885,8 @@
             margin-top: 40px !important;
             max-height: calc(100% - 40px) !important;
             height: calc(100% - 40px) !important;
+            overflow-y: auto !important;
+            overflow-x: hidden;
         }
 
         .ui.vertical.menu.sidebar-menu .item i.icon {
@@ -1073,7 +1100,7 @@
             Profile
         </div>
         <div class="menu">
-            <a class="item" href="#">
+            <a class="item" href="{% url 'homeApp:profile_page' %}">
                 <div><i class="user icon"></i>My Profile</div>
             </a>
             <a class="item" href="{% url 'homeApp:user_logout' %}">
@@ -1271,31 +1298,56 @@
 
 
     $(function () {
-        var current = location.pathname;
-        $('.sidebar  a').each(function () {
-            var $this = $(this);
-            // if the current path is like this link, make it active
-            if ($this.attr('href').indexOf(current) !== -1) {
-                $this.addClass('active');
-                // Scroll to active item
-                setTimeout(function() {
-                    var sidebar = $('.sidebar');
-                    var activeItem = sidebar.find('a.active');
-                    if (activeItem.length > 0) {
-                        var sidebarHeight = sidebar.height();
-                        var itemTop = activeItem.position().top;
-                        var itemHeight = activeItem.outerHeight();
-                        var scrollTop = sidebar.scrollTop();
-                        var targetScrollTop = scrollTop + itemTop - (sidebarHeight / 2) + (itemHeight / 2);
-                        
-                        sidebar.animate({
-                            scrollTop: targetScrollTop
-                        }, 500, 'swing');
-                    }
-                }, 100);
+        function normalizePath(path) {
+            if (!path) return '/';
+            var clean = path.split('?')[0].split('#')[0];
+            if (clean.length > 1 && clean.endsWith('/')) {
+                clean = clean.slice(0, -1);
             }
-        })
-    })
+            return clean || '/';
+        }
+
+        var current = normalizePath(window.location.pathname);
+        var $sidebar = $('#sidebar');
+        var $links = $sidebar.find('a[href]');
+        var $activeLink = null;
+        var bestMatchLength = -1;
+
+        $links.removeClass('active');
+        $links.each(function () {
+            var $link = $(this);
+            var href = $link.attr('href');
+            if (!href || href === '#') return;
+            if (/^https?:\/\//i.test(href) || href.startsWith('javascript:')) return;
+
+            var linkPath = normalizePath(href);
+            var isExact = linkPath === current;
+            var isParent = current.indexOf(linkPath + '/') === 0;
+
+            if (isExact || isParent) {
+                if (linkPath.length > bestMatchLength) {
+                    bestMatchLength = linkPath.length;
+                    $activeLink = $link;
+                }
+            }
+        });
+
+        if ($activeLink && $activeLink.length) {
+            $activeLink.addClass('active');
+
+            setTimeout(function () {
+                var container = $sidebar.get(0);
+                var item = $activeLink.get(0);
+                if (!container || !item) return;
+
+                var containerRect = container.getBoundingClientRect();
+                var itemRect = item.getBoundingClientRect();
+                var offset = itemRect.top - containerRect.top;
+                var targetScrollTop = container.scrollTop + offset - (container.clientHeight / 2) + (item.offsetHeight / 2);
+                container.scrollTo({ top: Math.max(0, targetScrollTop), behavior: 'smooth' });
+            }, 120);
+        }
+    });
 </script>
 <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
 {#<script src="https://cdn.datatables.net/1.12.1/js/dataTables.semanticui.min.js"></script>#}
