@@ -241,9 +241,15 @@
                             <i class="arrow left icon"></i>Back
                         </a>
                     {% else %}
-                        <a href="{% url 'teacherApp:teacher_students_list' %}" class="ui mini button">
-                            <i class="arrow left icon"></i>Back
-                        </a>
+                        {% if is_student_view %}
+                            <a href="{% url 'studentApp:student_home' %}" class="ui mini button">
+                                <i class="arrow left icon"></i>Back
+                            </a>
+                        {% else %}
+                            <a href="{% url 'teacherApp:teacher_students_list' %}" class="ui mini button">
+                                <i class="arrow left icon"></i>Back
+                            </a>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>

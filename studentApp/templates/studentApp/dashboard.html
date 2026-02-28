@@ -1,487 +1,303 @@
 {% extends 'studentApp/index.html' %}
 {% load static %}
+
 {% block title %}
-    <title>Dashboard</title>
+    <title>Student Dashboard</title>
 {% endblock %}
+
 {% block css %}
+<style>
+    .student-dashboard {
+        width: 100%;
+    }
+
+    .hero-card {
+        background: linear-gradient(135deg, #2a6fd8 0%, #1a4f9e 55%, #163f80 100%);
+        border-radius: 16px;
+        padding: 1.25rem;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 35px rgba(17, 42, 82, 0.22);
+        margin-bottom: 1rem;
+    }
+
+    .hero-card:before {
+        content: "";
+        position: absolute;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        top: -110px;
+        right: -50px;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-title {
+        margin: 0;
+        color: #fff;
+    }
+
+    .hero-sub {
+        margin-top: 0.3rem;
+        color: rgba(255, 255, 255, 0.93);
+    }
+
+    .hero-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 6px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.34);
+        background: rgba(255, 255, 255, 0.12);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .metric-grid {
+        margin-top: 0 !important;
+    }
+
+    .metric-card {
+        border: 1px solid var(--app-border) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08) !important;
+        height: 100%;
+    }
+
+    .metric-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.4rem;
+    }
+
+    .metric-title {
+        font-size: 0.82rem;
+        color: var(--app-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-weight: 700;
+    }
+
+    .metric-value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--app-text);
+        line-height: 1.1;
+    }
+
+    .metric-meta {
+        color: var(--app-muted);
+        font-size: 0.84rem;
+    }
+
+    .section-card {
+        border: 1px solid var(--app-border) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08) !important;
+        margin-top: 1rem !important;
+    }
+
+    .list-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.8rem;
+        border-bottom: 1px dashed rgba(128, 145, 170, 0.3);
+        padding: 0.6rem 0;
+        color: var(--app-text);
+    }
+
+    .list-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .list-muted {
+        color: var(--app-muted);
+        font-size: 0.84rem;
+    }
+
+    @media (max-width: 767px) {
+        .hero-card {
+            padding: 1rem;
+            border-radius: 14px;
+        }
+
+        .metric-value {
+            font-size: 1.35rem;
+        }
+    }
+</style>
 {% endblock %}
+
 {% block body %}
-
-    <style>
-
-
-        #SubjectTable_length {
-            left: 20px;
-            position: absolute;
-        }
-
-        #SubjectTable_filter {
-            float: right;
-        }
-
-        .dt-buttons {
-            position: absolute;
-            left: 174px;
-        }
-
-        input[type=search] {
-            width: 100px !important;
-        }
-
-        .dashboard-cards .column {
-            display: flex;
-        }
-
-        .dashboard-stat-card {
-            width: 100%;
-            border: 1px solid var(--app-border);
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
-            overflow: hidden;
-        }
-
-        .dashboard-stat-card .content {
-            padding: 18px !important;
-        }
-
-        .dashboard-icon {
-            float: right;
-            width: 42px;
-            height: 42px;
-            border-radius: 10px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            color: #fff;
-        }
-
-        .dashboard-icon.red { background: #db2828; }
-        .dashboard-icon.green { background: #21ba45; }
-        .dashboard-icon.teal { background: #00b5ad; }
-        .dashboard-icon.purple { background: #a333c8; }
-
-        .dashboard-value {
-            font-size: 2rem;
-            line-height: 1;
-            font-weight: 700;
-            color: var(--app-text);
-            margin: 8px 0 10px;
-        }
-
-        .dashboard-meta {
-            color: var(--app-muted);
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-        }
-
-        .dashboard-label {
-            color: var(--app-text);
-            font-weight: 600;
-            min-height: 24px;
-        }
-
-        .dashboard-stat-card .extra.content {
-            background: var(--app-surface);
-            border-top: 1px solid var(--app-border);
-        }
-
-        .dashboard-stat-card .ui.button {
-            border-radius: 8px !important;
-        }
-    </style>
-
-    <div class="ui left aligned basic  grid">
-        <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Dashboard
+<div class="ui left aligned basic grid student-dashboard">
+    <div class="sixteen wide column">
+        <div class="hero-card">
+            <div class="hero-content">
+                <div>
+                    <h2 class="hero-title">Welcome, {{ student.name|default:request.user.username }}</h2>
+                    <div class="hero-sub">
+                        {{ student.standardID.name|default:'N/A' }}{% if student.standardID.section %} - {{ student.standardID.section }}{% endif %}
+                        {% if student.roll %} | Roll: {{ student.roll }}{% endif %}
+                    </div>
                 </div>
-
+                <div class="hero-chip">
+                    <i class="calendar alternate outline icon"></i>
+                    Session: {{ request.session.current_session.currentSessionYear|default:'N/A' }}
+                </div>
             </div>
-            <div class="ui tab " data-tab="user">
-                <div class="main">
-                    <div class="ui grid stackable padded dashboard-cards">
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile column"
-                        >
-                            <div class="ui fluid card dashboard-stat-card">
-                                <div class="content">
-                                    <div class="dashboard-icon red">
-                                        <i class="icon shopping cart"></i>
-                                    </div>
-                                    <div class="dashboard-value">
-                                        3958
-                                    </div>
-                                    <div class="dashboard-meta">
-                                        orders
-                                    </div>
-                                    <div class="dashboard-label">
-                                        Total Orders
-                                    </div>
-                                </div>
-                                <div class="extra content">
-                                    <div class="ui two buttons">
-                                        <div class="ui red button">More Info</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile column"
-                        >
-                            <div class="ui fluid card dashboard-stat-card">
-                                <div class="content">
-                                    <div class="dashboard-icon green">
-                                        <i class="icon clock"></i>
-                                    </div>
-                                    <div class="dashboard-value">57.6%</div>
-                                    <div class="dashboard-meta">
-                                        Time
-                                    </div>
-                                    <div class="dashboard-label">
-                                        Time Utilization
-                                    </div>
-                                </div>
-                                <div class="extra content">
-                                    <div class="ui two buttons">
-                                        <div class="ui green button">More Info</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile column"
-                        >
-                            <div class="ui fluid card dashboard-stat-card">
-                                <div class="content">
-                                    <div class="dashboard-icon teal">
-                                        <i class="icon briefcase"></i>
-                                    </div>
-                                    <div class="dashboard-value">3112</div>
-                                    <div class="dashboard-meta">
-                                        Saves
-                                    </div>
-                                    <div class="dashboard-label">
-                                        Saved Items
-                                    </div>
-                                </div>
-                                <div class="extra content">
-                                    <div class="ui two buttons">
-                                        <div class="ui teal button">More Info</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile column"
-                        >
-                            <div class="ui fluid card dashboard-stat-card">
-                                <div class="content">
-                                    <div class="dashboard-icon purple">
-                                        <i class="icon trophy"></i>
-                                    </div>
-                                    <div class="dashboard-value">9805</div>
-                                    <div class="dashboard-meta">
-                                        Views
-                                    </div>
-                                    <div class="dashboard-label">
-                                        Total Views
-                                    </div>
-                                </div>
-                                <div class="extra content">
-                                    <div class="ui two buttons">
-                                        <div class="ui purple button">More Info</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="ui grid stackable padded">
-                        <div class="column">
-                            <table class="ui celled striped table">
-                                <thead>
-                                <tr>
-                                    <th colspan="3">
-                                        Git Repository
-                                    </th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr>
-                                    <td class="collapsing">
-                                        <i class="folder icon"></i> node_modules
-                                    </td>
-                                    <td>Initial commit</td>
-                                    <td class="right aligned collapsing">10 hours ago</td>
-                                </tr>
-                                <tr>
-                                    <td><i class="folder icon"></i> test</td>
-                                    <td>Initial commit</td>
-                                    <td class="right aligned">10 hours ago</td>
-                                </tr>
-                                <tr>
-                                    <td><i class="folder icon"></i> build</td>
-                                    <td>Initial commit</td>
-                                    <td class="right aligned">10 hours ago</td>
-                                </tr>
-                                <tr>
-                                    <td><i class="file outline icon"></i> package.json</td>
-                                    <td>Initial commit</td>
-                                    <td class="right aligned">10 hours ago</td>
-                                </tr>
-                                <tr>
-                                    <td><i class="file outline icon"></i> Gruntfile.js</td>
-                                    <td>Initial commit</td>
-                                    <td class="right aligned">10 hours ago</td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="ui grid stackable padded">
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile  center aligned column"
-                        >
-                            <div class="ui teal statistic">
-                                <div class="value">
-                                    5,550
-                                </div>
-                                <div class="label">
-                                    Downloads
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile  center aligned column"
-                        >
-                            <div class="ui purple statistic">
-                                <div class="value">
-                                    50+
-                                </div>
-                                <div class="label">
-                                    Developers
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile  center aligned column"
-                        >
-                            <div class="ui green statistic">
-                                <div class="value">
-                                    800+
-                                </div>
-                                <div class="label">
-                                    Commits
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                                class="four wide computer eight wide tablet sixteen wide mobile  center aligned column"
-                        >
-                            <div class="ui purple statistic">
-                                <div class="value">
-                                    1000+
-                                </div>
-                                <div class="label">
-                                    Cups of Coffee
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        </div>
 
+        {% if student_not_found %}
+            <div class="ui warning message">
+                <div class="header">Student profile not found</div>
+                <p>Your student details are not available for the selected session.</p>
+            </div>
+        {% endif %}
+
+        <div class="ui four stackable cards metric-grid">
+            <div class="card metric-card">
+                <div class="content">
+                    <div class="metric-top">
+                        <div class="metric-title">Attendance (This Month)</div>
+                        <i class="calendar check outline icon"></i>
+                    </div>
+                    <div class="metric-value">{{ attendance_month_percent }}%</div>
+                    <div class="metric-meta">{{ attendance_month_present_days }} / {{ attendance_month_total_days }} days present in {{ attendance_month_label }}</div>
+                </div>
+            </div>
+            <div class="card metric-card">
+                <div class="content">
+                    <div class="metric-top">
+                        <div class="metric-title">Subjects</div>
+                        <i class="book icon"></i>
+                    </div>
+                    <div class="metric-value">{{ subjects_count }}</div>
+                    <div class="metric-meta">Assigned in current class</div>
+                </div>
+            </div>
+            <div class="card metric-card">
+                <div class="content">
+                    <div class="metric-top">
+                        <div class="metric-title">Fee Paid</div>
+                        <i class="money bill alternate outline icon"></i>
+                    </div>
+                    <div class="metric-value">₹{{ paid_amount|floatformat:2 }}</div>
+                    <div class="metric-meta">{{ paid_months_count }} month(s) marked paid</div>
+                </div>
+            </div>
+            <div class="card metric-card">
+                <div class="content">
+                    <div class="metric-top">
+                        <div class="metric-title">Fee Pending</div>
+                        <i class="exclamation circle icon"></i>
+                    </div>
+                    <div class="metric-value">₹{{ pending_amount|floatformat:2 }}</div>
+                    <div class="metric-meta">Expected total: ₹{{ total_fee_expected|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ui two stackable cards" style="margin-top: 1rem;">
+            <div class="card section-card">
+                <div class="content">
+                    <div class="header">Attendance Percentage by Month</div>
+                </div>
+                <div class="content">
+                    <canvas id="attendanceTrendChart" height="120"></canvas>
+                </div>
+            </div>
+
+            <div class="card section-card">
+                <div class="content">
+                    <div class="header">Upcoming Exams</div>
+                </div>
+                <div class="content">
+                    {% for exam in upcoming_exams %}
+                        <div class="list-row">
+                            <div>
+                                <div><strong>{{ exam.examID.name|default:'N/A' }}</strong></div>
+                                <div class="list-muted">Marks: {{ exam.fullMarks|default:'N/A' }} | Pass: {{ exam.passMarks|default:'N/A' }}</div>
+                            </div>
+                            <div class="list-muted">{{ exam.startDate|date:'d M Y'|default:'N/A' }}</div>
+                        </div>
+                    {% empty %}
+                        <div class="list-muted">No upcoming exams found.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="ui card fluid section-card">
+            <div class="content">
+                <div class="header">Upcoming Events (Next 30 Days)</div>
+            </div>
+            <div class="content">
+                {% for event in upcoming_events %}
+                    <div class="list-row">
+                        <div>
+                            <div><strong>{{ event.title|default:'N/A' }}</strong></div>
+                            <div class="list-muted">{{ event.message|default:'No description' }}</div>
+                        </div>
+                        <div class="list-muted">{{ event.startDate|date:'d M Y'|default:'N/A' }}</div>
+                    </div>
+                {% empty %}
+                    <div class="list-muted">No events announced for the next 30 days.</div>
+                {% endfor %}
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
 
-
-
-
 {% block js %}
-    <script>
+<script>
+    (function () {
+        const labels = {{ attendance_chart_labels|safe }};
+        const values = {{ attendance_chart_values|safe }};
+        const canvas = document.getElementById('attendanceTrendChart');
+        if (!canvas) return;
 
-        $(getStandardList());
-
-        function getStandardList() {
-
-            $.ajax({
-                type: 'get',
-                url: "{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}",
-
-                success: function (response) {
-
-                    $('#standard').html('');
-                    $('#standard').append(' <option value="">Search By Class Name</option>');
-                    var j;
-                    for (j = 0; j < response.data.length; j++) {
-
-                        $('#standard').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
-
-                    }
-
-                },
-
-                error: function () {
-                    $('body')
-                        .toast({
-                            class: 'error',
-                            message: 'An error occurred !'
-                        })
-                    ;
-                }
-            });
-
-
-        }
-
-        function getStudentList() {
-
-            $.ajax({
-                type: 'get',
-                url: "{% url 'managementAppAPI:get_student_list_by_class_api' %}",
-                data: {
-                    'standard': $('#standard').val()
-                },
-
-                success: function (response) {
-
-                    $('#student').dropdown('clear');
-                    $('#student').html('');
-                    $('#ByStudentStudent').append(' <option value="">Search By Student Name-Roll</option>');
-                    var j;
-                    for (j = 0; j < response.data.length; j++) {
-
-                        $('#student').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
-
-                    }
-
-                },
-
-                error: function () {
-                    $('body')
-                        .toast({
-                            class: 'error',
-                            message: 'An error occurred !'
-                        })
-                    ;
-                }
-            });
-
-
-        }
-
-
-        let today = new Date();
-        $('#date')
-            .calendar({
-                    monthFirst: false,
-                    type: 'date',
-                    formatter: {
-                        date: function (date, settings) {
-
-                            if (!date) return '';
-                            var day = String(date.getDate());
-                            var month = String(date.getMonth() + 1);
-                            var year = date.getFullYear();
-                            return day + '/' + month + '/' + year;
-                        }
-                    }
-                }
-            );
-
-
-        let subjectTab
-
-
-        function searchData() {
-            let standard = $('#standard').val();
-            let student = $('#student').val();
-
-            if (standard === '' || student === '') {
-                requiredFieldError();
-                $('#AttendanceTableDiv').css('display', 'none');
-            } else {
-                $('#AttendanceTableDiv').css('display', 'block');
-
-                subjectTab.ajax.url('{% url 'managementAppAPI:FeeByStudentJson' %}?standard=' + standard + '&student=' + student).load();
-
-            }
-        }
-
-        // user Details
-
-        subjectTab = $('#SubjectTable').DataTable({
-            dom: 'Blfrtip',
-            "scrollY": "350px",
-            "scrollX": true,
-            stateSave: true,
-            fixedColumns: {
-                left: 1,
-                right: 1
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Monthly Attendance %',
+                    data: values,
+                    borderColor: '#1a73e8',
+                    backgroundColor: 'rgba(26,115,232,0.14)',
+                    borderWidth: 2,
+                    fill: true,
+                    lineTension: 0.25,
+                    pointRadius: 3
+                }]
             },
-            buttons: [{
-                extend: 'excel',
-                exportOptions: {
-                    columns: [0, 1, 2, 3, 4]
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                legend: {display: false},
+                scales: {
+                    yAxes: [{
+                        ticks: {min: 0, max: 100}
+                    }]
                 }
             }
-            ],
-            "columnDefs": [
-                {"name": "month", "targets": 0, "orderable": true},
-                {"name": "isPaid", "targets": 1, "orderable": true},
-                {"name": "payDate", "targets": 2, "orderable": true},
-                {"name": "amount", "targets": 3, "orderable": true},
-                {"name": "note", "targets": 4, "orderable": true},
-                {"name": "action", "targets": 5, "orderable": false}
-            ],
-            aaSorting: [[1, 'desc']],
-            "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
-            "pageLength": 100,
-            "processing": true,
-            "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:FeeByStudentJson' %}"
         });
-
-
-        function pushFee(id) {
-            let isPresent = $('#isPresent' + id).prop('checked');
-            let reason = $('#reason' + id).val();
-            let amount = $('#amount' + id).val();
-            let data = new FormData();
-            data.append('id', id);
-            data.append('isPresent', isPresent);
-            data.append('reason', reason);
-            data.append('amount', amount);
-            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
-            $.ajax({
-                type: 'post',
-                url: "{% url 'managementAppAPI:add_student_fee_api' %}",
-                data: data,
-                contentType: false,
-                cache: false,
-                processData: false,
-
-                success: function (response) {
-                    if (response.success) {
-                        addSuccessNotification(response.message, response.color);
-                        subjectTab.ajax.reload(null, false);
-                    } else {
-                        addErrorNotification();
-
-                    }
-
-                    return response;
-                },
-                error: function () {
-                    addErrorNotification();
-                }
-            });
-
-
-        }
-
-    </script>
-
+    })();
+</script>
 {% endblock %}

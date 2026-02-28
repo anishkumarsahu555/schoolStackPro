@@ -1,0 +1,47 @@
+{% extends 'studentApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Exam Details</title>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">Exam Details</div>
+            </div>
+
+            <div class="ui segment">
+                <table class="ui celled striped compact table">
+                    <thead>
+                    <tr>
+                        <th>Exam</th>
+                        <th>Class</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Full Marks</th>
+                        <th>Pass Marks</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in exams %}
+                        <tr>
+                            <td>{{ row.examID.name|default:'N/A' }}</td>
+                            <td>{{ row.standardID.name|default:'N/A' }}{% if row.standardID.section %} - {{ row.standardID.section }}{% endif %}</td>
+                            <td>{{ row.startDate|date:'d-m-Y'|default:'N/A' }}</td>
+                            <td>{{ row.endDate|date:'d-m-Y'|default:'N/A' }}</td>
+                            <td>{{ row.fullMarks|default:'N/A' }}</td>
+                            <td>{{ row.passMarks|default:'N/A' }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="center aligned">No exam details available.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

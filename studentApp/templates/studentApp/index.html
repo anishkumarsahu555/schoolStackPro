@@ -1,80 +1,51 @@
 {% extends 'homeApp/base.html' %}
 
 {% block sidebar %}
-    <div class="item">
-        <div class="header">General</div>
-        <div class="menu">
-            <a class="item" href="{% url 'studentApp:student_home' %}">
-                <div>
-                    <i class="tachometer alternate icon"></i>
-                    Dashboard
-                </div>
-            </a>
+    <div class="material-sidenav">
+        <div class="sidenav-header">
+            <span class="app-name">Student Panel</span>
         </div>
+
+        <div class="nav-section">General</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'student_home' or request.resolver_match.url_name == 'student_root' %}active{% endif %}"
+           href="{% url 'studentApp:student_home' %}">
+            <i class="tachometer alternate icon"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <div class="nav-section">Profile</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'student_my_details' %}active{% endif %}"
+           href="{% url 'studentApp:student_my_details' %}">
+            <i class="id card outline icon"></i>
+            <span>My Details</span>
+        </a>
+
+        <div class="nav-section">Attendance</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'attendance_history' %}active{% endif %}"
+           href="{% url 'studentApp:attendance_history' %}">
+            <i class="calendar check outline icon"></i>
+            <span>Attendance History</span>
+        </a>
+
+        <div class="nav-section">Fees</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'fee_detail' %}active{% endif %}"
+           href="{% url 'studentApp:fee_detail' %}">
+            <i class="money bill alternate outline icon"></i>
+            <span>Fee Details</span>
+        </a>
+
+        <div class="nav-section">Exams</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'student_exam_details' %}active{% endif %}"
+           href="{% url 'studentApp:student_exam_details' %}">
+            <i class="clipboard outline icon"></i>
+            <span>Exam Details</span>
+        </a>
+
+        <div class="nav-section">Events</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'student_events' %}active{% endif %}"
+           href="{% url 'studentApp:student_events' %}">
+            <i class="calendar alternate outline icon"></i>
+            <span>Events</span>
+        </a>
     </div>
-
-
-
-
-    <div class="item">
-        <div class="header">
-            My Attendance
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'studentApp:attendance_history' %}">
-                <div><i class="book icon"></i>Attendance History</div>
-            </a>
-        </div>
-    </div>
-
-
-
-
-    <div class="item">
-        <div class="header">
-          My Tuition Fee
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'studentApp:fee_detail' %}">
-                <div><i class="hand holding usd icon"></i>Fee Details</div>
-            </a>
-
-        </div>
-    </div>
-
-
-    <div class="item">
-        <div class="header">
-            My Exams
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'managementApp:manage_exams' %}">
-                <div><i class="clipboard outline icon"></i></i>Exam Details</div>
-            </a>
-
-        </div>
-    </div>
-    <div class="item">
-        <div class="header">
-            My Results
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'managementApp:student_marks' %}">
-                <div><i class="edit outline icon"></i>Add Marks</div>
-            </a>
-
-        </div>
-    </div>
-    <div class="item">
-        <div class="header">
-            Events And Announcements
-        </div>
-        <div class="menu">
-            <a class="item" href="{% url 'managementApp:add_teacher' %}">
-                <div><i class="calendar plus outline icon"></i>Add Event</div>
-            </a>
-
-        </div>
-    </div>
-
 {% endblock %}
