@@ -71,29 +71,6 @@
 
 
                 </div>
-
-                <div class="ui basic modal custom" id="deleteDataModal">
-                    <div class="ui icon header">
-                       <i class="trash alternate icon red"></i>
-                        Teacher/Staff Details will be Deleted
-                    </div>
-                    <div class="content">
-                        <p style="text-align: center">This detail will be deleted, are you sure to delete this Staff?</p>
-                    </div>
-                    <div class="actions">
-                        <div class="ui red basic cancel inverted button">
-                            <i class="remove icon"></i>
-                            No
-                        </div>
-                        <input type="hidden" id="dataID">
-                        <div class="ui green ok inverted button" onclick="deleteData()">
-                            <i class="checkmark icon"></i>
-                            Yes
-                        </div>
-                    </div>
-                </div>
-
-
             </div>
         </div>
     </div>
@@ -116,7 +93,7 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [1, 2, 3, 4, 5, 6, 7,8,9,10]
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
                 }
             }
                 {% comment %}      , {
@@ -145,44 +122,6 @@
             "serverSide": true,
             "ajax": "{% url 'managementAppAPI:ParentsListJson' %}"
         });
-
-
-        function delData(id) {
-            $('#deleteDataModal')
-                .modal('show')
-            ;
-            $('#dataID').val(id)
-        }
-
-        function deleteData() {
-            let id = $('#dataID').val();
-            let data = new FormData();
-            data.append('dataID', id);
-
-            $.ajax({
-                url: "{% url 'managementAppAPI:delete_teacher' %}",
-                type: "post",
-                data: data,
-                contentType: false,
-                cache: false,
-                processData: false,
-
-                success: function (response) {
-                    if (response.success) {
-                            addSuccessNotification(response.message, response.color);
-                            teacherTab.ajax.reload(null, false);
-                            $('#deleteDataModal').modal('toggle');
-                        } else {
-                                  addErrorNotification();
-                        }
-                        return response;
-                    },
-                    error: function () {
-                               addErrorNotification();
-                    }
-            });
-
-        }
 
     </script>
 

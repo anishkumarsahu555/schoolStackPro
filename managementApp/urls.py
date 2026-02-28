@@ -47,5 +47,7 @@ urlpatterns = [
 
     #parents
     path('manage_parents/', manage_parents, name='manage_parents'),
+    path('parent_detail/<int:id>/', parent_detail, name='parent_detail'),
+    path('edit_parent/<int:id>/', edit_parent, name='edit_parent'),
 
 ]

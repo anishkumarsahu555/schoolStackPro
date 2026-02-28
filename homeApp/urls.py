@@ -7,6 +7,7 @@ urlpatterns = [
     path('post_login/', post_login, name='post_login'),
     path('home/', homepage, name='homepage'),
     path('profile/', profile_page, name='profile_page'),
+    path('change-password/', change_password, name='change_password'),
 
     #admin
     path('admin_home/', admin_home, name='admin_home'),

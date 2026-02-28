@@ -3072,12 +3072,12 @@ class ParentsListJson(BaseDatatableView):
         json_data = []
         for item in qs:
             action = '''
-              <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
-                <i class="pen icon"></i>
-              </button>
-              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
-                <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk),
+              <a href="/management/parent_detail/{}/" data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" class="ui circular facebook icon button purple">
+                <i class="eye icon"></i>
+              </a>
+              <a href="/management/edit_parent/{}/" data-inverted="" data-tooltip="Edit Parent" data-position="left center" data-variation="mini" style="font-size:10px;" class="ui circular icon button blue">
+                <i class="edit icon"></i>
+              </a>'''.format(item.pk, item.pk)
             students = Student.objects.filter(parentID__pk=item.pk)
             student_html = ""
             if students.exists():

@@ -5,56 +5,289 @@
     <title>Student Detail</title>
 {% endblock %}
 
+{% block css %}
+<style>
+    .detail-shell {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0 0.9rem;
+        box-sizing: border-box;
+    }
+
+    .ui.grid.detail-shell {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .ui.grid.detail-shell > .column {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .detail-hero {
+        background: linear-gradient(135deg, #2a6fd8 0%, #1a4f9e 55%, #163f80 100%);
+        border-radius: 18px;
+        padding: 1.4rem;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 35px rgba(17, 42, 82, 0.25);
+    }
+
+    .detail-hero:before {
+        content: "";
+        position: absolute;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        top: -130px;
+        right: -60px;
+    }
+
+    .detail-hero-inner {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .student-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        min-width: 0;
+    }
+
+    .student-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.38);
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .student-avatar-fallback {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        font-weight: 700;
+        border: 2px solid rgba(255, 255, 255, 0.38);
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .detail-hero h2 {
+        margin: 0 0 0.3rem 0;
+        font-size: 1.35rem;
+        color: #fff;
+    }
+
+    .detail-tags {
+        margin-top: 0.55rem;
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .detail-tags .ui.label {
+        background: rgba(255, 255, 255, 0.15) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+    }
+
+    .info-grid {
+        margin-top: 1.1rem;
+    }
+
+    .info-card {
+        background: var(--dm-card-bg, #ffffff) !important;
+        color: var(--dm-text, #1d2a3a) !important;
+        border-radius: 18px !important;
+        border: 1px solid var(--dm-border, #e7ecf3) !important;
+        box-shadow: 0 12px 24px rgba(21, 35, 61, 0.08) !important;
+        height: 100%;
+    }
+
+    .info-card .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+    }
+
+    .chip {
+        font-size: 0.78rem;
+        border-radius: 999px;
+        padding: 0.25rem 0.65rem;
+        background: rgba(42, 111, 216, 0.12);
+        color: #2a6fd8;
+    }
+
+    .info-list {
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .info-line {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        line-height: 1.35;
+        border-bottom: 1px dashed rgba(128, 145, 170, 0.28);
+        padding-bottom: 0.35rem;
+    }
+
+    .info-line:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .info-line .k {
+        min-width: 120px;
+        font-size: 0.82rem;
+        color: var(--dm-muted, #5f6d7d);
+    }
+
+    .info-line .v {
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    @media (max-width: 767px) {
+        .detail-shell {
+            padding: 0 0.25rem;
+        }
+
+        .detail-hero {
+            padding: 1.05rem;
+            border-radius: 16px;
+        }
+
+        .student-avatar,
+        .student-avatar-fallback {
+            width: 60px;
+            height: 60px;
+            font-size: 1.1rem;
+        }
+
+        .info-line .k {
+            min-width: 92px;
+            font-size: 0.78rem;
+        }
+
+        .info-card {
+            border-radius: 14px !important;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block body %}
-    <div class="ui container">
-        <div class="ui raised segment center aligned">
-            <div class="ui small centered image">
-                {% if instance.photo %}
-                    <img src="{{ instance.photo.url }}" alt="Student Photo">
-                {% else %}
-                    <i class="huge circular user icon"></i>
-                {% endif %}
-            </div>
-            <h2 class="ui header">{{ instance.name|default:'N/A' }}</h2>
-            <div class="ui labels">
-                <a class="ui label">Class: {{ instance.standardID.name|default:'N/A' }}</a>
-                <a class="ui label">Section: {{ instance.standardID.section|default:'N/A' }}</a>
-                <a class="ui label">Roll: {{ instance.roll|default:'N/A' }}</a>
-                <a class="ui teal label">Reg ID: {{ instance.registrationCode|default:'N/A' }}</a>
-            </div>
-        </div>
-
-        <div class="ui raised segment">
-            <h4 class="ui header"><i class="user icon"></i> Personal Information</h4>
-            <div class="ui divided relaxed list">
-                <div class="item"><strong>DOB:</strong> {{ instance.dob|default:'N/A' }}</div>
-                <div class="item"><strong>Gender:</strong> {{ instance.gender|default:'N/A' }}</div>
-                <div class="item"><strong>Blood Group:</strong> {{ instance.bloodGroup|default:'N/A' }}</div>
-                <div class="item"><strong>Phone:</strong> {{ instance.phoneNumber|default:'N/A' }}</div>
-                <div class="item"><strong>Email:</strong> {{ instance.email|default:'N/A' }}</div>
-                <div class="item"><strong>Aadhar:</strong> {{ instance.aadhar|default:'N/A' }}</div>
+<div class="ui left aligned basic grid detail-shell">
+    <div class="sixteen wide column">
+        <div class="detail-hero">
+            <div class="detail-hero-inner">
+                <div class="student-meta">
+                    {% if instance.photo %}
+                        <img class="student-avatar" src="{{ instance.photo.url }}" alt="{{ instance.name|default:'Student' }}">
+                    {% else %}
+                        <div class="student-avatar-fallback">{{ instance.name|default:'S'|slice:":1"|upper }}</div>
+                    {% endif %}
+                    <div>
+                        <h2>{{ instance.name|default:"N/A" }}</h2>
+                        <div class="detail-tags">
+                            <span class="ui tiny label">Class: {{ instance.standardID.name|default:"N/A" }}</span>
+                            <span class="ui tiny label">Section: {{ instance.standardID.section|default:"N/A" }}</span>
+                            <span class="ui tiny label">Roll: {{ instance.roll|default:"N/A" }}</span>
+                            <span class="ui tiny label">Reg ID: {{ instance.registrationCode|default:"N/A" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <a href="{% url 'teacherApp:teacher_students_list' %}" class="ui mini button">
+                        <i class="arrow left icon"></i>Back
+                    </a>
+                </div>
             </div>
         </div>
 
-        <div class="ui raised segment">
-            <h4 class="ui header"><i class="users icon"></i> Parent Information</h4>
-            <div class="ui divided relaxed list">
-                <div class="item"><strong>Father Name:</strong> {{ instance.parentID.fatherName|default:'N/A' }}</div>
-                <div class="item"><strong>Mother Name:</strong> {{ instance.parentID.motherName|default:'N/A' }}</div>
-                <div class="item"><strong>Phone:</strong> {{ instance.parentID.phoneNumber|default:'N/A' }}</div>
-                <div class="item"><strong>Email:</strong> {{ instance.parentID.email|default:'N/A' }}</div>
+        <div class="ui stackable two column grid info-grid">
+            <div class="column">
+                <div class="ui segment info-card">
+                    <div class="header">
+                        <h4 class="ui header"><i class="user icon"></i>Personal Information</h4>
+                        <span class="chip">Profile</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-line"><span class="k">DOB</span><span class="v">{{ instance.dob|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Gender</span><span class="v">{{ instance.gender|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Blood Group</span><span class="v">{{ instance.bloodGroup|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Phone</span><span class="v">{{ instance.phoneNumber|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Email</span><span class="v">{{ instance.email|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Aadhar</span><span class="v">{{ instance.aadhar|default:"N/A" }}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="ui segment info-card">
+                    <div class="header">
+                        <h4 class="ui header"><i class="users icon"></i>Parent Information</h4>
+                        <span class="chip">Family</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-line"><span class="k">Father Name</span><span class="v">{{ instance.parentID.fatherName|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Mother Name</span><span class="v">{{ instance.parentID.motherName|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Parent Phone</span><span class="v">{{ instance.parentID.phoneNumber|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Parent Email</span><span class="v">{{ instance.parentID.email|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Family Type</span><span class="v">{{ instance.parentID.familyType|default:"N/A" }}</span></div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="ui raised segment">
-            <h4 class="ui header"><i class="map marker alternate icon"></i> Address</h4>
-            <div class="ui divided relaxed list">
-                <div class="item"><strong>Present:</strong> {{ instance.presentAddress|default:'N/A' }}</div>
-                <div class="item"><strong>City:</strong> {{ instance.presentCity|default:'N/A' }}</div>
-                <div class="item"><strong>State:</strong> {{ instance.presentState|default:'N/A' }}</div>
-                <div class="item"><strong>Country:</strong> {{ instance.presentCountry|default:'N/A' }}</div>
-                <div class="item"><strong>Pincode:</strong> {{ instance.presentPinCode|default:'N/A' }}</div>
+        <div class="ui stackable two column grid info-grid" style="margin-top:0;">
+            <div class="column">
+                <div class="ui segment info-card">
+                    <div class="header">
+                        <h4 class="ui header"><i class="map marker alternate icon"></i>Present Address</h4>
+                        <span class="chip">Current</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-line"><span class="k">Address</span><span class="v">{{ instance.presentAddress|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">City</span><span class="v">{{ instance.presentCity|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">State</span><span class="v">{{ instance.presentState|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Country</span><span class="v">{{ instance.presentCountry|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Pincode</span><span class="v">{{ instance.presentPinCode|default:"N/A" }}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="ui segment info-card">
+                    <div class="header">
+                        <h4 class="ui header"><i class="home icon"></i>Permanent Address</h4>
+                        <span class="chip">Permanent</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-line"><span class="k">Address</span><span class="v">{{ instance.permanentAddress|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">City</span><span class="v">{{ instance.permanentCity|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">State</span><span class="v">{{ instance.permanentState|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Country</span><span class="v">{{ instance.permanentCountry|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Pincode</span><span class="v">{{ instance.permanentPinCode|default:"N/A" }}</span></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+</div>
 {% endblock %}

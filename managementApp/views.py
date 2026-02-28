@@ -1,9 +1,10 @@
 import json
 
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 
 from homeApp.utils import login_required
 from managementApp.models import *
+from managementApp.signals import pre_save_with_user
 from utils.custom_decorators import check_groups
 
 
@@ -249,3 +250,63 @@ def manage_parents(request):
     context = {
     }
     return render(request, 'managementApp/parents/parents_list.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def parent_detail(request, id=None):
+    parent = get_object_or_404(Parent, pk=id, isDeleted=False)
+    current_session_id = request.session['current_session']['Id']
+    wards = Student.objects.select_related('standardID').filter(
+        parentID_id=parent.id,
+        isDeleted=False,
+        sessionID_id=current_session_id,
+    ).order_by('name')
+    context = {
+        'parent': parent,
+        'wards': wards,
+    }
+    return render(request, 'managementApp/parents/parent_detail.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def edit_parent(request, id=None):
+    parent = get_object_or_404(
+        Parent,
+        pk=id,
+        isDeleted=False,
+        sessionID_id=request.session['current_session']['Id'],
+    )
+
+    if request.method == 'POST':
+        parent.fatherName = request.POST.get('fatherName')
+        parent.fatherPhone = request.POST.get('fatherPhone')
+        parent.fatherEmail = request.POST.get('fatherEmail')
+        parent.fatherOccupation = request.POST.get('fatherOccupation')
+        parent.fatherAddress = request.POST.get('fatherAddress')
+
+        parent.motherName = request.POST.get('motherName')
+        parent.motherPhone = request.POST.get('motherPhone')
+        parent.motherEmail = request.POST.get('motherEmail')
+        parent.motherOccupation = request.POST.get('motherOccupation')
+        parent.motherAddress = request.POST.get('motherAddress')
+
+        parent.guardianName = request.POST.get('guardianName')
+        parent.guardianPhone = request.POST.get('guardianPhone')
+        parent.guardianOccupation = request.POST.get('guardianOccupation')
+
+        parent.familyType = request.POST.get('familyType')
+        parent.totalFamilyMembers = request.POST.get('totalFamilyMembers') or None
+        parent.annualIncome = request.POST.get('annualIncome') or 0
+        parent.phoneNumber = request.POST.get('primaryPhone')
+        parent.email = request.POST.get('primaryEmail')
+
+        pre_save_with_user.send(sender=Parent, instance=parent, user=request.user.pk)
+        parent.save()
+        return redirect('managementApp:parent_detail', id=parent.id)
+
+    context = {
+        'parent': parent,
+    }
+    return render(request, 'managementApp/parents/edit_parent.html', context)

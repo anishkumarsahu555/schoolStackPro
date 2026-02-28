@@ -460,11 +460,16 @@
 
         .ui.icon,
         i.icon,
-        .ui.button > .icon:not(.dropdown),
         .ui.input > i.icon,
         .ui.menu .item > i.icon,
         .ui.table i.icon {
             color: var(--app-icon) !important;
+            opacity: 1 !important;
+        }
+
+        .ui.button > .icon:not(.dropdown),
+        .ui.icon.button > .icon {
+            color: inherit !important;
             opacity: 1 !important;
         }
 
@@ -478,6 +483,19 @@
         .ui.form .ui.button > .icon:not(.dropdown) {
             color: #ffffff !important;
             opacity: 1 !important;
+        }
+
+        html[data-theme="dark"] .ui.basic.button,
+        html[data-theme="dark"] .ui.basic.icon.button {
+            color: var(--app-text) !important;
+            border-color: var(--app-border) !important;
+            background: transparent !important;
+        }
+
+        html[data-theme="dark"] .ui.basic.button:hover,
+        html[data-theme="dark"] .ui.basic.icon.button:hover {
+            color: #ffffff !important;
+            background: var(--app-hover) !important;
         }
 
         .dashboard-stat-card .dashboard-icon i.icon {

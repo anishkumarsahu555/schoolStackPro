@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import update_session_auth_hash
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
@@ -144,3 +145,49 @@ def profile_page(request):
     if role_label == 'Teacher':
         return render(request, 'teacherApp/profile.html', context)
     return render(request, 'managementApp/profile.html', context)
+
+
+@login_required
+def change_password(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'}, safe=False, status=405)
+
+    current_password = request.POST.get('current_password', '')
+    new_password = request.POST.get('new_password', '')
+    confirm_password = request.POST.get('confirm_password', '')
+
+    if not current_password or not new_password or not confirm_password:
+        return JsonResponse({'success': False, 'message': 'All password fields are required.'}, safe=False, status=400)
+
+    if new_password != confirm_password:
+        return JsonResponse({'success': False, 'message': 'New password and confirm password do not match.'}, safe=False, status=400)
+
+    if len(new_password) < 8:
+        return JsonResponse({'success': False, 'message': 'New password must be at least 8 characters.'}, safe=False, status=400)
+
+    user = request.user
+    if not user.check_password(current_password):
+        return JsonResponse({'success': False, 'message': 'Current password is incorrect.'}, safe=False, status=400)
+
+    user.set_password(new_password)
+    user.save()
+    update_session_auth_hash(request, user)
+
+    groups = set(user.groups.values_list('name', flat=True))
+    if 'Student' in groups:
+        student = Student.objects.filter(userID_id=user.id, isDeleted=False).order_by('-datetime').first()
+        if student:
+            student.password = new_password
+            student.save(update_fields=['password', 'lastUpdatedOn'])
+    elif 'Teaching' in groups:
+        teacher = TeacherDetail.objects.filter(userID_id=user.id, isDeleted=False).order_by('-datetime').first()
+        if teacher:
+            teacher.password = new_password
+            teacher.save(update_fields=['password', 'lastUpdatedOn'])
+    else:
+        owner = SchoolOwner.objects.filter(userID_id=user.id, isDeleted=False).order_by('-datetime').first()
+        if owner:
+            owner.password = new_password
+            owner.save(update_fields=['password', 'lastUpdatedOn'])
+
+    return JsonResponse({'success': True, 'message': 'Password changed successfully.', 'color': 'green'}, safe=False)

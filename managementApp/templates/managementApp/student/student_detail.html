@@ -1,199 +1,386 @@
 {% extends base_template|default:'managementApp/index.html' %}
 {% load static %}
+
 {% block title %}
 <title>Student Detail</title>
 {% endblock %}
 
+{% block css %}
+<style>
+    .detail-shell {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0 0.9rem;
+        box-sizing: border-box;
+    }
+
+    .ui.grid.detail-shell {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .ui.grid.detail-shell > .column {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .detail-hero {
+        background: linear-gradient(135deg, #2a6fd8 0%, #1a4f9e 55%, #163f80 100%);
+        border-radius: 18px;
+        padding: 1.4rem;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 35px rgba(17, 42, 82, 0.25);
+    }
+
+    .detail-hero:before {
+        content: "";
+        position: absolute;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        top: -130px;
+        right: -60px;
+    }
+
+    .detail-hero-inner {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .student-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        min-width: 0;
+    }
+
+    .student-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.38);
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .student-avatar-fallback {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        font-weight: 700;
+        border: 2px solid rgba(255, 255, 255, 0.38);
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .detail-hero h2 {
+        margin: 0 0 0.3rem 0;
+        font-size: 1.35rem;
+        color: #fff;
+    }
+
+    .detail-hero p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.92);
+    }
+
+    .detail-tags {
+        margin-top: 0.55rem;
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .detail-tags .ui.label {
+        background: rgba(255, 255, 255, 0.15) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+    }
+
+    .detail-actions .ui.button {
+        margin-left: 0.45rem;
+    }
+
+    .info-grid {
+        margin-top: 1.1rem;
+    }
+
+    .info-card {
+        background: var(--dm-card-bg, #ffffff) !important;
+        color: var(--dm-text, #1d2a3a) !important;
+        border-radius: 18px !important;
+        border: 1px solid var(--dm-border, #e7ecf3) !important;
+        box-shadow: 0 12px 24px rgba(21, 35, 61, 0.08) !important;
+        height: 100%;
+    }
+
+    .info-card .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+    }
+
+    .chip {
+        font-size: 0.78rem;
+        border-radius: 999px;
+        padding: 0.25rem 0.65rem;
+        background: rgba(42, 111, 216, 0.12);
+        color: #2a6fd8;
+    }
+
+    .info-list {
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .info-line {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        line-height: 1.35;
+        border-bottom: 1px dashed rgba(128, 145, 170, 0.28);
+        padding-bottom: 0.35rem;
+    }
+
+    .info-line:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .info-line .k {
+        min-width: 130px;
+        font-size: 0.82rem;
+        color: var(--dm-muted, #5f6d7d);
+    }
+
+    .info-line .v {
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    @media (max-width: 767px) {
+        .detail-shell {
+            padding: 0 0.25rem;
+        }
+
+        .detail-hero {
+            padding: 1.05rem;
+            border-radius: 16px;
+        }
+
+        .detail-hero-inner {
+            align-items: flex-start;
+        }
+
+        .detail-actions .ui.button {
+            margin: 0.35rem 0.35rem 0 0;
+        }
+
+        .student-avatar,
+        .student-avatar-fallback {
+            width: 60px;
+            height: 60px;
+            font-size: 1.1rem;
+        }
+
+        .info-line .k {
+            min-width: 96px;
+            font-size: 0.78rem;
+        }
+
+        .info-card {
+            border-radius: 14px !important;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block body %}
-
-<div class="ui container">
-
-    <!-- ================= HEADER CARD ================= -->
-    <div class="ui raised segment center aligned">
-
-        <div class="ui small centered image">
-            <img src="{{ instance.photo.url }}" alt="Student Photo">
-        </div>
-
-        <h2 class="ui header">{{ instance.name|capfirst }}</h2>
-
-        <div class="ui labels">
-            <a class="ui label">Class: {{ instance.standardID.name }}</a>
-            {% if instance.standardID.hasSection %}
-            <a class="ui label">Section: {{ instance.standardID.section }}</a>
-            {% endif %}
-            <a class="ui label">Roll: {{ instance.roll }}</a>
-            <a class="ui label teal">Reg ID: {{ instance.registrationCode }}</a>
-        </div>
-
-        <div class="ui divider"></div>
-
-        {% if not is_teacher_view %}
-            <a href="{% url 'managementApp:edit_student_detail' instance.id %}" class="ui orange labeled icon button">
-                <i class="edit icon"></i>
-                Edit Details
-            </a>
-        {% endif %}
-    </div>
-
-
-    <!-- ================= PERSONAL INFORMATION ================= -->
-    <div class="ui raised segment">
-        <h4 class="ui header"><i class="user icon"></i> Personal Information</h4>
-        <div class="ui divided relaxed list">
-
-            <div class="item"><strong>DOB:</strong> {{ instance.dob }}</div>
-            <div class="item"><strong>Gender:</strong> {{ instance.gender }}</div>
-            <div class="item"><strong>Blood Group:</strong> {{ instance.bloodGroup }}</div>
-            <div class="item"><strong>Aadhar:</strong> {{ instance.aadhar }}</div>
-            <div class="item"><strong>ID Mark:</strong> {{ instance.idMark }}</div>
-            <div class="item"><strong>Phone:</strong> {{ instance.phoneNumber }}</div>
-            <div class="item"><strong>Email:</strong> {{ instance.email }}</div>
-
-        </div>
-    </div>
-
-
-    <!-- ================= FAMILY INFORMATION ================= -->
-    <div class="ui raised segment">
-        <h4 class="ui header"><i class="users icon"></i> Family Information</h4>
-
-        <div class="ui divided relaxed list">
-            <div class="item"><strong>Family Type:</strong> {{ instance.parentID.familyType }}</div>
-            <div class="item"><strong>Total Members:</strong> {{ instance.parentID.totalFamilyMembers }}</div>
-            <div class="item"><strong>Annual Income:</strong> ₹{{ instance.parentID.annualIncome }}</div>
-        </div>
-    </div>
-
-
-    <!-- ================= FATHER INFO ================= -->
-    <div class="ui raised segment">
-        <h4 class="ui header"><i class="male icon"></i> Father Details</h4>
-
-        <div class="ui divided relaxed list">
-            <div class="item"><strong>Name:</strong> {{ instance.parentID.fatherName }}</div>
-            <div class="item"><strong>Occupation:</strong> {{ instance.parentID.fatherOccupation }}</div>
-            <div class="item"><strong>Phone:</strong> {{ instance.parentID.fatherPhone }}</div>
-            <div class="item"><strong>Address:</strong> {{ instance.parentID.fatherAddress }}</div>
-        </div>
-    </div>
-
-
-    <!-- ================= MOTHER INFO ================= -->
-    <div class="ui raised segment">
-        <h4 class="ui header"><i class="female icon"></i> Mother Details</h4>
-
-        <div class="ui divided relaxed list">
-            <div class="item"><strong>Name:</strong> {{ instance.parentID.motherName }}</div>
-            <div class="item"><strong>Occupation:</strong> {{ instance.parentID.motherOccupation }}</div>
-            <div class="item"><strong>Phone:</strong> {{ instance.parentID.motherPhone }}</div>
-            <div class="item"><strong>Address:</strong> {{ instance.parentID.motherAddress }}</div>
-        </div>
-    </div>
-
-
-    <!-- ================= GUARDIAN INFO ================= -->
-    {% if instance.parentID.guardianName %}
-    <div class="ui raised segment">
-        <h4 class="ui header"><i class="address book icon"></i> Guardian Details</h4>
-
-        <div class="ui divided relaxed list">
-            <div class="item"><strong>Name:</strong> {{ instance.parentID.guardianName }}</div>
-            <div class="item"><strong>Occupation:</strong> {{ instance.parentID.guardianOccupation }}</div>
-            <div class="item"><strong>Phone:</strong> {{ instance.parentID.guardianPhone }}</div>
-        </div>
-    </div>
-    {% endif %}
-
-
-    <!-- ================= CASTE/TRIBE/RELIGION ================= -->
-    <div class="ui raised segment">
-        <h4 class="ui header"><i class="id card icon"></i> Caste & Religion</h4>
-
-        <div class="ui divided relaxed list">
-            <div class="item"><strong>Caste:</strong> {{ instance.caste }}</div>
-            <div class="item"><strong>Tribe:</strong> {{ instance.tribe }}</div>
-            <div class="item"><strong>Religion:</strong> {{ instance.religion }}</div>
-        </div>
-    </div>
-
-
-    <!-- ================= LANGUAGE / HOBBIES ================= -->
-    <div class="ui raised segment">
-        <h4 class="ui header"><i class="language icon"></i> Languages & Interests</h4>
-
-        <div class="ui divided relaxed list">
-            <div class="item"><strong>Mother Tongue:</strong> {{ instance.motherTongue }}</div>
-            <div class="item"><strong>Languages Known:</strong> {{ instance.languageKnown }}</div>
-            <div class="item"><strong>Hobbies:</strong> {{ instance.hobbies }}</div>
-            <div class="item"><strong>Aim In Life:</strong> {{ instance.aimInLife }}</div>
-            <div class="item"><strong>MIL Option:</strong> {{ instance.milOption }}</div>
-        </div>
-    </div>
-
-
-    <!-- ================= PREVIOUS SCHOOL ================= -->
-    <div class="ui raised segment">
-        <h4 class="ui header"><i class="building icon"></i> Previous School</h4>
-
-        <div class="ui divided relaxed list">
-            <div class="item"><strong>School Name:</strong> {{ instance.lastSchoolName }}</div>
-            <div class="item"><strong>Address:</strong> {{ instance.lastSchoolAddress }}</div>
-            <div class="item"><strong>Class:</strong> {{ instance.lastClass }}</div>
-            <div class="item"><strong>Result:</strong> {{ instance.lastResult }}</div>
-            <div class="item"><strong>Division:</strong> {{ instance.lastDivision }}</div>
-            <div class="item"><strong>Roll No:</strong> {{ instance.lastRollNo }}</div>
-        </div>
-    </div>
-
-
-    <!-- ================= ADDRESS ================= -->
-    <div class="ui raised segment">
-        <h4 class="ui header"><i class="map icon"></i> Present Address</h4>
-
-        <div class="ui divided relaxed list">
-            <div class="item"><strong>Address:</strong> {{ instance.presentAddress }}</div>
-            <div class="item"><strong>City:</strong> {{ instance.presentCity }}</div>
-            <div class="item"><strong>State:</strong> {{ instance.presentState }}</div>
-            <div class="item"><strong>Country:</strong> {{ instance.presentCountry }}</div>
-            <div class="item"><strong>Pincode:</strong> {{ instance.presentPinCode }}</div>
-        </div>
-    </div>
-
-    <div class="ui raised segment">
-        <h4 class="ui header"><i class="home icon"></i> Permanent Address</h4>
-
-        <div class="ui divided relaxed list">
-            <div class="item"><strong>Address:</strong> {{ instance.permanentAddress }}</div>
-            <div class="item"><strong>City:</strong> {{ instance.permanentCity }}</div>
-            <div class="item"><strong>State:</strong> {{ instance.permanentState }}</div>
-            <div class="item"><strong>Country:</strong> {{ instance.permanentCountry }}</div>
-            <div class="item"><strong>Pincode:</strong> {{ instance.permanentPinCode }}</div>
-        </div>
-    </div>
-
-
-    <!-- ================= INTERNAL DETAILS ================= -->
-    {% if not is_teacher_view %}
-        <div class="ui raised segment">
-            <h4 class="ui header"><i class="key icon"></i> Internal Details</h4>
-
-            <div class="ui divided relaxed list">
-                <div class="item"><strong>Username:</strong> {{ instance.username }}</div>
-                <div class="item"><strong>Password:</strong> {{ instance.password }}</div>
-                <div class="item"><strong>Status:</strong> {{ instance.isActive }}</div>
-
-                <div class="item"><strong>Admission Fee:</strong> ₹{{ instance.admissionFee }}</div>
-                <div class="item"><strong>Tuition Fee:</strong> ₹{{ instance.tuitionFee }}</div>
-                <div class="item"><strong>Misc Fee:</strong> ₹{{ instance.miscFee }}</div>
-                <div class="item"><strong>Total Fee:</strong> ₹{{ instance.totalFee }}</div>
-
-                <div class="item"><strong>Date of Joining:</strong> {{ instance.dateOfJoining }}</div>
-                <div class="item"><strong>Date of Leaving:</strong> {{ instance.dateOfLeaving }}</div>
+<div class="ui left aligned basic grid detail-shell">
+    <div class="sixteen wide column">
+        <div class="detail-hero">
+            <div class="detail-hero-inner">
+                <div class="student-meta">
+                    {% if instance.photo %}
+                        <img class="student-avatar" src="{{ instance.photo.url }}" alt="{{ instance.name|default:'Student' }}">
+                    {% else %}
+                        <div class="student-avatar-fallback">{{ instance.name|default:'S'|slice:":1"|upper }}</div>
+                    {% endif %}
+                    <div>
+                        <h2>{{ instance.name|default:"N/A"|capfirst }}</h2>
+                        <p>Student profile and academic details</p>
+                        <div class="detail-tags">
+                            <span class="ui tiny label">Class: {{ instance.standardID.name|default:"N/A" }}</span>
+                            {% if instance.standardID.section %}
+                                <span class="ui tiny label">Section: {{ instance.standardID.section|default:"N/A" }}</span>
+                            {% endif %}
+                            <span class="ui tiny label">Roll: {{ instance.roll|default:"N/A" }}</span>
+                            <span class="ui tiny label">Reg ID: {{ instance.registrationCode|default:"N/A" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-actions">
+                    {% if not is_teacher_view %}
+                        <a href="{% url 'managementApp:edit_student_detail' instance.id %}" class="ui mini white button">
+                            <i class="edit icon"></i>Edit
+                        </a>
+                        <a href="{% url 'managementApp:student_list' %}" class="ui mini button">
+                            <i class="arrow left icon"></i>Back
+                        </a>
+                    {% else %}
+                        <a href="{% url 'teacherApp:teacher_students_list' %}" class="ui mini button">
+                            <i class="arrow left icon"></i>Back
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
-    {% endif %}
 
+        <div class="ui stackable two column grid info-grid">
+            <div class="column">
+                <div class="ui segment info-card">
+                    <div class="header">
+                        <h4 class="ui header"><i class="user icon"></i>Personal Information</h4>
+                        <span class="chip">Profile</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-line"><span class="k">DOB</span><span class="v">{{ instance.dob|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Gender</span><span class="v">{{ instance.gender|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Blood Group</span><span class="v">{{ instance.bloodGroup|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Aadhar</span><span class="v">{{ instance.aadhar|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">ID Mark</span><span class="v">{{ instance.idMark|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Phone</span><span class="v">{{ instance.phoneNumber|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Email</span><span class="v">{{ instance.email|default:"N/A" }}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="ui segment info-card">
+                    <div class="header">
+                        <h4 class="ui header"><i class="users icon"></i>Family Information</h4>
+                        <span class="chip">Family</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-line"><span class="k">Family Type</span><span class="v">{{ instance.parentID.familyType|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Members</span><span class="v">{{ instance.parentID.totalFamilyMembers|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Annual Income</span><span class="v">₹{{ instance.parentID.annualIncome|default:"0" }}</span></div>
+                        <div class="info-line"><span class="k">Father Name</span><span class="v">{{ instance.parentID.fatherName|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Mother Name</span><span class="v">{{ instance.parentID.motherName|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Guardian</span><span class="v">{{ instance.parentID.guardianName|default:"N/A" }}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ui stackable two column grid info-grid" style="margin-top:0;">
+            <div class="column">
+                <div class="ui segment info-card">
+                    <div class="header">
+                        <h4 class="ui header"><i class="male icon"></i>Father Details</h4>
+                        <span class="chip">Primary</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-line"><span class="k">Name</span><span class="v">{{ instance.parentID.fatherName|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Occupation</span><span class="v">{{ instance.parentID.fatherOccupation|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Phone</span><span class="v">{{ instance.parentID.fatherPhone|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Address</span><span class="v">{{ instance.parentID.fatherAddress|default:"N/A" }}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="ui segment info-card">
+                    <div class="header">
+                        <h4 class="ui header"><i class="female icon"></i>Mother Details</h4>
+                        <span class="chip">Contact</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-line"><span class="k">Name</span><span class="v">{{ instance.parentID.motherName|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Occupation</span><span class="v">{{ instance.parentID.motherOccupation|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Phone</span><span class="v">{{ instance.parentID.motherPhone|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Address</span><span class="v">{{ instance.parentID.motherAddress|default:"N/A" }}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ui stackable two column grid info-grid" style="margin-top:0;">
+            <div class="column">
+                <div class="ui segment info-card">
+                    <div class="header">
+                        <h4 class="ui header"><i class="id card icon"></i>Caste and Religion</h4>
+                        <span class="chip">Social</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-line"><span class="k">Caste</span><span class="v">{{ instance.caste|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Tribe</span><span class="v">{{ instance.tribe|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Religion</span><span class="v">{{ instance.religion|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Mother Tongue</span><span class="v">{{ instance.motherTongue|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Languages</span><span class="v">{{ instance.otherLanguages|default:instance.languageKnown|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Hobbies</span><span class="v">{{ instance.hobbies|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Aim In Life</span><span class="v">{{ instance.aimInLife|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">MIL Option</span><span class="v">{{ instance.milOption|default:"N/A" }}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="ui segment info-card">
+                    <div class="header">
+                        <h4 class="ui header"><i class="building icon"></i>School and Address</h4>
+                        <span class="chip">Academic</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-line"><span class="k">Last School</span><span class="v">{{ instance.lastSchoolName|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Last Address</span><span class="v">{{ instance.lastSchoolAddress|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Last Class</span><span class="v">{{ instance.lastClass|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Last Result</span><span class="v">{{ instance.lastResult|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Last Division</span><span class="v">{{ instance.lastDivision|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Last Roll</span><span class="v">{{ instance.lastRollNo|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Present</span><span class="v">{{ instance.presentAddress|default:"N/A" }}, {{ instance.presentCity|default:"N/A" }}, {{ instance.presentState|default:"N/A" }}, {{ instance.presentCountry|default:"N/A" }} - {{ instance.presentPinCode|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Permanent</span><span class="v">{{ instance.permanentAddress|default:"N/A" }}, {{ instance.permanentCity|default:"N/A" }}, {{ instance.permanentState|default:"N/A" }}, {{ instance.permanentCountry|default:"N/A" }} - {{ instance.permanentPinCode|default:"N/A" }}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if not is_teacher_view %}
+        <div class="ui stackable one column grid info-grid" style="margin-top:0;">
+            <div class="column">
+                <div class="ui segment info-card">
+                    <div class="header">
+                        <h4 class="ui header"><i class="lock icon"></i>Internal Details</h4>
+                        <span class="chip">Secure</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-line"><span class="k">Username</span><span class="v">{{ instance.username|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Password</span><span class="v">{{ instance.password|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Status</span><span class="v">{{ instance.isActive|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Admission Fee</span><span class="v">₹{{ instance.admissionFee|default:"0" }}</span></div>
+                        <div class="info-line"><span class="k">Tuition Fee</span><span class="v">₹{{ instance.tuitionFee|default:"0" }}</span></div>
+                        <div class="info-line"><span class="k">Misc Fee</span><span class="v">₹{{ instance.miscFee|default:"0" }}</span></div>
+                        <div class="info-line"><span class="k">Total Fee</span><span class="v">₹{{ instance.totalFee|default:"0" }}</span></div>
+                        <div class="info-line"><span class="k">Joining Date</span><span class="v">{{ instance.dateOfJoining|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Leaving Date</span><span class="v">{{ instance.dateOfLeaving|default:"N/A" }}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
 </div>
-
 {% endblock %}

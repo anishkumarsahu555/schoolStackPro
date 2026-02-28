@@ -1,235 +1,319 @@
 {% extends 'managementApp/index.html' %}
 {% load static %}
+
 {% block title %}
     <title>Teacher Detail</title>
 {% endblock %}
+
 {% block css %}
-{% endblock %}
-{% block body %}
+<style>
+    .detail-shell {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0 0.9rem;
+        box-sizing: border-box;
+    }
 
-    <style>
+    .ui.grid.detail-shell {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
 
-        input[type=search] {
-            width: 100px !important;
+    .ui.grid.detail-shell > .column {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .detail-hero {
+        background: linear-gradient(135deg, #2a6fd8 0%, #1a4f9e 55%, #163f80 100%);
+        border-radius: 18px;
+        padding: 1.4rem;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 35px rgba(17, 42, 82, 0.25);
+    }
+
+    .detail-hero:before {
+        content: "";
+        position: absolute;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        top: -130px;
+        right: -60px;
+    }
+
+    .detail-hero-inner {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .teacher-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        min-width: 0;
+    }
+
+    .teacher-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.38);
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .teacher-avatar-fallback {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        font-weight: 700;
+        border: 2px solid rgba(255, 255, 255, 0.38);
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .detail-hero h2 {
+        margin: 0 0 0.3rem 0;
+        font-size: 1.35rem;
+        color: #fff;
+    }
+
+    .detail-hero p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.92);
+    }
+
+    .detail-tags {
+        margin-top: 0.55rem;
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .detail-tags .ui.label {
+        background: rgba(255, 255, 255, 0.15) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+    }
+
+    .detail-actions .ui.button {
+        margin-left: 0.45rem;
+    }
+
+    .info-grid {
+        margin-top: 1.1rem;
+    }
+
+    .info-card {
+        background: var(--dm-card-bg, #ffffff) !important;
+        color: var(--dm-text, #1d2a3a) !important;
+        border-radius: 18px !important;
+        border: 1px solid var(--dm-border, #e7ecf3) !important;
+        box-shadow: 0 12px 24px rgba(21, 35, 61, 0.08) !important;
+        height: 100%;
+    }
+
+    .info-card .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+    }
+
+    .chip {
+        font-size: 0.78rem;
+        border-radius: 999px;
+        padding: 0.25rem 0.65rem;
+        background: rgba(42, 111, 216, 0.12);
+        color: #2a6fd8;
+    }
+
+    .info-list {
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .info-line {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        line-height: 1.35;
+        border-bottom: 1px dashed rgba(128, 145, 170, 0.28);
+        padding-bottom: 0.35rem;
+    }
+
+    .info-line:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .info-line .k {
+        min-width: 130px;
+        font-size: 0.82rem;
+        color: var(--dm-muted, #5f6d7d);
+    }
+
+    .info-line .v {
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    @media (max-width: 767px) {
+        .detail-shell {
+            padding: 0 0.25rem;
         }
-    </style>
 
-    <div class="ui left aligned basic  grid">
+        .detail-hero {
+            padding: 1.05rem;
+            border-radius: 16px;
+        }
+
+        .detail-hero-inner {
+            align-items: flex-start;
+        }
+
+        .detail-actions .ui.button {
+            margin: 0.35rem 0.35rem 0 0;
+        }
+
+        .teacher-avatar,
+        .teacher-avatar-fallback {
+            width: 60px;
+            height: 60px;
+            font-size: 1.1rem;
+        }
+
+        .info-line .k {
+            min-width: 96px;
+            font-size: 0.78rem;
+        }
+
+        .info-card {
+            border-radius: 14px !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid detail-shell">
         <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Teacher Detail
-                </div>
-
-            </div>
-            <div class="ui tab " data-tab="user">
-                <div class="ui grid " style="margin-top: 0;padding-bottom: 30px;">
-                    <div class="sixteen wide tablet thirteen wide computer centered column"
-                         style="margin-top: 0;padding-top: 0">
-
-                        <div class="ui grid ">
-
-                            <div class="sixteen wide tablet six wide computer column center aligned ">
-
-                                <div class="your-class">
-                                    <div><img class="ui large image zoomImg " loading="lazy"
-                                              alt="{{ instance.photo.name }}" src="{{ instance.photo.url }}"></div>
-
-                                </div>
-
-                                <div class="ui grid " style="margin-top: 1rem;">
-                                    <a href="{% url 'managementApp:edit_teacher' instance.id %}" style="cursor: pointer"
-                                       data-inverted=""
-                                       data-tooltip="Edit Teacher Detail" data-position="top center"
-                                       class="sixteen wide column orange  center aligned">Edit Detail</a>
-
-                                </div>
-                            </div>
-
-                            <div class="sixteen wide tablet ten wide computer column ">
-                                <div class="wrapper" style="margin-bottom: 50px;!important;">
-                                    <div class="ui grid padded">
-                                        <div class="row">
-                                            <div class="sixteen wide column">
-                                                <div class="content left aligned">
-
-                                                    <div><h2 id="pName">{{ instance.name|capfirst }}</h2></div>
-                                                    <div class="meta">
-                                                        <a>{{ instance.tagLine|capfirst }}</a>
-                                                    </div>
-                                                    <a class="ui teal circular label"
-                                                       style="margin: 2px;">EmpCode: {{ instance.employeeCode }}</a>
-
-                                                    <a class="ui teal circular label"
-                                                       style="margin: 2px;">Type: {{ instance.staffType }}</a>
-
-                                                    <a class="ui teal circular label" style="margin: 2px;">Position
-                                                        : {{ instance.currentPosition }}</a>
-
-                                                    <a class="ui teal circular label" style="margin: 2px;">Registration
-                                                        ID:
-                                                        {{ instance.registrationCode }}</a>
-
-
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                    </div>
-
-                                    <div class="ui divider"></div>
-                                    <div class="ui grid padded">
-                                        <div class="row ">
-
-                                            <div class="sixteen wide column"><h4>Personal Information</h4></div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">DOB:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.dob }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">Gender:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.gender }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">Blood Group:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.bloodGroup }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">Aadhar Number:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.aadhar }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">Email:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.email }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">Phone Number:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.phoneNumber }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">Qualification:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.qualification }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">Additional Details:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.additionalDetails }}</div>
-
-                                        </div>
-                                    </div>
-
-                                    <div class="ui divider"></div>
-                                    <div class="ui grid padded">
-                                        <div class="row ">
-
-                                            <div class="sixteen wide column"><h4> Present Address</h4></div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">Address:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.presentAddress }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">City:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.presentCity }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">State:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.presentState }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">Country:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.presentCountry }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">Pincode:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.presentPinCode }}</div>
-
-
-                                        </div>
-                                    </div>
-                                    <div class="ui divider"></div>
-                                    <div class="ui grid padded">
-                                        <div class="row ">
-
-                                            <div class="sixteen wide column"><h4> Permanent Address</h4></div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">Address:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.permanentAddress }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">City:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.permanentCity }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">State:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.permanentState }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">Country:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.permanentCountry }}</div>
-                                            <div class="eight wide column left aligned"><span
-                                                    class="ui grey text">Pincode:</span>
-                                            </div>
-                                            <div class="eight wide column left aligned">{{ instance.permanentPinCode }}</div>
-
-
-                                        </div>
-                                    </div>
-
-                                </div>
+            <div class="detail-hero">
+                <div class="detail-hero-inner">
+                    <div class="teacher-meta">
+                        {% if instance.photo %}
+                            <img class="teacher-avatar" src="{{ instance.photo.url }}" alt="{{ instance.name|default:'Teacher' }}">
+                        {% else %}
+                            <div class="teacher-avatar-fallback">{{ instance.name|default:'T'|slice:":1"|upper }}</div>
+                        {% endif %}
+                        <div>
+                            <h2>{{ instance.name|default:"N/A"|capfirst }}</h2>
+                            <p>{{ instance.tagLine|default:"Teacher profile"|capfirst }}</p>
+                            <div class="detail-tags">
+                                <span class="ui tiny label">EmpCode: {{ instance.employeeCode|default:"N/A" }}</span>
+                                <span class="ui tiny label">Type: {{ instance.staffType|default:"N/A" }}</span>
+                                <span class="ui tiny label">Position: {{ instance.currentPosition|default:"N/A" }}</span>
                             </div>
                         </div>
-                        <div class="ui raised red grid segment">
+                    </div>
+                    <div class="detail-actions">
+                        <a href="{% url 'managementApp:edit_teacher' instance.id %}" class="ui mini white button">
+                            <i class="edit icon"></i>Edit
+                        </a>
+                        <a href="{% url 'managementApp:teacher_list' %}" class="ui mini button">
+                            <i class="arrow left icon"></i>Back
+                        </a>
+                    </div>
+                </div>
+            </div>
 
-                            <div class="sixteen wide column">
-                                <div class="ui vertical  menu " style="width: 100%">
-                                    <a class="item" id="relatedProducts">
-                                        Internal Details
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="ui grid padded">
-                                <div class="row ">
-
-                                    <div class="eight wide column left aligned"><span
-                                            class="ui grey text">Username:</span>
-                                    </div>
-                                    <div class="eight wide column left aligned">{{ instance.username }}</div>
-                                    <div class="eight wide column left aligned"><span
-                                            class="ui grey text">Password:</span>
-                                    </div>
-                                    <div class="eight wide column left aligned">{{ instance.password }}</div>
-                                    <div class="eight wide column left aligned"><span
-                                            class="ui grey text">Active:</span>
-                                    </div>
-                                    <div class="eight wide column left aligned">{{ instance.isActive }}</div>
-                                    <div class="eight wide column left aligned"><span
-                                            class="ui grey text">Salary:</span>
-                                    </div>
-                                    <div class="eight wide column left aligned">{{ instance.salary }}</div>
-                                    <div class="eight wide column left aligned"><span
-                                            class="ui grey text">Date of Leaving:</span>
-                                    </div>
-                                    <div class="eight wide column left aligned">{{ instance.dateOfLeaving }}</div>
-
-
-                                </div>
-                            </div>
-
+            <div class="ui stackable two column grid info-grid">
+                <div class="column">
+                    <div class="ui segment info-card">
+                        <div class="header">
+                            <h4 class="ui header"><i class="user icon"></i>Personal Information</h4>
+                            <span class="chip">Profile</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-line"><span class="k">DOB</span><span class="v">{{ instance.dob|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Gender</span><span class="v">{{ instance.gender|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Blood Group</span><span class="v">{{ instance.bloodGroup|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Aadhar</span><span class="v">{{ instance.aadhar|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Email</span><span class="v">{{ instance.email|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Phone</span><span class="v">{{ instance.phoneNumber|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Qualification</span><span class="v">{{ instance.qualification|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Details</span><span class="v">{{ instance.additionalDetails|default:"N/A" }}</span></div>
                         </div>
                     </div>
                 </div>
 
+                <div class="column">
+                    <div class="ui segment info-card">
+                        <div class="header">
+                            <h4 class="ui header"><i class="map marker alternate icon"></i>Present Address</h4>
+                            <span class="chip">Current</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-line"><span class="k">Address</span><span class="v">{{ instance.presentAddress|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">City</span><span class="v">{{ instance.presentCity|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">State</span><span class="v">{{ instance.presentState|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Country</span><span class="v">{{ instance.presentCountry|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Pincode</span><span class="v">{{ instance.presentPinCode|default:"N/A" }}</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui stackable two column grid info-grid" style="margin-top:0;">
+                <div class="column">
+                    <div class="ui segment info-card">
+                        <div class="header">
+                            <h4 class="ui header"><i class="home icon"></i>Permanent Address</h4>
+                            <span class="chip">Permanent</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-line"><span class="k">Address</span><span class="v">{{ instance.permanentAddress|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">City</span><span class="v">{{ instance.permanentCity|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">State</span><span class="v">{{ instance.permanentState|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Country</span><span class="v">{{ instance.permanentCountry|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Pincode</span><span class="v">{{ instance.permanentPinCode|default:"N/A" }}</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="column">
+                    <div class="ui segment info-card">
+                        <div class="header">
+                            <h4 class="ui header"><i class="lock icon"></i>Internal Details</h4>
+                            <span class="chip">Secure</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-line"><span class="k">Username</span><span class="v">{{ instance.username|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Password</span><span class="v">{{ instance.password|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Status</span><span class="v">{{ instance.isActive|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Salary</span><span class="v">{{ instance.salary|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Leaving Date</span><span class="v">{{ instance.dateOfLeaving|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Reg ID</span><span class="v">{{ instance.registrationCode|default:"N/A" }}</span></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 {% endblock %}
 
-
-
-
 {% block js %}
-
-
 {% endblock %}

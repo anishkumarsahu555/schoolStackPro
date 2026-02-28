@@ -1,0 +1,474 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Parent Detail</title>
+{% endblock %}
+
+{% block css %}
+<style>
+    .parent-shell {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0 0.9rem;
+        box-sizing: border-box;
+    }
+
+    .ui.grid.parent-shell {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .ui.grid.parent-shell > .column {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .parent-hero {
+        background: linear-gradient(135deg, #2a6fd8 0%, #1a4f9e 55%, #163f80 100%);
+        border-radius: 18px;
+        padding: 1.5rem;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 35px rgba(17, 42, 82, 0.25);
+    }
+
+    .parent-hero:before {
+        content: "";
+        position: absolute;
+        width: 260px;
+        height: 260px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        top: -140px;
+        right: -70px;
+    }
+
+    .parent-hero:after {
+        content: "";
+        position: absolute;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        bottom: -140px;
+        left: -70px;
+    }
+
+    .parent-hero-inner {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .parent-avatar {
+        width: 74px;
+        height: 74px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.18);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        margin-right: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .parent-hero-meta {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+    }
+
+    .parent-hero h2 {
+        margin: 0 0 0.25rem 0;
+        font-size: 1.35rem;
+        color: #fff;
+    }
+
+    .parent-hero p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 0.92rem;
+    }
+
+    .parent-actions .ui.button {
+        margin-left: 0.45rem;
+    }
+
+    .parent-grid {
+        margin-top: 1.1rem;
+    }
+
+    .info-card {
+        background: var(--dm-card-bg, #ffffff) !important;
+        color: var(--dm-text, #1d2a3a) !important;
+        border-radius: 18px !important;
+        border: 1px solid var(--dm-border, #e7ecf3) !important;
+        box-shadow: 0 12px 24px rgba(21, 35, 61, 0.08) !important;
+        height: 100%;
+    }
+
+    .info-card .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+    }
+
+    .chip {
+        font-size: 0.78rem;
+        border-radius: 999px;
+        padding: 0.25rem 0.65rem;
+        background: rgba(42, 111, 216, 0.12);
+        color: #2a6fd8;
+    }
+
+    .info-list {
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .info-line {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        line-height: 1.35;
+        border-bottom: 1px dashed rgba(128, 145, 170, 0.28);
+        padding-bottom: 0.35rem;
+    }
+
+    .info-line:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .info-line .k {
+        min-width: 110px;
+        font-size: 0.82rem;
+        color: var(--dm-muted, #5f6d7d);
+    }
+
+    .info-line .v {
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    .ward-card {
+        background: var(--dm-card-bg, #ffffff) !important;
+        color: var(--dm-text, #1d2a3a) !important;
+        border-radius: 18px !important;
+        border: 1px solid var(--dm-border, #e7ecf3) !important;
+        box-shadow: 0 12px 24px rgba(21, 35, 61, 0.08) !important;
+        margin-top: 1.1rem !important;
+        padding: 1rem !important;
+    }
+
+    .ward-table-wrap {
+        overflow-x: auto;
+    }
+
+    .ward-table.ui.table {
+        border-radius: 12px !important;
+        overflow: hidden;
+        margin-top: 0.65rem;
+    }
+
+    .ward-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .ward-count {
+        font-size: 0.82rem;
+        color: var(--dm-muted, #5f6d7d);
+        font-weight: 600;
+        background: rgba(42, 111, 216, 0.12);
+        border-radius: 999px;
+        padding: 0.3rem 0.75rem;
+    }
+
+    .ward-mobile-list {
+        display: none;
+        margin-top: 0.65rem;
+    }
+
+    .ward-mobile-item {
+        border: 1px solid var(--dm-border, #e7ecf3);
+        border-radius: 14px;
+        padding: 0.75rem;
+        margin-bottom: 0.7rem;
+        background: var(--dm-card-bg, #ffffff);
+    }
+
+    .ward-mobile-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .ward-mobile-name {
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .ward-mobile-meta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.45rem 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .ward-mobile-meta div {
+        font-size: 0.82rem;
+        color: var(--dm-muted, #5f6d7d);
+    }
+
+    .ward-mobile-meta strong {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--dm-text, #1d2a3a);
+        margin-bottom: 0.1rem;
+    }
+
+    @media (max-width: 767px) {
+        .parent-shell {
+            padding: 0 0.25rem;
+            box-sizing: border-box;
+        }
+
+        .parent-hero {
+            padding: 1.1rem;
+            border-radius: 16px;
+        }
+
+        .parent-hero-inner {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .parent-actions .ui.button {
+            margin: 0.35rem 0.35rem 0 0;
+        }
+
+        .parent-avatar {
+            width: 60px;
+            height: 60px;
+            font-size: 1.1rem;
+        }
+
+        .info-line .k {
+            min-width: 88px;
+            font-size: 0.78rem;
+        }
+
+        .ward-card,
+        .info-card {
+            border-radius: 14px !important;
+        }
+
+        .ui.grid.parent-grid > .column {
+            padding-top: 0.55rem !important;
+            padding-bottom: 0.55rem !important;
+        }
+
+        .ward-table-wrap {
+            display: none;
+        }
+
+        .ward-mobile-list {
+            display: block;
+        }
+
+        .ward-card {
+            padding: 0.8rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid parent-shell">
+        <div class="sixteen wide column">
+            <div class="parent-hero">
+                <div class="parent-hero-inner">
+                    <div class="parent-hero-meta">
+                        <div class="parent-avatar">
+                            {{ parent.fatherName|default:parent.guardianName|default:"P"|slice:":1"|upper }}
+                        </div>
+                        <div>
+                            <h2>Parent Details</h2>
+                            <p>{{ parent.fatherName|default:"N/A" }} and family overview</p>
+                        </div>
+                    </div>
+                    <div class="parent-actions">
+                        <a href="{% url 'managementApp:edit_parent' parent.id %}" class="ui mini white button">
+                            <i class="edit icon"></i>Edit
+                        </a>
+                        <a href="{% url 'managementApp:manage_parents' %}" class="ui mini button">
+                            <i class="arrow left icon"></i>Back
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui stackable two column grid parent-grid">
+                <div class="column">
+                    <div class="ui segment info-card">
+                        <div class="header">
+                            <h4 class="ui header"><i class="male icon"></i>Father Details</h4>
+                            <span class="chip">Primary</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-line"><span class="k">Name</span><span class="v">{{ parent.fatherName|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Phone</span><span class="v">{{ parent.fatherPhone|default:parent.phoneNumber|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Email</span><span class="v">{{ parent.fatherEmail|default:parent.email|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Occupation</span><span class="v">{{ parent.fatherOccupation|default:parent.profession|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Address</span><span class="v">{{ parent.fatherAddress|default:"N/A" }}</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="column">
+                    <div class="ui segment info-card">
+                        <div class="header">
+                            <h4 class="ui header"><i class="female icon"></i>Mother Details</h4>
+                            <span class="chip">Family</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-line"><span class="k">Name</span><span class="v">{{ parent.motherName|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Phone</span><span class="v">{{ parent.motherPhone|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Email</span><span class="v">{{ parent.motherEmail|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Occupation</span><span class="v">{{ parent.motherOccupation|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Address</span><span class="v">{{ parent.motherAddress|default:"N/A" }}</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui stackable two column grid">
+                <div class="column">
+                    <div class="ui segment info-card">
+                        <div class="header">
+                            <h4 class="ui header"><i class="address book icon"></i>Guardian Details</h4>
+                            <span class="chip">Contact</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-line"><span class="k">Name</span><span class="v">{{ parent.guardianName|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Phone</span><span class="v">{{ parent.guardianPhone|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Occupation</span><span class="v">{{ parent.guardianOccupation|default:"N/A" }}</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="ui segment info-card">
+                        <div class="header">
+                            <h4 class="ui header"><i class="users icon"></i>Family Summary</h4>
+                            <span class="chip">Overview</span>
+                        </div>
+                        <div class="info-list">
+                            <div class="info-line"><span class="k">Type</span><span class="v">{{ parent.familyType|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Members</span><span class="v">{{ parent.totalFamilyMembers|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Annual Income</span><span class="v">₹{{ parent.annualIncome|default:"0" }}</span></div>
+                            <div class="info-line"><span class="k">Primary Phone</span><span class="v">{{ parent.phoneNumber|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Primary Email</span><span class="v">{{ parent.email|default:"N/A" }}</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui segment ward-card">
+                <div class="ward-header">
+                    <h4 class="ui header"><i class="child icon"></i>Wards / Students</h4>
+                    <span class="ward-count">{{ wards|length }} Student{{ wards|length|pluralize }}</span>
+                </div>
+                {% if wards %}
+                    <div class="ward-table-wrap">
+                        <table class="ui celled striped compact table ward-table">
+                            <thead>
+                            <tr>
+                                <th>Photo</th>
+                                <th>Name</th>
+                                <th>Class</th>
+                                <th>Roll</th>
+                                <th>Gender</th>
+                                <th>Phone</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for s in wards %}
+                                <tr>
+                                    <td>
+                                        {% if s.photo %}
+                                            <img class="ui avatar image" src="{{ s.photo.thumbnail.url }}" alt="{{ s.name }}">
+                                        {% else %}
+                                            <i class="user circle icon"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ s.name|default:"N/A" }}</td>
+                                    <td>
+                                        {{ s.standardID.name|default:"N/A" }}{% if s.standardID.section %} - {{ s.standardID.section }}{% endif %}
+                                    </td>
+                                    <td>{{ s.roll|default:"N/A" }}</td>
+                                    <td>{{ s.gender|default:"N/A" }}</td>
+                                    <td>{{ s.phoneNumber|default:"N/A" }}</td>
+                                    <td>
+                                        <a href="{% url 'managementApp:student_detail' s.id %}" class="ui mini blue button">
+                                            <i class="eye icon"></i>
+                                            View Student
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="ward-mobile-list">
+                        {% for s in wards %}
+                            <div class="ward-mobile-item">
+                                <div class="ward-mobile-head">
+                                    <div style="display:flex; align-items:center; gap:0.55rem;">
+                                        {% if s.photo %}
+                                            <img class="ui avatar image" src="{{ s.photo.thumbnail.url }}" alt="{{ s.name }}">
+                                        {% else %}
+                                            <i class="user circle icon"></i>
+                                        {% endif %}
+                                        <span class="ward-mobile-name">{{ s.name|default:"N/A" }}</span>
+                                    </div>
+                                </div>
+                                <div class="ward-mobile-meta">
+                                    <div><strong>Class</strong>{{ s.standardID.name|default:"N/A" }}{% if s.standardID.section %} - {{ s.standardID.section }}{% endif %}</div>
+                                    <div><strong>Roll</strong>{{ s.roll|default:"N/A" }}</div>
+                                    <div><strong>Gender</strong>{{ s.gender|default:"N/A" }}</div>
+                                    <div><strong>Phone</strong>{{ s.phoneNumber|default:"N/A" }}</div>
+                                </div>
+                                <a href="{% url 'managementApp:student_detail' s.id %}" class="ui tiny blue fluid button">
+                                    <i class="eye icon"></i>
+                                    View Student
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="ui info message">
+                        <div class="header">No wards found</div>
+                        <p>No student is linked with this parent in the current session.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

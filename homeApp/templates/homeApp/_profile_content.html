@@ -1,42 +1,252 @@
 <style>
-    .profile-shell { border: 1px solid var(--app-border); border-radius: 14px; background: var(--app-surface); padding: 14px; }
-    .profile-title { margin: 0; font-size: 22px; font-weight: 800; color: var(--app-text); }
-    .profile-role-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background: var(--app-active); color: var(--app-brand); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
-    .profile-layout { display:grid; grid-template-columns: 1.1fr .9fr; gap: 14px; }
-    .profile-card { border:1px solid var(--app-border); border-radius:14px; background: var(--app-surface); overflow:hidden; }
-    .profile-card-head { padding: 12px 14px; border-bottom:1px solid var(--app-border); font-size:20px; font-weight:700; color: var(--app-text); }
-    .profile-head-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
-    .profile-card-body { padding: 14px; }
-    .profile-avatar { width:100%; max-width:420px; margin:0 auto; aspect-ratio:4/3; object-fit:cover; object-position:center top; border-radius:10px; border:1px solid var(--app-border); background: var(--app-hover); display:block; }
-    .profile-avatar-fallback { width:100%; max-width:420px; margin:0 auto; aspect-ratio:4/3; border:1px dashed var(--app-border); border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:8px; color: var(--app-muted); background: var(--app-hover); }
-    .kv { display:grid; grid-template-columns: 130px 1fr; gap:10px; padding:9px 0; border-bottom:1px solid var(--app-border); }
-    .kv:last-child { border-bottom:0; }
-    .k { color: var(--app-muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; font-weight:700; }
-    .v { color: var(--app-text); font-size:15px; font-weight:600; word-break:break-word; }
-    .stack { display:grid; gap:14px; }
+    .profile-shell {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .profile-hero {
+        background: linear-gradient(135deg, #2a6fd8 0%, #1a4f9e 55%, #163f80 100%);
+        border-radius: 18px;
+        padding: 1.4rem;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 35px rgba(17, 42, 82, 0.25);
+    }
+
+    .profile-hero:before {
+        content: "";
+        position: absolute;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        top: -130px;
+        right: -60px;
+    }
+
+    .profile-hero-inner {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .profile-hero-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        min-width: 0;
+    }
+
+    .profile-avatar-small {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.38);
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .profile-avatar-fallback-small {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        font-weight: 700;
+        border: 2px solid rgba(255, 255, 255, 0.38);
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .profile-title {
+        margin: 0;
+        font-size: 1.35rem;
+        color: #fff;
+        font-weight: 800;
+    }
+
+    .profile-subtitle {
+        margin: 0.2rem 0 0 0;
+        color: rgba(255, 255, 255, 0.92);
+    }
+
+    .profile-role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.16);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .profile-layout {
+        display: grid;
+        grid-template-columns: 1.1fr .9fr;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .profile-card {
+        border: 1px solid var(--app-border);
+        border-radius: 18px;
+        background: var(--app-surface);
+        overflow: hidden;
+        box-shadow: 0 12px 24px rgba(21, 35, 61, 0.08);
+    }
+
+    .profile-card-head {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--app-border);
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--app-text);
+    }
+
+    .profile-head-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .profile-card-body {
+        padding: 14px;
+    }
+
+    .profile-avatar {
+        width: min(220px, 100%);
+        max-width: 220px;
+        margin: 0 auto;
+        aspect-ratio: 1/1;
+        object-fit: cover;
+        object-position: center top;
+        border-radius: 10px;
+        border: 1px solid var(--app-border);
+        background: var(--app-hover);
+        display: block;
+    }
+
+    .profile-avatar-fallback {
+        width: min(220px, 100%);
+        max-width: 220px;
+        margin: 0 auto;
+        aspect-ratio: 1/1;
+        border: 1px dashed var(--app-border);
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        color: var(--app-muted);
+        background: var(--app-hover);
+    }
+
+    .kv {
+        display: grid;
+        grid-template-columns: 130px 1fr;
+        gap: 10px;
+        padding: 9px 0;
+        border-bottom: 1px dashed rgba(128, 145, 170, 0.28);
+    }
+
+    .kv:last-child {
+        border-bottom: 0;
+    }
+
+    .k {
+        color: var(--app-muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        font-weight: 700;
+    }
+
+    .v {
+        color: var(--app-text);
+        font-size: 15px;
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    .stack {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .password-help {
+        color: var(--app-muted);
+        font-size: 12px;
+        margin-top: 0.35rem;
+    }
+
+    .password-actions {
+        margin-top: 0.9rem;
+        display: flex;
+        justify-content: flex-end;
+    }
+
     @media (max-width: 900px) {
         .profile-layout { grid-template-columns: 1fr; }
         .profile-head-row { align-items:center; justify-content:space-between; flex-direction:row; }
         .profile-role-badge { font-size: 10px; padding: 5px 9px; width: fit-content; max-width: 100%; white-space: normal; line-height: 1.2; }
+        .profile-hero { padding: 1.05rem; border-radius: 16px; }
+        .profile-avatar-small,
+        .profile-avatar-fallback-small { width: 52px; height: 52px; font-size: 1rem; }
+        .profile-avatar,
+        .profile-avatar-fallback { width: min(180px, 100%); max-width: 180px; }
         .kv { grid-template-columns: 1fr; gap:4px; }
+        .profile-card { border-radius: 14px; }
+        .password-actions { justify-content: stretch; }
+        .password-actions .ui.button { width: 100%; }
     }
 </style>
 
-<div class="ui segment profile-shell">
+<div class="profile-shell">
+    <div class="profile-hero">
+        <div class="profile-hero-inner">
+            <div class="profile-hero-meta">
+                {% if profile_photo_url %}
+                    <img src="{{ profile_photo_url }}" class="profile-avatar-small" alt="Profile Photo" />
+                {% else %}
+                    <div class="profile-avatar-fallback-small">{{ profile_name|default:'U'|slice:":1"|upper }}</div>
+                {% endif %}
+                <div>
+                    <h2 class="profile-title">My Profile</h2>
+                    <p class="profile-subtitle">{{ profile_name }}</p>
+                </div>
+            </div>
+            <div class="profile-role-badge">
+                <i class="shield alternate icon"></i>
+                {{ role_label }}
+            </div>
+        </div>
+    </div>
+
     <div class="profile-layout">
         <div class="profile-card">
             <div class="profile-card-head">
                 <div class="profile-head-row">
-                    <span>My Profile</span>
-                    <div class="profile-role-badge">
-                        <i class="shield alternate icon"></i>
-                        {{ role_label }}
-                    </div>
+                    <span>Profile Details</span>
                 </div>
             </div>
             <div class="profile-card-body">
                 {% if profile_photo_url %}
-                    <img src="{{ profile_photo_url }}" class="ui image profile-avatar" alt="Profile Photo" />
+                    <img src="{{ profile_photo_url }}" class="profile-avatar" alt="Profile Photo" />
                 {% else %}
                     <div class="profile-avatar-fallback">
                         <i class="user circle icon"></i>
@@ -69,6 +279,147 @@
                     {% endif %}
                 </div>
             </div>
+
+            <div class="profile-card">
+                <div class="profile-card-head">Security</div>
+                <div class="profile-card-body">
+                    <button class="ui small blue button" type="button" id="openChangePasswordModal">
+                        <i class="lock icon"></i>
+                        Change Password
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<div class="ui small modal" id="changePasswordModal">
+    <div class="header">Change Password</div>
+    <div class="content">
+        <form class="ui form" id="changePasswordForm" autocomplete="off">
+            {% csrf_token %}
+            <div class="field required">
+                <label>Current Password</label>
+                <input type="password" id="currentPassword" name="current_password" placeholder="Current password">
+            </div>
+            <div class="field required">
+                <label>New Password</label>
+                <input type="password" id="newPassword" name="new_password" placeholder="New password">
+            </div>
+            <div class="field required">
+                <label>Confirm New Password</label>
+                <input type="password" id="confirmPassword" name="confirm_password" placeholder="Confirm new password">
+            </div>
+            <div class="password-help">Password must be at least 8 characters.</div>
+        </form>
+    </div>
+    <div class="actions">
+        <button class="ui button cancel" type="button">Cancel</button>
+        <button class="ui blue button" type="button" id="changePasswordBtn">
+            <i class="lock icon"></i>
+            Update Password
+        </button>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const openModalBtn = document.getElementById('openChangePasswordModal');
+        if (openModalBtn) {
+            openModalBtn.addEventListener('click', function () {
+                $('#changePasswordModal').modal('show');
+            });
+        }
+
+        const form = document.getElementById('changePasswordForm');
+        if (!form) return;
+
+        function clearFieldErrors() {
+            $('#changePasswordForm .field').removeClass('error');
+        }
+
+        function markFieldError(inputId) {
+            $('#' + inputId).closest('.field').addClass('error');
+        }
+
+        function submitChangePassword() {
+            clearFieldErrors();
+
+            const currentPassword = document.getElementById('currentPassword').value.trim();
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                if (!currentPassword) markFieldError('currentPassword');
+                if (!newPassword) markFieldError('newPassword');
+                if (!confirmPassword) markFieldError('confirmPassword');
+                requiredFieldError();
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                markFieldError('newPassword');
+                markFieldError('confirmPassword');
+                addErrorNotification('New password and confirm password do not match.');
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                markFieldError('newPassword');
+                addErrorNotification('New password must be at least 8 characters.');
+                return;
+            }
+
+            const data = new FormData(form);
+            const btn = document.getElementById('changePasswordBtn');
+            btn.classList.add('loading', 'disabled');
+
+            $.ajax({
+                url: "{% url 'homeApp:change_password' %}",
+                type: "post",
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        form.reset();
+                        $('#changePasswordModal').modal('hide');
+                    } else {
+                        addErrorNotification(response.message || 'Unable to change password.');
+                    }
+                },
+                error: function (xhr) {
+                    const message = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Unable to change password.';
+                    addErrorNotification(message);
+                },
+                complete: function () {
+                    btn.classList.remove('loading', 'disabled');
+                }
+            });
+        }
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            submitChangePassword();
+        });
+
+        const submitBtn = document.getElementById('changePasswordBtn');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', submitChangePassword);
+        }
+
+        $('#changePasswordModal').modal({
+            autofocus: false,
+            onHidden: function () {
+                form.reset();
+                clearFieldErrors();
+            }
+        });
+
+        $('#changePasswordForm input').on('input', function () {
+            $(this).closest('.field').removeClass('error');
+        });
+    })();
+</script>
