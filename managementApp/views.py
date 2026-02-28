@@ -1,5 +1,7 @@
 import json
+from datetime import date, timedelta
 
+from django.db.models import Count
 from django.shortcuts import render, get_object_or_404, redirect
 
 from homeApp.utils import login_required
@@ -13,19 +15,46 @@ from utils.custom_decorators import check_groups
 @check_groups('Admin', 'Owner')
 def admin_home(request):
     current_session_id = request.session['current_session']['Id']
+    current_session_year = request.session.get('current_session', {}).get('currentSessionYear', 'N/A')
 
     totalStudent = Student.objects.filter(isDeleted=False, sessionID_id=current_session_id).count()
     totalTeacher = TeacherDetail.objects.filter(isDeleted=False, sessionID_id=current_session_id).count()
     totalClass = Standard.objects.filter(isDeleted=False, sessionID_id=current_session_id).count()
     totalSubject = Subjects.objects.filter(isDeleted=False, sessionID_id=current_session_id).count()
+    totalParents = Parent.objects.filter(isDeleted=False, sessionID_id=current_session_id).count()
+
+    upcoming_events = Event.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        startDate__gte=date.today(),
+        startDate__lte=date.today() + timedelta(days=30),
+    ).order_by('startDate')[:5]
+
+    recent_students = Student.objects.select_related('standardID').filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+    ).order_by('-datetime')[:5]
+
+    class_distribution = list(
+        Student.objects.filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+        ).values('standardID__name').annotate(total=Count('id')).order_by('-total')[:8]
+    )
 
     context = {
         'total_students': totalStudent,
         'total_teachers': totalTeacher,
         'total_classes': totalClass,
         'total_subjects': totalSubject,
+        'total_parents': totalParents,
+        'current_session_year': current_session_year,
+        'upcoming_events': upcoming_events,
+        'recent_students': recent_students,
         'summary_labels_json': json.dumps(['Students', 'Teachers', 'Subjects', 'Classes']),
         'summary_values_json': json.dumps([totalStudent, totalTeacher, totalSubject, totalClass]),
+        'class_labels_json': json.dumps([row['standardID__name'] or 'N/A' for row in class_distribution]),
+        'class_values_json': json.dumps([row['total'] for row in class_distribution]),
     }
     return render(request, 'managementApp/dashboard.html', context)
 

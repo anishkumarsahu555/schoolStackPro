@@ -2,164 +2,283 @@
 {% load static %}
 
 {% block title %}
-    <title>Dashboard</title>
+    <title>Management Dashboard</title>
 {% endblock %}
 
 {% block css %}
     <style>
-        .dashboard-wrap .stats-grid .column {
-            display: flex;
-        }
-
-        .dashboard-stat-card {
-            width: 100%;
+        .management-dashboard .hero {
+            background: linear-gradient(135deg, rgba(32, 90, 230, 0.15), rgba(8, 132, 187, 0.10));
             border: 1px solid var(--app-border);
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
-            overflow: hidden;
+            border-radius: 14px;
+            padding: 1.2rem 1.4rem;
+            margin-bottom: 1rem;
         }
 
-        .dashboard-stat-card .content {
-            padding: 18px !important;
-        }
-
-        .dashboard-icon {
-            float: right;
-            width: 42px;
-            height: 42px;
-            border-radius: 10px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            color: #fff;
-        }
-
-        .dashboard-icon.red { background: #db2828; }
-        .dashboard-icon.green { background: #21ba45; }
-        .dashboard-icon.teal { background: #00b5ad; }
-        .dashboard-icon.purple { background: #a333c8; }
-
-        .dashboard-value {
-            font-size: 2rem;
-            line-height: 1;
+        .management-dashboard .hero-title {
+            margin: 0;
+            font-size: 1.35rem;
             font-weight: 700;
             color: var(--app-text);
-            margin: 8px 0 10px;
         }
 
-        .dashboard-meta {
+        .management-dashboard .hero-subtitle {
+            margin-top: 0.4rem;
             color: var(--app-muted);
-            font-size: 0.9rem;
-            margin-bottom: 8px;
+            font-size: 0.92rem;
         }
 
-        .dashboard-label {
+        .management-dashboard .kpi-card {
+            border: 1px solid var(--app-border) !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            height: 100%;
+        }
+
+        .management-dashboard .kpi-label {
+            color: var(--app-muted);
+            font-size: 0.86rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .management-dashboard .kpi-value {
+            font-size: 1.7rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--app-text);
+            margin-top: 0.25rem;
+        }
+
+        .management-dashboard .kpi-meta {
+            margin-top: 0.4rem;
+            color: var(--app-muted);
+            font-size: 0.84rem;
+        }
+
+        .management-dashboard .block-card {
+            border: 1px solid var(--app-border) !important;
+            border-radius: 12px !important;
+            box-shadow: none !important;
+            margin-top: 1rem;
+            height: calc(100% - 1rem);
+        }
+
+        .management-dashboard .chart-wrap {
+            position: relative;
+            height: 300px;
+        }
+
+        .management-dashboard .empty-note {
+            color: var(--app-muted);
+            font-size: 0.92rem;
+            text-align: center;
+            padding: 1rem 0.2rem;
+        }
+
+        .management-dashboard .list-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.8rem;
+            padding: 0.55rem 0;
+            border-bottom: 1px dashed rgba(128, 145, 170, 0.28);
+        }
+
+        .management-dashboard .list-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .management-dashboard .list-title {
             color: var(--app-text);
             font-weight: 600;
-            min-height: 24px;
         }
 
-        .dashboard-stat-card .extra.content {
-            background: var(--app-surface);
-            border-top: 1px solid var(--app-border);
+        .management-dashboard .list-meta {
+            color: var(--app-muted);
+            font-size: 0.84rem;
         }
 
-        .chart-card {
-            border: 1px solid var(--app-border);
-            border-radius: 12px;
-            padding: 14px;
-            background: var(--app-surface);
+        .management-dashboard .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.7rem;
         }
 
-        .chart-wrap {
-            position: relative;
-            height: 320px;
+        .management-dashboard .quick-actions .button {
+            width: 100%;
+        }
+
+        @media (max-width: 767px) {
+            .management-dashboard .hero {
+                padding: 1rem;
+            }
+
+            .management-dashboard .kpi-value {
+                font-size: 1.45rem;
+            }
+
+            .management-dashboard .chart-wrap {
+                height: 260px;
+            }
+
+            .management-dashboard .quick-actions {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 {% endblock %}
 
 {% block body %}
-    <div class="dashboard-wrap ui left aligned basic grid">
+    <div class="management-dashboard ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active">Dashboard</div>
+            <div class="hero">
+                <h2 class="hero-title">Management Dashboard</h2>
+                <div class="hero-subtitle">
+                    Session: {{ current_session_year }} | Overview of students, teachers, academics, and operations
+                </div>
             </div>
 
-            <div class="ui tab active">
-                <div class="ui grid stackable padded stats-grid">
-                    <div class="four wide computer eight wide tablet sixteen wide mobile column">
-                        <div class="ui fluid card dashboard-stat-card">
-                            <div class="content">
-                                <div class="dashboard-icon red"><i class="user tie icon"></i></div>
-                                <div class="dashboard-value">{{ total_students|default:0 }}</div>
-                                <div class="dashboard-meta">{{ request.session.current_session.currentSessionYear }}</div>
-                                <div class="dashboard-label">Total Students</div>
-                            </div>
-                            <div class="extra content">
-                                <a href="{% url 'managementApp:student_list' %}" class="ui red fluid button">More Info</a>
-                            </div>
-                        </div>
+            <div class="ui stackable five column grid">
+                <div class="column">
+                    <div class="ui segment kpi-card">
+                        <div class="kpi-label">Students</div>
+                        <div class="kpi-value">{{ total_students|default:0 }}</div>
+                        <div class="kpi-meta">Active in current session</div>
                     </div>
-
-                    <div class="four wide computer eight wide tablet sixteen wide mobile column">
-                        <div class="ui fluid card dashboard-stat-card">
-                            <div class="content">
-                                <div class="dashboard-icon green"><i class="chalkboard teacher icon"></i></div>
-                                <div class="dashboard-value">{{ total_teachers|default:0 }}</div>
-                                <div class="dashboard-meta">{{ request.session.current_session.currentSessionYear }}</div>
-                                <div class="dashboard-label">Total Teachers</div>
-                            </div>
-                            <div class="extra content">
-                                <a href="{% url 'managementApp:teacher_list' %}" class="ui green fluid button">More Info</a>
-                            </div>
-                        </div>
+                </div>
+                <div class="column">
+                    <div class="ui segment kpi-card">
+                        <div class="kpi-label">Teachers</div>
+                        <div class="kpi-value">{{ total_teachers|default:0 }}</div>
+                        <div class="kpi-meta">Mapped staff profiles</div>
                     </div>
-
-                    <div class="four wide computer eight wide tablet sixteen wide mobile column">
-                        <div class="ui fluid card dashboard-stat-card">
-                            <div class="content">
-                                <div class="dashboard-icon teal"><i class="book icon"></i></div>
-                                <div class="dashboard-value">{{ total_subjects|default:0 }}</div>
-                                <div class="dashboard-meta">{{ request.session.current_session.currentSessionYear }}</div>
-                                <div class="dashboard-label">Total Subjects</div>
-                            </div>
-                            <div class="extra content">
-                                <a href="{% url 'managementApp:manage_subjects' %}" class="ui teal fluid button">More Info</a>
-                            </div>
-                        </div>
+                </div>
+                <div class="column">
+                    <div class="ui segment kpi-card">
+                        <div class="kpi-label">Subjects</div>
+                        <div class="kpi-value">{{ total_subjects|default:0 }}</div>
+                        <div class="kpi-meta">Configured subjects</div>
                     </div>
+                </div>
+                <div class="column">
+                    <div class="ui segment kpi-card">
+                        <div class="kpi-label">Classes</div>
+                        <div class="kpi-value">{{ total_classes|default:0 }}</div>
+                        <div class="kpi-meta">Available class sections</div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="ui segment kpi-card">
+                        <div class="kpi-label">Parents</div>
+                        <div class="kpi-value">{{ total_parents|default:0 }}</div>
+                        <div class="kpi-meta">Registered guardian records</div>
+                    </div>
+                </div>
+            </div>
 
-                    <div class="four wide computer eight wide tablet sixteen wide mobile column">
-                        <div class="ui fluid card dashboard-stat-card">
-                            <div class="content">
-                                <div class="dashboard-icon purple"><i class="laptop house icon"></i></div>
-                                <div class="dashboard-value">{{ total_classes|default:0 }}</div>
-                                <div class="dashboard-meta">{{ request.session.current_session.currentSessionYear }}</div>
-                                <div class="dashboard-label">Total Classes</div>
+            <div class="ui stackable two column grid">
+                <div class="column">
+                    <div class="ui segment block-card">
+                        <h4 class="ui header">
+                            <i class="calendar check icon"></i>
+                            <div class="content">Upcoming Events (30 Days)</div>
+                        </h4>
+                        {% if upcoming_events %}
+                            <div>
+                                {% for event in upcoming_events %}
+                                    <div class="list-item">
+                                        <div>
+                                            <div class="list-title">{{ event.title|default:'Untitled Event' }}</div>
+                                            <div class="list-meta">{{ event.message|default:'No description' }}</div>
+                                        </div>
+                                        <div class="list-meta">{{ event.startDate|date:'d M Y' }}</div>
+                                    </div>
+                                {% endfor %}
                             </div>
-                            <div class="extra content">
-                                <a href="{% url 'managementApp:manage_class' %}" class="ui purple fluid button">More Info</a>
-                            </div>
-                        </div>
+                        {% else %}
+                            <div class="empty-note">No upcoming events in this session.</div>
+                        {% endif %}
                     </div>
                 </div>
 
-                <div class="ui stackable two column grid padded">
-                    <div class="column">
-                        <div class="chart-card">
-                            <h4 class="ui header">Summary Distribution</h4>
-                            <div class="chart-wrap">
-                                <canvas id="summaryPie"></canvas>
+                <div class="column">
+                    <div class="ui segment block-card">
+                        <h4 class="ui header">
+                            <i class="user plus icon"></i>
+                            <div class="content">Recent Student Admissions</div>
+                        </h4>
+                        {% if recent_students %}
+                            <div>
+                                {% for student in recent_students %}
+                                    <div class="list-item">
+                                        <div>
+                                            <div class="list-title">{{ student.name|default:'N/A' }}</div>
+                                            <div class="list-meta">{{ student.standardID.name|default:'N/A' }}</div>
+                                        </div>
+                                        <div class="list-meta">
+                                            <a href="{% url 'managementApp:student_detail' student.id %}" class="ui tiny button">View</a>
+                                        </div>
+                                    </div>
+                                {% endfor %}
                             </div>
+                        {% else %}
+                            <div class="empty-note">No recent students found.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui stackable two column grid">
+                <div class="column">
+                    <div class="ui segment block-card">
+                        <h4 class="ui header">
+                            <i class="chart pie icon"></i>
+                            <div class="content">Overall Distribution</div>
+                        </h4>
+                        <div class="chart-wrap">
+                            <canvas id="summaryPie"></canvas>
                         </div>
                     </div>
-                    <div class="column">
-                        <div class="chart-card">
-                            <h4 class="ui header">Summary Comparison</h4>
-                            <div class="chart-wrap">
-                                <canvas id="summaryBar"></canvas>
-                            </div>
+                </div>
+                <div class="column">
+                    <div class="ui segment block-card">
+                        <h4 class="ui header">
+                            <i class="chart bar icon"></i>
+                            <div class="content">Students By Class</div>
+                        </h4>
+                        <div class="chart-wrap">
+                            <canvas id="classBar"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui stackable two column grid">
+                <div class="column">
+                    <div class="ui segment block-card">
+                        <h4 class="ui header">
+                            <i class="compass outline icon"></i>
+                            <div class="content">Quick Actions</div>
+                        </h4>
+                        <div class="quick-actions">
+                            <a href="{% url 'managementApp:student_list' %}" class="ui primary button">Students</a>
+                            <a href="{% url 'managementApp:teacher_list' %}" class="ui primary button">Teachers</a>
+                            <a href="{% url 'managementApp:manage_class' %}" class="ui primary button">Classes</a>
+                            <a href="{% url 'managementApp:manage_subjects' %}" class="ui primary button">Subjects</a>
+                            <a href="{% url 'managementApp:manage_parents' %}" class="ui primary button">Parents</a>
+                            <a href="{% url 'managementApp:manage_event' %}" class="ui primary button">Events</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="ui segment block-card">
+                        <h4 class="ui header">
+                            <i class="chart line icon"></i>
+                            <div class="content">Summary Comparison</div>
+                        </h4>
+                        <div class="chart-wrap">
+                            <canvas id="summaryBar"></canvas>
                         </div>
                     </div>
                 </div>
@@ -173,9 +292,11 @@
         (function () {
             const labels = {{ summary_labels_json|safe }};
             const values = {{ summary_values_json|safe }};
+            const classLabels = {{ class_labels_json|safe }};
+            const classValues = {{ class_values_json|safe }};
             const surfaceText = getComputedStyle(document.documentElement).getPropertyValue('--app-text').trim() || '#1f2937';
             const gridLine = getComputedStyle(document.documentElement).getPropertyValue('--app-border').trim() || '#dfe3ea';
-            const palette = ['#db2828', '#21ba45', '#00b5ad', '#a333c8'];
+            const palette = ['#1f77d2', '#2dbf63', '#f59e0b', '#8b5cf6', '#ef4444'];
 
             const pieCtx = document.getElementById('summaryPie');
             if (pieCtx) {
@@ -212,6 +333,31 @@
                         scales: {
                             yAxes: [{ticks: {beginAtZero: true, fontColor: surfaceText}, gridLines: {color: gridLine}}],
                             xAxes: [{ticks: {fontColor: surfaceText}, gridLines: {color: gridLine}}]
+                        }
+                    }
+                });
+            }
+
+            const classBarCtx = document.getElementById('classBar');
+            if (classBarCtx) {
+                new Chart(classBarCtx.getContext('2d'), {
+                    type: 'horizontalBar',
+                    data: {
+                        labels: classLabels,
+                        datasets: [{
+                            label: 'Students',
+                            data: classValues,
+                            backgroundColor: '#3b82f6',
+                            borderColor: '#3b82f6',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        legend: {display: false},
+                        scales: {
+                            xAxes: [{ticks: {beginAtZero: true, fontColor: surfaceText}, gridLines: {color: gridLine}}],
+                            yAxes: [{ticks: {fontColor: surfaceText}, gridLines: {display: false}}]
                         }
                     }
                 });
