@@ -20,6 +20,14 @@
             <span>Students List</span>
         </a>
 
+        {% if request.session.is_class_teacher %}
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_assigned_class' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_assigned_class' %}">
+                <i class="users icon"></i>
+                <span>Assigned Class</span>
+            </a>
+        {% endif %}
+
         <div class="nav-section">Subjects</div>
         <a class="nav-item {% if request.resolver_match.url_name == 'teacher_assigned_subjects' %}active{% endif %}"
            href="{% url 'teacherApp:teacher_assigned_subjects' %}">

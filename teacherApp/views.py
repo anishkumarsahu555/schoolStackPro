@@ -5,35 +5,50 @@ from django.shortcuts import render, get_object_or_404
 
 from homeApp.models import SchoolSession
 from homeApp.utils import login_required
-from managementApp.models import Student, TeacherDetail, AssignSubjectsToTeacher, Event
+from managementApp.models import Student, TeacherDetail, AssignSubjectsToTeacher, Event, Standard
 from utils.custom_decorators import check_groups
 
 # Create your views here.
 
 
+def _bootstrap_teacher_context(request):
+    teacher = TeacherDetail.objects.select_related('sessionID', 'schoolID').filter(
+        userID_id=request.user.id,
+        isDeleted=False,
+    ).order_by('-datetime').first()
+
+    if teacher and teacher.sessionID and 'current_session' not in request.session:
+        request.session['current_session'] = {
+            'currentSessionYear': teacher.sessionID.sessionYear,
+            'Id': teacher.sessionID_id,
+        }
+        session_qs = SchoolSession.objects.filter(
+            isDeleted=False,
+            schoolID_id=teacher.schoolID_id,
+        ).order_by('-datetime')
+        request.session['session_list'] = [
+            {'currentSessionYear': s.sessionYear, 'Id': s.pk}
+            for s in session_qs
+        ]
+
+    current_session_id = request.session.get('current_session', {}).get('Id') or (teacher.sessionID_id if teacher else None)
+    is_class_teacher = False
+    if teacher and current_session_id:
+        is_class_teacher = Standard.objects.filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            classTeacher_id=teacher.id,
+        ).exists()
+    request.session['is_class_teacher'] = is_class_teacher
+    return teacher, current_session_id, is_class_teacher
+
+
 @login_required
 @check_groups('Teaching')
 def teacher_home(request):
-    if 'current_session' not in request.session:
-        teacher = TeacherDetail.objects.select_related('sessionID', 'schoolID').filter(
-            userID_id=request.user.id,
-            isDeleted=False,
-        ).order_by('-datetime').first()
-        if teacher and teacher.sessionID:
-            request.session['current_session'] = {
-                'currentSessionYear': teacher.sessionID.sessionYear,
-                'Id': teacher.sessionID_id,
-            }
-            session_qs = SchoolSession.objects.filter(
-                isDeleted=False,
-                schoolID_id=teacher.schoolID_id,
-            ).order_by('-datetime')
-            request.session['session_list'] = [
-                {'currentSessionYear': s.sessionYear, 'Id': s.pk}
-                for s in session_qs
-            ]
+    _, _, is_class_teacher = _bootstrap_teacher_context(request)
 
-    teacher = TeacherDetail.objects.select_related('schoolID').filter(
+    teacher = TeacherDetail.objects.select_related('schoolID', 'sessionID').filter(
         userID_id=request.user.id,
         isDeleted=False,
     ).order_by('-datetime').first()
@@ -130,6 +145,7 @@ def teacher_home(request):
         'chart_subject_values': json.dumps(list(subject_counter.values())),
         'chart_gender_labels': json.dumps(list(gender_counter.keys())),
         'chart_gender_values': json.dumps(list(gender_counter.values())),
+        'is_class_teacher': is_class_teacher,
     }
     return render(request, 'teacherApp/dashboard.html', context)
 
@@ -137,6 +153,7 @@ def teacher_home(request):
 @login_required
 @check_groups('Teaching')
 def teacher_students_list(request):
+    _, _, is_class_teacher = _bootstrap_teacher_context(request)
     if 'current_session' not in request.session:
         teacher = TeacherDetail.objects.select_related('sessionID', 'schoolID').filter(
             userID_id=request.user.id,
@@ -156,12 +173,13 @@ def teacher_students_list(request):
                 for s in session_qs
             ]
 
-    return render(request, 'teacherApp/students_list.html', {})
+    return render(request, 'teacherApp/students_list.html', {'is_class_teacher': is_class_teacher})
 
 
 @login_required
 @check_groups('Teaching')
 def teacher_assigned_subjects(request):
+    _, _, is_class_teacher = _bootstrap_teacher_context(request)
     if 'current_session' not in request.session:
         teacher = TeacherDetail.objects.select_related('sessionID', 'schoolID').filter(
             userID_id=request.user.id,
@@ -181,12 +199,13 @@ def teacher_assigned_subjects(request):
                 for s in session_qs
             ]
 
-    return render(request, 'teacherApp/assigned_subjects.html', {})
+    return render(request, 'teacherApp/assigned_subjects.html', {'is_class_teacher': is_class_teacher})
 
 
 @login_required
 @check_groups('Teaching')
 def teacher_student_attendance(request):
+    _, _, is_class_teacher = _bootstrap_teacher_context(request)
     if 'current_session' not in request.session:
         teacher = TeacherDetail.objects.select_related('sessionID', 'schoolID').filter(
             userID_id=request.user.id,
@@ -208,12 +227,14 @@ def teacher_student_attendance(request):
 
     return render(request, 'managementApp/attendance/studentAttendance.html', {
         'base_template': 'teacherApp/index.html',
+        'is_class_teacher': is_class_teacher,
     })
 
 
 @login_required
 @check_groups('Teaching')
 def teacher_manage_event(request):
+    _, _, is_class_teacher = _bootstrap_teacher_context(request)
     if 'current_session' not in request.session:
         teacher = TeacherDetail.objects.select_related('sessionID', 'schoolID').filter(
             userID_id=request.user.id,
@@ -233,12 +254,13 @@ def teacher_manage_event(request):
                 for s in session_qs
             ]
 
-    return render(request, 'teacherApp/events_list.html', {})
+    return render(request, 'teacherApp/events_list.html', {'is_class_teacher': is_class_teacher})
 
 
 @login_required
 @check_groups('Teaching')
 def teacher_add_marks(request):
+    _, _, is_class_teacher = _bootstrap_teacher_context(request)
     if 'current_session' not in request.session:
         teacher = TeacherDetail.objects.select_related('sessionID', 'schoolID').filter(
             userID_id=request.user.id,
@@ -260,12 +282,14 @@ def teacher_add_marks(request):
 
     return render(request, 'managementApp/marks/addExamMarks.html', {
         'base_template': 'teacherApp/index.html',
+        'is_class_teacher': is_class_teacher,
     })
 
 
 @login_required
 @check_groups('Teaching')
 def teacher_marks_details(request):
+    _, _, is_class_teacher = _bootstrap_teacher_context(request)
     if 'current_session' not in request.session:
         teacher = TeacherDetail.objects.select_related('sessionID', 'schoolID').filter(
             userID_id=request.user.id,
@@ -287,12 +311,26 @@ def teacher_marks_details(request):
 
     return render(request, 'managementApp/marks/examMarksDetails.html', {
         'base_template': 'teacherApp/index.html',
+        'is_class_teacher': is_class_teacher,
     })
 
 
 @login_required
 @check_groups('Teaching')
+def teacher_assigned_class(request):
+    _, _, is_class_teacher = _bootstrap_teacher_context(request)
+    if not is_class_teacher:
+        return render(request, 'teacherApp/assigned_class.html', {
+            'is_class_teacher': False,
+            'not_class_teacher_message': 'This section is available only for assigned class teachers.',
+        })
+    return render(request, 'teacherApp/assigned_class.html', {'is_class_teacher': True})
+
+
+@login_required
+@check_groups('Teaching')
 def teacher_student_detail(request, id=None):
+    _, _, is_class_teacher = _bootstrap_teacher_context(request)
     queryset = Student.objects.select_related('parentID', 'standardID').filter(isDeleted=False)
     current_session = request.session.get('current_session', {})
     current_session_id = current_session.get('Id')
@@ -305,5 +343,6 @@ def teacher_student_detail(request, id=None):
         'parent': instance.parentID,
         'is_teacher_view': True,
         'base_template': 'teacherApp/index.html',
+        'is_class_teacher': is_class_teacher,
     }
     return render(request, 'managementApp/student/student_detail.html', context)

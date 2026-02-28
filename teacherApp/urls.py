@@ -9,12 +9,14 @@ from .views import (
     teacher_manage_event,
     teacher_add_marks,
     teacher_marks_details,
+    teacher_assigned_class,
 )
 
 urlpatterns = [
     path('', teacher_home, name='teacher_root'),
     path('home/', teacher_home, name='teacher_home'),
     path('students/', teacher_students_list, name='teacher_students_list'),
+    path('assigned-class/', teacher_assigned_class, name='teacher_assigned_class'),
     path('assigned-subjects/', teacher_assigned_subjects, name='teacher_assigned_subjects'),
     path('student-attendance/', teacher_student_attendance, name='teacher_student_attendance'),
     path('manage-event/', teacher_manage_event, name='teacher_manage_event'),

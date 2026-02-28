@@ -147,14 +147,42 @@ def update_class(request):
 
     data = request.POST.dict()
     try:
-        obj = Standard.objects.get(pk=data['dataIDEdit'], isDeleted = False)
+        current_session_id = request.session['current_session']['Id']
+        obj = Standard.objects.get(
+            pk=data['dataIDEdit'],
+            isDeleted=False,
+            sessionID_id=current_session_id
+        )
+
+        teacher_id = data.get("teacherEdit")
+        teacher_id = int(teacher_id) if teacher_id and str(teacher_id).strip() else None
+
+        if teacher_id:
+            teacher_exists = TeacherDetail.objects.filter(
+                pk=teacher_id,
+                isDeleted=False,
+                sessionID_id=current_session_id,
+                isActive='Yes'
+            ).exists()
+            if not teacher_exists:
+                return ErrorResponse("Selected class teacher does not exist in current session.").to_json_response()
+
+            teacher_already_assigned = Standard.objects.filter(
+                isDeleted=False,
+                sessionID_id=current_session_id,
+                classTeacher_id=teacher_id
+            ).exclude(pk=obj.pk).exists()
+            if teacher_already_assigned:
+                return ErrorResponse("This teacher is already assigned as class teacher for another class.").to_json_response()
 
         obj.name = data["classNameEdit"]
-        obj.location = data["classLocationEdit"]
-        obj.startingRoll = int(data["startRoll0Edit"]) or 0
-        obj.endingRoll = int(data["endRoll0Edit"]) or 0
-        obj.section = data["section0Edit"]
-        obj.classTeacher_id = data["teacherEdit"] if isinstance(data["teacherEdit"], int) else None
+        obj.classLocation = data["classLocationEdit"]
+        obj.startingRoll = data.get("startRoll0Edit") or '0'
+        obj.endingRoll = data.get("endRoll0Edit") or '0'
+        section_value = data.get("section0Edit")
+        obj.section = None if section_value in ("", "N/A", None) else section_value
+        obj.classTeacher_id = teacher_id
+        pre_save_with_user.send(sender=Standard, instance=obj, user=request.user.pk)
         obj.save()
 
         new_data = {
@@ -191,7 +219,7 @@ class StandardListJson(BaseDatatableView):
         if search:
             qs = qs.filter(
                 Q(name__icontains=search) | Q(section__icontains=search)
-                | Q(classTeacher__firstName__icontains=search) | Q(classLocation__icontains=search)
+                | Q(classTeacher__name__icontains=search) | Q(classLocation__icontains=search)
                 | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
             )
 
@@ -206,13 +234,10 @@ class StandardListJson(BaseDatatableView):
               <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
                 <i class="trash alternate icon"></i>
               </button></td>'''.format(item.pk, item.pk),
-            if item.classTeacher:
-                teacher = item.classTeacher.firstName + " " + item.classTeacher.middleName + " " + item.classTeacher.lastName
-            else:
-                teacher = "N/A"
+            teacher = item.classTeacher.name if item.classTeacher and item.classTeacher.name else "N/A"
             json_data.append([
                 escape(item.name),
-                escape(item.section),
+                escape(item.section if item.section else "N/A"),
                 escape(teacher),
                 escape(item.startingRoll),
                 escape(item.endingRoll),
@@ -232,11 +257,11 @@ def get_class_detail(request, **kwargs):
         id = request.GET.get('id')
         obj = Standard.objects.get(pk=id, isDeleted=False, sessionID_id=request.session['current_session']['Id'])
         if obj.classTeacher:
-            teacher = obj.classTeacher.firstName + " " + obj.classTeacher.middleName + " " + obj.classTeacher.lastName
-            teacherID = obj.classTeacher.pk
+            teacher = obj.classTeacher.name if obj.classTeacher.name else "N/A"
+            teacherID = str(obj.classTeacher.pk)
         else:
             teacher = "N/A"
-            teacherID = "N/A"
+            teacherID = ""
         if obj.hasSection == "Yes":
             section = obj.section
         else:

@@ -1,0 +1,227 @@
+{% extends 'teacherApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Assigned Class</title>
+{% endblock %}
+
+{% block css %}
+    <style>
+        #AssignedStudentsTable_length, #StudentFeeDetailTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #AssignedStudentsTable_filter, #StudentFeeDetailTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+
+        #feeDetailSection {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">Assigned Class</div>
+            </div>
+            <div class="ui tab active" data-tab="user">
+                {% if not is_class_teacher %}
+                    <div class="ui warning message">
+                        <div class="header">Class Teacher Access Required</div>
+                        <p>{{ not_class_teacher_message|default:'This section is available only for assigned class teachers.' }}</p>
+                    </div>
+                {% else %}
+                    <div class="ui segment">
+                        <form class="ui tiny form" id="assignedClassForm">
+                            <div class="three fields">
+                                <div class="four wide field required">
+                                    <label>Class-Section</label>
+                                    <select class="ui search dropdown" id="standard">
+                                        <option value="">Search By Assigned Class</option>
+                                    </select>
+                                </div>
+                                <div class="two wide field" style="padding-top: 2.2em;">
+                                    <button type="button" class="ui mini green button" onclick="searchStudents()">
+                                        <i class="icon search"></i>
+                                        Search
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="row" style="padding-left: 5px; padding-right: 5px;">
+                        <div class="wide">
+                            <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                                   id="AssignedStudentsTable"
+                                   style="margin-top: 5px;width: 100%">
+                                <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Roll</th>
+                                    <th>Class-Section</th>
+                                    <th>Gender</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th>Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="feeDetailSection" class="ui segment" style="margin-top: 12px;">
+                        <h4 class="ui header" id="feeDetailHeader">Fee Details</h4>
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                               id="StudentFeeDetailTable"
+                               style="margin-top: 5px; width: 100%!important;">
+                            <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Status</th>
+                                <th>PayDate</th>
+                                <th>Amount</th>
+                                <th>Note</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    {% if is_class_teacher %}
+    <script>
+        let assignedStudentsTab;
+        let studentFeeDetailTab;
+
+        $(document).ready(function () {
+            getAssignedClassList();
+            initTables();
+        });
+
+        function getAssignedClassList() {
+            $.ajax({
+                type: 'get',
+                url: "{% url 'teacherAppAPI:get_assigned_class_list_api' %}",
+                success: function (response) {
+                    $('#standard').html('');
+                    $('#standard').append('<option value="">Search By Assigned Class</option>');
+                    if (response.success && Array.isArray(response.data)) {
+                        for (let j = 0; j < response.data.length; j++) {
+                            $('#standard').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
+                        }
+                    }
+                    $('#standard').dropdown('refresh');
+                },
+                error: function () {
+                    addErrorNotification('Unable to load assigned classes.');
+                }
+            });
+        }
+
+        function initTables() {
+            assignedStudentsTab = $('#AssignedStudentsTable').DataTable({
+                dom: 'Blfrtip',
+                scrollY: '350px',
+                scrollX: true,
+                stateSave: true,
+                fixedColumns: {
+                    left: 1,
+                    right: 1
+                },
+                buttons: [{
+                    extend: 'excel',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5]
+                    }
+                }],
+                columnDefs: [
+                    {name: 'name', targets: 0, orderable: true},
+                    {name: 'roll', targets: 1, orderable: true},
+                    {name: 'standardID__name', targets: 2, orderable: true},
+                    {name: 'gender', targets: 3, orderable: true},
+                    {name: 'phoneNumber', targets: 4, orderable: true},
+                    {name: 'email', targets: 5, orderable: true},
+                    {name: 'action', targets: 6, orderable: false}
+                ],
+                aaSorting: [[1, 'asc']],
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                pageLength: 10,
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "{% url 'teacherAppAPI:TeacherAssignedClassStudentsJson' %}",
+                    data: function (d) {
+                        d.standard = $('#standard').val();
+                    }
+                }
+            });
+
+            studentFeeDetailTab = $('#StudentFeeDetailTable').DataTable({
+                dom: 'Blfrtip',
+                scrollY: '320px',
+                scrollX: true,
+                stateSave: true,
+                fixedColumns: {
+                    left: 1,
+                    right: 1
+                },
+                buttons: [{
+                    extend: 'excel',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4]
+                    }
+                }],
+                columnDefs: [
+                    {name: 'month', targets: 0, orderable: true},
+                    {name: 'isPaid', targets: 1, orderable: true},
+                    {name: 'payDate', targets: 2, orderable: true},
+                    {name: 'amount', targets: 3, orderable: true},
+                    {name: 'note', targets: 4, orderable: true}
+                ],
+                aaSorting: [[0, 'asc']],
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                pageLength: 10,
+                processing: true,
+                serverSide: true,
+                ajax: "{% url 'teacherAppAPI:TeacherStudentFeeDetailsByStudentJson' %}"
+            });
+        }
+
+        function searchStudents() {
+            const standard = $('#standard').val();
+            if (standard === '') {
+                requiredFieldError();
+                return;
+            }
+            $('#feeDetailSection').hide();
+            assignedStudentsTab.ajax.reload(null, false);
+        }
+
+        function viewFeeDetail(studentId, standardId, studentName) {
+            $('#feeDetailHeader').text('Fee Details - ' + (studentName || 'Student'));
+            $('#feeDetailSection').show();
+            studentFeeDetailTab.ajax.url("{% url 'teacherAppAPI:TeacherStudentFeeDetailsByStudentJson' %}?student=" + studentId + '&standardByStudent=' + standardId).load();
+        }
+    </script>
+    {% endif %}
+{% endblock %}
