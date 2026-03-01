@@ -22,6 +22,8 @@ urlpatterns = [
     path('student_list/', student_list, name='student_list'),
     path('student_detail/<int:id>/', student_detail, name='student_detail'),
     path('edit_student/<int:id>/', edit_student_detail, name='edit_student_detail'),
+    path('student_id_cards/', student_id_cards, name='student_id_cards'),
+    path('student_id_card/<int:id>/', student_id_card_detail, name='student_id_card_detail'),
 
     # Exams
     path('manage_exams/', manage_exams, name='manage_exams'),

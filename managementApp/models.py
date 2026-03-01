@@ -500,3 +500,25 @@ class Event(models.Model):
 
     class Meta:
         verbose_name_plural = 'v) Event'
+
+
+class StudentIdCardRecord(models.Model):
+    ACTION_CHOICES = (
+        ('issue', 'Issue'),
+        ('reissue', 'Re-Issue'),
+        ('print', 'Print'),
+    )
+
+    studentID = models.ForeignKey(Student, blank=True, null=True, on_delete=models.CASCADE)
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    actionType = models.CharField(max_length=50, choices=ACTION_CHOICES, default='print')
+    validTill = models.DateField(blank=True, null=True)
+    remark = models.CharField(max_length=500, blank=True, null=True, default='')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = 'w) Student ID Card Records'

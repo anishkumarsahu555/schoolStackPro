@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 import json
 
+from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
 
 from homeApp.models import SchoolSession
@@ -262,7 +263,7 @@ def teacher_student_attendance(request):
 @login_required
 @check_groups('Teaching')
 def teacher_manage_event(request):
-    _, _, is_class_teacher = _bootstrap_teacher_context(request)
+    _, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
     if 'current_session' not in request.session:
         teacher = TeacherDetail.objects.select_related('sessionID', 'schoolID').filter(
             userID_id=request.user.id,
@@ -282,7 +283,17 @@ def teacher_manage_event(request):
                 for s in session_qs
             ]
 
-    return render(request, 'teacherApp/events_list.html', {'is_class_teacher': is_class_teacher})
+    events = Event.objects.select_related('eventID').filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+    ).filter(
+        Q(eventID__isnull=True) | Q(eventID__audience__in=['general', 'teacherapp', 'all_apps'])
+    ).order_by('-startDate', '-datetime') if current_session_id else Event.objects.none()
+
+    return render(request, 'teacherApp/events_list.html', {
+        'is_class_teacher': is_class_teacher,
+        'events': events,
+    })
 
 
 @login_required

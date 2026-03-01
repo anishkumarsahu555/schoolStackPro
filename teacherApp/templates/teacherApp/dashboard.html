@@ -80,6 +80,80 @@
             height: 280px;
         }
 
+        .teacher-dashboard .event-list .item .header {
+            color: var(--app-text) !important;
+        }
+
+        .teacher-dashboard .event-list .item .description {
+            color: var(--app-muted) !important;
+        }
+
+        .teacher-dashboard .event-list {
+            display: grid;
+            gap: 0.65rem;
+        }
+
+        .teacher-dashboard .event-list .item {
+            margin: 0 !important;
+            border: 1px solid var(--app-border) !important;
+            border-radius: 12px !important;
+            background: var(--app-surface);
+            padding: 0.7rem 0.75rem !important;
+            display: grid !important;
+            grid-template-columns: 36px minmax(0, 1fr) auto;
+            gap: 0.7rem;
+            align-items: flex-start;
+        }
+
+        .teacher-dashboard .event-list .item .icon {
+            width: 36px;
+            height: 36px;
+            margin: 0 !important;
+            border-radius: 10px;
+            background: rgba(26, 115, 232, 0.12);
+            color: var(--app-brand);
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .teacher-dashboard .event-list .event-date-pill {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--app-brand);
+            background: rgba(26, 115, 232, 0.12);
+            border: 1px solid rgba(26, 115, 232, 0.2);
+            border-radius: 999px;
+            padding: 0.22rem 0.58rem;
+            white-space: nowrap;
+            line-height: 1.2;
+            margin-top: 0.1rem;
+        }
+
+        html[data-theme="dark"] .teacher-dashboard .event-list .item .header {
+            color: #f3f6fc !important;
+        }
+
+        html[data-theme="dark"] .teacher-dashboard .event-list .item .description {
+            color: #cad4e2 !important;
+        }
+
+        html[data-theme="dark"] .teacher-dashboard .event-list .item {
+            background: #1e2632;
+            border-color: #324156 !important;
+        }
+
+        html[data-theme="dark"] .teacher-dashboard .event-list .item .icon {
+            background: rgba(116, 169, 255, 0.2);
+            color: #a8cbff;
+        }
+
+        html[data-theme="dark"] .teacher-dashboard .event-list .event-date-pill {
+            color: #d7e7ff;
+            background: rgba(116, 169, 255, 0.18);
+            border-color: rgba(116, 169, 255, 0.34);
+        }
+
         @media (max-width: 767px) {
             .teacher-dashboard .hero {
                 padding: 1rem;
@@ -87,6 +161,15 @@
 
             .teacher-dashboard .kpi-value {
                 font-size: 1.4rem;
+            }
+
+            .teacher-dashboard .event-list .item {
+                grid-template-columns: 32px 1fr;
+            }
+
+            .teacher-dashboard .event-list .event-date-pill {
+                justify-self: start;
+                grid-column: 2;
             }
         }
     </style>
@@ -164,15 +247,18 @@
                                 <div class="content">Upcoming Events (30 Days)</div>
                             </h4>
                             {% if upcoming_events %}
-                                <div class="ui relaxed divided list">
+                                <div class="ui relaxed divided list event-list">
                                     {% for event in upcoming_events %}
                                         <div class="item">
                                             <i class="calendar outline middle aligned icon"></i>
                                             <div class="content">
                                                 <div class="header">{{ event.title|default:"Untitled Event" }}</div>
                                                 <div class="description">
-                                                    {{ event.startDate|date:'d M Y' }}{% if event.endDate %} to {{ event.endDate|date:'d M Y' }}{% endif %}
+                                                    {{ event.message|default:'No description' }}
                                                 </div>
+                                            </div>
+                                            <div class="event-date-pill">
+                                                {{ event.startDate|date:'d M Y' }}{% if event.endDate %} - {{ event.endDate|date:'d M Y' }}{% endif %}
                                             </div>
                                         </div>
                                     {% endfor %}

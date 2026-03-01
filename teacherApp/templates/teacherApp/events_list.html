@@ -5,55 +5,320 @@
     <title>Events List</title>
 {% endblock %}
 
-{% block css %}
+{% block body %}
     <style>
-        #TeacherEventTable_length {
-            left: 20px;
-            position: absolute;
+        .events-shell {
+            display: grid;
+            gap: 0.85rem;
         }
 
-        #TeacherEventTable_filter {
-            float: right;
+        .events-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.7rem;
         }
 
-        .dt-buttons {
-            position: absolute;
-            left: 174px;
+        .stat-box {
+            border-radius: 14px;
+            border: 1px solid var(--dm-border, #d8e2f0);
+            background: var(--dm-card-bg, #ffffff);
+            padding: 0.7rem 0.8rem;
+            box-shadow: 0 6px 16px rgba(29, 48, 77, 0.08);
         }
 
-        input[type=search] {
-            width: 100px !important;
+        .stat-label {
+            color: var(--dm-muted, #5f6d7d);
+            font-size: 0.78rem;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .stat-value {
+            color: var(--dm-text, #1f2f43);
+            font-weight: 700;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .events-filter {
+            border-radius: 14px;
+            border: 1px solid var(--dm-border, #d8e2f0);
+            background: var(--dm-card-bg, #ffffff);
+            padding: 0.75rem;
+        }
+
+        .events-wrap {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(275px, 1fr));
+            gap: 0.8rem;
+        }
+
+        .event-card {
+            border: 1px solid var(--dm-border, #d8e2f0);
+            border-radius: 14px;
+            background: var(--dm-card-bg, #ffffff);
+            box-shadow: 0 6px 18px rgba(30, 54, 92, 0.08);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 58px auto;
+            min-height: 160px;
+        }
+
+        .event-date {
+            background: linear-gradient(180deg, #2a6fd8 0%, #1e57ad 100%);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.06rem;
+            padding: 0.35rem 0.2rem;
+        }
+
+        .event-date .day {
+            font-size: 1.08rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .event-date .month {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .event-content {
+            padding: 0.72rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+
+        .event-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.4rem;
+        }
+
+        .event-title {
+            margin: 0;
+            font-size: 0.98rem;
+            line-height: 1.3;
+            color: var(--dm-text, #1f2f43);
+            font-weight: 700;
+        }
+
+        .event-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.18rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+
+        .event-chip.type {
+            background: rgba(42, 111, 216, 0.13);
+            color: #2a6fd8;
+            border-color: rgba(42, 111, 216, 0.25);
+        }
+
+        .event-chip.status.upcoming {
+            background: rgba(44, 150, 90, 0.15);
+            color: #1f8a4f;
+            border-color: rgba(44, 150, 90, 0.28);
+        }
+
+        .event-chip.status.ongoing {
+            background: rgba(246, 153, 63, 0.16);
+            color: #c06a13;
+            border-color: rgba(246, 153, 63, 0.3);
+        }
+
+        .event-chip.status.past {
+            background: rgba(117, 128, 146, 0.16);
+            color: #586475;
+            border-color: rgba(117, 128, 146, 0.25);
+        }
+
+        .event-meta {
+            color: var(--dm-muted, #5f6d7d);
+            font-size: 0.8rem;
+            display: grid;
+            gap: 0.15rem;
+        }
+
+        .event-meta b {
+            color: var(--dm-text, #2d4059);
+        }
+
+        .event-desc {
+            color: var(--dm-text, #1f2f43);
+            font-size: 0.84rem;
+            line-height: 1.46;
+            border-top: 1px dashed var(--dm-border, #d8e2f0);
+            padding-top: 0.4rem;
+        }
+
+        .event-empty {
+            border: 1px dashed var(--dm-border, #d8e2f0);
+            border-radius: 14px;
+            padding: 1.15rem;
+            text-align: center;
+            color: var(--dm-muted, #5f6d7d);
+            background: var(--dm-card-bg, #ffffff);
+        }
+
+        html[data-theme="dark"] .stat-box,
+        html[data-theme="dark"] .events-filter,
+        html[data-theme="dark"] .event-card,
+        html[data-theme="dark"] .event-empty {
+            background: #111a2b !important;
+            border-color: #2a3856 !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32) !important;
+        }
+
+        html[data-theme="dark"] .stat-label,
+        html[data-theme="dark"] .event-meta,
+        html[data-theme="dark"] .event-empty {
+            color: #9fb1cd !important;
+        }
+
+        html[data-theme="dark"] .stat-value,
+        html[data-theme="dark"] .event-title,
+        html[data-theme="dark"] .event-meta b,
+        html[data-theme="dark"] .event-desc {
+            color: #e6eefc !important;
+        }
+
+        html[data-theme="dark"] .event-desc {
+            border-top-color: #314262 !important;
+        }
+
+        html[data-theme="dark"] #eventSearch,
+        html[data-theme="dark"] .events-filter .ui.dropdown,
+        html[data-theme="dark"] .events-filter .ui.search.dropdown > .text,
+        html[data-theme="dark"] .events-filter .ui.search.dropdown .menu > .item {
+            color: #e6eefc !important;
+        }
+
+        html[data-theme="dark"] .events-filter .ui.input > input {
+            background: #0f1726 !important;
+            border-color: #2c3a57 !important;
+            color: #e6eefc !important;
+        }
+
+        @media (max-width: 767px) {
+            .events-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .event-card {
+                grid-template-columns: 50px auto;
+            }
+
+            .event-content {
+                padding: 0.64rem;
+            }
         }
     </style>
-{% endblock %}
 
-{% block body %}
-    <div class="ui left aligned basic  grid">
+    <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
+            <div class="ui pointing secondary menu">
                 <div style="cursor: pointer;" class="item active" data-tab="user">Events List</div>
             </div>
-            <div class="ui tab " data-tab="user">
-                <div class="row" style="padding-left: 5px; padding-right: 5px">
-                    <div class="wide">
-                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
-                               id="TeacherEventTable"
-                               style="margin-top: 5px;width: 100%">
-                            <thead>
-                            <tr>
-                                <th>Event Type</th>
-                                <th>Audience</th>
-                                <th>Title</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                                <th>Description</th>
-                                <th>AddedOn</th>
-                            </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+
+            <div class="events-shell">
+                <div class="events-stats">
+                    <div class="stat-box">
+                        <div class="stat-label">Total Events</div>
+                        <div class="stat-value" id="statTotal">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Upcoming</div>
+                        <div class="stat-value" id="statUpcoming">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Ongoing</div>
+                        <div class="stat-value" id="statOngoing">0</div>
                     </div>
                 </div>
+
+                <div class="events-filter ui tiny form">
+                    <div class="fields">
+                        <div class="five wide field">
+                            <label>Search</label>
+                            <input type="text" id="eventSearch" placeholder="Search title or description">
+                        </div>
+                        <div class="three wide field">
+                            <label>Type</label>
+                            <select class="ui search dropdown" id="eventTypeFilter">
+                                <option value="">All Types</option>
+                            </select>
+                        </div>
+                        <div class="three wide field">
+                            <label>Month</label>
+                            <select class="ui search dropdown" id="eventMonthFilter">
+                                <option value="">All Months</option>
+                            </select>
+                        </div>
+                        <div class="three wide field">
+                            <label>Status</label>
+                            <select class="ui search dropdown" id="eventStatusFilter">
+                                <option value="">All Status</option>
+                                <option value="upcoming">Upcoming</option>
+                                <option value="ongoing">Ongoing</option>
+                                <option value="past">Past</option>
+                            </select>
+                        </div>
+                        <div class="two wide field" style="padding-top:2em;">
+                            <button class="ui mini red button" type="button" id="clearEventFilter">
+                                <i class="times icon"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {% if events %}
+                    <div class="events-wrap" id="eventsWrap">
+                        {% for row in events %}
+                            <div class="event-card"
+                                 data-title="{{ row.title|default:'Untitled Event'|lower }}"
+                                 data-message="{{ row.message|default:''|lower }}"
+                                 data-type="{{ row.eventID.name|default:'General'|lower }}"
+                                 data-start="{{ row.startDate|date:'Y-m-d' }}"
+                                 data-end="{{ row.endDate|date:'Y-m-d' }}">
+                                <div class="event-date">
+                                    <div class="day">{{ row.startDate|date:'d'|default:'--' }}</div>
+                                    <div class="month">{{ row.startDate|date:'M'|default:'---' }}</div>
+                                </div>
+                                <div class="event-content">
+                                    <div class="event-top">
+                                        <h4 class="event-title">{{ row.title|default:'Untitled Event' }}</h4>
+                                        <span class="event-chip type">{{ row.eventID.name|default:'General' }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="event-chip status" data-role="status-chip">Status</span>
+                                    </div>
+                                    <div class="event-meta">
+                                        <div><b>Audience:</b> {% if row.eventID %}{{ row.eventID.get_audience_display }}{% else %}General{% endif %}</div>
+                                        <div><b>Duration:</b> {{ row.startDate|date:'d M Y'|default:'N/A' }} - {{ row.endDate|date:'d M Y'|default:'N/A' }}</div>
+                                    </div>
+                                    <div class="event-desc">{{ row.message|default:'No description available.' }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="event-empty" id="eventEmpty" style="display:none;">No events match the selected filters.</div>
+                {% else %}
+                    <div class="event-empty">No events available.</div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -61,37 +326,129 @@
 
 {% block js %}
     <script>
-        let teacherEventTab;
+        function computeStatus(startRaw, endRaw) {
+            if (!startRaw && !endRaw) return 'upcoming';
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const startDate = startRaw ? new Date(startRaw + 'T00:00:00') : null;
+            const endDate = endRaw ? new Date(endRaw + 'T00:00:00') : startDate;
 
-        teacherEventTab = $('#TeacherEventTable').DataTable({
-            dom: 'Blfrtip',
-            scrollY: '350px',
-            scrollX: true,
-            stateSave: true,
-            fixedColumns: {
-                left: 1
-            },
-            buttons: [{
-                extend: 'excel',
-                exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6]
+            if (startDate && today < startDate) return 'upcoming';
+            if (startDate && endDate && today >= startDate && today <= endDate) return 'ongoing';
+            return 'past';
+        }
+
+        function statusLabel(status) {
+            if (status === 'ongoing') return 'Ongoing';
+            if (status === 'past') return 'Past';
+            return 'Upcoming';
+        }
+
+        function normalizeMonth(startRaw) {
+            if (!startRaw) return '';
+            const d = new Date(startRaw + 'T00:00:00');
+            if (Number.isNaN(d.getTime())) return '';
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            return y + '-' + m;
+        }
+
+        function monthLabel(value) {
+            const parts = value.split('-');
+            if (parts.length !== 2) return value;
+            const d = new Date(parts[0], Number(parts[1]) - 1, 1);
+            return d.toLocaleString(undefined, {month: 'long', year: 'numeric'});
+        }
+
+        function applyEventFilters() {
+            const q = ($('#eventSearch').val() || '').toLowerCase().trim();
+            const type = ($('#eventTypeFilter').val() || '').toLowerCase();
+            const month = ($('#eventMonthFilter').val() || '').toLowerCase();
+            const status = ($('#eventStatusFilter').val() || '').toLowerCase();
+
+            const cards = document.querySelectorAll('#eventsWrap .event-card');
+            let visibleCount = 0;
+            let upcomingCount = 0;
+            let ongoingCount = 0;
+
+            cards.forEach(function (card) {
+                const title = card.getAttribute('data-title') || '';
+                const message = card.getAttribute('data-message') || '';
+                const typeValue = card.getAttribute('data-type') || '';
+                const startRaw = card.getAttribute('data-start') || '';
+                const endRaw = card.getAttribute('data-end') || '';
+                const monthValue = normalizeMonth(startRaw);
+                const cardStatus = computeStatus(startRaw, endRaw);
+
+                const chip = card.querySelector('[data-role="status-chip"]');
+                chip.textContent = statusLabel(cardStatus);
+                chip.classList.remove('upcoming', 'ongoing', 'past');
+                chip.classList.add(cardStatus);
+
+                const matchesSearch = !q || title.includes(q) || message.includes(q);
+                const matchesType = !type || typeValue === type;
+                const matchesMonth = !month || monthValue === month;
+                const matchesStatus = !status || cardStatus === status;
+
+                const show = matchesSearch && matchesType && matchesMonth && matchesStatus;
+                card.style.display = show ? '' : 'none';
+                if (show) {
+                    visibleCount += 1;
+                    if (cardStatus === 'upcoming') upcomingCount += 1;
+                    if (cardStatus === 'ongoing') ongoingCount += 1;
                 }
-            }],
-            columnDefs: [
-                {name: 'eventID__name', targets: 0, orderable: true},
-                {name: 'eventID__audience', targets: 1, orderable: true},
-                {name: 'title', targets: 2, orderable: true},
-                {name: 'startDate', targets: 3, orderable: true},
-                {name: 'endDate', targets: 4, orderable: true},
-                {name: 'message', targets: 5, orderable: true},
-                {name: 'datetime', targets: 6, orderable: true}
-            ],
-            aaSorting: [[3, 'desc']],
-            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
-            pageLength: 10,
-            processing: true,
-            serverSide: true,
-            ajax: "{% url 'teacherAppAPI:TeacherEventListJson' %}"
-        });
+            });
+
+            document.getElementById('statTotal').textContent = String(visibleCount);
+            document.getElementById('statUpcoming').textContent = String(upcomingCount);
+            document.getElementById('statOngoing').textContent = String(ongoingCount);
+
+            const empty = document.getElementById('eventEmpty');
+            if (empty) {
+                empty.style.display = visibleCount === 0 ? '' : 'none';
+            }
+        }
+
+        function initEventFilters() {
+            const cards = document.querySelectorAll('#eventsWrap .event-card');
+            if (!cards.length) return;
+
+            const typeSet = new Set();
+            const monthSet = new Set();
+
+            cards.forEach(function (card) {
+                const type = card.getAttribute('data-type');
+                if (type) typeSet.add(type);
+                const month = normalizeMonth(card.getAttribute('data-start') || '');
+                if (month) monthSet.add(month);
+            });
+
+            const typeFilter = $('#eventTypeFilter');
+            [...typeSet].sort().forEach(function (t) {
+                const label = t.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+                typeFilter.append('<option value="' + t + '">' + label + '</option>');
+            });
+
+            const monthFilter = $('#eventMonthFilter');
+            [...monthSet].sort().forEach(function (m) {
+                monthFilter.append('<option value="' + m + '">' + monthLabel(m) + '</option>');
+            });
+
+            $('#eventTypeFilter, #eventMonthFilter, #eventStatusFilter').dropdown();
+
+            $('#eventSearch').on('input', applyEventFilters);
+            $('#eventTypeFilter, #eventMonthFilter, #eventStatusFilter').on('change', applyEventFilters);
+            $('#clearEventFilter').on('click', function () {
+                $('#eventSearch').val('');
+                $('#eventTypeFilter').dropdown('clear');
+                $('#eventMonthFilter').dropdown('clear');
+                $('#eventStatusFilter').dropdown('clear');
+                applyEventFilters();
+            });
+
+            applyEventFilters();
+        }
+
+        $(initEventFilters);
     </script>
 {% endblock %}

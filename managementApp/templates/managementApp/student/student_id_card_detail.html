@@ -1,0 +1,325 @@
+{% extends base_template|default:'managementApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Student ID Card</title>
+{% endblock %}
+
+{% block css %}
+<style>
+    .id-card-page {
+        display: flex;
+        justify-content: center;
+        padding: 1rem 0.5rem;
+    }
+
+    .id-card-shell {
+        width: 5.4cm;
+        height: 8.6cm;
+        background: #f3f5f8;
+        color: #122030;
+        border: 2px solid #2452a3;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 8px 18px rgba(12, 30, 66, 0.14);
+        display: flex;
+        flex-direction: column;
+        font-size: 8px;
+    }
+
+    .id-head {
+        background: linear-gradient(180deg, #2d67c4 0%, #2457ad 100%);
+        color: #fff;
+        text-align: center;
+        padding: 0.12cm 0.14cm 0.14cm;
+    }
+
+    .id-school {
+        display: grid;
+        grid-template-columns: 0.5cm auto;
+        align-items: center;
+        column-gap: 0.08cm;
+        margin-bottom: 0.05cm;
+    }
+
+    .school-logo {
+        width: 0.5cm;
+        height: 0.5cm;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .school-logo-fallback {
+        width: 0.5cm;
+        height: 0.5cm;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 8px;
+        font-weight: 700;
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .school-name {
+        text-align: left;
+        font-size: 8px;
+        font-weight: 700;
+        line-height: 1.1;
+        max-height: 0.36cm;
+        overflow: hidden;
+    }
+
+    .id-head .title {
+        font-size: 4.4mm;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        line-height: 1.05;
+    }
+
+    .id-head .subtitle {
+        font-size: 3.3mm;
+        opacity: 0.96;
+        line-height: 1.1;
+    }
+
+    .id-body {
+        padding: 0.1cm 0.14cm 0.08cm;
+        display: grid;
+        gap: 0.01cm;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .photo-wrap {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 0.03cm;
+    }
+
+    .photo-wrap img,
+    .photo-fallback {
+        width: 1.65cm;
+        height: 1.95cm;
+        border-radius: 10px;
+        border: 1px solid #cad8ee;
+        object-fit: cover;
+        background: #eef3fb;
+    }
+
+    .photo-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: #3569ba;
+        font-weight: 700;
+    }
+
+    .line {
+        display: grid;
+        grid-template-columns: 1.9cm auto;
+        column-gap: 0.04cm;
+        border-bottom: 1px dashed #d7e1ef;
+        padding-bottom: 0;
+        line-height: 1.08;
+    }
+
+    .line .k {
+        color: #324f75;
+        font-weight: 700;
+        white-space: nowrap;
+        font-size: 9px;
+    }
+
+    .line .v {
+        color: #1b2e46;
+        font-weight: 700;
+        word-break: break-word;
+        font-size: 9px;
+    }
+
+    .line.father .k,
+    .line.father .v {
+        font-size: 8.8px;
+    }
+
+    .line.address .v {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .id-foot {
+        padding: 0.06cm 0.14cm 0.08cm;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+
+    .validity {
+        font-size: 7px;
+        color: #1e4177;
+        font-weight: 700;
+    }
+
+    .sign {
+        text-align: center;
+        font-size: 6.5px;
+        color: #3a4f67;
+        min-width: 1.55cm;
+    }
+
+    .sign .line-sign {
+        border-top: 1px solid #405f89;
+        margin-bottom: 2px;
+    }
+
+    .toolbar {
+        text-align: center;
+        margin-bottom: 0.7rem;
+    }
+
+    @media print {
+        body * {
+            visibility: hidden !important;
+        }
+
+        .id-card-page,
+        .id-card-page * {
+            visibility: visible !important;
+        }
+
+        .id-card-page {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: flex-start !important;
+            background: #fff !important;
+        }
+
+        .id-card-shell {
+            box-shadow: none !important;
+        }
+    }
+</style>
+{% if embed_mode %}
+<style>
+    .material-sidenav,
+    .top-header,
+    .page-content-header {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0.5rem !important;
+    }
+</style>
+{% endif %}
+{% endblock %}
+
+{% block body %}
+{% if not embed_mode %}
+<div class="toolbar">
+    <button class="ui mini blue button" onclick="window.print()">
+        <i class="print icon"></i>
+        Print ID Card
+    </button>
+    <button class="ui mini green button" onclick="logPrintRecord()">
+        <i class="save icon"></i>
+        Save Print Record
+    </button>
+    <a class="ui mini button" href="{% url 'managementApp:student_id_cards' %}">
+        <i class="arrow left icon"></i>
+        Back To Tracker
+    </a>
+</div>
+{% endif %}
+
+<div class="id-card-page">
+    <div class="id-card-shell" id="student-id-card">
+        <div class="id-head">
+            <div class="id-school">
+                {% if school and school.logo %}
+                    <img class="school-logo" src="{{ school.logo.url }}" alt="{{ school_name }}">
+                {% else %}
+                    <div class="school-logo-fallback">{{ school_name|slice:":1"|upper }}</div>
+                {% endif %}
+                <div class="school-name">{{ school_name }}</div>
+            </div>
+            <div class="title">STUDENT ID CARD</div>
+            <div class="subtitle">School Identification</div>
+        </div>
+
+        <div class="id-body">
+            <div class="photo-wrap">
+                {% if instance.photo %}
+                    <img src="{{ instance.photo.url }}" alt="{{ instance.name|default:'Student' }}">
+                {% else %}
+                    <div class="photo-fallback">{{ instance.name|default:'S'|slice:":1"|upper }}</div>
+                {% endif %}
+            </div>
+
+            <div class="line"><div class="k">Regd. No.:</div><div class="v">{{ instance.registrationCode|default:'N/A' }}</div></div>
+            <div class="line"><div class="k">Name :</div><div class="v">{{ instance.name|default:'N/A' }}</div></div>
+            <div class="line"><div class="k">Class :</div><div class="v">{{ instance.standardID.name|default:'N/A' }}{% if instance.standardID.section %} - {{ instance.standardID.section }}{% endif %}</div></div>
+            <div class="line"><div class="k">Roll no.:</div><div class="v">{{ instance.roll|default:'N/A' }}</div></div>
+            <div class="line father"><div class="k">Father's Name:</div><div class="v">{{ instance.parentID.fatherName|default:'N/A' }}</div></div>
+            <div class="line"><div class="k">D.O.B :</div><div class="v">{{ instance.dob|date:'d-m-Y'|default:'N/A' }}</div></div>
+            <div class="line"><div class="k">Blood group :</div><div class="v">{{ instance.bloodGroup|default:'N/A' }}</div></div>
+            <div class="line address"><div class="k">Address :</div><div class="v">{% firstof instance.presentAddress instance.permanentAddress instance.parentID.fatherAddress instance.parentID.motherAddress "N/A" %}</div></div>
+            <div class="line"><div class="k">Contact No.:</div><div class="v">{{ instance.phoneNumber|default:instance.parentID.phoneNumber|default:'N/A' }}</div></div>
+        </div>
+
+        <div class="id-foot">
+            <div class="validity">Valid till : {{ valid_till_label }}</div>
+            <div class="sign">
+                <div class="line-sign"></div>
+                Principal Signature
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    function logPrintRecord() {
+        let data = new FormData();
+        data.append('student_id', '{{ instance.id }}');
+        data.append('action_type', 'print');
+        data.append('valid_till', '2026-12-31');
+        data.append('remark', 'Printed from ID card detail page');
+        data.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'managementAppAPI:add_student_id_card_record_api' %}",
+            data: data,
+            contentType: false,
+            processData: false,
+            cache: false,
+            success: function (response) {
+                if (response.success) {
+                    addSuccessNotification(response.message, response.color || 'green');
+                } else {
+                    addErrorNotification(response.message, response.color || 'red');
+                }
+            },
+            error: function () {
+                addErrorNotification('Unable to save print record.');
+            }
+        });
+    }
+</script>
+{% endblock %}

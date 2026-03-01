@@ -1,0 +1,485 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Student ID Cards</title>
+{% endblock %}
+
+{% block body %}
+    <style>
+        #IdCardTrackerTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #IdCardTrackerTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+
+        .id-actions-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.35rem;
+        }
+
+        .id-actions {
+            display: flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 767px) {
+            .id-actions-row {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active">Student ID Card Manager</div>
+            </div>
+
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="id card icon"></i>
+                    Generate Card And Track Record
+                </h4>
+
+                <form class="ui tiny form" id="idCardForm">{% csrf_token %}
+                    <div class="five fields">
+                        <div class="field required">
+                            <label>Class</label>
+                            <select class="ui search dropdown" id="standard" onchange="getStudentList()">
+                                <option value="">Search By Class</option>
+                            </select>
+                        </div>
+                        <div class="field required">
+                            <label>Student</label>
+                            <select class="ui search dropdown" id="student">
+                                <option value="">Search By Student</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Action</label>
+                            <select class="ui search dropdown" id="action_type">
+                                <option value="print">Print</option>
+                                <option value="issue">Issue</option>
+                                <option value="reissue">Re-Issue</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Valid Till</label>
+                            <div class="ui calendar" id="valid_tillCal">
+                                <div class="ui input left icon">
+                                    <i class="calendar icon"></i>
+                                    <input type="text" id="valid_till" placeholder="Valid Till">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Remark</label>
+                            <input type="text" id="remark" placeholder="Any note">
+                        </div>
+                    </div>
+                    <div class="id-actions-row">
+                        <div class="id-actions">
+                            <button type="button" class="ui mini blue button" onclick="openCardPreview()">
+                                <i class="id card outline icon"></i>
+                                View Card
+                            </button>
+                            <button type="button" class="ui mini green button" onclick="saveRecordTracker()">
+                                <i class="save icon"></i>
+                                Save Record
+                            </button>
+                            <button type="button" class="ui mini button" onclick="searchTracker()">
+                                <i class="search icon"></i>
+                                Search
+                            </button>
+                            <button type="button" class="ui mini red button" onclick="resetTracker()">
+                                <i class="times circle icon"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="row" style="padding-left: 5px; padding-right: 5px">
+                <div class="wide">
+                    <div class="ui tiny form" style="margin-bottom: 0.65rem;">
+                        <div class="fields">
+                            <div class="field">
+                                <label>Filter Class</label>
+                                <select class="ui search dropdown" id="filter_class">
+                                    <option value="">All Classes</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Filter Action</label>
+                                <select class="ui search dropdown" id="filter_action">
+                                    <option value="">All Actions</option>
+                                    <option value="print">Print</option>
+                                    <option value="issue">Issue</option>
+                                    <option value="reissue">Re-Issue</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Filter Edited By</label>
+                                <input type="text" id="filter_editor" placeholder="Type editor name">
+                            </div>
+                            <div class="field" style="padding-top: 2em;">
+                                <button type="button" class="ui mini button" onclick="applyDataTableFilters()">
+                                    <i class="filter icon"></i>
+                                    Apply Filter
+                                </button>
+                                <button type="button" class="ui mini red button" onclick="clearDataTableFilters()">
+                                    <i class="times icon"></i>
+                                    Clear Filter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                           id="IdCardTrackerTable"
+                           style="margin-top: 5px;width: 100%">
+                        <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Regd. No.</th>
+                            <th>Class</th>
+                            <th>Roll</th>
+                            <th>Action</th>
+                            <th>Valid Till</th>
+                            <th>Remark</th>
+                            <th>Edited By</th>
+                            <th>Added On</th>
+                            <th>Card</th>
+                        </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="ui large modal" id="idCardPreviewModal">
+                <div class="header">
+                    Student ID Card Preview
+                </div>
+                <div class="content" id="idCardPreviewContainer" style="padding: 0; min-height: 360px;">
+                </div>
+                <div class="actions">
+                    <div class="ui button" onclick="printCardInModal()">
+                        <i class="print icon"></i>
+                        Print
+                    </div>
+                    <div class="ui primary deny button">
+                        Close
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let trackerTab;
+
+        $(function () {
+            $('#valid_tillCal').calendar({
+                monthFirst: false,
+                type: 'date',
+                formatter: {
+                    date: function (date) {
+                        if (!date) return '';
+                        return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                    }
+                }
+            });
+            $('#valid_tillCal').calendar('set date', new Date(2026, 11, 31));
+            $('#filter_class').dropdown();
+            $('#filter_action').dropdown();
+            $('#standard').on('change', function () { clearFieldError('standard'); });
+            $('#student').on('change', function () { clearFieldError('student'); });
+            $('#action_type').on('change', function () { clearFieldError('action_type'); });
+            $('#valid_till').on('input', function () { clearFieldError('valid_till'); });
+            $('#filter_class').on('change', function () { applyDataTableFilters(); });
+            $('#filter_action').on('change', function () { applyDataTableFilters(); });
+            $('#filter_editor').on('input', function () {
+                if ($(this).val().length >= 2 || $(this).val().length === 0) {
+                    applyDataTableFilters();
+                }
+            });
+            $('#remark').on('input', function () {
+                if ($(this).val().length > 250) {
+                    $(this).val($(this).val().slice(0, 250));
+                }
+            });
+
+            getStandardList();
+            trackerTab = $('#IdCardTrackerTable').DataTable({
+                dom: 'Blfrtip',
+                scrollY: '350px',
+                scrollX: true,
+                stateSave: true,
+                fixedColumns: {
+                    left: 1,
+                    right: 1
+                },
+                buttons: [{
+                    extend: 'excel',
+                    exportOptions: {columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]}
+                }],
+                columnDefs: [
+                    {name: 'studentID__name', targets: 0, orderable: true},
+                    {name: 'studentID__registrationCode', targets: 1, orderable: true},
+                    {name: 'studentID__standardID__name', targets: 2, orderable: true},
+                    {name: 'studentID__roll', targets: 3, orderable: true},
+                    {name: 'actionType', targets: 4, orderable: true},
+                    {name: 'validTill', targets: 5, orderable: true},
+                    {name: 'remark', targets: 6, orderable: true},
+                    {name: 'lastEditedBy', targets: 7, orderable: true},
+                    {name: 'datetime', targets: 8, orderable: true},
+                    {name: 'action', targets: 9, orderable: false}
+                ],
+                aaSorting: [[8, 'desc']],
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                pageLength: 10,
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "{% url 'managementAppAPI:StudentIdCardRecordListJson' %}",
+                    data: function (d) {
+                        d.standard = $('#filter_class').val() || '';
+                        d.student = $('#student').val() || '';
+                        d.action_filter = $('#filter_action').val() || '';
+                        d.edited_by_filter = $('#filter_editor').val() || '';
+                    }
+                }
+            });
+        });
+
+        function getStandardList() {
+            $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}",
+                success: function (response) {
+                    $('#standard').html('<option value=\"\">Search By Class</option>');
+                    $('#filter_class').html('<option value=\"\">All Classes</option>');
+                    for (let i = 0; i < response.data.length; i++) {
+                        $('#standard').append('<option value=\"' + response.data[i]['ID'] + '\">' + response.data[i]['Name'] + '</option>');
+                        $('#filter_class').append('<option value=\"' + response.data[i]['ID'] + '\">' + response.data[i]['Name'] + '</option>');
+                    }
+                    $('#standard').dropdown('refresh');
+                    $('#filter_class').dropdown('refresh');
+                },
+                error: function () {
+                    addErrorNotification('Unable to load classes.');
+                }
+            });
+        }
+
+        function getStudentList() {
+            clearFieldError('standard');
+            clearFieldError('student');
+            const standard = $('#standard').val();
+            $('#student').dropdown('clear');
+            $('#student').html('<option value=\"\">Search By Student</option>');
+            if (!standard) {
+                $('#student').dropdown('refresh');
+                return;
+            }
+            $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppAPI:get_student_list_by_class_api' %}",
+                data: {standard: standard},
+                success: function (response) {
+                    for (let i = 0; i < response.data.length; i++) {
+                        $('#student').append('<option value=\"' + response.data[i]['ID'] + '\">' + response.data[i]['Name'] + '</option>');
+                    }
+                    $('#student').dropdown('refresh');
+                },
+                error: function () {
+                    addErrorNotification('Unable to load students.');
+                }
+            });
+        }
+
+        function setFieldError(id, isError) {
+            const $field = $('#' + id).closest('.field');
+            if (isError) {
+                $field.addClass('error');
+            } else {
+                $field.removeClass('error');
+            }
+        }
+
+        function clearFieldError(id) {
+            setFieldError(id, false);
+        }
+
+        function clearTrackerValidation() {
+            ['standard', 'student', 'action_type', 'valid_till'].forEach(function (id) {
+                clearFieldError(id);
+            });
+        }
+
+        function validateSelection(requireClass) {
+            clearTrackerValidation();
+
+            const standard = $('#standard').val();
+            const student = $('#student').val();
+            let isValid = true;
+
+            if (requireClass && !standard) {
+                setFieldError('standard', true);
+                isValid = false;
+            }
+            if (!student) {
+                setFieldError('student', true);
+                isValid = false;
+            }
+
+            if (!isValid) {
+                requiredFieldError();
+            }
+            return isValid;
+        }
+
+        function validateTrackerFormForSave() {
+            if (!validateSelection(true)) {
+                return false;
+            }
+            const actionType = $('#action_type').val();
+            const validTill = $('#valid_till').val();
+            if (!actionType) {
+                setFieldError('action_type', true);
+                requiredFieldError();
+                return false;
+            }
+            if ((actionType === 'issue' || actionType === 'reissue') && !validTill) {
+                setFieldError('valid_till', true);
+                requiredFieldError();
+                return false;
+            }
+            return true;
+        }
+
+        function openCardPreview() {
+            if (!validateSelection(false)) {
+                return;
+            }
+            const student = $('#student').val();
+            openCardModal(student);
+        }
+
+        function openCardModal(studentId) {
+            $('#idCardPreviewContainer').html(
+                '<div class="ui active inverted dimmer" style="height:360px;"><div class="ui text loader">Loading Card...</div></div>'
+            );
+            $('#idCardPreviewModal').modal('show');
+            $.ajax({
+                type: 'GET',
+                url: '/management/student_id_card/' + studentId + '/?partial=1',
+                success: function (html) {
+                    $('#idCardPreviewContainer').html(html);
+                },
+                error: function () {
+                    $('#idCardPreviewContainer').html('<div class="ui negative message" style="margin:1rem;">Unable to load ID card preview.</div>');
+                }
+            });
+        }
+
+        function printCardInModal() {
+            const container = document.getElementById('idCardPreviewContainer');
+            if (!container) return;
+            const printWindow = window.open('', '_blank', 'width=700,height=900');
+            if (!printWindow) {
+                addErrorNotification('Popup blocked. Please allow popups for printing.');
+                return;
+            }
+            printWindow.document.open();
+            printWindow.document.write('<html><head><title>Student ID Card</title></head><body style="margin:0;padding:0;background:#fff;">');
+            printWindow.document.write(container.innerHTML);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(function () {
+                printWindow.print();
+            }, 250);
+        }
+
+        function saveRecordTracker() {
+            if (!validateTrackerFormForSave()) {
+                return;
+            }
+            const student = $('#student').val();
+
+            let data = new FormData();
+            data.append('student_id', student);
+            data.append('action_type', $('#action_type').val());
+            data.append('valid_till', $('#valid_till').val());
+            data.append('remark', $('#remark').val());
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:add_student_id_card_record_api' %}",
+                data: data,
+                contentType: false,
+                processData: false,
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        trackerTab.ajax.reload(null, false);
+                    } else {
+                        addErrorNotification(response.message, response.color || 'red');
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to save tracker record.');
+                }
+            });
+        }
+
+        function searchTracker() {
+            clearTrackerValidation();
+            trackerTab.ajax.reload();
+        }
+
+        function resetTracker() {
+            $('#idCardForm')[0].reset();
+            clearTrackerValidation();
+            $('#standard').dropdown('clear');
+            $('#student').dropdown('clear');
+            $('#action_type').dropdown('set selected', 'print');
+            $('#valid_tillCal').calendar('set date', new Date(2026, 11, 31));
+            clearDataTableFilters();
+            trackerTab.ajax.reload();
+        }
+
+        function applyDataTableFilters() {
+            trackerTab.ajax.reload();
+        }
+
+        function clearDataTableFilters() {
+            $('#filter_class').dropdown('clear');
+            $('#filter_action').dropdown('clear');
+            $('#filter_editor').val('');
+            trackerTab.ajax.reload();
+        }
+    </script>
+{% endblock %}

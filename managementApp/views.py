@@ -180,6 +180,41 @@ def edit_student_detail(request, id=None):
     return render(request, 'managementApp/student/edit_student.html', context)
 
 
+@login_required
+@check_groups('Admin', 'Owner')
+def student_id_cards(request):
+    context = {}
+    return render(request, 'managementApp/student/student_id_cards.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def student_id_card_detail(request, id=None):
+    current_session_id = request.session['current_session']['Id']
+    instance = get_object_or_404(
+        Student.objects.select_related('standardID', 'parentID'),
+        pk=id,
+        isDeleted=False,
+        sessionID_id=current_session_id,
+    )
+    embed_mode = request.GET.get('embed') == '1'
+    partial_mode = request.GET.get('partial') == '1'
+    context = {
+        'instance': instance,
+        'school': instance.schoolID,
+        'school_name': (
+            (instance.schoolID.schoolName if instance.schoolID else '')
+            or (instance.schoolID.name if instance.schoolID else '')
+            or 'School Name'
+        ),
+        'valid_till_label': 'Upto 2026',
+        'embed_mode': embed_mode,
+    }
+    if partial_mode:
+        return render(request, 'managementApp/student/student_id_card_embed.html', context)
+    return render(request, 'managementApp/student/student_id_card_detail.html', context)
+
+
 # Exam ----------------------------------------------
 @login_required
 @check_groups('Admin', 'Owner')

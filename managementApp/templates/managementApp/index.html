@@ -59,6 +59,10 @@
         <i class="list alternate outline icon"></i>
         <span>Student List</span>
     </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'student_id_cards' or request.resolver_match.url_name == 'student_id_card_detail' %}active{% endif %}" href="{% url 'managementApp:student_id_cards' %}">
+        <i class="id card outline icon"></i>
+        <span>Student ID Cards</span>
+    </a>
 
     <!-- PARENTS -->
     <div class="nav-section">Parents</div>

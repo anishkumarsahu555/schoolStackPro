@@ -257,6 +257,26 @@ def student_my_details(request):
 
 @login_required
 @check_groups('Student')
+def student_id_card(request):
+    student, _ = _bootstrap_student_context(request)
+    if not student:
+        return render(request, 'studentApp/dashboard.html', {'student_not_found': True})
+
+    context = {
+        'instance': student,
+        'school': student.schoolID,
+        'school_name': (
+            (student.schoolID.schoolName if student.schoolID else '')
+            or (student.schoolID.name if student.schoolID else '')
+            or 'School Name'
+        ),
+        'valid_till_label': 'Upto 2026',
+    }
+    return render(request, 'studentApp/id_card.html', context)
+
+
+@login_required
+@check_groups('Student')
 def student_progress_report_cards(request):
     student, current_session_id = _bootstrap_student_context(request)
     if not student or not current_session_id:

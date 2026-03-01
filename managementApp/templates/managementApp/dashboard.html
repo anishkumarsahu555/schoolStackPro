@@ -99,6 +99,61 @@
             font-size: 0.84rem;
         }
 
+        .management-dashboard .event-list-grid {
+            display: grid;
+            gap: 0.65rem;
+        }
+
+        .management-dashboard .event-tile {
+            display: grid;
+            grid-template-columns: 36px minmax(0, 1fr) auto;
+            gap: 0.7rem;
+            align-items: flex-start;
+            border: 1px solid var(--app-border);
+            background: var(--app-surface);
+            border-radius: 12px;
+            padding: 0.7rem 0.75rem;
+        }
+
+        .management-dashboard .event-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(26, 115, 232, 0.12);
+            color: var(--app-brand);
+        }
+
+        .management-dashboard .event-date-pill {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--app-brand);
+            background: rgba(26, 115, 232, 0.12);
+            border: 1px solid rgba(26, 115, 232, 0.2);
+            border-radius: 999px;
+            padding: 0.22rem 0.58rem;
+            white-space: nowrap;
+            line-height: 1.2;
+        }
+
+        html[data-theme="dark"] .management-dashboard .event-tile {
+            background: #1e2632;
+            border-color: #324156;
+        }
+
+        html[data-theme="dark"] .management-dashboard .event-icon {
+            background: rgba(116, 169, 255, 0.2);
+            color: #a8cbff;
+        }
+
+        html[data-theme="dark"] .management-dashboard .event-date-pill {
+            color: #d7e7ff;
+            background: rgba(116, 169, 255, 0.18);
+            border-color: rgba(116, 169, 255, 0.34);
+        }
+
         .management-dashboard .quick-actions {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -124,6 +179,15 @@
 
             .management-dashboard .quick-actions {
                 grid-template-columns: 1fr;
+            }
+
+            .management-dashboard .event-tile {
+                grid-template-columns: 32px 1fr;
+            }
+
+            .management-dashboard .event-date-pill {
+                justify-self: start;
+                grid-column: 2;
             }
         }
     </style>
@@ -185,14 +249,17 @@
                             <div class="content">Upcoming Events (30 Days)</div>
                         </h4>
                         {% if upcoming_events %}
-                            <div>
+                            <div class="event-list event-list-grid">
                                 {% for event in upcoming_events %}
-                                    <div class="list-item">
+                                    <div class="event-tile">
+                                        <div class="event-icon">
+                                            <i class="calendar check outline icon"></i>
+                                        </div>
                                         <div>
                                             <div class="list-title">{{ event.title|default:'Untitled Event' }}</div>
                                             <div class="list-meta">{{ event.message|default:'No description' }}</div>
                                         </div>
-                                        <div class="list-meta">{{ event.startDate|date:'d M Y' }}</div>
+                                        <div class="event-date-pill">{{ event.startDate|date:'d M Y' }}</div>
                                     </div>
                                 {% endfor %}
                             </div>

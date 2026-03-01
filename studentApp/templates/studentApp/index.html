@@ -19,6 +19,11 @@
             <i class="id card outline icon"></i>
             <span>My Details</span>
         </a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'student_id_card' %}active{% endif %}"
+           href="{% url 'studentApp:student_id_card' %}">
+            <i class="address card outline icon"></i>
+            <span>My ID Card</span>
+        </a>
 
         <div class="nav-section">Attendance</div>
         <a class="nav-item {% if request.resolver_match.url_name == 'attendance_history' %}active{% endif %}"

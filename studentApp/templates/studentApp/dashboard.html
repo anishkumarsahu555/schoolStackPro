@@ -130,6 +130,70 @@
         font-size: 0.84rem;
     }
 
+    .student-dashboard .event-section .event-list {
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .student-dashboard .event-section .list-row {
+        margin: 0;
+        border: 1px solid var(--app-border);
+        border-radius: 12px;
+        background: var(--app-surface);
+        padding: 0.7rem 0.75rem;
+        display: grid;
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+        gap: 0.7rem;
+    }
+
+    .student-dashboard .event-section .event-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(26, 115, 232, 0.12);
+        color: var(--app-brand);
+    }
+
+    .student-dashboard .event-section .event-date-pill {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--app-brand);
+        background: rgba(26, 115, 232, 0.12);
+        border: 1px solid rgba(26, 115, 232, 0.2);
+        border-radius: 999px;
+        padding: 0.22rem 0.58rem;
+        white-space: nowrap;
+        line-height: 1.2;
+        margin-top: 0.1rem;
+    }
+
+    html[data-theme="dark"] .student-dashboard .event-section .list-row {
+        border-color: #324156;
+        background: #1e2632;
+    }
+
+    html[data-theme="dark"] .student-dashboard .event-section .list-row strong {
+        color: #f3f6fc;
+    }
+
+    html[data-theme="dark"] .student-dashboard .event-section .list-muted {
+        color: #cad4e2;
+    }
+
+    html[data-theme="dark"] .student-dashboard .event-section .event-icon {
+        background: rgba(116, 169, 255, 0.2);
+        color: #a8cbff;
+    }
+
+    html[data-theme="dark"] .student-dashboard .event-section .event-date-pill {
+        color: #d7e7ff;
+        background: rgba(116, 169, 255, 0.18);
+        border-color: rgba(116, 169, 255, 0.34);
+    }
+
     @media (max-width: 767px) {
         .hero-card {
             padding: 1rem;
@@ -138,6 +202,15 @@
 
         .metric-value {
             font-size: 1.35rem;
+        }
+
+        .student-dashboard .event-section .list-row {
+            grid-template-columns: 32px 1fr;
+        }
+
+        .student-dashboard .event-section .event-date-pill {
+            justify-self: start;
+            grid-column: 2;
         }
     }
 </style>
@@ -242,22 +315,27 @@
             </div>
         </div>
 
-        <div class="ui card fluid section-card">
+        <div class="ui card fluid section-card event-section">
             <div class="content">
                 <div class="header">Upcoming Events (Next 30 Days)</div>
             </div>
             <div class="content">
+                <div class="event-list">
                 {% for event in upcoming_events %}
                     <div class="list-row">
+                        <div class="event-icon">
+                            <i class="calendar check outline icon"></i>
+                        </div>
                         <div>
                             <div><strong>{{ event.title|default:'N/A' }}</strong></div>
                             <div class="list-muted">{{ event.message|default:'No description' }}</div>
                         </div>
-                        <div class="list-muted">{{ event.startDate|date:'d M Y'|default:'N/A' }}</div>
+                        <div class="event-date-pill">{{ event.startDate|date:'d M Y'|default:'N/A' }}</div>
                     </div>
                 {% empty %}
                     <div class="list-muted">No events announced for the next 30 days.</div>
                 {% endfor %}
+                </div>
             </div>
         </div>
     </div>

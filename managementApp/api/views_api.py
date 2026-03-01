@@ -1323,12 +1323,15 @@ class StudentListJson(BaseDatatableView):
             action = '''<a href="/management/student_detail/{}/" data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button purple">
                 <i class="eye icon"></i>
               </a>
+            <button type="button" onclick="openStudentIdCardModal('{}')" data-inverted="" data-tooltip="ID Card" data-position="left center" data-variation="mini" style="font-size:10px;" class="ui circular blue icon button">
+                <i class="id card outline icon"></i>
+              </button>
             <a href="/management/edit_student/{}/" data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
                 <i class="pen icon"></i>
               </a>
               <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
                 <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk,item.pk, item.pk, item.pk),
+              </button></td>'''.format(item.pk, item.pk, item.pk, item.pk, item.pk, item.pk)
             if item.standardID.section:
                 standard = item.standardID.name + ' - ' + item.standardID.section
             else:
@@ -1349,6 +1352,148 @@ class StudentListJson(BaseDatatableView):
             ])
 
         return json_data
+
+
+class StudentIdCardRecordListJson(BaseDatatableView):
+    order_columns = [
+        'studentID__name',
+        'studentID__registrationCode',
+        'studentID__standardID__name',
+        'studentID__roll',
+        'actionType',
+        'validTill',
+        'remark',
+        'lastEditedBy',
+        'datetime',
+    ]
+
+    def get_initial_queryset(self):
+        queryset = StudentIdCardRecord.objects.select_related(
+            'studentID', 'studentID__standardID'
+        ).filter(
+            isDeleted=False,
+            sessionID_id=self.request.session['current_session']['Id'],
+            studentID__isDeleted=False,
+        )
+
+        standard = self.request.GET.get('standard')
+        if standard and standard.isdigit():
+            queryset = queryset.filter(studentID__standardID_id=int(standard))
+        student = self.request.GET.get('student')
+        if student and student.isdigit():
+            queryset = queryset.filter(studentID_id=int(student))
+        action_filter = (self.request.GET.get('action_filter') or '').strip().lower()
+        if action_filter:
+            queryset = queryset.filter(actionType=action_filter)
+        edited_by_filter = (self.request.GET.get('edited_by_filter') or '').strip()
+        if edited_by_filter:
+            queryset = queryset.filter(lastEditedBy__icontains=edited_by_filter)
+        return queryset
+
+    def filter_queryset(self, qs):
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(studentID__name__icontains=search)
+                | Q(studentID__registrationCode__icontains=search)
+                | Q(studentID__roll__icontains=search)
+                | Q(studentID__standardID__name__icontains=search)
+                | Q(studentID__standardID__section__icontains=search)
+                | Q(actionType__icontains=search)
+                | Q(validTill__icontains=search)
+                | Q(remark__icontains=search)
+                | Q(lastEditedBy__icontains=search)
+                | Q(datetime__icontains=search)
+            )
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            standard = 'N/A'
+            if item.studentID and item.studentID.standardID:
+                standard = item.studentID.standardID.name or 'N/A'
+                if item.studentID.standardID.section:
+                    standard = f'{standard} - {item.studentID.standardID.section}'
+
+            action_label = dict(StudentIdCardRecord.ACTION_CHOICES).get(item.actionType, item.actionType)
+            preview_action = (
+                f'<button type="button" onclick="openCardModal({item.studentID_id})" '
+                f'data-inverted="" data-tooltip="View ID Card" data-position="left center" '
+                f'data-variation="mini" style="font-size:10px;" class="ui circular facebook icon button purple">'
+                f'<i class="id card icon"></i></button>'
+            )
+
+            json_data.append([
+                escape(item.studentID.name if item.studentID and item.studentID.name else 'N/A'),
+                escape(item.studentID.registrationCode if item.studentID and item.studentID.registrationCode else 'N/A'),
+                escape(standard),
+                escape(item.studentID.roll if item.studentID and item.studentID.roll else 'N/A'),
+                escape(action_label),
+                escape(item.validTill.strftime('%d-%m-%Y') if item.validTill else 'Upto 2026'),
+                escape(item.remark or 'N/A'),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p') if item.datetime else 'N/A'),
+                preview_action,
+            ])
+        return json_data
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_student_id_card_record_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Invalid request method.', extra={'color': 'red'}).to_json_response()
+
+    try:
+        student_id = request.POST.get('student_id')
+        action_type = (request.POST.get('action_type') or 'print').strip().lower()
+        valid_till = (request.POST.get('valid_till') or '').strip()
+        remark = (request.POST.get('remark') or '').strip()
+        current_session_id = request.session['current_session']['Id']
+
+        if not student_id:
+            return ErrorResponse('Student is required.', extra={'color': 'red'}).to_json_response()
+
+        student = Student.objects.filter(
+            pk=int(student_id),
+            isDeleted=False,
+            sessionID_id=current_session_id,
+        ).first()
+        if not student:
+            return ErrorResponse('Student not found in current session.', extra={'color': 'red'}).to_json_response()
+
+        valid_actions = {choice[0] for choice in StudentIdCardRecord.ACTION_CHOICES}
+        if action_type not in valid_actions:
+            return ErrorResponse('Invalid tracker action.', extra={'color': 'red'}).to_json_response()
+
+        parsed_valid_till = None
+        if valid_till:
+            try:
+                parsed_valid_till = datetime.strptime(valid_till, '%Y-%m-%d').date()
+            except ValueError:
+                try:
+                    parsed_valid_till = datetime.strptime(valid_till, '%d/%m/%Y').date()
+                except ValueError:
+                    return ErrorResponse('Invalid valid till date format.', extra={'color': 'red'}).to_json_response()
+
+        instance = StudentIdCardRecord(
+            studentID=student,
+            actionType=action_type,
+            validTill=parsed_valid_till,
+            remark=remark,
+        )
+        pre_save_with_user.send(sender=StudentIdCardRecord, instance=instance, user=request.user.pk)
+
+        return SuccessResponse(
+            'ID card tracker updated successfully.',
+            data={'preview_url': f'/management/student_id_card/{student.pk}/'},
+            extra={'color': 'success'}
+        ).to_json_response()
+    except Exception as e:
+        logger.error(f'Error in add_student_id_card_record_api: {e}')
+        return ErrorResponse('Failed to update ID card tracker.', extra={'color': 'red'}).to_json_response()
 
 
 @transaction.atomic

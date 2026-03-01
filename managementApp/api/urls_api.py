@@ -55,6 +55,8 @@ urlpatterns = [
     path('get_student_list_by_class_api', get_student_list_by_class_api, name='get_student_list_by_class_api'),
     path('StudentListJson', StudentListJson.as_view(), name='StudentListJson'),
     path('edit_student_api', edit_student_api, name='edit_student_api'),
+    path('StudentIdCardRecordListJson', StudentIdCardRecordListJson.as_view(), name='StudentIdCardRecordListJson'),
+    path('add_student_id_card_record_api', add_student_id_card_record_api, name='add_student_id_card_record_api'),
 
     # Exam
     path('add_exam', add_exam, name='add_exam'),

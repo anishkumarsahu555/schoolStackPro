@@ -1,0 +1,100 @@
+{% extends 'studentApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>My ID Card</title>
+{% endblock %}
+
+{% block body %}
+    <style>
+        .id-shell {
+            display: flex;
+            justify-content: center;
+            padding: 0.8rem 0.25rem 0.25rem;
+        }
+
+        .id-actions {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 0.55rem;
+            flex-wrap: wrap;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden !important;
+            }
+
+            .id-shell,
+            .id-shell * {
+                visibility: visible !important;
+            }
+
+            .id-shell {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: #fff !important;
+            }
+        }
+    </style>
+
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active">My ID Card</div>
+            </div>
+
+            <div class="id-actions">
+                <button class="ui mini blue button" onclick="window.print()">
+                    <i class="print icon"></i>
+                    Print Card
+                </button>
+                <button class="ui mini green button" onclick="saveStudentCardRecord()">
+                    <i class="save icon"></i>
+                    Save Print Record
+                </button>
+            </div>
+
+            <div class="id-shell">
+                {% include 'managementApp/student/student_id_card_embed.html' %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        function saveStudentCardRecord() {
+            let data = new FormData();
+            data.append('student_id', '{{ instance.id }}');
+            data.append('action_type', 'print');
+            data.append('valid_till', '2026-12-31');
+            data.append('remark', 'Printed from student app');
+            data.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:add_student_id_card_record_api' %}",
+                data: data,
+                contentType: false,
+                processData: false,
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                    } else {
+                        addErrorNotification(response.message, response.color || 'red');
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to save print record.');
+                }
+            });
+        }
+    </script>
+{% endblock %}
