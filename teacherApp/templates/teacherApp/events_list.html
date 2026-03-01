@@ -41,6 +41,8 @@
                                style="margin-top: 5px;width: 100%">
                             <thead>
                             <tr>
+                                <th>Event Type</th>
+                                <th>Audience</th>
                                 <th>Title</th>
                                 <th>Start Date</th>
                                 <th>End Date</th>
@@ -72,17 +74,19 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4]
+                    columns: [0, 1, 2, 3, 4, 5, 6]
                 }
             }],
             columnDefs: [
-                {name: 'title', targets: 0, orderable: true},
-                {name: 'startDate', targets: 1, orderable: true},
-                {name: 'endDate', targets: 2, orderable: true},
-                {name: 'message', targets: 3, orderable: true},
-                {name: 'datetime', targets: 4, orderable: true}
+                {name: 'eventID__name', targets: 0, orderable: true},
+                {name: 'eventID__audience', targets: 1, orderable: true},
+                {name: 'title', targets: 2, orderable: true},
+                {name: 'startDate', targets: 3, orderable: true},
+                {name: 'endDate', targets: 4, orderable: true},
+                {name: 'message', targets: 5, orderable: true},
+                {name: 'datetime', targets: 6, orderable: true}
             ],
-            aaSorting: [[1, 'desc']],
+            aaSorting: [[3, 'desc']],
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
             pageLength: 10,
             processing: true,

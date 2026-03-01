@@ -227,9 +227,11 @@ def student_exam_details(request):
 @check_groups('Student')
 def student_events(request):
     _, current_session_id = _bootstrap_student_context(request)
-    events = Event.objects.filter(
+    events = Event.objects.select_related('eventID').filter(
         isDeleted=False,
         sessionID_id=current_session_id,
+    ).filter(
+        Q(eventID__isnull=True) | Q(eventID__audience__in=['general', 'studentapp', 'all_apps'])
     ).order_by('-startDate', '-datetime') if current_session_id else Event.objects.none()
     return render(request, 'studentApp/events/eventsList.html', {
         'events': events,

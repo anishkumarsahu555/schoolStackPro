@@ -129,7 +129,11 @@
 
     <!-- EVENTS -->
     <div class="nav-section">Events</div>
-    <a class="nav-item" href="{% url 'managementApp:manage_event' %}">
+    <a class="nav-item {% if request.resolver_match.url_name == 'manage_event_type' %}active{% endif %}" href="{% url 'managementApp:manage_event_type' %}">
+        <i class="tags icon"></i>
+        <span>Manage Event Type</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'manage_event' %}active{% endif %}" href="{% url 'managementApp:manage_event' %}">
         <i class="calendar plus outline icon"></i>
         <span>Manage Event</span>
     </a>

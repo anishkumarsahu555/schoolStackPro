@@ -3303,6 +3303,209 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
 
 
 # Events ------------------------------------------------------
+@login_required
+def get_event_type_list_api(request):
+    try:
+        current_session_id = request.session['current_session']['Id']
+        default_types = [
+            ('General Announcement', 'general'),
+            ('Teacher Notice', 'teacherapp'),
+            ('Student Notice', 'studentapp'),
+            ('Management Circular', 'managementapp'),
+            ('All Apps Broadcast', 'all_apps'),
+        ]
+
+        for type_name, audience in default_types:
+            exists = EventType.objects.filter(
+                isDeleted=False,
+                sessionID_id=current_session_id,
+                name__iexact=type_name,
+                audience=audience,
+            ).exists()
+            if not exists:
+                obj = EventType(name=type_name, audience=audience)
+                pre_save_with_user.send(sender=EventType, instance=obj, user=request.user.pk)
+
+        objs = EventType.objects.filter(
+            isDeleted=False,
+            sessionID_id=current_session_id
+        ).order_by('name')
+        data = [{
+            'ID': obj.id,
+            'Name': obj.name,
+            'Audience': obj.audience,
+            'AudienceLabel': obj.get_audience_display(),
+        } for obj in objs]
+        return SuccessResponse('Event type list fetched successfully.', data=data, extra={'color': 'success'}).to_json_response()
+    except Exception as e:
+        logger.error(f"Error fetching event types: {e}")
+        return ErrorResponse('Error in fetching event type list.', extra={'color': 'red'}).to_json_response()
+
+
+class EventTypeListJson(BaseDatatableView):
+    order_columns = ['name', 'audience', 'description', 'datetime']
+
+    def get_initial_queryset(self):
+        return EventType.objects.filter(
+            isDeleted=False,
+            sessionID_id=self.request.session['current_session']['Id'],
+        )
+
+    def filter_queryset(self, qs):
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(name__icontains=search)
+                | Q(audience__icontains=search)
+                | Q(description__icontains=search)
+                | Q(datetime__icontains=search)
+            )
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            action = '''
+              <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetTypeDataDetails('{}')" class="ui circular facebook icon button green">
+                <i class="pen icon"></i>
+              </button>
+              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delTypeData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
+                <i class="trash alternate icon"></i>
+              </button></td>'''.format(item.pk, item.pk)
+            json_data.append([
+                escape(item.name or 'N/A'),
+                escape(item.get_audience_display()),
+                escape(item.description or ''),
+                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p') if item.datetime else 'N/A'),
+                action,
+            ])
+        return json_data
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_event_type_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Invalid request method.', extra={'color': 'red'}).to_json_response()
+
+    try:
+        post_data = request.POST.dict()
+        name = (post_data.get('type_name') or '').strip()
+        audience = (post_data.get('type_audience') or '').strip()
+        description = (post_data.get('type_description') or '').strip()
+
+        valid_audiences = {choice[0] for choice in EventType.AUDIENCE_CHOICES}
+        if not name or not audience:
+            return ErrorResponse('Name and audience are required.', extra={'color': 'red'}).to_json_response()
+        if audience not in valid_audiences:
+            return ErrorResponse('Invalid audience selected.', extra={'color': 'red'}).to_json_response()
+
+        exists = EventType.objects.filter(
+            isDeleted=False,
+            sessionID_id=request.session['current_session']['Id'],
+            name__iexact=name,
+            audience=audience,
+        ).exists()
+        if exists:
+            return ErrorResponse('Event type already exists for selected audience.', extra={'color': 'orange'}).to_json_response()
+
+        obj = EventType(name=name, audience=audience, description=description)
+        pre_save_with_user.send(sender=EventType, instance=obj, user=request.user.pk)
+
+        return SuccessResponse('Event type added successfully.', extra={'color': 'success'}).to_json_response()
+    except Exception as e:
+        logger.error(f'Error in add_event_type_api: {e}')
+        return ErrorResponse('Failed to add event type.', extra={'color': 'red'}).to_json_response()
+
+
+@login_required
+def get_event_type_detail(request):
+    try:
+        obj = EventType.objects.get(
+            pk=request.GET.get('id'),
+            isDeleted=False,
+            sessionID_id=request.session['current_session']['Id'],
+        )
+        data = {
+            'ID': obj.pk,
+            'name': obj.name,
+            'audience': obj.audience,
+            'description': obj.description or '',
+        }
+        return SuccessResponse('Event type detail fetched successfully.', data=data, extra={'color': 'success'}).to_json_response()
+    except Exception as e:
+        logger.error(f'Error in get_event_type_detail: {e}')
+        return ErrorResponse('Error in fetching event type details.', extra={'color': 'red'}).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def update_event_type_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Invalid request method.', extra={'color': 'red'}).to_json_response()
+
+    try:
+        post_data = request.POST.dict()
+        edit_id = post_data.get('type_editID')
+        name = (post_data.get('type_name') or '').strip()
+        audience = (post_data.get('type_audience') or '').strip()
+        description = (post_data.get('type_description') or '').strip()
+
+        valid_audiences = {choice[0] for choice in EventType.AUDIENCE_CHOICES}
+        if not edit_id or not name or not audience:
+            return ErrorResponse('Name and audience are required.', extra={'color': 'red'}).to_json_response()
+        if audience not in valid_audiences:
+            return ErrorResponse('Invalid audience selected.', extra={'color': 'red'}).to_json_response()
+
+        obj = EventType.objects.get(
+            pk=int(edit_id),
+            isDeleted=False,
+            sessionID_id=request.session['current_session']['Id'],
+        )
+
+        duplicate = EventType.objects.filter(
+            isDeleted=False,
+            sessionID_id=request.session['current_session']['Id'],
+            name__iexact=name,
+            audience=audience,
+        ).exclude(pk=obj.pk).exists()
+        if duplicate:
+            return ErrorResponse('Another event type already exists with same name and audience.', extra={'color': 'orange'}).to_json_response()
+
+        obj.name = name
+        obj.audience = audience
+        obj.description = description
+        pre_save_with_user.send(sender=EventType, instance=obj, user=request.user.pk)
+
+        return SuccessResponse('Event type updated successfully.', extra={'color': 'success'}).to_json_response()
+    except Exception as e:
+        logger.error(f'Error in update_event_type_api: {e}')
+        return ErrorResponse('Failed to update event type.', extra={'color': 'red'}).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def delete_event_type(request):
+    if request.method != 'POST':
+        return ErrorResponse('Invalid request method.', extra={'color': 'red'}).to_json_response()
+
+    try:
+        obj = EventType.objects.get(
+            pk=int(request.POST.get('dataID')),
+            isDeleted=False,
+            sessionID_id=request.session['current_session']['Id'],
+        )
+        obj.isDeleted = True
+        pre_save_with_user.send(sender=EventType, instance=obj, user=request.user.pk)
+        return SuccessResponse('Event type deleted successfully.', extra={'color': 'success'}).to_json_response()
+    except Exception as e:
+        logger.error(f'Error in delete_event_type: {e}')
+        return ErrorResponse('Error in deleting event type.', extra={'color': 'red'}).to_json_response()
+
+
 @transaction.atomic
 @csrf_exempt
 @login_required
@@ -3310,7 +3513,18 @@ def add_event_api(request):
     if request.method == 'POST':
         try:
             post_data = request.POST.dict()
+            event_type_id = post_data.get("event_type")
+            if not event_type_id:
+                return ErrorResponse('Event type is required.', extra={'color': 'red'}).to_json_response()
+            event_type_obj = EventType.objects.filter(
+                id=event_type_id,
+                isDeleted=False,
+                sessionID_id=request.session['current_session']['Id']
+            ).first()
+            if not event_type_obj:
+                return ErrorResponse('Invalid event type for current session.', extra={'color': 'red'}).to_json_response()
             obj = Event.objects.create(
+            eventID_id = event_type_obj.id,
             title  = post_data.get("title"),
             startDate = datetime.strptime(post_data["start_date"], "%d/%m/%Y"),
             endDate = datetime.strptime(post_data["end_date"], "%d/%m/%Y"),
@@ -3321,21 +3535,21 @@ def add_event_api(request):
 
             
             logger.info("Event added successfully")
-            return SuccessResponse('Event added successfully.').to_json_response()
+            return SuccessResponse('Event added successfully.', extra={'color': 'success'}).to_json_response()
         except Exception as e:
             logger.error(f"Error adding event: {str(e)}")
-            return ErrorResponse('Failed to add event.').to_json_response()
+            return ErrorResponse('Failed to add event.', extra={'color': 'red'}).to_json_response()
     else:
         logger.error("Invalid request method")
-        return ErrorResponse('Invalid request method.').to_json_response()    
+        return ErrorResponse('Invalid request method.', extra={'color': 'red'}).to_json_response()
 
 
 class EventListJson(BaseDatatableView):
-    order_columns = ['title', 'startDate',
+    order_columns = ['eventID__name', 'eventID__audience', 'title', 'startDate',
                      'endDate', 'message', 'datetime']
 
     def get_initial_queryset(self):
-        return Event.objects.select_related().filter(isDeleted__exact=False,
+        return Event.objects.select_related('eventID').filter(isDeleted__exact=False,
                                                                  sessionID_id=
                                                                  self.request.session["current_session"][
                                                                      "Id"])
@@ -3345,7 +3559,7 @@ class EventListJson(BaseDatatableView):
         search = self.request.GET.get('search[value]', None)
         if search:
             qs = qs.filter(
-                Q(title__icontains=search) | Q(
+                Q(eventID__name__icontains=search) | Q(eventID__audience__icontains=search) | Q(title__icontains=search) | Q(
                     startDate__icontains=search)| Q(
                     endDate__icontains=search)| Q(
                     message__icontains=search)
@@ -3363,8 +3577,10 @@ class EventListJson(BaseDatatableView):
               </button>
               <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
                 <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk),
+              </button></td>'''.format(item.pk, item.pk)
             json_data.append([
+                escape(item.eventID.name if item.eventID else 'N/A'),
+                escape(item.eventID.get_audience_display() if item.eventID else 'General'),
                 escape(item.title),
                 escape(item.startDate.strftime('%d-%m-%Y')),
                 escape(item.endDate.strftime('%d-%m-%Y')),
@@ -3406,6 +3622,8 @@ def get_event_detail(request, **kwargs):
         obj = Event.objects.get(pk=id, isDeleted=False, sessionID_id=request.session['current_session']['Id'])
         obj_dic = {
             'ID': obj.pk,
+            'eventTypeID': obj.eventID_id if obj.eventID_id else '',
+            'audience': obj.eventID.audience if obj.eventID else 'general',
             'title': obj.title,
             'startDate': obj.startDate.strftime('%d/%m/%Y'),
             'endDate': obj.endDate.strftime('%d/%m/%Y'),
@@ -3425,8 +3643,19 @@ def update_event_api(request):
     if request.method == 'POST':
         try:
             post_data = request.POST.dict()
+            event_type_id = post_data.get("event_type")
+            if not event_type_id:
+                return ErrorResponse('Event type is required.', extra={'color': 'red'}).to_json_response()
+            event_type_obj = EventType.objects.filter(
+                id=event_type_id,
+                isDeleted=False,
+                sessionID_id=request.session['current_session']['Id']
+            ).first()
+            if not event_type_obj:
+                return ErrorResponse('Invalid event type for current session.', extra={'color': 'red'}).to_json_response()
             obj = Event.objects.get(pk=int(post_data.get("editID")), isDeleted=False,
                                    sessionID_id=request.session['current_session']['Id'])
+            obj.eventID_id = event_type_obj.id
             obj.title = post_data.get("title")
             obj.startDate = datetime.strptime(post_data["start_date"], "%d/%m/%Y")
             obj.endDate = datetime.strptime(post_data["end_date"], "%d/%m/%Y")
@@ -3435,13 +3664,13 @@ def update_event_api(request):
             pre_save_with_user.send(sender=Event, instance=obj, user=request.user.pk)
 
             logger.info("Event detail updated successfully")
-            return SuccessResponse('Event detail updated successfully.').to_json_response()
+            return SuccessResponse('Event detail updated successfully.', extra={'color': 'success'}).to_json_response()
         except Exception as e:
             logger.error(f"Error updating event: {str(e)}")
-            return ErrorResponse('Failed to update event.').to_json_response()
+            return ErrorResponse('Failed to update event.', extra={'color': 'red'}).to_json_response()
     else:
         logger.error("Invalid request method")
-        return ErrorResponse('Invalid request method.').to_json_response()    
+        return ErrorResponse('Invalid request method.', extra={'color': 'red'}).to_json_response()
 
 # Parents API --------------
 class ParentsListJson(BaseDatatableView):

@@ -144,10 +144,14 @@ class TeacherAssignedSubjectsListJson(BaseDatatableView):
 @method_decorator(login_required, name='dispatch')
 @method_decorator(check_groups('Teaching'), name='dispatch')
 class TeacherEventListJson(BaseDatatableView):
-    order_columns = ['title', 'startDate', 'endDate', 'message', 'datetime']
+    order_columns = ['eventID__name', 'eventID__audience', 'title', 'startDate', 'endDate', 'message', 'datetime']
 
     def get_initial_queryset(self):
-        queryset = Event.objects.filter(isDeleted=False)
+        queryset = Event.objects.select_related('eventID').filter(
+            isDeleted=False
+        ).filter(
+            Q(eventID__isnull=True) | Q(eventID__audience__in=['general', 'teacherapp', 'all_apps'])
+        )
         current_session = self.request.session.get('current_session', {})
         current_session_id = current_session.get('Id')
         if current_session_id:
@@ -158,7 +162,9 @@ class TeacherEventListJson(BaseDatatableView):
         search = self.request.GET.get('search[value]', None)
         if search:
             qs = qs.filter(
-                Q(title__icontains=search)
+                Q(eventID__name__icontains=search)
+                | Q(eventID__audience__icontains=search)
+                | Q(title__icontains=search)
                 | Q(startDate__icontains=search)
                 | Q(endDate__icontains=search)
                 | Q(message__icontains=search)
@@ -169,7 +175,11 @@ class TeacherEventListJson(BaseDatatableView):
     def prepare_results(self, qs):
         data = []
         for item in qs:
+            event_type = item.eventID.name if item.eventID and item.eventID.name else 'General Announcement'
+            audience = item.eventID.get_audience_display() if item.eventID else 'General'
             data.append([
+                escape(event_type),
+                escape(audience),
                 escape(item.title or 'N/A'),
                 escape(item.startDate.strftime('%d-%m-%Y') if item.startDate else 'N/A'),
                 escape(item.endDate.strftime('%d-%m-%Y') if item.endDate else 'N/A'),

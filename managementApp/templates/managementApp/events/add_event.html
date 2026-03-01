@@ -47,7 +47,13 @@
                     <form class="ui tiny form" id="addForm">{% csrf_token %}
                         <input type="hidden" id="editID">
 
-                        <div class="five fields">
+                        <div class="six fields">
+                            <div class="field required">
+                                <label>Event Type</label>
+                                <select class="ui search dropdown" id="event_type">
+                                    <option value="">Select Event Type</option>
+                                </select>
+                            </div>
 
                             <div class="field required" >
                                 <label>Event Title</label>
@@ -116,6 +122,8 @@
                                style="margin-top: 5px;width: 100%">
                             <thead>
                             <tr>
+                                <th>Event Type</th>
+                                <th>Audience</th>
                                 <th>Title</th>
                                 <th>Start Date</th>
                                 <th>End Date</th>
@@ -131,6 +139,7 @@
                     </div>
 
                 </div>
+
 
                 <div class="ui basic modal custom" id="deleteDataModal">
                     <div class="ui icon header">
@@ -154,7 +163,6 @@
                     </div>
                 </div>
 
-
             </div>
         </div>
     </div>
@@ -165,339 +173,239 @@
 
 {% block js %}
     <script>
+        let eventTab;
 
-let today = new Date();
-        $('#start_dateCal')
-            .calendar({
-                    monthFirst: false,
-                    type: 'date',
-                    formatter: {
-                        date: function (date, settings) {
+        $(function () {
+            getEventTypeList();
 
-                            if (!date) return '';
-                            var day = String(date.getDate());
-                            var month = String(date.getMonth() + 1);
-                            var year = date.getFullYear();
-                            return day + '/' + month + '/' + year;
-                        }
+            $('#start_dateCal').calendar({
+                monthFirst: false,
+                type: 'date',
+                formatter: {
+                    date: function (date) {
+                        if (!date) return '';
+                        return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
                     }
-                }
-            );
-
-        $('#end_dateCal').calendar({
-            monthFirst: false,
-            type: 'date',
-            formatter: {
-                date: function (date, settings) {
-
-                    if (!date) return '';
-                    var day = String(date.getDate());
-                    var month = String(date.getMonth() + 1);
-                    var year = date.getFullYear();
-                    return day + '/' + month + '/' + year;
-                }
-            }
-        });
-
-        function addData() {
-    showLoading();
-
-    let data = new FormData();
-
-    // ---------- COLLECT ALL INPUTS BY ID ----------
-    $('#addForm input, #addForm select, #addForm textarea')
-        .each(function () {
-            const id = $(this).attr('id');
-
-            if (!id) return; // skip elements without id
-
-            // Handle file input
-            if (this.type === 'file') {
-                if (this.files.length > 0) {
-                    data.append(id, this.files[0]);
-                }
-            }
-            // Handle checkbox
-            else if (this.type === 'checkbox') {
-                data.append(id, $(this).is(':checked'));
-            }
-            // Handle radio
-            else if (this.type === 'radio') {
-                if ($(this).is(':checked')) {
-                    data.append(id, $(this).val());
-                }
-            }
-            // Normal input/select/textarea
-            else {
-                data.append(id, $(this).val());
-            }
-        });
-
-    // ---------- CSRF ----------
-    data.append(
-        'csrfmiddlewaretoken',
-        $("input[name='csrfmiddlewaretoken']").val()
-    );
-
-    // ---------- DEBUG ----------
-    console.log("Collected Data (by ID):");
-    for (let pair of data.entries()) {
-        console.log(pair[0]);
-    }
-
-    // ---------- BASIC REQUIRED CHECK ----------
-    const requiredIds = [
-        'title', 'start_date',
-        'end_date', 'description',
-    ];
-
-    let hasError = false;
-    requiredIds.forEach(id => {
-        if (!data.get(id)) {
-            console.log(id);
-             $(`#${id}`).closest('.field').addClass('error');
-            hasError = true;
-        }
-    });
-
-    if (hasError) {
-       requiredFieldError();
-       hideLoading();
-       return;
-    }
-
-    // ---------- AJAX ----------
-    $.ajax({
-        type: 'POST',
-        url: "{% url 'managementAppAPI:add_event_api' %}",
-        data: data,
-        contentType: false,
-        processData: false,
-        cache: false,
-
-        success: function (response) {
-            debugger;
-            if (response.success) {
-                addSuccessNotification(response.message, 'green');
-                $('#addForm').trigger('reset');
-                eventTab.ajax.reload(null, false);
-            } else {
-                addErrorNotification(response.message);
-            }
-            hideLoading();
-        },
-
-        error: function () {
-            addErrorNotification('An error occurred !');
-            hideLoading();
-        }
-    });
-}
-
-
-        // user Details
-
-      let eventTab
-        // user Details
-
-        eventTab = $('#EventTable').DataTable({
-            dom: 'Blfrtip',
-            "scrollY": "350px",
-            "scrollX": true,
-            stateSave: true,
-            fixedColumns: {
-                left: 1,
-                right: 1
-            },
-            buttons: [{
-                extend: 'excel',
-                exportOptions: {
-                    columns: [1, 2, 3, 4, 5, 6, 7,8,9]
-                }
-            }
-            ],
-            "columnDefs": [
-                {"name": "title", "targets": 0, "orderable": true},
-                {"name": "startDate", "targets": 1, "orderable": true},
-                {"name": "endDate", "targets": 2, "orderable": true},
-                {"name": "message", "targets": 3, "orderable": true},
-                {"name": "datetime", "targets": 4, "orderable": true},
-                {"name": "action", "targets": 5, "orderable": false}
-            ],
-            aaSorting: [[1, 'asc']],
-            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-            "pageLength": 10,
-            "processing": true,
-            "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:EventListJson' %}"
-        });
-
-
-
-        function delData(id) {
-            $('#deleteDataModal')
-                .modal('show')
-            ;
-            $('#dataID').val(id)
-        }
-
-        function deleteData() {
-            let id = $('#dataID').val();
-            let data = new FormData();
-            data.append('dataID', id);
-
-            $.ajax({
-                url: "{% url 'managementAppAPI:delete_event' %}",
-                type: "post",
-                data: data,
-                contentType: false,
-                cache: false,
-                processData: false,
-
-                success: function (response) {
-                    if (response.success) {
-                        addSuccessNotification(response.message, 'green');
-                        eventTab.ajax.reload(null, false);
-                        $('#deleteDataModal').modal('toggle');
-                    } else {
-                        addErrorNotification();
-                    }
-                    return response;
-                },
-                error: function () {
-                    addErrorNotification();
                 }
             });
 
+            $('#end_dateCal').calendar({
+                monthFirst: false,
+                type: 'date',
+                formatter: {
+                    date: function (date) {
+                        if (!date) return '';
+                        return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                    }
+                }
+            });
+
+            eventTab = $('#EventTable').DataTable({
+                dom: 'Blfrtip',
+                scrollY: '350px',
+                scrollX: true,
+                stateSave: true,
+                fixedColumns: {
+                    left: 1,
+                    right: 1
+                },
+                buttons: [{
+                    extend: 'excel',
+                    exportOptions: {columns: [0, 1, 2, 3, 4, 5, 6]}
+                }],
+                columnDefs: [
+                    {name: 'eventID__name', targets: 0, orderable: true},
+                    {name: 'eventID__audience', targets: 1, orderable: true},
+                    {name: 'title', targets: 2, orderable: true},
+                    {name: 'startDate', targets: 3, orderable: true},
+                    {name: 'endDate', targets: 4, orderable: true},
+                    {name: 'message', targets: 5, orderable: true},
+                    {name: 'datetime', targets: 6, orderable: true},
+                    {name: 'action', targets: 7, orderable: false}
+                ],
+                aaSorting: [[3, 'asc']],
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                pageLength: 10,
+                processing: true,
+                serverSide: true,
+                ajax: "{% url 'managementAppAPI:EventListJson' %}"
+            });
+
+        });
+
+        function getEventTypeList() {
+            $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppAPI:get_event_type_list_api' %}",
+                success: function (response) {
+                    if (!response.success || !Array.isArray(response.data)) {
+                        addErrorNotification(response.message || 'Unable to load event types.', response.color || 'red');
+                        return;
+                    }
+                    $('#event_type').html('<option value="">Select Event Type</option>');
+                    for (let i = 0; i < response.data.length; i++) {
+                        const row = response.data[i];
+                        $('#event_type').append('<option value="' + row.ID + '">' + row.Name + ' (' + row.AudienceLabel + ')</option>');
+                    }
+                    $('#event_type').dropdown('refresh');
+                },
+                error: function (xhr) {
+                    addErrorNotification('Unable to load event types.', (xhr.responseJSON && xhr.responseJSON.color) || 'red');
+                }
+            });
         }
 
-         function GetDataDetails(id) {
+        function buildEventPayload() {
+            let data = new FormData();
+            data.append('event_type', $('#event_type').val());
+            data.append('title', $('#title').val());
+            data.append('start_date', $('#start_date').val());
+            data.append('end_date', $('#end_date').val());
+            data.append('description', $('#description').val());
+            data.append('editID', $('#editID').val());
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            return data;
+        }
+
+        function validateEventForm() {
+            let requiredIds = ['event_type', 'title', 'start_date', 'end_date', 'description'];
+            let hasError = false;
+            requiredIds.forEach(function (id) {
+                if (!$('#' + id).val()) {
+                    $('#' + id).closest('.field').addClass('error');
+                    hasError = true;
+                }
+            });
+            return !hasError;
+        }
+
+        function addData() {
+            showLoading();
+            if (!validateEventForm()) {
+                requiredFieldError();
+                hideLoading();
+                return;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:add_event_api' %}",
+                data: buildEventPayload(),
+                contentType: false,
+                processData: false,
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        clearAndReset();
+                        eventTab.ajax.reload(null, false);
+                    } else {
+                        addErrorNotification(response.message, response.color || 'red');
+                    }
+                    hideLoading();
+                },
+                error: function () {
+                    addErrorNotification('An error occurred !');
+                    hideLoading();
+                }
+            });
+        }
+
+        function editData() {
+            showLoading();
+            if (!validateEventForm()) {
+                requiredFieldError();
+                hideLoading();
+                return;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:update_event_api' %}",
+                data: buildEventPayload(),
+                contentType: false,
+                processData: false,
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        clearAndReset();
+                        eventTab.ajax.reload(null, false);
+                    } else {
+                        addErrorNotification(response.message, response.color || 'red');
+                    }
+                    hideLoading();
+                },
+                error: function () {
+                    addErrorNotification('An error occurred !');
+                    hideLoading();
+                }
+            });
+        }
+
+        function clearAndReset() {
+            myOwnReset();
+            $('#saveBtn').css('display', '');
+            $('#saveBtnUpdate').css('display', 'none');
+            $('#event_type').dropdown('clear');
+        }
+
+        function GetDataDetails(id) {
             $('#saveBtn').css('display', 'none');
             $('#saveBtnUpdate').css('display', '');
             $.ajax({
                 type: 'get',
-                 data: {id: id},
+                data: {id: id},
                 url: "{% url 'managementAppAPI:get_event_detail' %}",
-
                 success: function (response) {
                     if (response.success) {
-                        $('#title').val(response.data['title']);
-                        $('#start_date').val(response.data['startDate']);
-                        $('#end_date').val(response.data['endDate']);
-                        $('#description').val(response.data['message']);
-                        $('#editID').val(response.data['ID']);
+                        $('#title').val(response.data.title);
+                        $('#start_date').val(response.data.startDate);
+                        $('#end_date').val(response.data.endDate);
+                        $('#description').val(response.data.message);
+                        $('#event_type').dropdown('set selected', String(response.data.eventTypeID));
+                        $('#editID').val(response.data.ID);
+                    } else {
+                        addErrorNotification(response.message || 'Unable to load event detail.', response.color || 'red');
                     }
-                    else{
-                        addErrorNotification();
-                    }
-
-
                 },
-                error: function () {
-                     addErrorNotification();
+                error: function (xhr) {
+                    addErrorNotification('Unable to load event detail.', (xhr.responseJSON && xhr.responseJSON.color) || 'red');
                 }
             });
-
         }
 
-
-
-         function clearAndReset() {
-            // {#$('#addForm').trigger('reset');#}
-             myOwnReset();
-            $('#saveBtn').css('display', '');
-            $('#saveBtnUpdate').css('display', 'none');
-
+        function delData(id) {
+            $('#dataID').val(id);
+            $('#deleteDataModal').modal('show');
         }
 
-        function editData() {
-    showLoading();
+        function deleteData() {
+            let data = new FormData();
+            data.append('dataID', $('#dataID').val());
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
 
-    let data = new FormData();
-
-    // ---------- COLLECT ALL INPUTS BY ID ----------
-    $('#addForm input, #addForm select, #addForm textarea')
-        .each(function () {
-            const id = $(this).attr('id');
-
-            if (!id) return; // skip elements without id
-
-            // Handle file input
-            if (this.type === 'file') {
-                if (this.files.length > 0) {
-                    data.append(id, this.files[0]);
+            $.ajax({
+                url: "{% url 'managementAppAPI:delete_event' %}",
+                type: 'post',
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        eventTab.ajax.reload(null, false);
+                        $('#deleteDataModal').modal('toggle');
+                    } else {
+                        addErrorNotification(response.message || 'Unable to delete event.', response.color || 'red');
+                    }
+                },
+                error: function (xhr) {
+                    addErrorNotification('Unable to delete event.', (xhr.responseJSON && xhr.responseJSON.color) || 'red');
                 }
-            }
-            // Handle checkbox
-            else if (this.type === 'checkbox') {
-                data.append(id, $(this).is(':checked'));
-            }
-            // Handle radio
-            else if (this.type === 'radio') {
-                if ($(this).is(':checked')) {
-                    data.append(id, $(this).val());
-                }
-            }
-            // Normal input/select/textarea
-            else {
-                data.append(id, $(this).val());
-            }
-        });
-
-    // ---------- CSRF ----------
-    data.append(
-        'csrfmiddlewaretoken',
-        $("input[name='csrfmiddlewaretoken']").val()
-    );
-
-    // ---------- BASIC REQUIRED CHECK ----------
-    const requiredIds = [
-        'title', 'start_date',
-        'end_date', 'description',
-    ];
-
-    let hasError = false;
-    requiredIds.forEach(id => {
-        if (!data.get(id)) {
-            console.log(id);
-             $(`#${id}`).closest('.field').addClass('error');
-            hasError = true;
+            });
         }
-    });
-
-    if (hasError) {
-       requiredFieldError();
-       hideLoading(true);
-       return;
-    }
-
-    // ---------- AJAX ----------
-    $.ajax({
-        type: 'POST',
-        url: "{% url 'managementAppAPI:update_event_api' %}",
-        data: data,
-        contentType: false,
-        processData: false,
-        cache: false,
-
-        success: function (response) {
-            if (response.success) {
-                addSuccessNotification(response.message, 'green');
-                $('#addForm').trigger('reset');
-                eventTab.ajax.reload(null, false);
-            } else {
-                addErrorNotification(response.message);
-            }
-            hideLoading();
-        },
-
-        error: function () {
-            addErrorNotification('An error occurred !');
-            hideLoading();
-        }
-    });
-}
 
     </script>
-
 {% endblock %}

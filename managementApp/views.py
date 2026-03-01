@@ -452,6 +452,14 @@ def manage_event(request):
     }
     return render(request, 'managementApp/events/add_event.html', context)
 
+
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_event_type(request):
+    context = {
+    }
+    return render(request, 'managementApp/events/manage_event_type.html', context)
+
 # ----Parents -------------------
 @login_required
 @check_groups('Admin', 'Owner')

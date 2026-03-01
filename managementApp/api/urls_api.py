@@ -107,6 +107,12 @@ urlpatterns = [
     path('StudentMarksDetailsByStudentJson', StudentMarksDetailsByStudentJson.as_view(), name='StudentMarksDetailsByStudentJson'),
 
     # events
+    path('get_event_type_list_api', get_event_type_list_api, name='get_event_type_list_api'),
+    path('EventTypeListJson', EventTypeListJson.as_view(), name='EventTypeListJson'),
+    path('add_event_type_api', add_event_type_api, name='add_event_type_api'),
+    path('get_event_type_detail', get_event_type_detail, name='get_event_type_detail'),
+    path('update_event_type_api', update_event_type_api, name='update_event_type_api'),
+    path('delete_event_type', delete_event_type, name='delete_event_type'),
     path('add_event_api',add_event_api, name='add_event_api'),
     path('EventListJson', EventListJson.as_view(), name='EventListJson'),
     path('delete_event', delete_event, name='delete_event'),

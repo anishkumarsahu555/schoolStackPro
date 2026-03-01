@@ -20,6 +20,7 @@ pre_save_with_user = Signal()
 @receiver(pre_save_with_user, sender=TeacherAttendance)
 @receiver(pre_save_with_user, sender=StudentFee)
 @receiver(pre_save_with_user, sender=MarkOfStudentsByExam)
+@receiver(pre_save_with_user, sender=EventType)
 @receiver(pre_save_with_user, sender=Event)
 def update_fields_from_signal(sender, instance, **kwargs):
     # Check if the instance is being created (has no primary key yet)

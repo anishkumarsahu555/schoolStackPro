@@ -1,0 +1,298 @@
+{% extends base_template|default:'managementApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Manage Event Type</title>
+{% endblock %}
+
+{% block body %}
+    <style>
+        #EventTypeTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #EventTypeTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+    </style>
+
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active">Manage Event Type</div>
+            </div>
+
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="left align icon"></i>
+                    Add/Edit Event Type
+                </h4>
+
+                <form class="ui tiny form" id="eventTypeForm">{% csrf_token %}
+                    <input type="hidden" id="type_editID">
+                    <div class="three fields">
+                        <div class="field required">
+                            <label>Name</label>
+                            <input type="text" id="type_name" placeholder="Event Type Name">
+                        </div>
+                        <div class="field required">
+                            <label>Audience</label>
+                            <select class="ui search dropdown" id="type_audience">
+                                <option value="">Select Audience</option>
+                                <option value="general">General</option>
+                                <option value="teacherapp">Teacher App</option>
+                                <option value="studentapp">Student App</option>
+                                <option value="managementapp">Management App</option>
+                                <option value="all_apps">All Apps</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Description</label>
+                            <input type="text" id="type_description" placeholder="Description">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <button type="button" id="typeSaveBtn" class="ui mini green button" onclick="addEventType()">
+                            <i class="icon plus square"></i>
+                            Add
+                        </button>
+                        <button type="button" id="typeUpdateBtn" style="display:none;" class="ui mini orange button" onclick="updateEventType()">
+                            <i class="icon redo"></i>
+                            Update
+                        </button>
+                        <button type="button" class="ui mini red button" onclick="clearEventTypeForm()">
+                            <i class="icon times circle"></i>
+                            Clear
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="row" style="padding-left: 5px; padding-right: 5px">
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                           id="EventTypeTable"
+                           style="margin-top: 5px;width: 100%">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Audience</th>
+                            <th>Description</th>
+                            <th>AddedOn</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="ui basic modal custom" id="deleteTypeModal">
+                <div class="ui icon header">
+                    <i class="trash alternate icon red"></i>
+                    Event Type will be Deleted
+                </div>
+                <div class="content">
+                    <p style="text-align: center">The event type will be deleted, are you sure?</p>
+                </div>
+                <div class="actions">
+                    <div class="ui red basic cancel inverted button">
+                        <i class="remove icon"></i>
+                        No
+                    </div>
+                    <input type="hidden" id="typeDataID">
+                    <div class="ui green ok inverted button" onclick="deleteEventType()">
+                        <i class="checkmark icon"></i>
+                        Yes
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let eventTypeTab;
+
+        $(function () {
+            eventTypeTab = $('#EventTypeTable').DataTable({
+                dom: 'Blfrtip',
+                scrollY: '300px',
+                scrollX: true,
+                stateSave: true,
+                fixedColumns: {
+                    left: 1,
+                    right: 1
+                },
+                buttons: [{
+                    extend: 'excel',
+                    exportOptions: {columns: [0, 1, 2, 3]}
+                }],
+                columnDefs: [
+                    {name: 'name', targets: 0, orderable: true},
+                    {name: 'audience', targets: 1, orderable: true},
+                    {name: 'description', targets: 2, orderable: true},
+                    {name: 'datetime', targets: 3, orderable: true},
+                    {name: 'action', targets: 4, orderable: false}
+                ],
+                aaSorting: [[3, 'desc']],
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                pageLength: 10,
+                processing: true,
+                serverSide: true,
+                ajax: "{% url 'managementAppAPI:EventTypeListJson' %}"
+            });
+        });
+
+        function validateEventTypeForm() {
+            let requiredIds = ['type_name', 'type_audience'];
+            let hasError = false;
+            requiredIds.forEach(function (id) {
+                if (!$('#' + id).val()) {
+                    $('#' + id).closest('.field').addClass('error');
+                    hasError = true;
+                }
+            });
+            return !hasError;
+        }
+
+        function buildEventTypePayload() {
+            let data = new FormData();
+            data.append('type_name', $('#type_name').val());
+            data.append('type_audience', $('#type_audience').val());
+            data.append('type_description', $('#type_description').val());
+            data.append('type_editID', $('#type_editID').val());
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            return data;
+        }
+
+        function clearEventTypeForm() {
+            $('#eventTypeForm')[0].reset();
+            $('#type_audience').dropdown('clear');
+            $('#type_editID').val('');
+            $('#typeSaveBtn').show();
+            $('#typeUpdateBtn').hide();
+        }
+
+        function addEventType() {
+            if (!validateEventTypeForm()) {
+                requiredFieldError();
+                return;
+            }
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:add_event_type_api' %}",
+                data: buildEventTypePayload(),
+                contentType: false,
+                processData: false,
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        clearEventTypeForm();
+                        eventTypeTab.ajax.reload(null, false);
+                    } else {
+                        addErrorNotification(response.message, response.color || 'red');
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to add event type.', 'red');
+                }
+            });
+        }
+
+        function GetTypeDataDetails(id) {
+            $('#typeSaveBtn').hide();
+            $('#typeUpdateBtn').show();
+            $.ajax({
+                type: 'GET',
+                data: {id: id},
+                url: "{% url 'managementAppAPI:get_event_type_detail' %}",
+                success: function (response) {
+                    if (response.success) {
+                        $('#type_editID').val(response.data.ID);
+                        $('#type_name').val(response.data.name);
+                        $('#type_audience').dropdown('set selected', response.data.audience);
+                        $('#type_description').val(response.data.description);
+                    } else {
+                        addErrorNotification(response.message, response.color || 'red');
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to fetch event type details.', 'red');
+                }
+            });
+        }
+
+        function updateEventType() {
+            if (!validateEventTypeForm()) {
+                requiredFieldError();
+                return;
+            }
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:update_event_type_api' %}",
+                data: buildEventTypePayload(),
+                contentType: false,
+                processData: false,
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        clearEventTypeForm();
+                        eventTypeTab.ajax.reload(null, false);
+                    } else {
+                        addErrorNotification(response.message, response.color || 'red');
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to update event type.', 'red');
+                }
+            });
+        }
+
+        function delTypeData(id) {
+            $('#typeDataID').val(id);
+            $('#deleteTypeModal').modal('show');
+        }
+
+        function deleteEventType() {
+            let data = new FormData();
+            data.append('dataID', $('#typeDataID').val());
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:delete_event_type' %}",
+                data: data,
+                contentType: false,
+                processData: false,
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        $('#deleteTypeModal').modal('toggle');
+                        clearEventTypeForm();
+                        eventTypeTab.ajax.reload(null, false);
+                    } else {
+                        addErrorNotification(response.message, response.color || 'red');
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to delete event type.', 'red');
+                }
+            });
+        }
+    </script>
+{% endblock %}

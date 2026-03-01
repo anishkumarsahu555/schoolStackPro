@@ -16,6 +16,8 @@
                 <table class="ui celled striped compact table">
                     <thead>
                     <tr>
+                        <th>Event Type</th>
+                        <th>Audience</th>
                         <th>Title</th>
                         <th>Start Date</th>
                         <th>End Date</th>
@@ -25,6 +27,8 @@
                     <tbody>
                     {% for row in events %}
                         <tr>
+                            <td>{{ row.eventID.name|default:'General Announcement' }}</td>
+                            <td>{% if row.eventID %}{{ row.eventID.get_audience_display }}{% else %}General{% endif %}</td>
                             <td>{{ row.title|default:'N/A' }}</td>
                             <td>{{ row.startDate|date:'d-m-Y'|default:'N/A' }}</td>
                             <td>{{ row.endDate|date:'d-m-Y'|default:'N/A' }}</td>
@@ -32,7 +36,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="4" class="center aligned">No events available.</td>
+                            <td colspan="6" class="center aligned">No events available.</td>
                         </tr>
                     {% endfor %}
                     </tbody>

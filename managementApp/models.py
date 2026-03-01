@@ -462,9 +462,17 @@ class MarkOfStudentsByExam(models.Model):
 
 
 class EventType(models.Model):
+    AUDIENCE_CHOICES = (
+        ('general', 'General'),
+        ('teacherapp', 'Teacher App'),
+        ('studentapp', 'Student App'),
+        ('managementapp', 'Management App'),
+        ('all_apps', 'All Apps'),
+    )
     schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
     sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=500, blank=True, null=True)
+    audience = models.CharField(max_length=100, choices=AUDIENCE_CHOICES, default='general')
     description = models.TextField(blank=True, null=True, default='')
     datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
