@@ -49,8 +49,10 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'django.middleware.gzip.GZipMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.http.ConditionalGetMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -75,6 +77,18 @@ TEMPLATES = [
     },
 ]
 
+if not DEBUG:
+    TEMPLATES[0]['APP_DIRS'] = False
+    TEMPLATES[0]['OPTIONS']['loaders'] = [
+        (
+            'django.template.loaders.cached.Loader',
+            [
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
+            ],
+        ),
+    ]
+
 WSGI_APPLICATION = 'schoolStackPro.wsgi.application'
 
 
@@ -83,6 +97,7 @@ WSGI_APPLICATION = 'schoolStackPro.wsgi.application'
 
 
 USE_MYSQL = os.getenv('USE_MYSQL', 'false').lower() == 'true'
+DB_CONN_MAX_AGE = int(os.getenv('DB_CONN_MAX_AGE', '60'))
 
 if USE_MYSQL:
     DATABASES = {
@@ -93,6 +108,10 @@ if USE_MYSQL:
             'PASSWORD': os.getenv('DB_PASSWORD', 'pass'),
             'HOST': os.getenv('DB_HOST', 'localhost'),
             'PORT': '3306',
+            'CONN_MAX_AGE': DB_CONN_MAX_AGE,
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            },
         }
     }
 else:
@@ -100,6 +119,10 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+            'CONN_MAX_AGE': DB_CONN_MAX_AGE,
+            'OPTIONS': {
+                'timeout': 20,
+            },
         }
     }
 

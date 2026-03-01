@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 import json
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.shortcuts import render, get_object_or_404
 
 from homeApp.models import SchoolSession
@@ -100,45 +100,61 @@ def teacher_home(request):
         sessionID_id=current_session_id,
     )
 
-    assigned_class_ids = set(assignments.values_list('assignedSubjectID__standardID_id', flat=True))
-    subject_count = assignments.values_list('assignedSubjectID__subjectID_id', flat=True).distinct().count()
+    assignment_pairs = list(
+        assignments.values_list(
+            'assignedSubjectID__standardID_id',
+            'assignedSubjectID__subjectID_id',
+        ).distinct()
+    )
+    assigned_class_ids = {row[0] for row in assignment_pairs if row[0]}
+    assigned_subject_ids = {row[1] for row in assignment_pairs if row[1]}
+
     class_count = len(assigned_class_ids)
+    subject_count = len(assigned_subject_ids)
     student_count = Student.objects.filter(
         isDeleted=False,
         sessionID_id=current_session_id,
         standardID_id__in=assigned_class_ids,
     ).count() if assigned_class_ids else 0
 
-    students_qs = Student.objects.select_related('standardID').filter(
-        isDeleted=False,
-        sessionID_id=current_session_id,
-        standardID_id__in=assigned_class_ids,
-    ) if assigned_class_ids else Student.objects.none()
-
     class_counter = {}
     gender_counter = {'Male': 0, 'Female': 0, 'Other': 0, 'Unknown': 0}
-    for stu in students_qs:
-        class_name = 'N/A'
-        if stu.standardID:
-            class_name = stu.standardID.name or 'N/A'
-            if stu.standardID.section:
-                class_name = f'{class_name} - {stu.standardID.section}'
-        class_counter[class_name] = class_counter.get(class_name, 0) + 1
+    if assigned_class_ids:
+        class_rows = Student.objects.filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            standardID_id__in=assigned_class_ids,
+        ).values('standardID__name', 'standardID__section').annotate(total=Count('id'))
 
-        gender = (stu.gender or '').strip().lower()
-        if gender in {'male', 'm'}:
-            gender_counter['Male'] += 1
-        elif gender in {'female', 'f'}:
-            gender_counter['Female'] += 1
-        elif gender:
-            gender_counter['Other'] += 1
-        else:
-            gender_counter['Unknown'] += 1
+        for row in class_rows:
+            class_name = row.get('standardID__name') or 'N/A'
+            section = row.get('standardID__section')
+            if section:
+                class_name = f'{class_name} - {section}'
+            class_counter[class_name] = row.get('total', 0)
 
-    subject_counter = {}
-    for item in assignments:
-        sub_name = item.assignedSubjectID.subjectID.name if item.assignedSubjectID and item.assignedSubjectID.subjectID else 'N/A'
-        subject_counter[sub_name] = subject_counter.get(sub_name, 0) + 1
+        gender_rows = Student.objects.filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            standardID_id__in=assigned_class_ids,
+        ).values('gender').annotate(total=Count('id'))
+
+        for row in gender_rows:
+            gender_value = (row.get('gender') or '').strip().lower()
+            total = row.get('total', 0)
+            if gender_value in {'male', 'm'}:
+                gender_counter['Male'] += total
+            elif gender_value in {'female', 'f'}:
+                gender_counter['Female'] += total
+            elif gender_value:
+                gender_counter['Other'] += total
+            else:
+                gender_counter['Unknown'] += total
+
+    subject_counter = {
+        row['assignedSubjectID__subjectID__name'] or 'N/A': row['total']
+        for row in assignments.values('assignedSubjectID__subjectID__name').annotate(total=Count('id'))
+    }
 
     upcoming_events = Event.objects.filter(
         isDeleted=False,
@@ -148,15 +164,21 @@ def teacher_home(request):
     ).order_by('startDate')[:5]
 
     recent_assignments = []
-    for item in assignments.order_by('-datetime')[:6]:
-        class_name = item.assignedSubjectID.standardID.name if item.assignedSubjectID.standardID else 'N/A'
-        section = item.assignedSubjectID.standardID.section if item.assignedSubjectID.standardID else ''
+    recent_assignment_rows = assignments.order_by('-datetime').values(
+        'assignedSubjectID__standardID__name',
+        'assignedSubjectID__standardID__section',
+        'assignedSubjectID__subjectID__name',
+        'subjectBranch',
+    )[:6]
+    for row in recent_assignment_rows:
+        class_name = row.get('assignedSubjectID__standardID__name') or 'N/A'
+        section = row.get('assignedSubjectID__standardID__section') or ''
         if section:
             class_name = f'{class_name} - {section}'
         recent_assignments.append({
             'class_name': class_name,
-            'subject_name': item.assignedSubjectID.subjectID.name if item.assignedSubjectID.subjectID else 'N/A',
-            'branch': item.subjectBranch or 'Main',
+            'subject_name': row.get('assignedSubjectID__subjectID__name') or 'N/A',
+            'branch': row.get('subjectBranch') or 'Main',
         })
 
     context = {

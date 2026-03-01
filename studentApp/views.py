@@ -93,16 +93,24 @@ def student_home(request):
         studentID_id=student.id,
         sessionID_id=current_session_id,
     )
-    total_attendance_days = attendance_qs.count()
-    present_days = attendance_qs.filter(isPresent=True).count()
+    attendance_totals = attendance_qs.aggregate(
+        total=Count('id'),
+        present=Count('id', filter=Q(isPresent=True)),
+    )
+    total_attendance_days = attendance_totals.get('total') or 0
+    present_days = attendance_totals.get('present') or 0
     attendance_percent = round((present_days * 100.0 / total_attendance_days), 2) if total_attendance_days else 0
     today = date.today()
     month_attendance_qs = attendance_qs.filter(
         attendanceDate__year=today.year,
         attendanceDate__month=today.month,
     )
-    attendance_month_total_days = month_attendance_qs.count()
-    attendance_month_present_days = month_attendance_qs.filter(isPresent=True).count()
+    attendance_month_totals = month_attendance_qs.aggregate(
+        total=Count('id'),
+        present=Count('id', filter=Q(isPresent=True)),
+    )
+    attendance_month_total_days = attendance_month_totals.get('total') or 0
+    attendance_month_present_days = attendance_month_totals.get('present') or 0
     attendance_month_percent = round(
         (attendance_month_present_days * 100.0 / attendance_month_total_days), 2
     ) if attendance_month_total_days else 0
@@ -113,8 +121,12 @@ def student_home(request):
         standardID_id=student.standardID_id,
         sessionID_id=current_session_id,
     )
-    paid_amount = float(fee_qs.filter(isPaid=True).aggregate(total=Sum('amount')).get('total') or 0)
-    paid_months_count = fee_qs.filter(isPaid=True).values_list('month', flat=True).distinct().count()
+    fee_totals = fee_qs.aggregate(
+        paid_total=Sum('amount', filter=Q(isPaid=True)),
+        paid_months=Count('month', filter=Q(isPaid=True), distinct=True),
+    )
+    paid_amount = float(fee_totals.get('paid_total') or 0)
+    paid_months_count = fee_totals.get('paid_months') or 0
     total_fee_expected = float(student.totalFee or 0)
     pending_amount = max(total_fee_expected - paid_amount, 0)
 

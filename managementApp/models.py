@@ -58,6 +58,10 @@ class TeacherDetail(models.Model):
 
     class Meta:
         verbose_name_plural = 'g) Teachers Details'
+        indexes = [
+            models.Index(fields=['userID', 'isDeleted', 'datetime'], name='td_user_del_dt_idx'),
+            models.Index(fields=['sessionID', 'isDeleted'], name='td_session_del_idx'),
+        ]
 
 
 class Standard(models.Model):
@@ -80,6 +84,10 @@ class Standard(models.Model):
 
     class Meta:
         verbose_name_plural = 'h) Standard Details'
+        indexes = [
+            models.Index(fields=['sessionID', 'isDeleted'], name='std_session_del_idx'),
+            models.Index(fields=['sessionID', 'classTeacher', 'isDeleted'], name='std_sess_cls_del_idx'),
+        ]
 
 
 # class Section(models.Model):
@@ -147,6 +155,9 @@ class AssignSubjectsToClass(models.Model):
 
     class Meta:
         verbose_name_plural = 'j) Assign Subjects To Class Details'
+        indexes = [
+            models.Index(fields=['sessionID', 'standardID', 'isDeleted'], name='astc_sess_std_del_idx'),
+        ]
 
 
 class AssignSubjectsToTeacher(models.Model):
@@ -165,6 +176,10 @@ class AssignSubjectsToTeacher(models.Model):
 
     class Meta:
         verbose_name_plural = 'j) Assign Subjects To Class Details'
+        indexes = [
+            models.Index(fields=['sessionID', 'teacherID', 'isDeleted'], name='ast_sess_tchr_del_idx'),
+            models.Index(fields=['teacherID', 'isDeleted', 'datetime'], name='ast_tchr_del_dt_idx'),
+        ]
 
 
 class Parent(models.Model):
@@ -317,6 +332,11 @@ class Student(models.Model):
 
     class Meta:
         verbose_name_plural = 'g) Student Details'
+        indexes = [
+            models.Index(fields=['userID', 'isDeleted', 'datetime'], name='stu_user_del_dt_idx'),
+            models.Index(fields=['sessionID', 'isDeleted', 'standardID'], name='stu_sess_del_std_idx'),
+            models.Index(fields=['sessionID', 'standardID', 'isDeleted'], name='stu_sess_std_del_idx'),
+        ]
 
 
 class Exam(models.Model):
@@ -354,6 +374,9 @@ class AssignExamToClass(models.Model):
 
     class Meta:
         verbose_name_plural = 'j) Assign Exam To Class Details'
+        indexes = [
+            models.Index(fields=['sessionID', 'standardID', 'isDeleted', 'startDate'], name='aec_sess_std_date_idx'),
+        ]
 
 
 class ExamTimeTable(models.Model):
@@ -405,6 +428,10 @@ class StudentAttendance(models.Model):
 
     class Meta:
         verbose_name_plural = 'p) Student Attendance'
+        indexes = [
+            models.Index(fields=['sessionID', 'studentID', 'isDeleted', 'isHoliday'], name='sa_sess_stu_del_hol_idx'),
+            models.Index(fields=['sessionID', 'standardID', 'isDeleted', 'attendanceDate'], name='sa_sess_std_dt_idx'),
+        ]
 
 
 class TeacherAttendance(models.Model):
@@ -422,6 +449,9 @@ class TeacherAttendance(models.Model):
 
     class Meta:
         verbose_name_plural = 'q) Teacher Attendance'
+        indexes = [
+            models.Index(fields=['sessionID', 'teacherID', 'isDeleted', 'attendanceDate'], name='ta_sess_tchr_dt_idx'),
+        ]
 
 
 class StudentFee(models.Model):
@@ -441,6 +471,10 @@ class StudentFee(models.Model):
 
     class Meta:
         verbose_name_plural = 'r) Student Fee'
+        indexes = [
+            models.Index(fields=['sessionID', 'studentID', 'standardID', 'isDeleted'], name='sf_sess_stu_std_del_idx'),
+            models.Index(fields=['sessionID', 'studentID', 'isPaid', 'isDeleted'], name='sf_sess_stu_paid_idx'),
+        ]
 
 
 class MarkOfStudentsByExam(models.Model):
@@ -459,6 +493,10 @@ class MarkOfStudentsByExam(models.Model):
 
     class Meta:
         verbose_name_plural = 's) Mark Of Students By Exam'
+        indexes = [
+            models.Index(fields=['sessionID', 'studentID', 'examID', 'isDeleted'], name='mse_sess_stu_exm_idx'),
+            models.Index(fields=['sessionID', 'standardID', 'isDeleted'], name='mse_sess_std_del_idx'),
+        ]
 
 
 class EventType(models.Model):
@@ -481,6 +519,9 @@ class EventType(models.Model):
 
     class Meta:
         verbose_name_plural = 't) Events Type'
+        indexes = [
+            models.Index(fields=['sessionID', 'audience', 'isDeleted'], name='evt_type_sess_aud_idx'),
+        ]
 
 
 class Event(models.Model):
@@ -500,6 +541,10 @@ class Event(models.Model):
 
     class Meta:
         verbose_name_plural = 'v) Event'
+        indexes = [
+            models.Index(fields=['sessionID', 'isDeleted', 'startDate'], name='evt_sess_del_start_idx'),
+            models.Index(fields=['sessionID', 'isDeleted', 'datetime'], name='evt_sess_del_dt_idx'),
+        ]
 
 
 class StudentIdCardRecord(models.Model):
@@ -522,3 +567,6 @@ class StudentIdCardRecord(models.Model):
 
     class Meta:
         verbose_name_plural = 'w) Student ID Card Records'
+        indexes = [
+            models.Index(fields=['sessionID', 'studentID', 'isDeleted', 'datetime'], name='sid_sess_stu_del_idx'),
+        ]

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.db import transaction, IntegrityError
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.http import JsonResponse as DjangoJsonResponse
 from django.utils.crypto import get_random_string
 from django.utils.html import escape
@@ -44,6 +44,10 @@ def _api_response(payload, safe=False, status=200):
             ).to_json_response()
 
     return DjangoJsonResponse(payload, safe=safe, status=status)
+
+
+def _current_session_id(request):
+    return request.session.get("current_session", {}).get("Id")
 
 # Class ------------------
 @transaction.atomic
@@ -207,7 +211,10 @@ class StandardListJson(BaseDatatableView):
                      'datetime']             
 
     def get_initial_queryset(self):
-        return Standard.objects.select_related().filter(
+        return Standard.objects.select_related('classTeacher').only(
+            'id', 'name', 'section', 'startingRoll', 'endingRoll', 'classLocation',
+            'lastEditedBy', 'datetime', 'classTeacher__name'
+        ).filter(
             isDeleted__exact=False,
             sessionID_id=self.request.session["current_session"]["Id"],
             # schoolID_id=school_id
@@ -341,8 +348,12 @@ class SubjectListJson(BaseDatatableView):
     order_columns = ['name', 'lastEditedBy', 'datetime']
 
     def get_initial_queryset(self):
-        return Subjects.objects.select_related().filter(isDeleted__exact=False,
-                                                        sessionID_id=self.request.session["current_session"]["Id"])
+        return Subjects.objects.only(
+            'id', 'name', 'lastEditedBy', 'datetime', 'lastUpdatedOn'
+        ).filter(
+            isDeleted__exact=False,
+            sessionID_id=self.request.session["current_session"]["Id"]
+        )
 
     def filter_queryset(self, qs):
 
@@ -479,10 +490,16 @@ class AssignSubjectToClassListJson(BaseDatatableView):
     order_columns = ['standardID.name', 'subjectID.name', 'lastEditedBy', 'datetime']
 
     def get_initial_queryset(self):
-        return AssignSubjectsToClass.objects.select_related().filter(isDeleted__exact=False,
-                                                                     sessionID_id=
-                                                                     self.request.session["current_session"][
-                                                                         "Id"]).order_by('standardID__name')
+        return AssignSubjectsToClass.objects.select_related(
+            'standardID', 'subjectID'
+        ).only(
+            'id', 'lastEditedBy', 'datetime',
+            'standardID__name', 'standardID__section',
+            'subjectID__name'
+        ).filter(
+            isDeleted__exact=False,
+            sessionID_id=self.request.session["current_session"]["Id"]
+        ).order_by('standardID__name')
 
     def filter_queryset(self, qs):
 
@@ -590,21 +607,19 @@ def update_subject_to_class(request):
 
 @login_required
 def get_subjects_to_class_assign_list_api(request):
-    objs = AssignSubjectsToClass.objects.filter(isDeleted=False,
-                                                sessionID_id=request.session['current_session']['Id']).order_by(
-        'standardID__name')
+    rows = AssignSubjectsToClass.objects.filter(
+        isDeleted=False,
+        sessionID_id=_current_session_id(request)
+    ).values(
+        'id', 'standardID__name', 'standardID__section', 'subjectID__name'
+    ).order_by('standardID__name')
     data = []
-    for obj in objs:
-        if obj.standardID.section:
-            name = obj.standardID.name + ' - ' + obj.standardID.section + ' - ' + obj.subjectID.name
-        else:
-            name = obj.standardID.name + ' - ' + obj.subjectID.name
-        data_dic = {
-            'ID': obj.pk,
-            'Name': name
-
-        }
-        data.append(data_dic)
+    for row in rows:
+        standard = row.get('standardID__name') or 'N/A'
+        section = row.get('standardID__section')
+        subject = row.get('subjectID__name') or 'N/A'
+        name = f"{standard} - {section} - {subject}" if section else f"{standard} - {subject}"
+        data.append({'ID': row['id'], 'Name': name})
     return _api_response(
         {'status': 'success', 'data': data,
          'color': 'success'}, safe=False)
@@ -613,17 +628,12 @@ def get_subjects_to_class_assign_list_api(request):
 @login_required
 def get_subjects_to_class_assign_list_with_given_class_api(request):
     standard = request.GET.get('standard')
-    objs = AssignSubjectsToClass.objects.filter(isDeleted=False, standardID_id=int(standard),
-                                                sessionID_id=request.session['current_session']['Id']).order_by(
-        'standardID__name')
-    data = []
-    for obj in objs:
-        data_dic = {
-            'ID': obj.pk,
-            'Name': obj.subjectID.name
-
-        }
-        data.append(data_dic)
+    rows = AssignSubjectsToClass.objects.filter(
+        isDeleted=False,
+        standardID_id=int(standard),
+        sessionID_id=_current_session_id(request)
+    ).values('id', 'subjectID__name').order_by('subjectID__name')
+    data = [{'ID': row['id'], 'Name': row['subjectID__name'] or 'N/A'} for row in rows]
     return _api_response(
         {'status': 'success', 'data': data,
          'color': 'success'}, safe=False)
@@ -666,10 +676,16 @@ class AssignSubjectToTeacherListJson(BaseDatatableView):
                      'assignedSubjectID.subjectID.name', 'teacherID.name', 'subjectBranch', 'lastEditedBy', 'datetime']
 
     def get_initial_queryset(self):
-        return AssignSubjectsToTeacher.objects.select_related().filter(isDeleted__exact=False,
-                                                                       sessionID_id=
-                                                                       self.request.session["current_session"][
-                                                                           "Id"]).order_by(
+        return AssignSubjectsToTeacher.objects.select_related(
+            'assignedSubjectID__standardID', 'assignedSubjectID__subjectID', 'teacherID'
+        ).only(
+            'id', 'subjectBranch', 'lastEditedBy', 'datetime',
+            'assignedSubjectID__standardID__name', 'assignedSubjectID__standardID__section',
+            'assignedSubjectID__subjectID__name', 'teacherID__name'
+        ).filter(
+            isDeleted__exact=False,
+            sessionID_id=self.request.session["current_session"]["Id"]
+        ).order_by(
             'assignedSubjectID__standardID__name')
 
     def filter_queryset(self, qs):
@@ -721,10 +737,16 @@ class AssignSubjectToClassListJson(BaseDatatableView):
     order_columns = ['standardID.name', 'subjectID.name', 'lastEditedBy', 'datetime']
 
     def get_initial_queryset(self):
-        return AssignSubjectsToClass.objects.select_related().filter(isDeleted__exact=False,
-                                                                     sessionID_id=
-                                                                     self.request.session["current_session"][
-                                                                         "Id"]).order_by('standardID__name')
+        return AssignSubjectsToClass.objects.select_related(
+            'standardID', 'subjectID'
+        ).only(
+            'id', 'lastEditedBy', 'datetime',
+            'standardID__name', 'standardID__section',
+            'subjectID__name'
+        ).filter(
+            isDeleted__exact=False,
+            sessionID_id=self.request.session["current_session"]["Id"]
+        ).order_by('standardID__name')
 
     def filter_queryset(self, qs):
 
@@ -901,7 +923,7 @@ def add_teacher_api(request):
 
             username = 'T' + get_random_string(length=5, allowed_chars='1234567890')
             password = get_random_string(length=8, allowed_chars='1234567890')
-            while User.objects.select_related().filter(username__exact=username).count() > 0:
+            while User.objects.filter(username__exact=username).exists():
                 username = 'T' + get_random_string(length=5, allowed_chars='1234567890')
             else:
                 new_user = User()
@@ -1037,8 +1059,13 @@ class TeacherListJson(BaseDatatableView):
                      'isActive', 'lastEditedBy', 'datetime']
 
     def get_initial_queryset(self):
-        return TeacherDetail.objects.select_related().filter(isDeleted__exact=False,
-                                                             sessionID_id=self.request.session["current_session"]["Id"])
+        return TeacherDetail.objects.only(
+            'id', 'photo', 'name', 'email', 'phoneNumber', 'employeeCode', 'gender',
+            'staffType', 'presentCity', 'isActive', 'lastEditedBy', 'datetime', 'lastUpdatedOn'
+        ).filter(
+            isDeleted__exact=False,
+            sessionID_id=self.request.session["current_session"]["Id"]
+        )
 
     def filter_queryset(self, qs):
 
@@ -1117,19 +1144,15 @@ def delete_teacher(request):
 
 @login_required
 def get_teacher_list_api(request):
-    objs = TeacherDetail.objects.filter(isDeleted=False, sessionID_id=request.session['current_session']['Id'],
-                                        isActive='Yes').order_by(
-        'name')
-    data = []
-    for obj in objs:
-        name = obj.name + ' - ' + obj.employeeCode
-
-        data_dic = {
-            'ID': obj.pk,
-            'Name': name
-
-        }
-        data.append(data_dic)
+    rows = TeacherDetail.objects.filter(
+        isDeleted=False,
+        sessionID_id=_current_session_id(request),
+        isActive='Yes'
+    ).values('id', 'name', 'employeeCode').order_by('name')
+    data = [
+        {'ID': row['id'], 'Name': f"{row.get('name') or 'N/A'} - {row.get('employeeCode') or 'N/A'}"}
+        for row in rows
+    ]
     return _api_response(
         {'status': 'success', 'data': data,
          'color': 'success'}, safe=False)
@@ -1270,19 +1293,19 @@ def add_student_api(request):
 @login_required
 def get_student_list_by_class_api(request):
     standard = request.GET.get('standard')
-    objs = Student.objects.filter(isDeleted=False, sessionID_id=request.session['current_session']['Id'],
-                                  standardID_id=int(standard)).order_by(
-        'roll')
+    rows = Student.objects.filter(
+        isDeleted=False,
+        sessionID_id=_current_session_id(request),
+        standardID_id=int(standard)
+    ).values('id', 'name', 'roll').order_by('roll')
     data = []
-    for obj in objs:
-        name = obj.name + ' - ' + str(int(float(obj.roll)))
-
-        data_dic = {
-            'ID': obj.pk,
-            'Name': name
-
-        }
-        data.append(data_dic)
+    for row in rows:
+        roll = row.get('roll')
+        try:
+            roll_label = str(int(float(roll)))
+        except Exception:
+            roll_label = str(roll or 'N/A')
+        data.append({'ID': row['id'], 'Name': f"{row.get('name') or 'N/A'} - {roll_label}"})
     return _api_response(
         {'status': 'success', 'data': data,
          'color': 'success'}, safe=False)
@@ -1294,8 +1317,14 @@ class StudentListJson(BaseDatatableView):
                      'isActive', 'lastEditedBy', 'datetime']
 
     def get_initial_queryset(self):
-        return Student.objects.select_related().filter(isDeleted__exact=False,
-                                                       sessionID_id=self.request.session["current_session"]["Id"])
+        return Student.objects.select_related('standardID', 'parentID').only(
+            'id', 'photo', 'name', 'gender', 'presentCity', 'isActive', 'lastEditedBy', 'datetime', 'lastUpdatedOn',
+            'standardID__name', 'standardID__section',
+            'parentID__fatherName', 'parentID__phoneNumber'
+        ).filter(
+            isDeleted__exact=False,
+            sessionID_id=self.request.session["current_session"]["Id"]
+        )
 
     def filter_queryset(self, qs):
 
@@ -1671,8 +1700,12 @@ class ExamListJson(BaseDatatableView):
     order_columns = ['name', 'lastEditedBy', 'datetime']
 
     def get_initial_queryset(self):
-        return Exam.objects.select_related().filter(isDeleted__exact=False,
-                                                    sessionID_id=self.request.session["current_session"]["Id"])
+        return Exam.objects.only(
+            'id', 'name', 'lastEditedBy', 'datetime', 'lastUpdatedOn'
+        ).filter(
+            isDeleted__exact=False,
+            sessionID_id=self.request.session["current_session"]["Id"]
+        )
 
     def filter_queryset(self, qs):
 
@@ -1772,16 +1805,11 @@ def edit_exam(request):
 
 @login_required
 def get_exams_list_api(request):
-    objs = Exam.objects.filter(isDeleted=False, sessionID_id=request.session['current_session']['Id']).order_by(
-        'name')
-    data = []
-    for obj in objs:
-        data_dic = {
-            'ID': obj.pk,
-            'Name': obj.name
-
-        }
-        data.append(data_dic)
+    rows = Exam.objects.filter(
+        isDeleted=False,
+        sessionID_id=_current_session_id(request)
+    ).values('id', 'name').order_by('name')
+    data = [{'ID': row['id'], 'Name': row.get('name') or 'N/A'} for row in rows]
     return _api_response(
         {'status': 'success', 'data': data, 'color': 'success'}, safe=False)
 
@@ -2205,10 +2233,16 @@ class AssignExamToClassListJson(BaseDatatableView):
                      'examID.name', 'fullMarks', 'passMarks', 'startDate', 'endDate', 'lastEditedBy', 'datetime']
 
     def get_initial_queryset(self):
-        return AssignExamToClass.objects.select_related().filter(isDeleted__exact=False,
-                                                                 sessionID_id=
-                                                                 self.request.session["current_session"][
-                                                                     "Id"]).order_by(
+        return AssignExamToClass.objects.select_related(
+            'standardID', 'examID'
+        ).only(
+            'id', 'fullMarks', 'passMarks', 'startDate', 'endDate', 'lastEditedBy', 'datetime',
+            'standardID__name', 'standardID__section',
+            'examID__name'
+        ).filter(
+            isDeleted__exact=False,
+            sessionID_id=self.request.session["current_session"]["Id"]
+        ).order_by(
             'standardID__name')
 
     def filter_queryset(self, qs):
@@ -3451,7 +3485,7 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
 @login_required
 def get_event_type_list_api(request):
     try:
-        current_session_id = request.session['current_session']['Id']
+        current_session_id = _current_session_id(request)
         default_types = [
             ('General Announcement', 'general'),
             ('Teacher Notice', 'teacherapp'),
@@ -3460,16 +3494,19 @@ def get_event_type_list_api(request):
             ('All Apps Broadcast', 'all_apps'),
         ]
 
-        for type_name, audience in default_types:
-            exists = EventType.objects.filter(
+        existing_pairs = set(
+            EventType.objects.filter(
                 isDeleted=False,
                 sessionID_id=current_session_id,
-                name__iexact=type_name,
-                audience=audience,
-            ).exists()
-            if not exists:
+                name__in=[name for name, _ in default_types],
+                audience__in=[aud for _, aud in default_types],
+            ).values_list('name', 'audience')
+        )
+        for type_name, audience in default_types:
+            if (type_name, audience) not in existing_pairs:
                 obj = EventType(name=type_name, audience=audience)
                 pre_save_with_user.send(sender=EventType, instance=obj, user=request.user.pk)
+                obj.save()
 
         objs = EventType.objects.filter(
             isDeleted=False,
@@ -3694,10 +3731,13 @@ class EventListJson(BaseDatatableView):
                      'endDate', 'message', 'datetime']
 
     def get_initial_queryset(self):
-        return Event.objects.select_related('eventID').filter(isDeleted__exact=False,
-                                                                 sessionID_id=
-                                                                 self.request.session["current_session"][
-                                                                     "Id"])
+        return Event.objects.select_related('eventID').only(
+            'id', 'title', 'startDate', 'endDate', 'message', 'datetime',
+            'eventID__name', 'eventID__audience'
+        ).filter(
+            isDeleted__exact=False,
+            sessionID_id=self.request.session["current_session"]["Id"]
+        )
 
     def filter_queryset(self, qs):
 
@@ -3826,10 +3866,23 @@ class ParentsListJson(BaseDatatableView):
                      'datetime']
 
     def get_initial_queryset(self):
-        return Parent.objects.select_related().filter(isDeleted__exact=False,
-                                                                 sessionID_id=
-                                                                 self.request.session["current_session"][
-                                                                     "Id"])
+        current_session_id = self.request.session["current_session"]["Id"]
+        return Parent.objects.only(
+            'id', 'fatherName', 'fatherPhone', 'motherName', 'motherPhone',
+            'guardianName', 'guardianPhone', 'totalFamilyMembers', 'datetime'
+        ).prefetch_related(
+            Prefetch(
+                'student_set',
+                queryset=Student.objects.select_related('standardID').only(
+                    'id', 'name', 'roll', 'photo',
+                    'standardID__name', 'standardID__section', 'standardID__hasSection'
+                ).filter(isDeleted=False, sessionID_id=current_session_id),
+                to_attr='active_students',
+            )
+        ).filter(
+            isDeleted__exact=False,
+            sessionID_id=current_session_id
+        )
 
     def filter_queryset(self, qs):
 
@@ -3856,17 +3909,16 @@ class ParentsListJson(BaseDatatableView):
               <a href="/management/edit_parent/{}/" data-inverted="" data-tooltip="Edit Parent" data-position="left center" data-variation="mini" style="font-size:10px;" class="ui circular icon button blue">
                 <i class="edit icon"></i>
               </a>'''.format(item.pk, item.pk)
-            students = Student.objects.filter(parentID__pk=item.pk)
-            student_html = ""
-            if students.exists():
-                for s in students:
-                    student_html += f'''
+            students = getattr(item, 'active_students', [])
+            student_html = []
+            for s in students:
+                student_html.append(f'''
                     <a class="ui blue image label">
                     <img src="{s.photo.thumbnail.url if s.photo else ''}">
                     {s.name}
-                    <div class="detail">Roll: {s.roll} Class: {s.standardID.name} { "-"+s.standardID.section if s.standardID.hasSection == "Yes" else ''}</div>
+                    <div class="detail">Roll: {s.roll} Class: {s.standardID.name if s.standardID else 'N/A'} { "-"+s.standardID.section if s.standardID and s.standardID.hasSection == "Yes" else ''}</div>
                     </a>
-                    '''
+                    ''')
 
             json_data.append([
                 escape(item.fatherName),
@@ -3876,7 +3928,7 @@ class ParentsListJson(BaseDatatableView):
                 escape(item.guardianName),
                 escape(item.guardianPhone if item.guardianPhone else 'N/A'),
                 escape(item.totalFamilyMembers if item.totalFamilyMembers else '1'),
-                student_html,
+                ''.join(student_html),
                 escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
                 action,
 

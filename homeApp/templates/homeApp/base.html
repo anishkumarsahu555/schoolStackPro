@@ -1508,7 +1508,77 @@
     }
 
 
+    function isFormFieldEmpty($input) {
+        if (!$input || !$input.length || $input.is(':disabled')) return false;
+        const type = ($input.attr('type') || '').toLowerCase();
+        if (type === 'checkbox' || type === 'radio') {
+            const name = $input.attr('name');
+            if (name) {
+                const $group = $input.closest('form').find('[name="' + name + '"]');
+                return !$group.is(':checked');
+            }
+            return !$input.is(':checked');
+        }
+        return String($input.val() || '').trim() === '';
+    }
+
+    function applyRequiredAttributes(context) {
+        const $context = context ? $(context) : $(document);
+        $context.find('.ui.form .field.required').each(function () {
+            const $field = $(this);
+            const $input = $field.find('input:not([type="hidden"]), select, textarea').first();
+            if (!$input.length) return;
+
+            if (!$input.attr('required')) {
+                $input.attr('required', 'required');
+            }
+
+            // Keep compatibility with existing pages that expect manual validation.
+            if (!$input.attr('aria-required')) {
+                $input.attr('aria-required', 'true');
+            }
+        });
+    }
+
+    function markRequiredFields(contextSelector = '.ui.form:visible') {
+        let hasError = false;
+        const $forms = $(contextSelector);
+
+        $forms.each(function () {
+            const $form = $(this);
+            $form.find('input[required], select[required], textarea[required]').each(function () {
+                const $input = $(this);
+                const $field = $input.closest('.field');
+                if (($field.length && !$field.is(':visible')) || (!$field.length && !$input.is(':visible'))) return;
+                if (isFormFieldEmpty($input)) {
+                    if ($field.length) {
+                        $field.addClass('error');
+                    } else {
+                        $input.addClass('error');
+                    }
+                    hasError = true;
+                }
+            });
+
+            $form.find('.field.required').each(function () {
+                const $field = $(this);
+                if (!$field.is(':visible')) return;
+
+                const $input = $field.find('input:not([type="hidden"]), select, textarea').first();
+                if (!$input.length) return;
+
+                if (isFormFieldEmpty($input)) {
+                    $field.addClass('error');
+                    hasError = true;
+                }
+            });
+        });
+
+        return hasError;
+    }
+
     function requiredFieldError() {
+        markRequiredFields('.ui.form:visible');
         $('body')
             .toast({
                 class: 'orange',
@@ -1679,9 +1749,33 @@
 
     }
 
-    $('#addForm input, #addForm select, #addForm textarea').on('input change', function () {
-    $(this).closest('.field').removeClass('error').popup('destroy');
-});
+    $(document).on('input change', '.ui.form input, .ui.form select, .ui.form textarea', function () {
+        $(this).closest('.field').removeClass('error').popup('destroy');
+    });
+
+    $(document).ready(function () {
+        applyRequiredAttributes(document);
+    });
+
+    const formValidationObserver = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+            mutation.addedNodes.forEach(function (node) {
+                if (node && node.nodeType === 1) {
+                    applyRequiredAttributes(node);
+                }
+            });
+        });
+    });
+
+    formValidationObserver.observe(document.body, {childList: true, subtree: true});
+
+    $(document).on('submit', '.ui.form', function (e) {
+        const hasError = markRequiredFields(this);
+        if (hasError) {
+            e.preventDefault();
+            requiredFieldError();
+        }
+    });
 
 
 </script>
