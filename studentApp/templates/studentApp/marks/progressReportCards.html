@@ -1,0 +1,301 @@
+{% extends 'studentApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>My Progress Report Cards</title>
+{% endblock %}
+
+{% block css %}
+    <style>
+        .report-page .filter-segment {
+            border: 1px solid var(--app-border);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .report-page .student-banner {
+            border: 1px solid var(--app-border);
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(32,90,230,.12), rgba(8,132,187,.08));
+            padding: .9rem 1rem;
+            margin-bottom: .9rem;
+        }
+
+        .report-page .student-banner h3 {
+            margin: 0;
+            color: var(--app-text);
+        }
+
+        .report-page .student-banner .meta {
+            margin-top: .25rem;
+            color: var(--app-muted);
+            font-size: .88rem;
+        }
+
+        .report-page .cards-wrap {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .9rem;
+        }
+
+        .report-page .report-card {
+            border: 1px solid var(--app-border);
+            border-radius: 12px;
+            background: var(--app-surface);
+            overflow: hidden;
+        }
+
+        .report-page .card-head {
+            padding: .85rem 1rem;
+            border-bottom: 1px solid var(--app-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: .7rem;
+            cursor: pointer;
+        }
+
+        .report-page .card-title {
+            margin: 0;
+            color: var(--app-text);
+            font-size: .98rem;
+        }
+
+        .report-page .card-sub {
+            color: var(--app-muted);
+            font-size: .8rem;
+            margin-top: .2rem;
+        }
+
+        .report-page .badge {
+            border-radius: 999px;
+            padding: .28rem .62rem;
+            font-size: .76rem;
+            font-weight: 700;
+            border: 1px solid var(--app-border);
+            background: var(--app-hover);
+            color: var(--app-text);
+        }
+
+        .report-page .badge.pass {
+            background: rgba(33, 186, 69, .16);
+            color: #21ba45;
+            border-color: rgba(33, 186, 69, .3);
+        }
+
+        .report-page .badge.fail {
+            background: rgba(219, 40, 40, .14);
+            color: #db2828;
+            border-color: rgba(219, 40, 40, .3);
+        }
+
+        .report-page .badge.pending {
+            background: rgba(242, 153, 74, .18);
+            color: #f2994a;
+            border-color: rgba(242, 153, 74, .35);
+        }
+
+        .report-page .card-body {
+            display: none;
+            padding: .85rem 1rem;
+        }
+
+        .report-page .report-card.expanded .card-body {
+            display: block;
+        }
+
+        .report-page .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: .55rem;
+            margin-bottom: .65rem;
+        }
+
+        .report-page .kpi {
+            border: 1px dashed var(--app-border);
+            border-radius: 8px;
+            padding: .45rem .5rem;
+        }
+
+        .report-page .kpi .label {
+            color: var(--app-muted);
+            font-size: .72rem;
+            text-transform: uppercase;
+        }
+
+        .report-page .kpi .value {
+            color: var(--app-text);
+            font-size: .95rem;
+            font-weight: 700;
+            margin-top: .2rem;
+        }
+
+        .report-page .subject-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .report-page .subject-table th,
+        .report-page .subject-table td {
+            border-bottom: 1px solid var(--app-border);
+            padding: .45rem .3rem;
+            text-align: left;
+            color: var(--app-text);
+            font-size: .84rem;
+        }
+
+        .report-page .subject-table th {
+            color: var(--app-muted);
+            font-size: .75rem;
+            text-transform: uppercase;
+        }
+
+        .report-page .subject-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .report-page .empty-note {
+            text-align: center;
+            color: var(--app-muted);
+            padding: 1.2rem .4rem;
+        }
+
+        @media print {
+            .material-sidenav,
+            .ui.top.fixed.menu,
+            .report-page .filter-segment,
+            .report-page .ui.pointing.secondary.menu,
+            #printBtn {
+                display: none !important;
+            }
+
+            .report-page .cards-wrap {
+                grid-template-columns: 1fr;
+            }
+
+            .report-page .card-body {
+                display: block !important;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .report-page .cards-wrap {
+                grid-template-columns: 1fr;
+            }
+
+            .report-page .kpi-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="report-page ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div class="item active">My Progress Report Cards</div>
+            </div>
+
+            {% if student_not_found %}
+                <div class="ui warning message">Student profile not found for current session.</div>
+            {% else %}
+                <div class="ui segment filter-segment">
+                    <form class="ui tiny form" method="get" id="filterForm">
+                        <div class="two fields">
+                            <div class="field">
+                                <label>Exam</label>
+                                <select class="ui search dropdown" id="exam" name="exam">
+                                    <option value="all">All Exams</option>
+                                    {% for exam in exam_options %}
+                                        <option value="{{ exam.id }}" {% if selected_exam_id|stringformat:'s' == exam.id|stringformat:'s' %}selected{% endif %}>{{ exam.examID__name|default:'N/A' }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field" style="padding-top: 1.95rem;">
+                                <button class="ui mini primary button" type="submit">
+                                    <i class="search icon"></i> Load
+                                </button>
+                                <a class="ui mini button" href="{% url 'studentApp:student_progress_report_cards' %}">
+                                    <i class="undo icon"></i> Reset
+                                </a>
+                                <button id="printBtn" class="ui mini teal button" type="button" onclick="window.print()">
+                                    <i class="print icon"></i> Print
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="student-banner">
+                    <h3>{{ student.name|default:'N/A' }}</h3>
+                    <div class="meta">
+                        Roll: {{ student.roll|default:'N/A' }}
+                        {% if student.standardID %}
+                            | Class: {{ student.standardID.name }}{% if student.standardID.section %} - {{ student.standardID.section }}{% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if report_cards %}
+                    <div class="cards-wrap" id="reportCardsWrap">
+                        {% for card in report_cards %}
+                            <div class="report-card {% if forloop.first %}expanded{% endif %}">
+                                <div class="card-head">
+                                    <div>
+                                        <h4 class="card-title">{{ card.exam_name }}</h4>
+                                        <div class="card-sub">{{ card.exam_date|date:'d M Y'|default:'N/A' }} | Entries: {{ card.entered_marks_count }}/{{ card.subject_count }}</div>
+                                    </div>
+                                    <div class="badge {% if card.result == 'Pass' %}pass{% elif card.result == 'Fail' %}fail{% else %}pending{% endif %}">
+                                        {{ card.result }}
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="kpi-grid">
+                                        <div class="kpi"><div class="label">Obtained</div><div class="value">{{ card.total_obtained }}</div></div>
+                                        <div class="kpi"><div class="label">Full Marks</div><div class="value">{{ card.full_marks }}</div></div>
+                                        <div class="kpi"><div class="label">Percentage</div><div class="value">{% if card.percentage != None %}{{ card.percentage }}%{% else %}N/A{% endif %}</div></div>
+                                        <div class="kpi"><div class="label">Grade</div><div class="value">{{ card.grade }}</div></div>
+                                    </div>
+
+                                    <table class="subject-table">
+                                        <thead>
+                                        <tr>
+                                            <th>Subject</th>
+                                            <th>Marks</th>
+                                            <th>Note</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for row in card.subject_rows %}
+                                            <tr>
+                                                <td>{{ row.subject_name }}</td>
+                                                <td>{% if row.mark != None %}{{ row.mark }}{% else %}Pending{% endif %}</td>
+                                                <td>{{ row.note|default:'-' }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="ui message">No report card data found.</div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        $(document).ready(function () {
+            document.querySelectorAll('#reportCardsWrap .report-card .card-head').forEach(function (head) {
+                head.addEventListener('click', function () {
+                    head.parentElement.classList.toggle('expanded');
+                });
+            });
+        });
+    </script>
+{% endblock %}

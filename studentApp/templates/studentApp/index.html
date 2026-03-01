@@ -40,6 +40,11 @@
             <i class="clipboard outline icon"></i>
             <span>Exam Details</span>
         </a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'student_progress_report_cards' %}active{% endif %}"
+           href="{% url 'studentApp:student_progress_report_cards' %}">
+            <i class="chart bar outline icon"></i>
+            <span>Progress Report Cards</span>
+        </a>
 
         <div class="nav-section">Events</div>
         <a class="nav-item {% if request.resolver_match.url_name == 'student_events' %}active{% endif %}"

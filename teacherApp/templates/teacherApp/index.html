@@ -60,6 +60,11 @@
             <i class="list alternate outline icon"></i>
             <span>Marks Details</span>
         </a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_progress_report_cards' %}active{% endif %}"
+           href="{% url 'teacherApp:teacher_progress_report_cards' %}">
+            <i class="chart bar outline icon"></i>
+            <span>Progress Report Cards</span>
+        </a>
 
         <div class="nav-section">Events</div>
         <a class="nav-item {% if request.resolver_match.url_name == 'teacher_manage_event' %}active{% endif %}"

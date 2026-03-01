@@ -13,6 +13,7 @@ urlpatterns = [
     #fee
     path('fee_detail/', fee_detail, name='fee_detail'),
     path('exams/', student_exam_details, name='student_exam_details'),
+    path('progress-report-cards/', student_progress_report_cards, name='student_progress_report_cards'),
     path('events/', student_events, name='student_events'),
 
 ]

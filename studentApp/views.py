@@ -44,6 +44,24 @@ def _bootstrap_student_context(request):
     return student, current_session_id
 
 
+def _grade_from_percentage(value):
+    if value is None:
+        return 'N/A'
+    if value >= 90:
+        return 'A+'
+    if value >= 80:
+        return 'A'
+    if value >= 70:
+        return 'B+'
+    if value >= 60:
+        return 'B'
+    if value >= 50:
+        return 'C'
+    if value >= 40:
+        return 'D'
+    return 'F'
+
+
 @login_required
 @check_groups('Student')
 def student_home(request):
@@ -233,3 +251,101 @@ def student_my_details(request):
         'base_template': 'studentApp/index.html',
     }
     return render(request, 'managementApp/student/student_detail.html', context)
+
+
+@login_required
+@check_groups('Student')
+def student_progress_report_cards(request):
+    student, current_session_id = _bootstrap_student_context(request)
+    if not student or not current_session_id:
+        return render(request, 'studentApp/marks/progressReportCards.html', {
+            'selected_exam_id': 'all',
+            'report_cards': [],
+            'student_not_found': True,
+        })
+
+    selected_exam_id = request.GET.get('exam') or 'all'
+
+    exam_qs = AssignExamToClass.objects.select_related('examID').filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=student.standardID_id,
+    )
+    if selected_exam_id != 'all' and str(selected_exam_id).isdigit():
+        exam_qs = exam_qs.filter(id=int(selected_exam_id))
+    exam_qs = exam_qs.order_by('startDate', 'examID__name')
+
+    exam_options = list(AssignExamToClass.objects.select_related('examID').filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=student.standardID_id,
+    ).order_by('examID__name').values('id', 'examID__name'))
+
+    class_subjects = list(AssignSubjectsToClass.objects.select_related('subjectID').filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=student.standardID_id,
+    ).order_by('subjectID__name'))
+
+    report_cards = []
+    for exam_obj in exam_qs:
+        marks_qs = MarkOfStudentsByExam.objects.select_related('subjectID', 'subjectID__subjectID').filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            studentID_id=student.id,
+            standardID_id=student.standardID_id,
+            examID_id=exam_obj.id,
+        )
+        mark_map = {m.subjectID_id: m for m in marks_qs}
+
+        subject_rows = []
+        total_obtained = 0.0
+        entered_marks_count = 0
+        for ass_sub in class_subjects:
+            mark_obj = mark_map.get(ass_sub.id)
+            if mark_obj is not None:
+                mark_value = float(mark_obj.mark or 0)
+                total_obtained += mark_value
+                entered_marks_count += 1
+            else:
+                mark_value = None
+
+            subject_rows.append({
+                'subject_name': ass_sub.subjectID.name if ass_sub.subjectID else 'N/A',
+                'mark': mark_value,
+                'note': mark_obj.note if mark_obj and mark_obj.note else '',
+            })
+
+        full_marks = float(exam_obj.fullMarks or 0)
+        pass_marks = float(exam_obj.passMarks or 0)
+        percentage = round((total_obtained * 100.0 / full_marks), 2) if full_marks > 0 else None
+        grade = _grade_from_percentage(percentage)
+        is_complete = entered_marks_count == len(class_subjects) and len(class_subjects) > 0
+        if not is_complete:
+            result = 'Pending'
+        elif total_obtained >= pass_marks:
+            result = 'Pass'
+        else:
+            result = 'Fail'
+
+        report_cards.append({
+            'exam_name': exam_obj.examID.name if exam_obj.examID else 'N/A',
+            'exam_date': exam_obj.startDate,
+            'full_marks': full_marks,
+            'pass_marks': pass_marks,
+            'total_obtained': round(total_obtained, 2),
+            'percentage': percentage,
+            'grade': grade,
+            'result': result,
+            'subject_rows': subject_rows,
+            'entered_marks_count': entered_marks_count,
+            'subject_count': len(class_subjects),
+        })
+
+    return render(request, 'studentApp/marks/progressReportCards.html', {
+        'student': student,
+        'exam_options': exam_options,
+        'selected_exam_id': selected_exam_id,
+        'report_cards': report_cards,
+        'student_not_found': False,
+    })

@@ -5,7 +5,17 @@ from django.shortcuts import render, get_object_or_404
 
 from homeApp.models import SchoolSession
 from homeApp.utils import login_required
-from managementApp.models import Student, TeacherDetail, AssignSubjectsToTeacher, Event, Standard, ExamTimeTable
+from managementApp.models import (
+    Student,
+    TeacherDetail,
+    AssignSubjectsToTeacher,
+    Event,
+    Standard,
+    ExamTimeTable,
+    AssignExamToClass,
+    AssignSubjectsToClass,
+    MarkOfStudentsByExam,
+)
 from utils.custom_decorators import check_groups
 
 # Create your views here.
@@ -41,6 +51,24 @@ def _bootstrap_teacher_context(request):
         ).exists()
     request.session['is_class_teacher'] = is_class_teacher
     return teacher, current_session_id, is_class_teacher
+
+
+def _grade_from_percentage(value):
+    if value is None:
+        return 'N/A'
+    if value >= 90:
+        return 'A+'
+    if value >= 80:
+        return 'A'
+    if value >= 70:
+        return 'B+'
+    if value >= 60:
+        return 'B'
+    if value >= 50:
+        return 'C'
+    if value >= 40:
+        return 'D'
+    return 'F'
 
 
 @login_required
@@ -357,6 +385,167 @@ def teacher_assigned_class(request):
             'not_class_teacher_message': 'This section is available only for assigned class teachers.',
         })
     return render(request, 'teacherApp/assigned_class.html', {'is_class_teacher': True})
+
+
+@login_required
+@check_groups('Teaching')
+def teacher_progress_report_cards(request):
+    teacher, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
+    if not teacher:
+        return render(request, 'teacherApp/progress_report_cards.html', {
+            'is_class_teacher': is_class_teacher,
+            'class_map_json': json.dumps([]),
+            'students_by_class_json': json.dumps({}),
+            'exams_by_class_json': json.dumps({}),
+            'selected_class_id': '',
+            'selected_student_id': '',
+            'selected_exam_id': 'all',
+            'selected_student': None,
+            'report_cards': [],
+        })
+
+    assigned_class_ids = list(AssignSubjectsToTeacher.objects.filter(
+        isDeleted=False,
+        teacherID_id=teacher.id,
+        sessionID_id=current_session_id,
+        assignedSubjectID__isDeleted=False,
+    ).values_list('assignedSubjectID__standardID_id', flat=True).distinct())
+    assigned_class_ids = [cid for cid in assigned_class_ids if cid]
+
+    classes = list(Standard.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        id__in=assigned_class_ids,
+    ).order_by('name', 'section'))
+
+    students = list(Student.objects.select_related('standardID').filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id__in=assigned_class_ids,
+    ).order_by('name'))
+
+    assigned_exams = list(AssignExamToClass.objects.select_related('examID', 'standardID').filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id__in=assigned_class_ids,
+    ).order_by('examID__name', 'startDate'))
+
+    class_map = [{
+        'id': c.id,
+        'name': f"{c.name or 'N/A'}{' - ' + c.section if c.section else ''}"
+    } for c in classes]
+
+    students_by_class = {}
+    for s in students:
+        students_by_class.setdefault(str(s.standardID_id), []).append({
+            'id': s.id,
+            'name': f"{s.name or 'N/A'}{' (Roll: ' + str(s.roll) + ')' if s.roll else ''}"
+        })
+
+    exams_by_class = {}
+    for e in assigned_exams:
+        exams_by_class.setdefault(str(e.standardID_id), []).append({
+            'id': e.id,
+            'name': e.examID.name if e.examID else 'N/A'
+        })
+
+    selected_class_id = request.GET.get('standard')
+    selected_student_id = request.GET.get('student')
+    selected_exam_id = request.GET.get('exam')
+    report_cards = []
+    selected_student = None
+
+    valid_class = selected_class_id and selected_class_id.isdigit() and int(selected_class_id) in set(assigned_class_ids)
+    if valid_class and selected_student_id and selected_student_id.isdigit():
+        selected_class_int = int(selected_class_id)
+        selected_student = Student.objects.select_related('standardID').filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            standardID_id=selected_class_int,
+            id=int(selected_student_id),
+        ).first()
+
+        if selected_student:
+            exam_qs = AssignExamToClass.objects.select_related('examID').filter(
+                isDeleted=False,
+                sessionID_id=current_session_id,
+                standardID_id=selected_class_int,
+            )
+            if selected_exam_id and selected_exam_id != 'all':
+                exam_qs = exam_qs.filter(id=selected_exam_id)
+            exam_qs = exam_qs.order_by('startDate', 'examID__name')
+
+            class_subjects = list(AssignSubjectsToClass.objects.select_related('subjectID').filter(
+                isDeleted=False,
+                sessionID_id=current_session_id,
+                standardID_id=selected_class_int,
+            ).order_by('subjectID__name'))
+
+            for exam_obj in exam_qs:
+                marks_qs = MarkOfStudentsByExam.objects.select_related('subjectID', 'subjectID__subjectID').filter(
+                    isDeleted=False,
+                    sessionID_id=current_session_id,
+                    studentID_id=selected_student.id,
+                    standardID_id=selected_class_int,
+                    examID_id=exam_obj.id,
+                )
+                mark_map = {m.subjectID_id: m for m in marks_qs}
+
+                subject_rows = []
+                total_obtained = 0.0
+                entered_marks_count = 0
+                for ass_sub in class_subjects:
+                    mark_obj = mark_map.get(ass_sub.id)
+                    if mark_obj is not None:
+                        mark_value = float(mark_obj.mark or 0)
+                        total_obtained += mark_value
+                        entered_marks_count += 1
+                    else:
+                        mark_value = None
+
+                    subject_rows.append({
+                        'subject_name': ass_sub.subjectID.name if ass_sub.subjectID else 'N/A',
+                        'mark': mark_value,
+                        'note': mark_obj.note if mark_obj and mark_obj.note else '',
+                    })
+
+                full_marks = float(exam_obj.fullMarks or 0)
+                pass_marks = float(exam_obj.passMarks or 0)
+                percentage = round((total_obtained * 100.0 / full_marks), 2) if full_marks > 0 else None
+                grade = _grade_from_percentage(percentage)
+                is_complete = entered_marks_count == len(class_subjects) and len(class_subjects) > 0
+                if not is_complete:
+                    result = 'Pending'
+                elif total_obtained >= pass_marks:
+                    result = 'Pass'
+                else:
+                    result = 'Fail'
+
+                report_cards.append({
+                    'exam_name': exam_obj.examID.name if exam_obj.examID else 'N/A',
+                    'exam_date': exam_obj.startDate,
+                    'full_marks': full_marks,
+                    'pass_marks': pass_marks,
+                    'total_obtained': round(total_obtained, 2),
+                    'percentage': percentage,
+                    'grade': grade,
+                    'result': result,
+                    'subject_rows': subject_rows,
+                    'entered_marks_count': entered_marks_count,
+                    'subject_count': len(class_subjects),
+                })
+
+    return render(request, 'teacherApp/progress_report_cards.html', {
+        'is_class_teacher': is_class_teacher,
+        'class_map_json': json.dumps(class_map),
+        'students_by_class_json': json.dumps(students_by_class),
+        'exams_by_class_json': json.dumps(exams_by_class),
+        'selected_class_id': int(selected_class_id) if selected_class_id and selected_class_id.isdigit() else '',
+        'selected_student_id': int(selected_student_id) if selected_student_id and selected_student_id.isdigit() else '',
+        'selected_exam_id': selected_exam_id if selected_exam_id else 'all',
+        'selected_student': selected_student,
+        'report_cards': report_cards,
+    })
 
 
 @login_required

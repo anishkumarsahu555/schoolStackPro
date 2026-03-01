@@ -10,6 +10,7 @@ from .views import (
     teacher_exam_timetable,
     teacher_add_marks,
     teacher_marks_details,
+    teacher_progress_report_cards,
     teacher_assigned_class,
 )
 
@@ -24,5 +25,6 @@ urlpatterns = [
     path('exam-timetable/', teacher_exam_timetable, name='teacher_exam_timetable'),
     path('add-marks/', teacher_add_marks, name='teacher_add_marks'),
     path('marks-details/', teacher_marks_details, name='teacher_marks_details'),
+    path('progress-report-cards/', teacher_progress_report_cards, name='teacher_progress_report_cards'),
     path('students/detail/<int:id>/', teacher_student_detail, name='teacher_student_detail'),
 ]

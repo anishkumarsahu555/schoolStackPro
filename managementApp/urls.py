@@ -41,6 +41,7 @@ urlpatterns = [
     #marks
     path('student_marks/', student_marks, name='student_marks'),
     path('exam_marks_details/', exam_marks_details, name='exam_marks_details'),
+    path('progress_report_cards/', progress_report_cards, name='progress_report_cards'),
 
     #events
     path('manage_event/', manage_event, name='manage_event'),
