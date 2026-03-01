@@ -335,6 +335,45 @@
             border-color: var(--app-border) !important;
         }
 
+        /* Global fix for legacy delete dialogs: <div class="ui basic modal custom"> */
+        .ui.basic.modal.custom {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border: 1px solid var(--app-border) !important;
+            box-shadow: 0 14px 35px rgba(15, 23, 42, 0.25) !important;
+        }
+
+        .ui.basic.modal.custom > .header,
+        .ui.basic.modal.custom > .content,
+        .ui.basic.modal.custom > .actions {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        .ui.basic.modal.custom > .actions {
+            border-top: 1px solid var(--app-border) !important;
+        }
+
+        .ui.basic.modal.custom .ui.red.basic.inverted.button {
+            color: var(--app-text) !important;
+            border-color: var(--app-border) !important;
+            background: var(--app-hover) !important;
+            box-shadow: none !important;
+        }
+
+        .ui.basic.modal.custom .ui.red.basic.inverted.button:hover {
+            background: var(--app-active) !important;
+            border-color: var(--app-brand) !important;
+            color: var(--app-text) !important;
+        }
+
+        .ui.basic.modal.custom .ui.green.ok.inverted.button {
+            background: #21ba45 !important;
+            color: #ffffff !important;
+            border-color: #21ba45 !important;
+        }
+
         .ui.card .meta,
         .ui.cards > .card .meta {
             color: var(--app-muted) !important;
@@ -409,8 +448,78 @@
         .ui.selection.dropdown > .text,
         .ui.selection.dropdown > .dropdown.icon {
             color: var(--app-text) !important;
+            -webkit-text-fill-color: var(--app-text) !important;
             background: var(--app-surface) !important;
             border-color: var(--app-border) !important;
+        }
+
+        .ui.form select option {
+            color: var(--app-text) !important;
+            background: var(--app-surface) !important;
+        }
+
+        .ui.form select option[value=""],
+        .ui.form select option[disabled],
+        .ui.form select:invalid {
+            color: var(--app-text) !important;
+            opacity: 0.75 !important;
+        }
+
+        .ui.selection.dropdown > .default.text {
+            color: var(--app-text) !important;
+            opacity: 0.78 !important;
+        }
+
+        .ui.selection.dropdown > .text:not(.default) {
+            color: var(--app-text) !important;
+            opacity: 1 !important;
+        }
+
+        .ui.search.dropdown > input.search,
+        .ui.search.selection.dropdown > input.search {
+            color: var(--app-text) !important;
+            -webkit-text-fill-color: var(--app-text) !important;
+            caret-color: var(--app-text) !important;
+            opacity: 1 !important;
+            background: transparent !important;
+        }
+
+        .ui.search.dropdown > input.search::placeholder,
+        .ui.search.selection.dropdown > input.search::placeholder {
+            color: var(--app-text) !important;
+            opacity: 0.7 !important;
+        }
+
+        .ui.search.dropdown.active > input.search,
+        .ui.search.selection.dropdown.active > input.search,
+        .ui.search.dropdown.visible > input.search,
+        .ui.search.selection.dropdown.visible > input.search {
+            color: var(--app-text) !important;
+            -webkit-text-fill-color: var(--app-text) !important;
+            opacity: 1 !important;
+        }
+
+        .ui.search.selection.dropdown > .text,
+        .ui.search.dropdown > .text,
+        .ui.search.selection.dropdown > .default.text {
+            color: var(--app-text) !important;
+        }
+
+        .ui.search.selection.dropdown .menu > .item,
+        .ui.search.dropdown .menu > .item {
+            color: var(--app-text) !important;
+        }
+
+        .ui.search.selection.dropdown .menu > .selected.item,
+        .ui.search.dropdown .menu > .selected.item {
+            background: var(--app-active) !important;
+            color: var(--app-text) !important;
+        }
+
+        .ui.selection.dropdown.visible > .text,
+        .ui.selection.dropdown.active > .text {
+            color: var(--app-text) !important;
+            opacity: 1 !important;
         }
 
         .ui.dropdown .menu > .item {
@@ -601,6 +710,72 @@
             background: var(--app-surface) !important;
             border-color: #db2828 !important;
             color: var(--app-text) !important;
+        }
+
+        .ui.form .field.error input::placeholder,
+        .ui.form .field.error textarea::placeholder,
+        .ui.form .fields.error .field input::placeholder,
+        .ui.form .fields.error .field textarea::placeholder,
+        .ui.form input.error::placeholder,
+        .ui.form textarea.error::placeholder {
+            color: var(--app-text) !important;
+            opacity: 0.65 !important;
+        }
+
+        .ui.form .field.error input::-webkit-input-placeholder,
+        .ui.form .field.error textarea::-webkit-input-placeholder,
+        .ui.form .fields.error .field input::-webkit-input-placeholder,
+        .ui.form .fields.error .field textarea::-webkit-input-placeholder,
+        .ui.form input.error::-webkit-input-placeholder,
+        .ui.form textarea.error::-webkit-input-placeholder {
+            color: var(--app-text) !important;
+            opacity: 0.65 !important;
+        }
+
+        .ui.form .field.error input::-moz-placeholder,
+        .ui.form .field.error textarea::-moz-placeholder,
+        .ui.form .fields.error .field input::-moz-placeholder,
+        .ui.form .fields.error .field textarea::-moz-placeholder,
+        .ui.form input.error::-moz-placeholder,
+        .ui.form textarea.error::-moz-placeholder {
+            color: var(--app-text) !important;
+            opacity: 0.65 !important;
+        }
+
+        .ui.form .field.error input:-ms-input-placeholder,
+        .ui.form .field.error textarea:-ms-input-placeholder,
+        .ui.form .fields.error .field input:-ms-input-placeholder,
+        .ui.form .fields.error .field textarea:-ms-input-placeholder,
+        .ui.form input.error:-ms-input-placeholder,
+        .ui.form textarea.error:-ms-input-placeholder {
+            color: var(--app-text) !important;
+            opacity: 0.65 !important;
+        }
+
+        .ui.form .field.error .ui.selection.dropdown > .default.text,
+        .ui.form .fields.error .field .ui.selection.dropdown > .default.text,
+        .ui.form .field.error .ui.dropdown .text {
+            color: var(--app-text) !important;
+            opacity: 0.9 !important;
+        }
+
+        .ui.form .field.error select,
+        .ui.form .fields.error .field select,
+        .ui.form select.error {
+            color: var(--app-text) !important;
+            -webkit-text-fill-color: var(--app-text) !important;
+        }
+
+        .ui.form .field.error select option,
+        .ui.form .fields.error .field select option,
+        .ui.form select.error option {
+            color: var(--app-text) !important;
+            background: var(--app-surface) !important;
+        }
+
+        html[data-theme="dark"] .ui.form select,
+        html[data-theme="dark"] .dataTables_wrapper .dataTables_length select {
+            color-scheme: dark;
         }
 
         .ui.form .error.message,
@@ -813,6 +988,22 @@
         .dataTables_wrapper table.dataTable tbody textarea::placeholder {
             color: var(--app-muted) !important;
             opacity: 1;
+        }
+
+        .dataTables_wrapper table.dataTable tbody .error input::placeholder,
+        .dataTables_wrapper table.dataTable tbody .error textarea::placeholder,
+        .dataTables_wrapper table.dataTable tbody input.error::placeholder,
+        .dataTables_wrapper table.dataTable tbody textarea.error::placeholder {
+            color: var(--app-text) !important;
+            opacity: 0.65 !important;
+        }
+
+        .dataTables_wrapper table.dataTable tbody .error input::-webkit-input-placeholder,
+        .dataTables_wrapper table.dataTable tbody .error textarea::-webkit-input-placeholder,
+        .dataTables_wrapper table.dataTable tbody input.error::-webkit-input-placeholder,
+        .dataTables_wrapper table.dataTable tbody textarea.error::-webkit-input-placeholder {
+            color: var(--app-text) !important;
+            opacity: 0.65 !important;
         }
 
         .dataTables_wrapper table.dataTable tbody input:focus,

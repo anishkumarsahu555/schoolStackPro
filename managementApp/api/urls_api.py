@@ -63,6 +63,11 @@ urlpatterns = [
     path('edit_exam', edit_exam, name='edit_exam'),
     path('get_exams_list_api', get_exams_list_api, name='get_exams_list_api'),
     path('ExamListJson', ExamListJson.as_view(), name='ExamListJson'),
+    path('add_exam_timetable', add_exam_timetable, name='add_exam_timetable'),
+    path('ExamTimeTableListJson', ExamTimeTableListJson.as_view(), name='ExamTimeTableListJson'),
+    path('get_exam_timetable_detail', get_exam_timetable_detail, name='get_exam_timetable_detail'),
+    path('update_exam_timetable', update_exam_timetable, name='update_exam_timetable'),
+    path('delete_exam_timetable', delete_exam_timetable, name='delete_exam_timetable'),
 
     # assign Exam to class
     path('add_exam_to_class', add_exam_to_class, name='add_exam_to_class'),

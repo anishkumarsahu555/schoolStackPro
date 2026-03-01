@@ -42,6 +42,13 @@
             <span>Student Attendance</span>
         </a>
 
+        <div class="nav-section">Exams</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_exam_timetable' %}active{% endif %}"
+           href="{% url 'teacherApp:teacher_exam_timetable' %}">
+            <i class="calendar alternate outline icon"></i>
+            <span>Exam Time Table</span>
+        </a>
+
         <div class="nav-section">Marks</div>
         <a class="nav-item {% if request.resolver_match.url_name == 'teacher_add_marks' %}active{% endif %}"
            href="{% url 'teacherApp:teacher_add_marks' %}">

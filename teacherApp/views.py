@@ -5,7 +5,7 @@ from django.shortcuts import render, get_object_or_404
 
 from homeApp.models import SchoolSession
 from homeApp.utils import login_required
-from managementApp.models import Student, TeacherDetail, AssignSubjectsToTeacher, Event, Standard
+from managementApp.models import Student, TeacherDetail, AssignSubjectsToTeacher, Event, Standard, ExamTimeTable
 from utils.custom_decorators import check_groups
 
 # Create your views here.
@@ -255,6 +255,38 @@ def teacher_manage_event(request):
             ]
 
     return render(request, 'teacherApp/events_list.html', {'is_class_teacher': is_class_teacher})
+
+
+@login_required
+@check_groups('Teaching')
+def teacher_exam_timetable(request):
+    teacher, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
+    if not teacher:
+        return render(request, 'teacherApp/exam_timetable.html', {
+            'is_class_teacher': is_class_teacher,
+            'timetable_rows': [],
+        })
+
+    assigned_class_ids = list(AssignSubjectsToTeacher.objects.filter(
+        isDeleted=False,
+        teacherID_id=teacher.id,
+        sessionID_id=current_session_id,
+        assignedSubjectID__isDeleted=False,
+    ).values_list('assignedSubjectID__standardID_id', flat=True).distinct())
+    assigned_class_ids = [cid for cid in assigned_class_ids if cid]
+
+    timetable_rows = ExamTimeTable.objects.select_related(
+        'standardID', 'examID', 'subjectID'
+    ).filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id__in=assigned_class_ids,
+    ).order_by('examID__name', 'examDate', 'startTime', 'standardID__name')
+
+    return render(request, 'teacherApp/exam_timetable.html', {
+        'is_class_teacher': is_class_teacher,
+        'timetable_rows': timetable_rows,
+    })
 
 
 @login_required

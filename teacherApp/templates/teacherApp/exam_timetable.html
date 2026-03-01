@@ -1,40 +1,12 @@
-{% extends 'studentApp/index.html' %}
+{% extends 'teacherApp/index.html' %}
 {% load static %}
 
 {% block title %}
-    <title>Exam Details</title>
+    <title>Exam Time Table</title>
 {% endblock %}
 
 {% block css %}
     <style>
-        .exam-page .top-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.8rem;
-            margin-bottom: 0.9rem;
-        }
-
-        .exam-page .mini-stat {
-            border: 1px solid var(--app-border);
-            border-radius: 12px;
-            padding: 0.75rem 0.85rem;
-            background: var(--app-surface);
-        }
-
-        .exam-page .mini-label {
-            color: var(--app-muted);
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: .03em;
-        }
-
-        .exam-page .mini-value {
-            color: var(--app-text);
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-top: 0.2rem;
-        }
-
         .exam-page .toolbar {
             display: flex;
             gap: 0.6rem;
@@ -43,17 +15,17 @@
             margin-bottom: 0.8rem;
         }
 
-        .exam-page .chip {
+        .exam-page .toolbar .chip {
             border: 1px solid var(--app-border);
             background: var(--app-surface);
             color: var(--app-text);
-            padding: 0.42rem 0.8rem;
+            padding: 0.45rem 0.8rem;
             border-radius: 999px;
             font-size: 0.82rem;
             cursor: pointer;
         }
 
-        .exam-page .chip.active {
+        .exam-page .toolbar .chip.active {
             background: var(--app-active);
             color: var(--app-brand);
             border-color: var(--app-brand);
@@ -101,7 +73,7 @@
 
         .exam-page .slot-row {
             display: grid;
-            grid-template-columns: 1.2fr 0.85fr 0.85fr 0.8fr 1.2fr;
+            grid-template-columns: 1.2fr 1.1fr 0.8fr 0.9fr 0.9fr 0.8fr 1.2fr;
             gap: 0.5rem;
             border-bottom: 1px dashed var(--app-border);
             padding: 0.55rem 0.3rem;
@@ -130,12 +102,9 @@
         }
 
         @media (max-width: 900px) {
-            .exam-page .top-grid {
-                grid-template-columns: 1fr;
-            }
-
             .exam-page .slot-row {
                 grid-template-columns: 1fr 1fr;
+                gap: 0.45rem 0.65rem;
             }
 
             .exam-page .slot-row.header {
@@ -149,32 +118,19 @@
     <div class="exam-page ui left aligned basic grid">
         <div class="sixteen wide column">
             <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active">Exam Details</div>
+                <div style="cursor: pointer;" class="item active">Exam Time Table</div>
             </div>
 
             <div class="ui segment">
-                <div class="top-grid">
-                    <div class="mini-stat">
-                        <div class="mini-label">Total Exams</div>
-                        <div class="mini-value">{{ exams|length }}</div>
-                    </div>
-                    <div class="mini-stat">
-                        <div class="mini-label">Scheduled Papers</div>
-                        <div class="mini-value">{{ timetable_rows|length }}</div>
-                    </div>
-                    <div class="mini-stat">
-                        <div class="mini-label">Class</div>
-                        <div class="mini-value">{% if exams and exams.0.standardID %}{{ exams.0.standardID.name }}{% if exams.0.standardID.section %} - {{ exams.0.standardID.section }}{% endif %}{% else %}N/A{% endif %}</div>
-                    </div>
-                </div>
-
                 {% regroup timetable_rows by examID as exam_groups %}
 
                 {% if timetable_rows %}
                     <div class="toolbar" id="examFilterBar">
                         <button class="chip active" type="button" data-exam="all">All Exams</button>
                         {% for exam_group in exam_groups %}
-                            <button class="chip" type="button" data-exam="{{ exam_group.grouper.id|default:'na' }}">{{ exam_group.grouper.name|default:'N/A' }}</button>
+                            <button class="chip" type="button" data-exam="{{ exam_group.grouper.id|default:'na' }}">
+                                {{ exam_group.grouper.name|default:'N/A' }}
+                            </button>
                         {% endfor %}
                     </div>
 
@@ -184,30 +140,29 @@
                                 <div class="exam-head">
                                     <div>
                                         <h4 class="exam-title">{{ exam_group.grouper.name|default:'N/A' }}</h4>
-                                        <div class="exam-meta">{{ exam_group.list|length }} paper(s)</div>
+                                        <div class="exam-meta">{{ exam_group.list|length }} schedule(s)</div>
                                     </div>
                                     <i class="angle down icon"></i>
                                 </div>
                                 <div class="exam-body">
                                     <div class="slot-row header">
+                                        <div>Class</div>
                                         <div>Subject</div>
                                         <div>Date</div>
                                         <div>Start</div>
                                         <div>End</div>
-                                        <div>Room / Note</div>
+                                        <div>Room</div>
+                                        <div>Note</div>
                                     </div>
                                     {% for row in exam_group.list %}
                                         <div class="slot-row">
+                                            <div>{{ row.standardID.name|default:'N/A' }}{% if row.standardID.section %} - {{ row.standardID.section }}{% endif %}</div>
                                             <div>{{ row.subjectID.name|default:'N/A' }}</div>
                                             <div>{{ row.examDate|date:'d M Y'|default:'N/A' }}</div>
                                             <div>{{ row.startTime|time:'h:i A'|default:'N/A' }}</div>
                                             <div>{{ row.endTime|time:'h:i A'|default:'N/A' }}</div>
-                                            <div>
-                                                {{ row.roomNo|default:'N/A' }}
-                                                {% if row.note %}
-                                                    <div style="color: var(--app-muted); font-size: .8rem;">{{ row.note }}</div>
-                                                {% endif %}
-                                            </div>
+                                            <div>{{ row.roomNo|default:'N/A' }}</div>
+                                            <div>{{ row.note|default:'N/A' }}</div>
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -215,7 +170,7 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="empty-note">No timetable available.</div>
+                    <div class="empty-note">No exam timetable available for your assigned classes.</div>
                 {% endif %}
             </div>
         </div>

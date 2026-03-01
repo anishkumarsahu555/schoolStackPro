@@ -356,6 +356,37 @@ class AssignExamToClass(models.Model):
         verbose_name_plural = 'j) Assign Exam To Class Details'
 
 
+class ExamTimeTable(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    standardID = models.ForeignKey(Standard, blank=True, null=True, on_delete=models.CASCADE)
+    examID = models.ForeignKey(Exam, blank=True, null=True, on_delete=models.CASCADE)
+    subjectID = models.ForeignKey(Subjects, blank=True, null=True, on_delete=models.CASCADE)
+    examDate = models.DateField(blank=True, null=True)
+    startTime = models.TimeField(blank=True, null=True)
+    endTime = models.TimeField(blank=True, null=True)
+    roomNo = models.CharField(max_length=200, blank=True, null=True)
+    note = models.TextField(blank=True, null=True, default='')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = 'k) Exam Time Table'
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(startTime__lt=models.F('endTime')),
+                name='exam_timetable_start_before_end'
+            ),
+            models.UniqueConstraint(
+                fields=['sessionID', 'standardID', 'examID', 'subjectID', 'examDate'],
+                condition=models.Q(isDeleted=False),
+                name='exam_timetable_unique_active_entry'
+            ),
+        ]
+
+
 class StudentAttendance(models.Model):
     isPresent = models.BooleanField(default=False)
     isHoliday = models.BooleanField(default=False)

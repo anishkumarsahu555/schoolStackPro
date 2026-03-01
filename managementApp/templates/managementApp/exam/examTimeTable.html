@@ -1,0 +1,719 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Exam Time Table</title>
+{% endblock %}
+
+{% block body %}
+    <style>
+        #ExamTimeTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #ExamTimeTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 110px !important;
+        }
+
+        #deleteDataModal.ui.modal {
+            background: var(--app-surface);
+            color: var(--app-text);
+            border: 1px solid var(--app-border);
+        }
+
+        #deleteDataModal .header,
+        #deleteDataModal .content,
+        #deleteDataModal .actions {
+            background: var(--app-surface);
+            color: var(--app-text);
+        }
+
+        #deleteDataModal .actions {
+            border-top: 1px solid var(--app-border);
+        }
+
+        .exam-preview {
+            margin-top: 1rem;
+            border: 1px solid var(--app-border);
+            border-radius: 12px;
+            padding: 0.9rem;
+            background: var(--app-surface);
+        }
+
+        .exam-preview .toolbar {
+            display: flex;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+        }
+
+        .exam-preview .chip {
+            border: 1px solid var(--app-border);
+            background: var(--app-surface);
+            color: var(--app-text);
+            border-radius: 999px;
+            padding: 0.38rem 0.75rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .exam-preview .chip.active {
+            border-color: var(--app-brand);
+            background: var(--app-active);
+            color: var(--app-brand);
+            font-weight: 700;
+        }
+
+        .exam-preview .exam-card {
+            border: 1px solid var(--app-border);
+            border-radius: 10px;
+            margin-bottom: 0.7rem;
+            overflow: hidden;
+        }
+
+        .exam-preview .exam-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0.9rem;
+            background: var(--app-surface);
+            cursor: pointer;
+        }
+
+        .exam-preview .exam-title {
+            margin: 0;
+            color: var(--app-text);
+            font-size: 0.96rem;
+        }
+
+        .exam-preview .exam-meta {
+            color: var(--app-muted);
+            font-size: 0.8rem;
+        }
+
+        .exam-preview .exam-body {
+            display: none;
+            border-top: 1px solid var(--app-border);
+            padding: 0.55rem;
+        }
+
+        .exam-preview .exam-card.expanded .exam-body {
+            display: block;
+        }
+
+        .exam-preview .slot-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr .85fr .85fr .75fr 1fr;
+            gap: 0.5rem;
+            border-bottom: 1px dashed var(--app-border);
+            padding: 0.5rem 0.3rem;
+            color: var(--app-text);
+            font-size: 0.84rem;
+        }
+
+        .exam-preview .slot-row.header {
+            color: var(--app-muted);
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--app-border);
+        }
+
+        .exam-preview .slot-row:last-child {
+            border-bottom: none;
+        }
+
+        .exam-preview .empty-note {
+            text-align: center;
+            color: var(--app-muted);
+            padding: 1rem 0.4rem;
+        }
+
+        @media (max-width: 900px) {
+            .exam-preview .slot-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .exam-preview .slot-row.header {
+                display: none;
+            }
+        }
+    </style>
+
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active">Exam Time Table</div>
+            </div>
+
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="left align icon"></i>
+                    Add/Edit Exam Schedule
+                </h4>
+
+                <form class="ui tiny form" id="addForm">{% csrf_token %}
+                    <input type="hidden" id="editID">
+                    <div class="three fields">
+                        <div class="field required">
+                            <label>Class - Section</label>
+                            <select class="ui search dropdown" id="standard">
+                                <option value="">Search By Class Name</option>
+                            </select>
+                        </div>
+                        <div class="field required">
+                            <label>Exam</label>
+                            <select class="ui search dropdown" id="exam">
+                                <option value="">Search By Exam Name</option>
+                            </select>
+                        </div>
+                        <div class="field required">
+                            <label>Subject</label>
+                            <select class="ui search dropdown" id="subject">
+                                <option value="">Search By Subject Name</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="five fields">
+                        <div class="field required">
+                            <label>Exam Date</label>
+                            <div class="ui calendar" id="examDateCalendar">
+                                <div class="ui input left icon">
+                                    <i class="calendar icon"></i>
+                                    <input type="text" placeholder="DD/MM/YYYY" id="examDate">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="field required">
+                            <label>Start Time</label>
+                            <div class="ui calendar" id="startTimeCalendar">
+                                <div class="ui input left icon">
+                                    <i class="clock outline icon"></i>
+                                    <input type="text" id="startTime" placeholder="hh:mm AM/PM">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="field required">
+                            <label>End Time</label>
+                            <div class="ui calendar" id="endTimeCalendar">
+                                <div class="ui input left icon">
+                                    <i class="clock outline icon"></i>
+                                    <input type="text" id="endTime" placeholder="hh:mm AM/PM">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Room No</label>
+                            <input type="text" id="roomNo" placeholder="Room / Hall No">
+                        </div>
+                        <div class="field">
+                            <label>Note</label>
+                            <input type="text" id="note" placeholder="Additional note (optional)">
+                        </div>
+                    </div>
+
+                    <div class="field" style="padding-top: .4em;">
+                        <button type="button" id="saveBtn" class="ui mini green button" onclick="addData()">
+                            <i class="icon plus square"></i>
+                            Add
+                        </button>
+                        <button type="button" id="saveBtnUpdate" style="display:none" class="ui mini orange button" onclick="editData()">
+                            <i class="icon redo"></i>
+                            Update
+                        </button>
+                        <button class="ui mini red button" type="button" onclick="clearAndReset()">
+                            <i class="icon times circle"></i>
+                            Clear
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="row" style="padding-left: 5px; padding-right: 5px">
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                           id="ExamTimeTable"
+                           style="margin-top: 5px;width: 100%">
+                        <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Section</th>
+                            <th>Exam</th>
+                            <th>Subject</th>
+                            <th>Date</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Room</th>
+                            <th>EditedBy</th>
+                            <th>AddedOn</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="exam-preview">
+                <h4 class="ui header" style="margin-top:0;">Exam-wise Interactive Preview</h4>
+                {% regroup timetable_rows by examID as exam_groups %}
+
+                {% if timetable_rows %}
+                    <div class="toolbar" id="previewExamFilterBar">
+                        <button class="chip active" type="button" data-exam="all">All Exams</button>
+                        {% for exam_group in exam_groups %}
+                            <button class="chip" type="button" data-exam="{{ exam_group.grouper.id|default:'na' }}">
+                                {{ exam_group.grouper.name|default:'N/A' }}
+                            </button>
+                        {% endfor %}
+                    </div>
+
+                    <div id="previewExamGroupsWrap">
+                        {% for exam_group in exam_groups %}
+                            <div class="exam-card {% if forloop.first %}expanded{% endif %}" data-exam-group="{{ exam_group.grouper.id|default:'na' }}">
+                                <div class="exam-head">
+                                    <div>
+                                        <h5 class="exam-title">{{ exam_group.grouper.name|default:'N/A' }}</h5>
+                                        <div class="exam-meta">{{ exam_group.list|length }} schedule(s)</div>
+                                    </div>
+                                    <i class="angle down icon"></i>
+                                </div>
+                                <div class="exam-body">
+                                    <div class="slot-row header">
+                                        <div>Class</div>
+                                        <div>Subject</div>
+                                        <div>Date</div>
+                                        <div>Start</div>
+                                        <div>End</div>
+                                        <div>Room / Note</div>
+                                    </div>
+                                    {% for row in exam_group.list %}
+                                        <div class="slot-row">
+                                            <div>{{ row.standardID.name|default:'N/A' }}{% if row.standardID.section %} - {{ row.standardID.section }}{% endif %}</div>
+                                            <div>{{ row.subjectID.name|default:'N/A' }}</div>
+                                            <div>{{ row.examDate|date:'d M Y'|default:'N/A' }}</div>
+                                            <div>{{ row.startTime|time:'h:i A'|default:'N/A' }}</div>
+                                            <div>{{ row.endTime|time:'h:i A'|default:'N/A' }}</div>
+                                            <div>
+                                                {{ row.roomNo|default:'N/A' }}
+                                                {% if row.note %}
+                                                    <div style="color:var(--app-muted);font-size:.78rem;">{{ row.note }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-note">No timetable entries found yet.</div>
+                {% endif %}
+            </div>
+
+            <div class="ui small modal" id="deleteDataModal">
+                <div class="header">
+                    <i class="trash alternate icon red"></i>
+                    Delete Exam Time Table Entry
+                </div>
+                <div class="content">
+                    <p style="text-align: center">This schedule entry will be deleted. Are you sure?</p>
+                </div>
+                <div class="actions">
+                    <div class="ui cancel button">
+                        <i class="remove icon"></i>
+                        No
+                    </div>
+                    <input type="hidden" id="dataID">
+                    <div class="ui red button" onclick="deleteData()">
+                        <i class="checkmark icon"></i>
+                        Delete
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    $('#examDateCalendar').calendar({
+        monthFirst: false,
+        type: 'date',
+        formatter: {
+            date: function (date) {
+                if (!date) return '';
+                var day = String(date.getDate());
+                var month = String(date.getMonth() + 1);
+                var year = date.getFullYear();
+                return day + '/' + month + '/' + year;
+            }
+        }
+    });
+
+    function timeFormatter(date) {
+        if (!date) return '';
+        let hours = date.getHours();
+        const meridian = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        const hoursText = String(hours).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return hoursText + ':' + minutes + ' ' + meridian;
+    }
+
+    $('#startTimeCalendar').calendar({
+        type: 'time',
+        ampm: true,
+        formatter: { time: timeFormatter }
+    });
+
+    $('#endTimeCalendar').calendar({
+        type: 'time',
+        ampm: true,
+        formatter: { time: timeFormatter }
+    });
+
+    $(getStandardList());
+    $(getExamList());
+    $(getSubjectList());
+
+    function getStandardList() {
+        $.ajax({
+            type: 'get',
+            url: "{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}",
+            success: function (response) {
+                $('#standard').html('');
+                $('#standard').append('<option value="">Search By Class Name</option>');
+                for (let j = 0; j < response.data.length; j++) {
+                    $('#standard').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
+                }
+            },
+            error: function () {
+                addErrorNotification();
+            }
+        });
+    }
+
+    function getExamList() {
+        $.ajax({
+            type: 'get',
+            url: "{% url 'managementAppAPI:get_exams_list_api' %}",
+            success: function (response) {
+                $('#exam').html('');
+                $('#exam').append('<option value="">Search By Exam Name</option>');
+                for (let j = 0; j < response.data.length; j++) {
+                    $('#exam').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
+                }
+            },
+            error: function () {
+                addErrorNotification();
+            }
+        });
+    }
+
+    function getSubjectList() {
+        $.ajax({
+            type: 'get',
+            url: "{% url 'managementAppCachedAPI:get_cached_subjects_list_api' %}",
+            success: function (response) {
+                $('#subject').html('');
+                $('#subject').append('<option value="">Search By Subject Name</option>');
+                for (let j = 0; j < response.data.length; j++) {
+                    $('#subject').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
+                }
+            },
+            error: function () {
+                addErrorNotification();
+            }
+        });
+    }
+
+    function buildPayload() {
+        let data = new FormData();
+        data.append('standard', $('#standard').val());
+        data.append('exam', $('#exam').val());
+        data.append('subject', $('#subject').val());
+        data.append('examDate', $('#examDate').val().trim());
+        data.append('startTime', $('#startTime').val().trim());
+        data.append('endTime', $('#endTime').val().trim());
+        data.append('roomNo', $('#roomNo').val().trim());
+        data.append('note', $('#note').val().trim());
+        data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+        return data;
+    }
+
+    function clearValidationErrors() {
+        $('#addForm .field').removeClass('error');
+    }
+
+    function getTimeMinutesFrom12Hour(value) {
+        if (!value) return null;
+        const match = value.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+        if (!match) return null;
+        let hour = parseInt(match[1], 10);
+        const minute = parseInt(match[2], 10);
+        const meridian = match[3].toUpperCase();
+        if (hour < 1 || hour > 12 || minute < 0 || minute > 59) return null;
+        if (hour === 12) hour = 0;
+        if (meridian === 'PM') hour += 12;
+        return hour * 60 + minute;
+    }
+
+    function showResponseNotification(response, fallbackMessage) {
+        const message = (response && response.message) || fallbackMessage || 'Something went wrong.';
+        const color = (response && response.color) || '';
+        if (color === 'info' || color === 'warning' || color === 'success' || color === 'green') {
+            addSuccessNotification(message, color);
+            return;
+        }
+        addErrorNotification(message);
+    }
+
+    function validateFormData() {
+        clearValidationErrors();
+        const requiredIds = ['standard', 'exam', 'subject', 'examDate', 'startTime', 'endTime'];
+        let hasError = false;
+
+        requiredIds.forEach(function (id) {
+            const $el = $('#' + id);
+            const value = ($el.val() || '').toString().trim();
+            if (!value) {
+                $el.closest('.field').addClass('error');
+                hasError = true;
+            }
+        });
+
+        if (hasError) {
+            requiredFieldError();
+            return false;
+        }
+
+        const startTimeMins = getTimeMinutesFrom12Hour($('#startTime').val());
+        const endTimeMins = getTimeMinutesFrom12Hour($('#endTime').val());
+        if (startTimeMins === null || endTimeMins === null) {
+            $('#startTime').closest('.field').addClass('error');
+            $('#endTime').closest('.field').addClass('error');
+            addErrorNotification('Please select valid time in hh:mm AM/PM format.');
+            return false;
+        }
+
+        if (startTimeMins >= endTimeMins) {
+            $('#startTime').closest('.field').addClass('error');
+            $('#endTime').closest('.field').addClass('error');
+            addErrorNotification('Start time must be before end time.');
+            return false;
+        }
+
+        return true;
+    }
+
+    function addData() {
+        showLoading();
+        if (!validateFormData()) {
+            hideLoading();
+            return;
+        }
+
+        $.ajax({
+            type: 'post',
+            url: "{% url 'managementAppAPI:add_exam_timetable' %}",
+            data: buildPayload(),
+            contentType: false,
+            cache: false,
+            processData: false,
+            success: function (response) {
+                if (response.success) {
+                    addSuccessNotification(response.message, response.color || 'green');
+                    examTimeTable.ajax.reload(null, false);
+                    clearAndReset();
+                } else {
+                    showResponseNotification(response, 'Error occurred');
+                }
+                hideLoading();
+            },
+            error: function (xhr) {
+                showResponseNotification(xhr.responseJSON, 'Request failed. Please check your inputs.');
+                hideLoading();
+            }
+        });
+    }
+
+    let examTimeTable = $('#ExamTimeTable').DataTable({
+        dom: 'Blfrtip',
+        scrollY: '350px',
+        scrollX: true,
+        stateSave: true,
+        fixedColumns: {
+            left: 1,
+            right: 1
+        },
+        buttons: [{
+            extend: 'excel',
+            exportOptions: {
+                columns: [0, 1, 2, 3, 4, 5, 6, 7]
+            }
+        }],
+        columnDefs: [
+            {name: 'standardID.name', targets: 0, orderable: true},
+            {name: 'standardID.section', targets: 1, orderable: true},
+            {name: 'examID.name', targets: 2, orderable: true},
+            {name: 'subjectID.name', targets: 3, orderable: true},
+            {name: 'examDate', targets: 4, orderable: true},
+            {name: 'startTime', targets: 5, orderable: true},
+            {name: 'endTime', targets: 6, orderable: true},
+            {name: 'roomNo', targets: 7, orderable: true},
+            {name: 'lastEditedBy', targets: 8, orderable: true},
+            {name: 'datetime', targets: 9, orderable: true},
+            {name: 'action', targets: 10, orderable: false}
+        ],
+        aaSorting: [[4, 'desc'], [5, 'asc']],
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+        pageLength: 10,
+        processing: true,
+        serverSide: true,
+        ajax: "{% url 'managementAppAPI:ExamTimeTableListJson' %}"
+    });
+
+    function delData(id) {
+        $('#deleteDataModal').modal('show');
+        $('#dataID').val(id);
+    }
+
+    function deleteData() {
+        let data = new FormData();
+        data.append('dataID', $('#dataID').val());
+        data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+        $.ajax({
+            url: "{% url 'managementAppAPI:delete_exam_timetable' %}",
+            type: 'post',
+            data: data,
+            contentType: false,
+            cache: false,
+            processData: false,
+            success: function (response) {
+                if (response.success) {
+                    addSuccessNotification(response.message, response.color || 'green');
+                    examTimeTable.ajax.reload(null, false);
+                    $('#deleteDataModal').modal('toggle');
+                } else {
+                    showResponseNotification(response, 'Error occurred');
+                }
+            },
+            error: function (xhr) {
+                showResponseNotification(xhr.responseJSON, 'Request failed. Please try again.');
+            }
+        });
+    }
+
+    function GetDataDetails(id) {
+        $('#saveBtn').hide();
+        $('#saveBtnUpdate').show();
+        $.ajax({
+            type: 'get',
+            data: {id: id},
+            url: "{% url 'managementAppAPI:get_exam_timetable_detail' %}",
+            success: function (response) {
+                if (response.success) {
+                    $('#standard').dropdown('set selected', String(response.data['StandardID']));
+                    $('#exam').dropdown('set selected', String(response.data['ExamID']));
+                    $('#subject').dropdown('set selected', String(response.data['SubjectID']));
+                    $('#examDate').val(response.data['ExamDate']);
+                    $('#startTime').val(response.data['StartTime']);
+                    $('#endTime').val(response.data['EndTime']);
+                    $('#roomNo').val(response.data['RoomNo']);
+                    $('#note').val(response.data['Note']);
+                    $('#editID').val(response.data['ID']);
+                    clearValidationErrors();
+                } else {
+                    showResponseNotification(response, 'Error occurred');
+                }
+            },
+            error: function (xhr) {
+                showResponseNotification(xhr.responseJSON, 'Unable to load timetable details.');
+            }
+        });
+    }
+
+    function editData() {
+        showUpdateLoading();
+        if (!validateFormData()) {
+            hideLoading();
+            return;
+        }
+
+        let data = buildPayload();
+        data.append('editID', $('#editID').val());
+
+        $.ajax({
+            type: 'post',
+            url: "{% url 'managementAppAPI:update_exam_timetable' %}",
+            data: data,
+            contentType: false,
+            cache: false,
+            processData: false,
+            success: function (response) {
+                if (response.success) {
+                    addSuccessNotification(response.message, response.color || 'green');
+                    examTimeTable.ajax.reload(null, false);
+                    clearAndReset();
+                } else {
+                    showResponseNotification(response, 'Error occurred');
+                }
+                hideLoading();
+            },
+            error: function (xhr) {
+                showResponseNotification(xhr.responseJSON, 'Request failed. Please check your inputs.');
+                hideLoading();
+            }
+        });
+    }
+
+    function clearAndReset() {
+        $('#addForm').trigger('reset');
+        $('#saveBtn').show();
+        $('#saveBtnUpdate').hide();
+        $('#editID').val('');
+        $('#standard').dropdown('clear');
+        $('#exam').dropdown('clear');
+        $('#subject').dropdown('clear');
+        clearValidationErrors();
+    }
+
+    (function () {
+        const cards = document.querySelectorAll('#previewExamGroupsWrap .exam-card');
+        const chips = document.querySelectorAll('#previewExamFilterBar .chip');
+
+        cards.forEach(function (card) {
+            const head = card.querySelector('.exam-head');
+            if (!head) return;
+            head.addEventListener('click', function () {
+                card.classList.toggle('expanded');
+            });
+        });
+
+        chips.forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                const selected = chip.getAttribute('data-exam');
+                chips.forEach(function (c) { c.classList.remove('active'); });
+                chip.classList.add('active');
+                cards.forEach(function (card) {
+                    const group = card.getAttribute('data-exam-group');
+                    card.style.display = (selected === 'all' || selected === group) ? '' : 'none';
+                });
+            });
+        });
+    })();
+</script>
+{% endblock %}

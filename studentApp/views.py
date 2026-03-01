@@ -185,14 +185,23 @@ def fee_detail(request):
 def student_exam_details(request):
     student, current_session_id = _bootstrap_student_context(request)
     exams = []
+    timetable_rows = []
     if student and student.standardID_id and current_session_id:
         exams = AssignExamToClass.objects.select_related('examID', 'standardID').filter(
             isDeleted=False,
             standardID_id=student.standardID_id,
             sessionID_id=current_session_id,
         ).order_by('startDate', 'examID__name')
+        timetable_rows = ExamTimeTable.objects.select_related(
+            'standardID', 'examID', 'subjectID'
+        ).filter(
+            isDeleted=False,
+            standardID_id=student.standardID_id,
+            sessionID_id=current_session_id,
+        ).order_by('examID__name', 'examDate', 'startTime', 'subjectID__name')
     return render(request, 'studentApp/exam/examDetails.html', {
         'exams': exams,
+        'timetable_rows': timetable_rows,
     })
 
 

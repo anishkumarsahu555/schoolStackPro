@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import Q
 from django.http import JsonResponse as DjangoJsonResponse
 from django.utils.crypto import get_random_string
@@ -233,7 +233,7 @@ class StandardListJson(BaseDatatableView):
               </button>
               <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
                 <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk),
+              </button></td>'''.format(item.pk, item.pk)
             teacher = item.classTeacher.name if item.classTeacher and item.classTeacher.name else "N/A"
             json_data.append([
                 escape(item.name),
@@ -1639,6 +1639,385 @@ def get_exams_list_api(request):
         data.append(data_dic)
     return _api_response(
         {'status': 'success', 'data': data, 'color': 'success'}, safe=False)
+
+
+def _parse_exam_time(value):
+    if not value:
+        return None
+    value = value.strip()
+    for candidate in (value, value.upper()):
+        for fmt in ('%I:%M %p', '%H:%M', '%H:%M:%S'):
+            try:
+                return datetime.strptime(candidate, fmt).time()
+            except ValueError:
+                pass
+    raise ValueError("Invalid time format")
+
+
+def _validate_exam_timetable_business_rules(
+        current_session_id,
+        standard_id,
+        exam_id,
+        subject_id,
+        parsed_exam_date,
+        parsed_start_time,
+        parsed_end_time,
+        room_no,
+        exclude_id=None,
+):
+    assign_subject_exists = AssignSubjectsToClass.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=standard_id,
+        subjectID_id=subject_id,
+    ).exists()
+    if not assign_subject_exists:
+        return False, "Selected subject is not assigned to the selected class.", 'red'
+
+    assigned_exam = AssignExamToClass.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=standard_id,
+        examID_id=exam_id,
+    ).order_by('-datetime').first()
+    if not assigned_exam:
+        return False, "Selected exam is not assigned to the selected class.", 'red'
+
+    if assigned_exam.startDate and parsed_exam_date < assigned_exam.startDate:
+        return False, "Exam date cannot be before assigned exam start date.", 'red'
+    if assigned_exam.endDate and parsed_exam_date > assigned_exam.endDate:
+        return False, "Exam date cannot be after assigned exam end date.", 'red'
+
+    base_queryset = ExamTimeTable.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        examDate=parsed_exam_date,
+    )
+    if exclude_id:
+        base_queryset = base_queryset.exclude(pk=exclude_id)
+
+    duplicate_exists = base_queryset.filter(
+        standardID_id=standard_id,
+        examID_id=exam_id,
+        subjectID_id=subject_id,
+    ).exists()
+    if duplicate_exists:
+        return False, "Exam timetable already exists for this class, exam, subject and date.", 'info'
+
+    class_overlap_exists = base_queryset.filter(
+        standardID_id=standard_id,
+        startTime__lt=parsed_end_time,
+        endTime__gt=parsed_start_time,
+    ).exists()
+    if class_overlap_exists:
+        return False, "Time conflict: this class already has another paper in the selected time slot.", 'red'
+
+    if room_no:
+        room_overlap_exists = base_queryset.filter(
+            roomNo__iexact=room_no,
+            startTime__lt=parsed_end_time,
+            endTime__gt=parsed_start_time,
+        ).exists()
+        if room_overlap_exists:
+            return False, "Time conflict: selected room is already occupied in this time slot.", 'red'
+
+    return True, "", 'success'
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_exam_timetable(request):
+    if request.method != 'POST':
+        return ErrorResponse("Method not allowed", extra={'color': 'red'}).to_json_response()
+
+    try:
+        standard_id = request.POST.get("standard")
+        exam_id = request.POST.get("exam")
+        subject_id = request.POST.get("subject")
+        exam_date = request.POST.get("examDate")
+        start_time = request.POST.get("startTime")
+        end_time = request.POST.get("endTime")
+        room_no = request.POST.get("roomNo", "").strip()
+        note = request.POST.get("note", "").strip()
+        current_session_id = request.session['current_session']['Id']
+
+        if not (standard_id and exam_id and subject_id and exam_date and start_time and end_time):
+            return ErrorResponse(
+                "Class, exam, subject, date, start time and end time are required.",
+                extra={'color': 'red'}
+            ).to_json_response()
+
+        standard_id = int(standard_id)
+        exam_id = int(exam_id)
+        subject_id = int(subject_id)
+
+        standard_exists = Standard.objects.filter(
+            pk=standard_id, isDeleted=False, sessionID_id=current_session_id
+        ).exists()
+        exam_exists = Exam.objects.filter(
+            pk=exam_id, isDeleted=False, sessionID_id=current_session_id
+        ).exists()
+        subject_exists = Subjects.objects.filter(
+            pk=subject_id, isDeleted=False, sessionID_id=current_session_id
+        ).exists()
+        if not (standard_exists and exam_exists and subject_exists):
+            return ErrorResponse(
+                "Invalid class, exam, or subject for current session.",
+                extra={'color': 'red'}
+            ).to_json_response()
+
+        parsed_exam_date = datetime.strptime(exam_date, '%d/%m/%Y').date()
+        parsed_start_time = _parse_exam_time(start_time)
+        parsed_end_time = _parse_exam_time(end_time)
+        if parsed_start_time >= parsed_end_time:
+            return ErrorResponse("Start time must be before end time.", extra={'color': 'red'}).to_json_response()
+
+        is_valid, validation_message, validation_color = _validate_exam_timetable_business_rules(
+            current_session_id=current_session_id,
+            standard_id=standard_id,
+            exam_id=exam_id,
+            subject_id=subject_id,
+            parsed_exam_date=parsed_exam_date,
+            parsed_start_time=parsed_start_time,
+            parsed_end_time=parsed_end_time,
+            room_no=room_no,
+        )
+        if not is_valid:
+            return ErrorResponse(validation_message, extra={'color': validation_color}).to_json_response()
+
+        instance = ExamTimeTable()
+        instance.standardID_id = standard_id
+        instance.examID_id = exam_id
+        instance.subjectID_id = subject_id
+        instance.examDate = parsed_exam_date
+        instance.startTime = parsed_start_time
+        instance.endTime = parsed_end_time
+        instance.roomNo = room_no
+        instance.note = note
+        pre_save_with_user.send(sender=ExamTimeTable, instance=instance, user=request.user.pk)
+        instance.save()
+        return SuccessResponse("Exam timetable added successfully.", extra={'color': 'success'}).to_json_response()
+    except ValueError:
+        return ErrorResponse("Invalid date/time format.", extra={'color': 'red'}).to_json_response()
+    except IntegrityError:
+        return ErrorResponse(
+            "Unable to save timetable due to conflict. Please refresh and try again.",
+            extra={'color': 'red'}
+        ).to_json_response()
+    except Exception as e:
+        logger.error(f"Error in add_exam_timetable: {e}")
+        return ErrorResponse("Error in adding exam timetable.", extra={'color': 'red'}).to_json_response()
+
+
+class ExamTimeTableListJson(BaseDatatableView):
+    order_columns = [
+        'standardID.name',
+        'standardID.section',
+        'examID.name',
+        'subjectID.name',
+        'examDate',
+        'startTime',
+        'endTime',
+        'roomNo',
+        'lastEditedBy',
+        'datetime'
+    ]
+
+    def get_initial_queryset(self):
+        return ExamTimeTable.objects.select_related(
+            'standardID', 'examID', 'subjectID'
+        ).filter(
+            isDeleted=False,
+            sessionID_id=self.request.session["current_session"]["Id"]
+        ).order_by('-examDate', 'startTime')
+
+    def filter_queryset(self, qs):
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(standardID__name__icontains=search)
+                | Q(standardID__section__icontains=search)
+                | Q(examID__name__icontains=search)
+                | Q(subjectID__name__icontains=search)
+                | Q(roomNo__icontains=search)
+                | Q(lastEditedBy__icontains=search)
+                | Q(lastUpdatedOn__icontains=search)
+            )
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            action = '''<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
+                <i class="pen icon"></i>
+              </button>
+              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
+                <i class="trash alternate icon"></i>
+              </button></td>'''.format(item.pk, item.pk)
+            section = item.standardID.section if item.standardID and item.standardID.section else 'N/A'
+            json_data.append([
+                escape(item.standardID.name if item.standardID else 'N/A'),
+                escape(section),
+                escape(item.examID.name if item.examID else 'N/A'),
+                escape(item.subjectID.name if item.subjectID else 'N/A'),
+                escape(item.examDate.strftime('%d-%m-%Y') if item.examDate else 'N/A'),
+                escape(item.startTime.strftime('%I:%M %p') if item.startTime else 'N/A'),
+                escape(item.endTime.strftime('%I:%M %p') if item.endTime else 'N/A'),
+                escape(item.roomNo if item.roomNo else 'N/A'),
+                escape(item.lastEditedBy if item.lastEditedBy else 'N/A'),
+                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p') if item.datetime else 'N/A'),
+                action,
+            ])
+        return json_data
+
+
+@login_required
+def get_exam_timetable_detail(request, **kwargs):
+    try:
+        row_id = request.GET.get('id')
+        obj = ExamTimeTable.objects.get(
+            pk=row_id,
+            isDeleted=False,
+            sessionID_id=request.session['current_session']['Id']
+        )
+        obj_dic = {
+            'ID': obj.pk,
+            'StandardID': obj.standardID_id,
+            'ExamID': obj.examID_id,
+            'SubjectID': obj.subjectID_id,
+            'ExamDate': obj.examDate.strftime('%d/%m/%Y') if obj.examDate else '',
+            'StartTime': obj.startTime.strftime('%I:%M %p') if obj.startTime else '',
+            'EndTime': obj.endTime.strftime('%I:%M %p') if obj.endTime else '',
+            'RoomNo': obj.roomNo if obj.roomNo else '',
+            'Note': obj.note if obj.note else '',
+        }
+        return SuccessResponse(
+            "Exam timetable detail fetched successfully.",
+            data=obj_dic,
+            extra={'color': 'success'}
+        ).to_json_response()
+    except ExamTimeTable.DoesNotExist:
+        return ErrorResponse("Exam timetable detail not found.", extra={'color': 'red'}).to_json_response()
+    except Exception as e:
+        logger.error(f"Error in get_exam_timetable_detail: {e}")
+        return ErrorResponse("Error in fetching exam timetable detail.", extra={'color': 'red'}).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def update_exam_timetable(request):
+    if request.method != 'POST':
+        return ErrorResponse("Method not allowed", extra={'color': 'red'}).to_json_response()
+
+    try:
+        edit_id = request.POST.get("editID")
+        standard_id = request.POST.get("standard")
+        exam_id = request.POST.get("exam")
+        subject_id = request.POST.get("subject")
+        exam_date = request.POST.get("examDate")
+        start_time = request.POST.get("startTime")
+        end_time = request.POST.get("endTime")
+        room_no = request.POST.get("roomNo", "").strip()
+        note = request.POST.get("note", "").strip()
+        current_session_id = request.session['current_session']['Id']
+
+        if not (edit_id and standard_id and exam_id and subject_id and exam_date and start_time and end_time):
+            return ErrorResponse(
+                "Class, exam, subject, date, start time and end time are required.",
+                extra={'color': 'red'}
+            ).to_json_response()
+
+        edit_id = int(edit_id)
+        standard_id = int(standard_id)
+        exam_id = int(exam_id)
+        subject_id = int(subject_id)
+
+        standard_exists = Standard.objects.filter(
+            pk=standard_id, isDeleted=False, sessionID_id=current_session_id
+        ).exists()
+        exam_exists = Exam.objects.filter(
+            pk=exam_id, isDeleted=False, sessionID_id=current_session_id
+        ).exists()
+        subject_exists = Subjects.objects.filter(
+            pk=subject_id, isDeleted=False, sessionID_id=current_session_id
+        ).exists()
+        if not (standard_exists and exam_exists and subject_exists):
+            return ErrorResponse(
+                "Invalid class, exam, or subject for current session.",
+                extra={'color': 'red'}
+            ).to_json_response()
+
+        instance = ExamTimeTable.objects.get(
+            pk=edit_id, isDeleted=False, sessionID_id=current_session_id
+        )
+        parsed_exam_date = datetime.strptime(exam_date, '%d/%m/%Y').date()
+        parsed_start_time = _parse_exam_time(start_time)
+        parsed_end_time = _parse_exam_time(end_time)
+        if parsed_start_time >= parsed_end_time:
+            return ErrorResponse("Start time must be before end time.", extra={'color': 'red'}).to_json_response()
+
+        is_valid, validation_message, validation_color = _validate_exam_timetable_business_rules(
+            current_session_id=current_session_id,
+            standard_id=standard_id,
+            exam_id=exam_id,
+            subject_id=subject_id,
+            parsed_exam_date=parsed_exam_date,
+            parsed_start_time=parsed_start_time,
+            parsed_end_time=parsed_end_time,
+            room_no=room_no,
+            exclude_id=edit_id,
+        )
+        if not is_valid:
+            return ErrorResponse(validation_message, extra={'color': validation_color}).to_json_response()
+
+        instance.standardID_id = standard_id
+        instance.examID_id = exam_id
+        instance.subjectID_id = subject_id
+        instance.examDate = parsed_exam_date
+        instance.startTime = parsed_start_time
+        instance.endTime = parsed_end_time
+        instance.roomNo = room_no
+        instance.note = note
+        pre_save_with_user.send(sender=ExamTimeTable, instance=instance, user=request.user.pk)
+        instance.save()
+        return SuccessResponse("Exam timetable updated successfully.", extra={'color': 'success'}).to_json_response()
+    except ExamTimeTable.DoesNotExist:
+        return ErrorResponse("Exam timetable detail not found.", extra={'color': 'red'}).to_json_response()
+    except ValueError:
+        return ErrorResponse("Invalid date/time format.", extra={'color': 'red'}).to_json_response()
+    except IntegrityError:
+        return ErrorResponse(
+            "Unable to update timetable due to conflict. Please refresh and try again.",
+            extra={'color': 'red'}
+        ).to_json_response()
+    except Exception as e:
+        logger.error(f"Error in update_exam_timetable: {e}")
+        return ErrorResponse("Error in updating exam timetable.", extra={'color': 'red'}).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def delete_exam_timetable(request):
+    if request.method != 'POST':
+        return ErrorResponse("Method not allowed", extra={'color': 'red'}).to_json_response()
+
+    try:
+        row_id = request.POST.get("dataID")
+        instance = ExamTimeTable.objects.get(
+            pk=row_id, isDeleted=False, sessionID_id=request.session['current_session']['Id']
+        )
+        instance.isDeleted = True
+        pre_save_with_user.send(sender=ExamTimeTable, instance=instance, user=request.user.pk)
+        instance.save()
+        return SuccessResponse("Exam timetable deleted successfully.", extra={'color': 'success'}).to_json_response()
+    except ExamTimeTable.DoesNotExist:
+        return ErrorResponse("Exam timetable detail not found.", extra={'color': 'red'}).to_json_response()
+    except Exception as e:
+        logger.error(f"Error in delete_exam_timetable: {e}")
+        return ErrorResponse("Error in deleting exam timetable.", extra={'color': 'red'}).to_json_response()
 
 
 # assign exam to class

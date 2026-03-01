@@ -26,6 +26,7 @@ urlpatterns = [
     # Exams
     path('manage_exams/', manage_exams, name='manage_exams'),
     path('assign_exams_to_class/', assign_exams_to_class, name='assign_exams_to_class'),
+    path('manage_exam_timetable/', manage_exam_timetable, name='manage_exam_timetable'),
 
     # Attendance
     path('student_attendance/', student_attendance, name='student_attendance'),

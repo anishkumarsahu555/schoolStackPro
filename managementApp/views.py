@@ -197,6 +197,22 @@ def assign_exams_to_class(request):
     return render(request, 'managementApp/exam/assignExamToClass.html', context)
 
 
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_exam_timetable(request):
+    current_session_id = request.session.get('current_session', {}).get('Id')
+    timetable_rows = ExamTimeTable.objects.select_related(
+        'standardID', 'examID', 'subjectID'
+    ).filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+    ).order_by('examID__name', 'examDate', 'startTime', 'standardID__name') if current_session_id else ExamTimeTable.objects.none()
+    context = {
+        'timetable_rows': timetable_rows,
+    }
+    return render(request, 'managementApp/exam/examTimeTable.html', context)
+
+
 # attendance
 @login_required
 @check_groups('Admin', 'Owner')
