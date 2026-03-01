@@ -4,7 +4,7 @@ import json
 from django.db.models import Q, Count
 from django.shortcuts import render, get_object_or_404
 
-from homeApp.models import SchoolSession
+from homeApp.models import SchoolSession, SchoolDetail
 from homeApp.utils import login_required
 from managementApp.models import (
     Student,
@@ -70,6 +70,30 @@ def _grade_from_percentage(value):
     if value >= 40:
         return 'D'
     return 'F'
+
+
+def _resolve_school_from_context(teacher, current_session_id):
+    school = None
+    if teacher and teacher.schoolID_id:
+        school = SchoolDetail.objects.filter(pk=teacher.schoolID_id, isDeleted=False).first()
+    if not school and current_session_id:
+        school = SchoolDetail.objects.filter(
+            schoolsession__id=current_session_id,
+            schoolsession__isDeleted=False,
+            isDeleted=False,
+        ).distinct().first()
+    return school
+
+
+@login_required
+@check_groups('Teaching')
+def teacher_school_detail(request):
+    teacher, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
+    school = _resolve_school_from_context(teacher, current_session_id)
+    return render(request, 'teacherApp/school_detail.html', {
+        'school': school,
+        'is_class_teacher': is_class_teacher,
+    })
 
 
 @login_required

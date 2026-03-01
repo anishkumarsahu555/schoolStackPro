@@ -2,8 +2,11 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import update_session_auth_hash
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
+from django.templatetags.static import static
 from django.views.decorators.csrf import csrf_exempt
+import os
 
+from homeApp.branding import get_school_branding
 from homeApp.models import SchoolOwner, SchoolDetail
 from homeApp.utils import init_session, get_all_session_list, custom_login_required, login_required
 from managementApp.models import TeacherDetail, Student
@@ -191,3 +194,44 @@ def change_password(request):
             owner.save(update_fields=['password', 'lastUpdatedOn'])
 
     return JsonResponse({'success': True, 'message': 'Password changed successfully.', 'color': 'green'}, safe=False)
+
+
+def dynamic_manifest(request):
+    branding = get_school_branding(request)
+    school_name = branding.get('school_name') or 'SCHOOLS-STACK'
+
+    icon_url = branding.get('icon_url')
+    icon_type = "image/png"
+    if icon_url:
+        icon_192 = request.build_absolute_uri(icon_url)
+        icon_512 = request.build_absolute_uri(icon_url)
+        ext = os.path.splitext(icon_url.lower())[1]
+        if ext in {".jpg", ".jpeg"}:
+            icon_type = "image/jpeg"
+        elif ext == ".webp":
+            icon_type = "image/webp"
+        elif ext == ".svg":
+            icon_type = "image/svg+xml"
+    else:
+        icon_192 = request.build_absolute_uri(static('sw/images/icon-192.png'))
+        icon_512 = request.build_absolute_uri(static('sw/images/icon-512.png'))
+
+    data = {
+        "name": school_name,
+        "short_name": school_name[:12] if school_name else "SchoolStack",
+        "start_url": "/",
+        "display": "standalone",
+        "orientation": "portrait",
+        "background_color": "#1a73e8",
+        "theme_color": "#1a73e8",
+        "icons": [
+            {"src": icon_192, "sizes": "192x192", "type": icon_type},
+            {"src": icon_512, "sizes": "512x512", "type": icon_type},
+            {"src": icon_192, "sizes": "192x192", "type": icon_type, "purpose": "maskable"},
+            {"src": icon_512, "sizes": "512x512", "type": icon_type, "purpose": "maskable"},
+        ],
+    }
+    response = JsonResponse(data)
+    response["Content-Type"] = "application/manifest+json"
+    response["Cache-Control"] = "private, max-age=60"
+    return response

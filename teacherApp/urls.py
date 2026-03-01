@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     teacher_home,
+    teacher_school_detail,
     teacher_students_list,
     teacher_student_detail,
     teacher_assigned_subjects,
@@ -17,6 +18,7 @@ from .views import (
 urlpatterns = [
     path('', teacher_home, name='teacher_root'),
     path('home/', teacher_home, name='teacher_home'),
+    path('school-detail/', teacher_school_detail, name='teacher_school_detail'),
     path('students/', teacher_students_list, name='teacher_students_list'),
     path('assigned-class/', teacher_assigned_class, name='teacher_assigned_class'),
     path('assigned-subjects/', teacher_assigned_subjects, name='teacher_assigned_subjects'),

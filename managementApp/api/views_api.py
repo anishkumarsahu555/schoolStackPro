@@ -10,6 +10,7 @@ from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
+from homeApp.models import SchoolDetail
 from managementApp.models import *
 from managementApp.signals import pre_save_with_user
 from utils.conts import MONTHS_LIST
@@ -19,6 +20,7 @@ from utils.json_validator import validate_input
 from utils.logger import logger
 from utils.custom_response import SuccessResponse, ErrorResponse
 from utils.cache_modfier import add_item_to_existing_cache, delete_item_from_existing_cache, update_item_in_existing_cache
+from utils.custom_decorators import check_groups
 
 
 def _api_response(payload, safe=False, status=200):
@@ -48,6 +50,90 @@ def _api_response(payload, safe=False, status=200):
 
 def _current_session_id(request):
     return request.session.get("current_session", {}).get("Id")
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def get_school_detail_api(request):
+    try:
+        school_id = request.session.get('current_session', {}).get('SchoolID')
+        school = None
+        if school_id:
+            school = SchoolDetail.objects.filter(pk=school_id, isDeleted=False).first()
+        if not school:
+            school = SchoolDetail.objects.filter(ownerID__userID_id=request.user.id, isDeleted=False).order_by('-datetime').first()
+        if not school:
+            return ErrorResponse('School detail not found.').to_json_response()
+
+        data = {
+            'id': school.id,
+            'schoolName': school.schoolName or '',
+            'name': school.name or '',
+            'address': school.address or '',
+            'city': school.city or '',
+            'state': school.state or '',
+            'country': school.country or '',
+            'pinCode': school.pinCode or '',
+            'phoneNumber': school.phoneNumber or '',
+            'email': school.email or '',
+            'website': school.website or '',
+            'logo': school.logo.url if school.logo else '',
+        }
+        return SuccessResponse('School details fetched successfully.', data=data).to_json_response()
+    except Exception as e:
+        logger.error(f'Error in get_school_detail_api: {e}')
+        return ErrorResponse('Unable to fetch school details.').to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+@check_groups('Admin', 'Owner')
+def update_school_detail_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed.').to_json_response()
+    try:
+        school_id = request.session.get('current_session', {}).get('SchoolID')
+        school = None
+        if school_id:
+            school = SchoolDetail.objects.filter(pk=school_id, isDeleted=False).first()
+        if not school:
+            school = SchoolDetail.objects.filter(ownerID__userID_id=request.user.id, isDeleted=False).order_by('-datetime').first()
+        if not school:
+            return ErrorResponse('School detail not found.').to_json_response()
+
+        school.schoolName = (request.POST.get('schoolName') or '').strip()
+        school.name = (request.POST.get('name') or '').strip()
+        school.address = (request.POST.get('address') or '').strip()
+        school.city = (request.POST.get('city') or '').strip()
+        school.state = (request.POST.get('state') or '').strip()
+        school.country = (request.POST.get('country') or '').strip()
+        school.pinCode = (request.POST.get('pinCode') or '').strip()
+        school.phoneNumber = (request.POST.get('phoneNumber') or '').strip()
+        school.email = (request.POST.get('email') or '').strip()
+        school.website = (request.POST.get('website') or '').strip()
+        logo = request.FILES.get('logo')
+        if logo:
+            school.logo = logo
+
+        if not school.schoolName:
+            return ErrorResponse('School name is required.').to_json_response()
+        if not school.address:
+            return ErrorResponse('Address is required.').to_json_response()
+
+        school.lastEditedBy = request.user.username
+        school.save()
+
+        current_session = dict(request.session.get('current_session', {}))
+        current_session['SchoolID'] = school.id
+        current_session['SchoolName'] = school.schoolName or school.name or current_session.get('SchoolName')
+        current_session['SchoolLogo'] = school.logo.url if school.logo else current_session.get('SchoolLogo')
+        request.session['current_session'] = current_session
+
+        return SuccessResponse('School details updated successfully.', extra={'color': 'green'}).to_json_response()
+    except Exception as e:
+        logger.error(f'Error in update_school_detail_api: {e}')
+        return ErrorResponse('Unable to update school details.').to_json_response()
 
 # Class ------------------
 @transaction.atomic

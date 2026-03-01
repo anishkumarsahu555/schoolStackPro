@@ -1,0 +1,374 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>School Details</title>
+{% endblock %}
+
+{% block css %}
+    <style>
+        .detail-shell {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            padding: 0 0.9rem;
+            box-sizing: border-box;
+        }
+
+        .ui.grid.detail-shell {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        .ui.grid.detail-shell > .column {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        .detail-hero {
+            background: linear-gradient(135deg, #2a6fd8 0%, #1a4f9e 55%, #163f80 100%);
+            border-radius: 18px;
+            padding: 1.4rem;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 14px 35px rgba(17, 42, 82, 0.25);
+        }
+
+        .detail-hero:before {
+            content: "";
+            position: absolute;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            top: -130px;
+            right: -60px;
+        }
+
+        .detail-hero-inner {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .school-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            min-width: 0;
+        }
+
+        .logo-preview-wrap {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo-preview {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.38);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .logo-placeholder {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            border: 2px solid rgba(255, 255, 255, 0.38);
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .detail-hero h2 {
+            margin: 0 0 0.3rem 0;
+            font-size: 1.35rem;
+            color: #fff;
+        }
+
+        .detail-hero p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        .detail-tags {
+            margin-top: 0.55rem;
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .detail-tags .ui.label {
+            background: rgba(255, 255, 255, 0.15) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+        }
+
+        .detail-actions .ui.button {
+            margin-left: 0.45rem;
+        }
+
+        .info-grid {
+            margin-top: 1.1rem;
+        }
+
+        .info-card {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border-radius: 18px !important;
+            border: 1px solid var(--app-border) !important;
+            box-shadow: 0 12px 24px rgba(21, 35, 61, 0.08) !important;
+            height: 100%;
+        }
+
+        .info-card .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+        }
+
+        .chip {
+            font-size: 0.78rem;
+            border-radius: 999px;
+            padding: 0.25rem 0.65rem;
+            background: rgba(42, 111, 216, 0.12);
+            color: #2a6fd8;
+        }
+
+        @media (max-width: 767px) {
+            .detail-shell {
+                padding: 0 0.25rem;
+            }
+
+            .detail-hero {
+                padding: 1.05rem;
+                border-radius: 16px;
+            }
+
+            .detail-hero-inner {
+                align-items: flex-start;
+            }
+
+            .detail-actions .ui.button {
+                margin: 0.35rem 0.35rem 0 0;
+            }
+
+            .logo-preview,
+            .logo-placeholder {
+                width: 60px;
+                height: 60px;
+                font-size: 1.1rem;
+            }
+
+            .info-card {
+                border-radius: 14px !important;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid detail-shell">
+        <div class="sixteen wide column">
+            <div class="detail-hero">
+                <div class="detail-hero-inner">
+                    <div class="school-meta">
+                        {% if school and school.logo %}
+                            <img id="logoPreview" class="logo-preview" src="{{ school.logo.url }}" alt="School Logo">
+                            <div id="logoPreviewPlaceholder" class="logo-placeholder" style="display:none;">
+                                {{ school.schoolName|default:'S'|slice:":1"|upper }}
+                            </div>
+                        {% else %}
+                            <div id="logoPreviewPlaceholder" class="logo-placeholder">{{ school.schoolName|default:'S'|slice:":1"|upper }}</div>
+                            <img id="logoPreview" class="logo-preview" src="" alt="School Logo" style="display:none;">
+                        {% endif %}
+                        <div>
+                            <h2>{{ school.schoolName|default:"School Details" }}</h2>
+                            <p>Manage branding and core school profile details.</p>
+                            <div class="detail-tags">
+                                <span class="ui tiny label">Favicon: Dynamic</span>
+                                <span class="ui tiny label">Install Icon: Dynamic</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-actions">
+                        <button type="button" class="ui mini white button" onclick="window.location.reload()">
+                            <i class="sync icon"></i>Reset
+                        </button>
+                        <button type="button" class="ui mini button saveBtn" onclick="updateSchoolDetail()">
+                            <i class="save icon"></i>Save
+                        </button>
+                        <button type="button" class="ui mini button saveBtnLoad" style="display:none;">
+                            <i class="spinner loading icon"></i>Saving
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <form id="schoolDetailForm" class="ui tiny form" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="ui stackable two column grid info-grid">
+                        <div class="column">
+                            <div class="ui segment info-card">
+                                <div class="header">
+                                    <h4 class="ui header"><i class="school icon"></i>School Information</h4>
+                                    <span class="chip">Primary</span>
+                                </div>
+                                <div class="two fields">
+                                    <div class="field required">
+                                        <label>School Name</label>
+                                        <input type="text" id="schoolName" placeholder="School Name" value="{{ school.schoolName|default:'' }}">
+                                    </div>
+                                    <div class="field">
+                                        <label>Display Name</label>
+                                        <input type="text" id="name" placeholder="Display Name" value="{{ school.name|default:'' }}">
+                                    </div>
+                                </div>
+                                <div class="three fields">
+                                    <div class="field">
+                                        <label>Email</label>
+                                        <input type="email" id="email" placeholder="Email" value="{{ school.email|default:'' }}">
+                                    </div>
+                                    <div class="field">
+                                        <label>Phone Number</label>
+                                        <input type="text" id="phoneNumber" placeholder="Phone Number" value="{{ school.phoneNumber|default:'' }}">
+                                    </div>
+                                    <div class="field">
+                                        <label>Website</label>
+                                        <input type="text" id="website" placeholder="Website URL" value="{{ school.website|default:'' }}">
+                                    </div>
+                                </div>
+                                <div class="field required">
+                                    <label>Address</label>
+                                    <textarea id="address" rows="3" placeholder="Address">{{ school.address|default:'' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="column">
+                            <div class="ui segment info-card">
+                                <div class="header">
+                                    <h4 class="ui header"><i class="image icon"></i>Branding & Location</h4>
+                                    <span class="chip">Assets</span>
+                                </div>
+                                <div class="field">
+                                    <label>School Logo</label>
+                                    <div class="logo-preview-wrap" style="margin-bottom:.75rem;">
+                                        <input type="file" id="logo" accept="image/*">
+                                    </div>
+                                    <div style="color: var(--app-muted); font-size:.82rem;">
+                                        Logo is used for navbar icon, favicon and install app icon.
+                                    </div>
+                                </div>
+                                <div class="four fields" style="margin-top:.85rem;">
+                                    <div class="field">
+                                        <label>City</label>
+                                        <input type="text" id="city" placeholder="City" value="{{ school.city|default:'' }}">
+                                    </div>
+                                    <div class="field">
+                                        <label>State</label>
+                                        <input type="text" id="state" placeholder="State" value="{{ school.state|default:'' }}">
+                                    </div>
+                                    <div class="field">
+                                        <label>Country</label>
+                                        <input type="text" id="country" placeholder="Country" value="{{ school.country|default:'' }}">
+                                    </div>
+                                    <div class="field">
+                                        <label>Pincode</label>
+                                        <input type="text" id="pinCode" placeholder="Pincode" value="{{ school.pinCode|default:'' }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        $('#logo').on('change', function () {
+            const file = this.files && this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                $('#logoPreview').attr('src', e.target.result).show();
+                $('#logoPreviewPlaceholder').hide();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function updateSchoolDetail() {
+            showLoading();
+            const data = new FormData();
+            data.append('schoolName', ($('#schoolName').val() || '').trim());
+            data.append('name', ($('#name').val() || '').trim());
+            data.append('email', ($('#email').val() || '').trim());
+            data.append('phoneNumber', ($('#phoneNumber').val() || '').trim());
+            data.append('website', ($('#website').val() || '').trim());
+            data.append('address', ($('#address').val() || '').trim());
+            data.append('city', ($('#city').val() || '').trim());
+            data.append('state', ($('#state').val() || '').trim());
+            data.append('country', ($('#country').val() || '').trim());
+            data.append('pinCode', ($('#pinCode').val() || '').trim());
+
+            const logoFile = $('#logo')[0].files[0];
+            if (logoFile) data.append('logo', logoFile);
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+            let hasError = false;
+            ['schoolName', 'address'].forEach(function (id) {
+                if (!data.get(id)) {
+                    $('#' + id).closest('.field').addClass('error');
+                    hasError = true;
+                }
+            });
+            if (hasError) {
+                requiredFieldError();
+                hideLoading();
+                return;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:update_school_detail_api' %}",
+                data: data,
+                contentType: false,
+                processData: false,
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message || 'School details updated successfully.', response.color || 'green');
+                        setTimeout(function () {
+                            window.location.reload();
+                        }, 400);
+                    } else {
+                        addErrorNotification(response.message || 'Unable to update school details.');
+                    }
+                    hideLoading();
+                },
+                error: function (xhr) {
+                    const msg = (xhr.responseJSON && xhr.responseJSON.message) || 'Unable to update school details.';
+                    addErrorNotification(msg);
+                    hideLoading();
+                }
+            });
+        }
+    </script>
+{% endblock %}

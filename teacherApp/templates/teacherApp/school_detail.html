@@ -1,0 +1,138 @@
+{% extends 'teacherApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>School Detail</title>
+{% endblock %}
+
+{% block css %}
+<style>
+    .detail-shell { width: 100%; max-width: 100%; margin: 0; padding: 0 .9rem; box-sizing: border-box; }
+    .ui.grid.detail-shell { margin-left: 0 !important; margin-right: 0 !important; }
+    .ui.grid.detail-shell > .column { padding-left: 0 !important; padding-right: 0 !important; }
+
+    .detail-hero {
+        background: linear-gradient(135deg, #2a6fd8 0%, #1a4f9e 55%, #163f80 100%);
+        border-radius: 18px;
+        padding: 1.3rem;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 35px rgba(17, 42, 82, 0.25);
+    }
+    .detail-hero:before {
+        content: "";
+        position: absolute;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        top: -130px;
+        right: -60px;
+    }
+    .detail-hero-inner {
+        position: relative; z-index: 2; display: flex; justify-content: space-between;
+        align-items: center; gap: 1rem; flex-wrap: wrap;
+    }
+    .school-meta { display: flex; align-items: center; gap: .9rem; min-width: 0; }
+    .school-logo {
+        width: 72px; height: 72px; border-radius: 50%; object-fit: cover;
+        border: 2px solid rgba(255,255,255,.38); background: rgba(255,255,255,.2);
+    }
+    .school-logo-fallback {
+        width: 72px; height: 72px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.35rem; font-weight: 700; color: #fff;
+        border: 2px solid rgba(255,255,255,.38); background: rgba(255,255,255,.2);
+    }
+    .detail-hero h2 { margin: 0 0 .3rem 0; font-size: 1.3rem; color: #fff; }
+    .detail-hero p { margin: 0; color: rgba(255,255,255,.92); }
+    .detail-tags { margin-top: .55rem; display: flex; gap: .4rem; flex-wrap: wrap; }
+    .detail-tags .ui.label {
+        background: rgba(255,255,255,.15) !important; color: #fff !important;
+        border: 1px solid rgba(255,255,255,.35);
+    }
+
+    .info-grid { margin-top: 1.05rem; }
+    .info-card {
+        background: var(--app-surface) !important; color: var(--app-text) !important;
+        border-radius: 18px !important; border: 1px solid var(--app-border) !important;
+        box-shadow: 0 12px 24px rgba(21, 35, 61, 0.08) !important; height: 100%;
+    }
+    .info-card .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .8rem; }
+    .chip { font-size: .78rem; border-radius: 999px; padding: .25rem .65rem; background: rgba(42,111,216,.12); color: #2a6fd8; }
+    .info-list { display: grid; gap: .55rem; }
+    .info-line { display: flex; align-items: baseline; gap: .5rem; border-bottom: 1px dashed rgba(128,145,170,.28); padding-bottom: .35rem; }
+    .info-line:last-child { border-bottom: none; padding-bottom: 0; }
+    .info-line .k { min-width: 130px; font-size: .82rem; color: var(--app-muted); }
+    .info-line .v { font-weight: 600; word-break: break-word; }
+
+    @media (max-width: 767px) {
+        .detail-shell { padding: 0 .25rem; }
+        .detail-hero { padding: 1.05rem; border-radius: 16px; }
+        .school-logo, .school-logo-fallback { width: 60px; height: 60px; font-size: 1.1rem; }
+        .info-line .k { min-width: 96px; font-size: .78rem; }
+        .info-card { border-radius: 14px !important; }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="ui left aligned basic grid detail-shell">
+    <div class="sixteen wide column">
+        <div class="detail-hero">
+            <div class="detail-hero-inner">
+                <div class="school-meta">
+                    {% if school and school.logo %}
+                        <img class="school-logo" src="{{ school.logo.url }}" alt="{{ school.schoolName|default:'School' }}">
+                    {% else %}
+                        <div class="school-logo-fallback">{{ school.schoolName|default:'S'|slice:":1"|upper }}</div>
+                    {% endif %}
+                    <div>
+                        <h2>{{ school.schoolName|default:"School Detail" }}</h2>
+                        <p>{{ school.name|default:"School profile and contact details" }}</p>
+                        <div class="detail-tags">
+                            <span class="ui tiny label">Teacher View</span>
+                            <span class="ui tiny label">Read Only</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ui stackable two column grid info-grid">
+            <div class="column">
+                <div class="ui segment info-card">
+                    <div class="header">
+                        <h4 class="ui header"><i class="school icon"></i>School Information</h4>
+                        <span class="chip">Profile</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-line"><span class="k">School Name</span><span class="v">{{ school.schoolName|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Display Name</span><span class="v">{{ school.name|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Email</span><span class="v">{{ school.email|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Phone</span><span class="v">{{ school.phoneNumber|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Website</span><span class="v">{{ school.website|default:"N/A" }}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="ui segment info-card">
+                    <div class="header">
+                        <h4 class="ui header"><i class="map marker alternate icon"></i>Address</h4>
+                        <span class="chip">Location</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-line"><span class="k">Address</span><span class="v">{{ school.address|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">City</span><span class="v">{{ school.city|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">State</span><span class="v">{{ school.state|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Country</span><span class="v">{{ school.country|default:"N/A" }}</span></div>
+                        <div class="info-line"><span class="k">Pincode</span><span class="v">{{ school.pinCode|default:"N/A" }}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

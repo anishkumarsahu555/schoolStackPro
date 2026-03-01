@@ -3,6 +3,7 @@ from .views import *
 
 urlpatterns = [
     path('', login_page, name='login_page'),
+    path('manifest.webmanifest', dynamic_manifest, name='dynamic_manifest'),
     path('logout/', user_logout, name='user_logout'),
     path('post_login/', post_login, name='post_login'),
     path('home/', homepage, name='homepage'),

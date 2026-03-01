@@ -1,115 +1,460 @@
 {% extends 'studentApp/index.html' %}
 {% load static %}
+
 {% block title %}
     <title>Fee Details</title>
 {% endblock %}
+
 {% block css %}
-{% endblock %}
-{% block body %}
-
     <style>
-
-
-        #SubjectTable_length, #byStudentTable_length {
-            left: 20px;
-            position: absolute;
+        .fee-shell {
+            display: grid;
+            gap: 0.85rem;
         }
 
-        #SubjectTable_filter, #byStudentTable_filter {
-            float: right;
+        .fee-stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.7rem;
         }
 
-        .dt-buttons {
-            position: absolute;
-            left: 174px;
+        .stat-box {
+            border-radius: 14px;
+            border: 1px solid var(--dm-border, #d8e2f0);
+            background: var(--dm-card-bg, #ffffff);
+            padding: 0.7rem 0.8rem;
+            box-shadow: 0 6px 16px rgba(29, 48, 77, 0.08);
         }
 
-        input[type=search] {
-            width: 100px !important;
+        .stat-label {
+            color: var(--dm-muted, #5f6d7d);
+            font-size: 0.78rem;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .stat-value {
+            color: var(--dm-text, #1f2f43);
+            font-weight: 700;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .fee-filter {
+            border-radius: 14px;
+            border: 1px solid var(--dm-border, #d8e2f0);
+            background: var(--dm-card-bg, #ffffff);
+            padding: 0.75rem;
+        }
+
+        .fee-wrap {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(275px, 1fr));
+            gap: 0.8rem;
+        }
+
+        .fee-card {
+            border: 1px solid var(--dm-border, #d8e2f0);
+            border-radius: 14px;
+            background: var(--dm-card-bg, #ffffff);
+            box-shadow: 0 6px 18px rgba(30, 54, 92, 0.08);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 62px auto;
+            min-height: 166px;
+        }
+
+        .fee-month {
+            background: linear-gradient(180deg, #2a6fd8 0%, #1e57ad 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            padding: 0.45rem 0.35rem;
+            text-align: center;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            line-height: 1.25;
+            letter-spacing: 0.4px;
+        }
+
+        .fee-content {
+            padding: 0.72rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+
+        .fee-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .fee-title {
+            margin: 0;
+            font-size: 0.98rem;
+            line-height: 1.3;
+            color: var(--dm-text, #1f2f43);
+            font-weight: 700;
+        }
+
+        .fee-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.18rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+
+        .fee-chip.paid {
+            background: rgba(44, 150, 90, 0.15);
+            color: #1f8a4f;
+            border-color: rgba(44, 150, 90, 0.28);
+        }
+
+        .fee-chip.due {
+            background: rgba(234, 91, 91, 0.14);
+            color: #b32929;
+            border-color: rgba(234, 91, 91, 0.3);
+        }
+
+        .fee-meta {
+            color: var(--dm-muted, #5f6d7d);
+            font-size: 0.84rem;
+            display: grid;
+            gap: 0.2rem;
+        }
+
+        .fee-meta b {
+            color: var(--dm-text, #2d4059);
+        }
+
+        .fee-note {
+            color: var(--dm-text, #1f2f43);
+            font-size: 0.84rem;
+            line-height: 1.45;
+            border-top: 1px dashed var(--dm-border, #d8e2f0);
+            padding-top: 0.4rem;
+        }
+
+        .fee-empty {
+            border: 1px dashed var(--dm-border, #d8e2f0);
+            border-radius: 14px;
+            padding: 1.15rem;
+            text-align: center;
+            color: var(--dm-muted, #5f6d7d);
+            background: var(--dm-card-bg, #ffffff);
+        }
+
+        html[data-theme="dark"] .stat-box,
+        html[data-theme="dark"] .fee-filter,
+        html[data-theme="dark"] .fee-card,
+        html[data-theme="dark"] .fee-empty {
+            background: #111a2b !important;
+            border-color: #2a3856 !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32) !important;
+        }
+
+        html[data-theme="dark"] .stat-label,
+        html[data-theme="dark"] .fee-meta,
+        html[data-theme="dark"] .fee-empty {
+            color: #9fb1cd !important;
+        }
+
+        html[data-theme="dark"] .stat-value,
+        html[data-theme="dark"] .fee-title,
+        html[data-theme="dark"] .fee-meta b,
+        html[data-theme="dark"] .fee-note {
+            color: #e6eefc !important;
+        }
+
+        html[data-theme="dark"] .fee-note {
+            border-top-color: #314262 !important;
+        }
+
+        html[data-theme="dark"] .fee-filter .ui.dropdown,
+        html[data-theme="dark"] .fee-filter .ui.search.dropdown > .text,
+        html[data-theme="dark"] .fee-filter .ui.search.dropdown .menu > .item {
+            color: #e6eefc !important;
+        }
+
+        html[data-theme="dark"] .fee-filter .ui.input > input {
+            background: #0f1726 !important;
+            border-color: #2c3a57 !important;
+            color: #e6eefc !important;
+        }
+
+        @media (max-width: 767px) {
+            .fee-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .fee-card {
+                grid-template-columns: 52px auto;
+            }
+
+            .fee-content {
+                padding: 0.64rem;
+            }
         }
     </style>
+{% endblock %}
 
-    <div class="ui left aligned basic  grid">
+{% block body %}
+    <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user"
-                > Student Fee Details
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">Fee Details</div>
+            </div>
+
+            <div class="fee-shell">
+                <div class="fee-stats">
+                    <div class="stat-box">
+                        <div class="stat-label">Total Months</div>
+                        <div class="stat-value" id="statTotal">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Paid</div>
+                        <div class="stat-value" id="statPaid">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Due</div>
+                        <div class="stat-value" id="statDue">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Collected</div>
+                        <div class="stat-value" id="statCollected">0</div>
+                    </div>
                 </div>
 
-            </div>
-            <div class="ui tab active " data-tab="user">
-
-                        <div class="row" style="padding-left: 5px; padding-right: 5px;" id="AttendanceTableDiv">
-                            <div class="wide">
-
-                                <table class="ui unstackable tiny sortable celled very nowrap very compact table"
-                                       id="byStudentTable"
-                                       style="margin-top: 5px;width: 100%!important;">
-                                    <thead>
-                                    <tr>
-                                        <th>Month</th>
-                                        <th>Status</th>
-                                        <th>PayDate</th>
-                                        <th>Amount</th>
-                                        <th>Note</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    </tbody>
-                                </table>
-                            </div>
-
+                <div class="fee-filter ui tiny form">
+                    <div class="fields">
+                        <div class="six wide field">
+                            <label>Search</label>
+                            <input type="text" id="feeSearch" placeholder="Search month or note">
                         </div>
+                        <div class="four wide field">
+                            <label>Month</label>
+                            <select class="ui search dropdown" id="feeMonthFilter">
+                                <option value="">All Months</option>
+                            </select>
+                        </div>
+                        <div class="four wide field">
+                            <label>Status</label>
+                            <select class="ui search dropdown" id="feeStatusFilter">
+                                <option value="">All Status</option>
+                                <option value="paid">Paid</option>
+                                <option value="due">Due</option>
+                            </select>
+                        </div>
+                        <div class="two wide field" style="padding-top:2em;">
+                            <button class="ui mini red button" type="button" id="clearFeeFilter">
+                                <i class="times icon"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-
+                <div class="fee-wrap" id="feeWrap"></div>
+                <div class="fee-empty" id="feeEmpty" style="display:none;">No fee records match the selected filters.</div>
             </div>
         </div>
     </div>
 {% endblock %}
 
-
-
-
 {% block js %}
     <script>
+        let feeRecords = [];
 
+        function safeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
 
+        function toAmount(value) {
+            const num = Number(value);
+            return Number.isFinite(num) ? num : 0;
+        }
 
-        let byStudentTab
+        function monthAbbr(monthText) {
+            const value = String(monthText || '').trim();
+            if (!value) return 'N/A';
+            return value.length > 3 ? value.slice(0, 3) : value;
+        }
 
+        function renderFeeCards(list) {
+            const wrap = document.getElementById('feeWrap');
+            const empty = document.getElementById('feeEmpty');
+            if (!wrap || !empty) return;
 
-        byStudentTab = $('#byStudentTable').DataTable({
-            dom: 'Blfrtip',
-            "scrollY": "370px",
-            "scrollX": true,
-            stateSave: true,
-            fixedColumns: {
-                left: 1,
-                right: 1
-            },
-            buttons: [{
-                extend: 'excel',
-                exportOptions: {
-                    columns: [0,1, 2, 3,4]
-                }
+            if (!list.length) {
+                wrap.innerHTML = '';
+                empty.style.display = '';
+                return;
             }
 
-            ],
-            "columnDefs": [
-                {"name": "month", "targets": 0, "orderable": true},
-                {"name": "isPaid", "targets": 1, "orderable": true},
-                {"name": "payDate", "targets": 2, "orderable": true},
-                {"name": "amount", "targets": 3, "orderable": true},
-                {"name": "note", "targets": 4, "orderable": true},
-            ],
-            aaSorting: [[1, 'asc']],
-            "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
-            "pageLength": 100,
-            "processing": true,
-            "serverSide": true,
-            "ajax": "{% url 'studentAppAPI:StudentFeeDetailsJson' %}"
-        });
+            empty.style.display = 'none';
+            wrap.innerHTML = list.map(function (row) {
+                const statusClass = row.status === 'Paid' ? 'paid' : 'due';
+                const statusText = row.status === 'Paid' ? 'Paid' : 'Due';
+                return '' +
+                    '<div class="fee-card">' +
+                    '<div class="fee-month">' + safeHtml(monthAbbr(row.month)) + '</div>' +
+                    '<div class="fee-content">' +
+                    '<div class="fee-top">' +
+                    '<h4 class="fee-title">' + safeHtml(row.month || 'N/A') + '</h4>' +
+                    '<span class="fee-chip ' + statusClass + '">' + statusText + '</span>' +
+                    '</div>' +
+                    '<div class="fee-meta">' +
+                    '<div><b>Pay Date:</b> ' + safeHtml(row.payDate || 'N/A') + '</div>' +
+                    '<div><b>Amount:</b> ' + safeHtml(row.amount) + '</div>' +
+                    '</div>' +
+                    '<div class="fee-note">' + safeHtml(row.note || 'No remark available.') + '</div>' +
+                    '</div>' +
+                    '</div>';
+            }).join('');
+        }
 
+        function updateStats(list) {
+            let paid = 0;
+            let due = 0;
+            let collected = 0;
+
+            list.forEach(function (row) {
+                if (row.status === 'Paid') {
+                    paid += 1;
+                    collected += toAmount(row.amount);
+                } else {
+                    due += 1;
+                }
+            });
+
+            document.getElementById('statTotal').textContent = String(list.length);
+            document.getElementById('statPaid').textContent = String(paid);
+            document.getElementById('statDue').textContent = String(due);
+            document.getElementById('statCollected').textContent = String(collected);
+        }
+
+        function applyFeeFilters() {
+            const q = ($('#feeSearch').val() || '').toLowerCase().trim();
+            const month = ($('#feeMonthFilter').val() || '').toLowerCase();
+            const status = ($('#feeStatusFilter').val() || '').toLowerCase();
+
+            const filtered = feeRecords.filter(function (row) {
+                const rowMonth = (row.month || '').toLowerCase();
+                const rowNote = (row.note || '').toLowerCase();
+                const rowStatus = (row.status || '').toLowerCase();
+
+                const matchesSearch = !q || rowMonth.includes(q) || rowNote.includes(q);
+                const matchesMonth = !month || rowMonth === month;
+                const matchesStatus = !status || rowStatus === status;
+
+                return matchesSearch && matchesMonth && matchesStatus;
+            });
+
+            renderFeeCards(filtered);
+            updateStats(filtered);
+        }
+
+        function initFeeFilters() {
+            const monthSet = new Set();
+            feeRecords.forEach(function (row) {
+                if (row.month) {
+                    monthSet.add(String(row.month).toLowerCase());
+                }
+            });
+
+            function monthSortWeight(monthName) {
+                const key = String(monthName || '').toLowerCase().trim();
+                const order = {
+                    january: 1, jan: 1,
+                    february: 2, feb: 2,
+                    march: 3, mar: 3,
+                    april: 4, apr: 4,
+                    may: 5,
+                    june: 6, jun: 6,
+                    july: 7, jul: 7,
+                    august: 8, aug: 8,
+                    september: 9, sep: 9, sept: 9,
+                    october: 10, oct: 10,
+                    november: 11, nov: 11,
+                    december: 12, dec: 12
+                };
+                return Object.prototype.hasOwnProperty.call(order, key) ? order[key] : 99;
+            }
+
+            const monthFilter = $('#feeMonthFilter');
+            monthFilter.find('option:not(:first)').remove();
+            [...monthSet].sort(function (a, b) {
+                const wa = monthSortWeight(a);
+                const wb = monthSortWeight(b);
+                if (wa !== wb) return wa - wb;
+                return a.localeCompare(b);
+            }).forEach(function (m) {
+                const label = m.replace(/\b\w/g, function (c) {
+                    return c.toUpperCase();
+                });
+                monthFilter.append('<option value="' + m + '">' + label + '</option>');
+            });
+
+            $('#feeMonthFilter, #feeStatusFilter').dropdown();
+
+            $('#feeSearch').on('input', applyFeeFilters);
+            $('#feeMonthFilter, #feeStatusFilter').on('change', applyFeeFilters);
+            $('#clearFeeFilter').on('click', function () {
+                $('#feeSearch').val('');
+                $('#feeMonthFilter').dropdown('clear');
+                $('#feeStatusFilter').dropdown('clear');
+                applyFeeFilters();
+            });
+        }
+
+        function loadFeeDetails() {
+            $.ajax({
+                url: "{% url 'studentAppAPI:StudentFeeDetailsJson' %}",
+                dataType: 'json',
+                data: {
+                    draw: 1,
+                    start: 0,
+                    length: -1,
+                    'search[value]': ''
+                },
+                success: function (response) {
+                    const rows = Array.isArray(response.data) ? response.data : [];
+                    feeRecords = rows.map(function (row) {
+                        return {
+                            month: row[0] || 'N/A',
+                            status: row[1] || 'Due',
+                            payDate: row[2] || 'N/A',
+                            amount: row[3] || 0,
+                            note: row[4] || ''
+                        };
+                    });
+
+                    initFeeFilters();
+                    applyFeeFilters();
+                },
+                error: function () {
+                    feeRecords = [];
+                    renderFeeCards([]);
+                    updateStats([]);
+                    addErrorNotification('Unable to load fee details. Please refresh and try again.');
+                }
+            });
+        }
+
+        $(loadFeeDetails);
     </script>
-
 {% endblock %}

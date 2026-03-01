@@ -1,244 +1,716 @@
 {% extends 'studentApp/index.html' %}
 {% load static %}
+
 {% block title %}
     <title>Students Attendance History</title>
 {% endblock %}
+
 {% block css %}
-{% endblock %}
-{% block body %}
-
     <style>
-
-
-        #SubjectTable_length, #byStudentTable_length {
-            left: 20px;
-            position: absolute;
+        .attendance-shell {
+            display: grid;
+            gap: 0.8rem;
         }
 
-        #SubjectTable_filter,#byStudentTable_filter {
-            float: right;
+        .attendance-tab-pane {
+            display: none;
         }
 
-        .dt-buttons {
-            position: absolute;
-            left: 174px;
+        .attendance-tab-pane.active {
+            display: block;
         }
 
-        input[type=search] {
-            width: 100px !important;
+        .attendance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 0.8rem;
+        }
+
+        .calendar-wrap {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .calendar-month {
+            border: 1px solid var(--dm-border, #d8e2f0);
+            border-radius: 14px;
+            background: var(--dm-card-bg, #ffffff);
+            box-shadow: 0 8px 20px rgba(29, 48, 77, 0.08);
+            overflow: hidden;
+        }
+
+        .calendar-month-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.7rem 0.8rem;
+            border-bottom: 1px solid var(--dm-border, #d8e2f0);
+        }
+
+        .calendar-month-title {
+            margin: 0;
+            color: var(--dm-text, #1f2f43);
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .calendar-legend {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.74rem;
+            color: var(--dm-muted, #5f6d7d);
+        }
+
+        .calendar-legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .calendar-legend-dot.present {
+            background: #1f8a4f;
+        }
+
+        .calendar-legend-dot.absent {
+            background: #b32929;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+        }
+
+        .calendar-weekday {
+            padding: 0.45rem 0.35rem;
+            text-align: center;
+            font-size: 0.74rem;
+            color: var(--dm-muted, #5f6d7d);
+            border-bottom: 1px solid var(--dm-border, #d8e2f0);
+            font-weight: 700;
+        }
+
+        .calendar-day {
+            min-height: 78px;
+            padding: 0.3rem;
+            border-right: 1px solid var(--dm-border, #d8e2f0);
+            border-bottom: 1px solid var(--dm-border, #d8e2f0);
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            background: transparent;
+        }
+
+        .calendar-day:nth-child(7n) {
+            border-right: none;
+        }
+
+        .calendar-day.outside {
+            opacity: 0.42;
+        }
+
+        .calendar-day-num {
+            font-size: 0.77rem;
+            color: var(--dm-text, #1f2f43);
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .calendar-status {
+            font-size: 0.67rem;
+            border-radius: 999px;
+            padding: 0.12rem 0.38rem;
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid transparent;
+            font-weight: 700;
+            width: fit-content;
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .calendar-status.present {
+            background: rgba(44, 150, 90, 0.14);
+            color: #1f8a4f;
+            border-color: rgba(44, 150, 90, 0.28);
+        }
+
+        .calendar-status.absent {
+            background: rgba(234, 91, 91, 0.14);
+            color: #b32929;
+            border-color: rgba(234, 91, 91, 0.3);
+        }
+
+        .calendar-status.none {
+            background: rgba(140, 154, 177, 0.12);
+            color: #5d6c84;
+            border-color: rgba(140, 154, 177, 0.25);
+        }
+
+        .attendance-card {
+            border: 1px solid var(--dm-border, #d8e2f0);
+            border-radius: 14px;
+            background: var(--dm-card-bg, #ffffff);
+            box-shadow: 0 8px 20px rgba(29, 48, 77, 0.08);
+            padding: 0.8rem;
+        }
+
+        .attendance-card-title {
+            margin: 0;
+            color: var(--dm-text, #1f2f43);
+            font-size: 0.96rem;
+            font-weight: 700;
+        }
+
+        .attendance-card-meta {
+            margin-top: 0.45rem;
+            display: grid;
+            gap: 0.3rem;
+            color: var(--dm-muted, #5f6d7d);
+            font-size: 0.84rem;
+        }
+
+        .attendance-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            border-radius: 999px;
+            padding: 0.2rem 0.55rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .attendance-chip.present {
+            background: rgba(44, 150, 90, 0.14);
+            color: #1f8a4f;
+            border-color: rgba(44, 150, 90, 0.28);
+        }
+
+        .attendance-chip.absent {
+            background: rgba(234, 91, 91, 0.14);
+            color: #b32929;
+            border-color: rgba(234, 91, 91, 0.3);
+        }
+
+        .attendance-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+        }
+
+        .attendance-empty {
+            border: 1px dashed var(--dm-border, #d8e2f0);
+            border-radius: 14px;
+            padding: 1rem;
+            color: var(--dm-muted, #5f6d7d);
+            background: var(--dm-card-bg, #ffffff);
+            text-align: center;
+        }
+
+        html[data-theme="dark"] .attendance-card,
+        html[data-theme="dark"] .attendance-empty {
+            background: #111a2b !important;
+            border-color: #2a3856 !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32) !important;
+        }
+
+        html[data-theme="dark"] .calendar-month {
+            background: #111a2b !important;
+            border-color: #2a3856 !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32) !important;
+        }
+
+        html[data-theme="dark"] .calendar-month-head,
+        html[data-theme="dark"] .calendar-weekday,
+        html[data-theme="dark"] .calendar-day {
+            border-color: #2a3856 !important;
+        }
+
+        html[data-theme="dark"] .attendance-card-title,
+        html[data-theme="dark"] .attendance-card-meta b,
+        html[data-theme="dark"] .calendar-month-title,
+        html[data-theme="dark"] .calendar-day-num {
+            color: #e6eefc !important;
+        }
+
+        html[data-theme="dark"] .attendance-card-meta,
+        html[data-theme="dark"] .attendance-empty,
+        html[data-theme="dark"] .calendar-weekday,
+        html[data-theme="dark"] .calendar-legend {
+            color: #9fb1cd !important;
+        }
+
+        @media (max-width: 767px) {
+            .calendar-day {
+                min-height: 60px;
+                padding: 0.22rem;
+            }
+
+            .calendar-status {
+                font-size: 0.62rem;
+                padding: 0.1rem 0.25rem;
+            }
         }
     </style>
+{% endblock %}
 
-    <div class="ui left aligned basic  grid">
+{% block body %}
+    <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user"
-                > Student Attendance History
-                </div>
-
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active">Student Attendance History</div>
             </div>
-            <div class="ui tab active " data-tab="user">
 
-
-                        <div class="ui segment" id="subjectFormDiv">
-                            <form class="ui tiny form" id="addForm">{% csrf_token %}
-
-                                <div class="four fields">
-
-                                    <div class="three wide field required">
-
-                                        <label>Subject</label>
-                                        <select class="ui search dropdown" id="ByStudentSubject">
-                                            <option value="">Search By Subject Name</option>
-                                        </select>
-                                    </div>
-                                    <div class="two wide field required">
-                                        <label>Start Date</label>
-                                        <div class="ui calendar" id="cStartDateByStudent">
-                                            <div class="ui input left icon">
-                                                <i class="calendar icon"></i>
-                                                <input type="text" placeholder="Attendance Date"
-                                                       id="ByStudentStartDate">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="two wide field required">
-                                        <label>End Date</label>
-                                        <div class="ui calendar" id="cEndDateByStudent">
-                                            <div class="ui input left icon">
-                                                <i class="calendar icon"></i>
-                                                <input type="text" placeholder="Attendance Date" id="ByStudentEndDate">
-                                            </div>
-                                        </div>
-                                    </div>
-
-
-                                    <div class="two wide field" style="padding-top: 2.2em;">
-                                        <button type="button" class="ui mini green button"
-                                                onclick="searchData('ByStudent')">
-                                            <i class="icon search"></i>
-                                            Search
-                                        </button>
-
-                                    </div>
-                                </div>
-
-
-                            </form>
-                        </div>
-                        <div class="row" style="padding-left: 5px; padding-right: 5px;" id="AttendanceTableDiv">
-                            <div class="wide">
-
-                                <table class="ui unstackable tiny sortable celled very nowrap very compact table"
-                                       id="byStudentTable"
-                                       style="margin-top: 5px;width: 100%!important;">
-                                    <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>IsPresent</th>
-                                        <th>IsAbsent</th>
-                                        <th>Reason</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    </tbody>
-                                </table>
+            <div class="attendance-shell">
+                <div class="ui segment" id="subjectFormDiv">
+                    <form class="ui tiny form" id="addForm">{% csrf_token %}
+                        <div class="four fields">
+                            <div class="three wide field required">
+                                <label>Subject</label>
+                                <select class="ui search dropdown" id="ByStudentSubject">
+                                    <option value="">Search By Subject Name</option>
+                                </select>
                             </div>
 
+                            <div class="two wide field required">
+                                <label>Start Date</label>
+                                <div class="ui calendar" id="cStartDateByStudent">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" placeholder="Start Date" id="ByStudentStartDate">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="two wide field required">
+                                <label>End Date</label>
+                                <div class="ui calendar" id="cEndDateByStudent">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" placeholder="End Date" id="ByStudentEndDate">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="three wide field">
+                                <label>View Mode</label>
+                                <select class="ui dropdown" id="AttendanceViewMode">
+                                    <option value="calendar" selected>Calendar View</option>
+                                    <option value="month">Month View</option>
+                                    <option value="daily">Daily View</option>
+                                    <option value="subject">Subject Wise</option>
+                                </select>
+                            </div>
+
+                            <div class="four wide field" style="padding-top: 2.2em;">
+                                <button type="button" class="ui mini green button" id="searchAttendanceBtn">
+                                    <i class="icon search"></i>
+                                    Search
+                                </button>
+                                <button type="button" class="ui mini red button" id="clearAttendanceBtn">
+                                    <i class="icon times"></i>
+                                    Clear
+                                </button>
+                            </div>
                         </div>
+                    </form>
+                </div>
+
+                <div class="ui mini four item pointing secondary menu" id="attendanceViewTabs">
+                    <a class="active item" data-view="calendar">Calendar View</a>
+                    <a class="item" data-view="month">Month View</a>
+                    <a class="item" data-view="daily">Daily View</a>
+                    <a class="item" data-view="subject">Subject Wise</a>
+                </div>
+
+                <div class="attendance-tab-pane active" id="calendarViewPane">
+                    <div class="calendar-wrap" id="attendanceCalendarWrap"></div>
+                    <div class="attendance-empty" id="attendanceCalendarEmpty" style="display:none;">No attendance data available for calendar view.</div>
+                </div>
+
+                <div class="attendance-tab-pane" id="dailyViewPane">
+                    <div class="attendance-grid" id="dailyAttendanceGrid"></div>
+                    <div class="attendance-empty" id="dailyAttendanceEmpty" style="display:none;">No daily attendance found.</div>
+                </div>
+
+                <div class="attendance-tab-pane" id="monthViewPane">
+                    <div class="attendance-grid" id="monthAttendanceGrid"></div>
+                    <div class="attendance-empty" id="monthAttendanceEmpty" style="display:none;">No month-wise attendance found.</div>
+                </div>
+
+                <div class="attendance-tab-pane" id="subjectViewPane">
+                    <div class="attendance-grid" id="subjectAttendanceGrid"></div>
+                    <div class="attendance-empty" id="subjectAttendanceEmpty" style="display:none;">No subject-wise attendance found.</div>
+                </div>
             </div>
         </div>
     </div>
 {% endblock %}
 
-
-
-
 {% block js %}
     <script>
-        let today = new Date();
-        var commonFormatter = function (date, settings) {
-            if (!date) return '';
-            var day = String(date.getDate());
-            var month = String(date.getMonth() + 1);
-            var year = date.getFullYear();
-            return day + '/' + month + '/' + year;
-        };
+        function safeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
 
-        $('#cStartDateByStudent, #cEndDateByStudent')
-            .calendar({
+        function formatAsDdMmYyyy(dateObj) {
+            if (!dateObj) return '';
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = dateObj.getFullYear();
+            return day + '/' + month + '/' + year;
+        }
+
+        function initCalendars() {
+            $('#cStartDateByStudent, #cEndDateByStudent').calendar({
                 monthFirst: false,
                 type: 'date',
                 formatter: {
-                    date: commonFormatter
+                    date: function (date) {
+                        return formatAsDdMmYyyy(date);
+                    }
                 }
             });
 
+            const now = new Date();
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            $('#ByStudentStartDate').val(formatAsDdMmYyyy(monthStart));
+            $('#ByStudentEndDate').val(formatAsDdMmYyyy(now));
+        }
 
-        $(getStandardSubjectList());
+        function getFilters(validateInput) {
+            const subject = $('#ByStudentSubject').val();
+            const startDate = ($('#ByStudentStartDate').val() || '').trim();
+            const endDate = ($('#ByStudentEndDate').val() || '').trim();
+            if (validateInput && (!subject || !startDate || !endDate)) {
+                requiredFieldError();
+                return null;
+            }
+            return {
+                ByStudentSubject: subject,
+                ByStudentStartDate: startDate,
+                ByStudentEndDate: endDate
+            };
+        }
 
-        function getStandardSubjectList() {
+        function setActiveView(view) {
+            $('#attendanceViewTabs .item').removeClass('active');
+            $('#attendanceViewTabs .item[data-view="' + view + '"]').addClass('active');
+            $('.attendance-tab-pane').removeClass('active');
+            if (view === 'calendar') {
+                $('#calendarViewPane').addClass('active');
+            } else if (view === 'month') {
+                $('#monthViewPane').addClass('active');
+            } else if (view === 'subject') {
+                $('#subjectViewPane').addClass('active');
+            } else {
+                $('#dailyViewPane').addClass('active');
+            }
+            $('#AttendanceViewMode').dropdown('set selected', view);
+        }
 
+        function parseDmY(dateText) {
+            if (!dateText || typeof dateText !== 'string') return null;
+            const parts = dateText.split('-');
+            if (parts.length !== 3) return null;
+            const day = Number(parts[0]);
+            const month = Number(parts[1]);
+            const year = Number(parts[2]);
+            if (!day || !month || !year) return null;
+            return new Date(year, month - 1, day);
+        }
+
+        function formatDateKey(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + d;
+        }
+
+        function monthKey(dateObj) {
+            return dateObj.getFullYear() + '-' + String(dateObj.getMonth() + 1).padStart(2, '0');
+        }
+
+        function monthLabelByKey(key) {
+            const parts = key.split('-');
+            if (parts.length !== 2) return key;
+            const y = Number(parts[0]);
+            const m = Number(parts[1]);
+            if (!y || !m) return key;
+            const d = new Date(y, m - 1, 1);
+            return d.toLocaleString(undefined, {month: 'long', year: 'numeric'});
+        }
+
+        function getMonthCalendarCells(year, monthIndex) {
+            const first = new Date(year, monthIndex, 1);
+            const firstWeekDay = first.getDay();
+            const start = new Date(year, monthIndex, 1 - firstWeekDay);
+            const cells = [];
+            for (let i = 0; i < 42; i++) {
+                const d = new Date(start);
+                d.setDate(start.getDate() + i);
+                cells.push(d);
+            }
+            return cells;
+        }
+
+        function renderAttendanceCalendar(rows) {
+            const wrap = document.getElementById('attendanceCalendarWrap');
+            const empty = document.getElementById('attendanceCalendarEmpty');
+            if (!wrap || !empty) return;
+
+            const statusByDate = {};
+            rows.forEach(function (row) {
+                const d = parseDmY(row[0]);
+                if (!d) return;
+                const key = formatDateKey(d);
+                const isPresent = (row[1] || '').toLowerCase() === 'yes';
+                statusByDate[key] = {
+                    present: isPresent,
+                    reason: row[3] || ''
+                };
+            });
+
+            const dateKeys = Object.keys(statusByDate).sort();
+            if (!dateKeys.length) {
+                wrap.innerHTML = '';
+                empty.style.display = '';
+                return;
+            }
+            empty.style.display = 'none';
+
+            const groupedMonths = {};
+            dateKeys.forEach(function (key) {
+                const d = new Date(key + 'T00:00:00');
+                const mk = monthKey(d);
+                groupedMonths[mk] = true;
+            });
+
+            const monthKeys = Object.keys(groupedMonths).sort();
+            const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            let html = '';
+
+            monthKeys.forEach(function (mk) {
+                const year = Number(mk.slice(0, 4));
+                const monthIndex = Number(mk.slice(5, 7)) - 1;
+                const cells = getMonthCalendarCells(year, monthIndex);
+
+                html += '<div class="calendar-month">';
+                html += '<div class="calendar-month-head">';
+                html += '<h4 class="calendar-month-title">' + safeHtml(monthLabelByKey(mk)) + '</h4>';
+                html += '<div class="calendar-legend"><span class="calendar-legend-dot present"></span>Present <span class="calendar-legend-dot absent"></span>Absent</div>';
+                html += '</div>';
+                html += '<div class="calendar-grid">';
+
+                weekdayLabels.forEach(function (w) {
+                    html += '<div class="calendar-weekday">' + w + '</div>';
+                });
+
+                cells.forEach(function (d) {
+                    const key = formatDateKey(d);
+                    const inMonth = d.getMonth() === monthIndex;
+                    const entry = statusByDate[key];
+                    const statusClass = entry ? (entry.present ? 'present' : 'absent') : 'none';
+                    const statusText = entry ? (entry.present ? 'Present' : 'Absent') : 'No Class';
+                    const titleText = entry && entry.reason ? (' title="' + safeHtml(entry.reason) + '"') : '';
+                    html += '<div class="calendar-day ' + (inMonth ? '' : 'outside') + '">';
+                    html += '<div class="calendar-day-num">' + d.getDate() + '</div>';
+                    if (inMonth) {
+                        html += '<span class="calendar-status ' + statusClass + '"' + titleText + '>' + statusText + '</span>';
+                    }
+                    html += '</div>';
+                });
+
+                html += '</div></div>';
+            });
+
+            wrap.innerHTML = html;
+        }
+
+        function renderGrid(gridId, emptyId, cards) {
+            const grid = document.getElementById(gridId);
+            const empty = document.getElementById(emptyId);
+            if (!grid || !empty) return;
+            if (!cards.length) {
+                grid.innerHTML = '';
+                empty.style.display = '';
+                return;
+            }
+            empty.style.display = 'none';
+            grid.innerHTML = cards.join('');
+        }
+
+        function loadDailyAttendance(filters) {
+            $.ajax({
+                type: 'get',
+                url: "{% url 'studentAppAPI:StudentAttendanceHistoryByDateRangeJson' %}",
+                data: {
+                    draw: 1,
+                    start: 0,
+                    length: -1,
+                    'search[value]': '',
+                    ByStudentSubject: filters.ByStudentSubject,
+                    ByStudentStartDate: filters.ByStudentStartDate,
+                    ByStudentEndDate: filters.ByStudentEndDate
+                },
+                success: function (response) {
+                    const rows = Array.isArray(response.data) ? response.data : [];
+                    renderAttendanceCalendar(rows);
+                    const cards = rows.map(function (row) {
+                        const isPresent = (row[1] || '').toLowerCase() === 'yes';
+                        const chipClass = isPresent ? 'present' : 'absent';
+                        const chipText = isPresent ? 'Present' : 'Absent';
+                        return '' +
+                            '<div class="attendance-card">' +
+                            '<div class="attendance-header-row">' +
+                            '<h4 class="attendance-card-title">' + safeHtml(row[0] || 'N/A') + '</h4>' +
+                            '<span class="attendance-chip ' + chipClass + '">' + chipText + '</span>' +
+                            '</div>' +
+                            '<div class="attendance-card-meta">' +
+                            '<div><b>Absent Reason:</b> ' + safeHtml(row[3] || 'N/A') + '</div>' +
+                            '</div>' +
+                            '</div>';
+                    });
+                    renderGrid('dailyAttendanceGrid', 'dailyAttendanceEmpty', cards);
+                },
+                error: function () {
+                    renderGrid('dailyAttendanceGrid', 'dailyAttendanceEmpty', []);
+                    addErrorNotification('Unable to load daily attendance.');
+                }
+            });
+        }
+
+        function loadMonthSummary(filters) {
+            $.ajax({
+                type: 'get',
+                url: "{% url 'studentAppAPI:StudentAttendanceMonthWiseSummaryApi' %}",
+                data: filters,
+                success: function (response) {
+                    const rows = Array.isArray(response.data) ? response.data : [];
+                    const cards = rows.map(function (row) {
+                        const percent = Number(row.percentage || 0);
+                        const chipClass = percent >= 75 ? 'present' : 'absent';
+                        return '' +
+                            '<div class="attendance-card">' +
+                            '<div class="attendance-header-row">' +
+                            '<h4 class="attendance-card-title">' + safeHtml(row.month || 'N/A') + '</h4>' +
+                            '<span class="attendance-chip ' + chipClass + '">' + safeHtml(percent) + '%</span>' +
+                            '</div>' +
+                            '<div class="attendance-card-meta">' +
+                            '<div><b>Total Classes:</b> ' + safeHtml(row.total) + '</div>' +
+                            '<div><b>Present:</b> ' + safeHtml(row.present) + '</div>' +
+                            '<div><b>Absent:</b> ' + safeHtml(row.absent) + '</div>' +
+                            '</div>' +
+                            '</div>';
+                    });
+                    renderGrid('monthAttendanceGrid', 'monthAttendanceEmpty', cards);
+                },
+                error: function () {
+                    renderGrid('monthAttendanceGrid', 'monthAttendanceEmpty', []);
+                    addErrorNotification('Unable to load month-wise summary.');
+                }
+            });
+        }
+
+        function loadSubjectSummary(filters) {
+            $.ajax({
+                type: 'get',
+                url: "{% url 'studentAppAPI:StudentAttendanceSubjectWiseSummaryApi' %}",
+                data: filters,
+                success: function (response) {
+                    const rows = Array.isArray(response.data) ? response.data : [];
+                    const cards = rows.map(function (row) {
+                        const percent = Number(row.percentage || 0);
+                        const chipClass = percent >= 75 ? 'present' : 'absent';
+                        return '' +
+                            '<div class="attendance-card">' +
+                            '<div class="attendance-header-row">' +
+                            '<h4 class="attendance-card-title">' + safeHtml(row.subject || 'N/A') + '</h4>' +
+                            '<span class="attendance-chip ' + chipClass + '">' + safeHtml(percent) + '%</span>' +
+                            '</div>' +
+                            '<div class="attendance-card-meta">' +
+                            '<div><b>Total Classes:</b> ' + safeHtml(row.total) + '</div>' +
+                            '<div><b>Present:</b> ' + safeHtml(row.present) + '</div>' +
+                            '<div><b>Absent:</b> ' + safeHtml(row.absent) + '</div>' +
+                            '</div>' +
+                            '</div>';
+                    });
+                    renderGrid('subjectAttendanceGrid', 'subjectAttendanceEmpty', cards);
+                },
+                error: function () {
+                    renderGrid('subjectAttendanceGrid', 'subjectAttendanceEmpty', []);
+                    addErrorNotification('Unable to load subject-wise summary.');
+                }
+            });
+        }
+
+        function searchAttendance() {
+            const filters = getFilters(true);
+            if (!filters) return;
+            loadDailyAttendance(filters);
+            loadMonthSummary(filters);
+            loadSubjectSummary(filters);
+        }
+
+        function initSubjectList() {
             $.ajax({
                 type: 'get',
                 url: "{% url 'studentAppAPI:get_subjects_to_class_assign_list_for_student_in_class_api' %}",
-
                 success: function (response) {
-
-                        $('#ByStudentSubject').html('');
-                        $('#ByStudentSubject').append(' <option value="all" selected>All</option>');
-
-
-                    var j;
-                    for (j = 0; j < response.data.length; j++) {
-                            $('#ByStudentSubject').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+                    $('#ByStudentSubject').html('');
+                    $('#ByStudentSubject').append('<option value="all" selected>All</option>');
+                    const rows = Array.isArray(response.data) ? response.data : [];
+                    for (let i = 0; i < rows.length; i++) {
+                        $('#ByStudentSubject').append('<option value="' + rows[i].ID + '">' + rows[i].Name + '</option>');
                     }
-
+                    $('#ByStudentSubject').dropdown();
+                    searchAttendance();
                 },
-
                 error: function () {
-                    $('body')
-                        .toast({
-                            class: 'error',
-                            message: 'An error occurred !'
-                        })
-                    ;
+                    addErrorNotification('Unable to load subject list.');
+                }
+            });
+        }
+
+        function initInteractions() {
+            $('#AttendanceViewMode').dropdown({
+                onChange: function (value) {
+                    if (value) setActiveView(value);
                 }
             });
 
+            $('#attendanceViewTabs .item').on('click', function () {
+                setActiveView($(this).data('view'));
+            });
 
+            $('#searchAttendanceBtn').on('click', searchAttendance);
+
+            $('#clearAttendanceBtn').on('click', function () {
+                $('#ByStudentSubject').dropdown('set selected', 'all');
+                const now = new Date();
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                $('#ByStudentStartDate').val(formatAsDdMmYyyy(monthStart));
+                $('#ByStudentEndDate').val(formatAsDdMmYyyy(now));
+                searchAttendance();
+            });
         }
 
-
-        let byStudentTab
-
-
-        function searchData(mode) {
-            if (mode === 'ByStudent') {
-                let ByStudentSubject = $('#ByStudentSubject').val();
-                let ByStudentStartDate = $('#ByStudentStartDate').val();
-                let ByStudentEndDate = $('#ByStudentEndDate').val();
-                if (ByStudentStartDate.trim() === '' || ByStudentEndDate.trim() === '' || ByStudentSubject === '') {
-                    requiredFieldError();
-                    {#$('#AttendanceTableDiv').css('display', 'none');#}
-                } else {
-                    {#$('#AttendanceTableDiv').css('display', 'block');#}
-                    byStudentTab.ajax.url('{% url 'studentAppAPI:StudentAttendanceHistoryByDateRangeJson' %}?ByStudentSubject=' + ByStudentSubject + '&ByStudentStartDate=' + ByStudentStartDate + '&ByStudentEndDate=' + ByStudentEndDate).load();
-
-
-                }
-            }
-
-
-        }
-
-
-
-        byStudentTab = $('#byStudentTable').DataTable({
-            dom: 'Blfrtip',
-            "scrollY": "350px",
-            "scrollX": true,
-            stateSave: true,
-            fixedColumns: {
-                left: 1,
-                right: 1
-            },
-            buttons: [{
-                extend: 'excel',
-                exportOptions: {
-                    columns: [0,1, 2, 3]
-                }
-            }
-                {% comment %}      , {
-                          extend: 'print',
-                          exportOptions: {
-                               columns: [1, 2, 3, 4, 5, 6, 7, 8]
-                          }
-                      }{% endcomment %}
-            ],
-            "columnDefs": [
-                {"name": "attendanceDate", "targets": 0, "orderable": true},
-                {"name": "isPresent", "targets": 1, "orderable": true},
-                {"name": "isPresent", "targets": 2, "orderable": true},
-                {"name": "absentReason", "targets": 3, "orderable": true},
-            ],
-            aaSorting: [[0, 'asc']],
-            "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
-            "pageLength": 100,
-            "processing": true,
-            "serverSide": true,
-            "ajax": "{% url 'studentAppAPI:StudentAttendanceHistoryByDateRangeJson' %}"
+        $(function () {
+            initCalendars();
+            initInteractions();
+            setActiveView('calendar');
+            initSubjectList();
         });
-
-
-        function clearAndReset() {
-            {#$('#addForm').trigger('reset');#}
-            myOwnReset();
-            $('#saveBtn').css('display', '');
-            $('#saveBtnUpdate').css('display', 'none');
-
-        }
-
     </script>
-
 {% endblock %}

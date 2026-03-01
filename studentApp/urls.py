@@ -5,6 +5,7 @@ urlpatterns = [
     #student home
     path('', student_home, name='student_root'),
     path('home/', student_home, name='student_home'),
+    path('school-detail/', student_school_detail, name='student_school_detail'),
     path('my-details/', student_my_details, name='student_my_details'),
     path('id-card/', student_id_card, name='student_id_card'),
 

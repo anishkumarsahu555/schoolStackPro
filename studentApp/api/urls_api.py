@@ -9,6 +9,10 @@ urlpatterns = [
          name='get_subjects_to_class_assign_list_for_student_in_class_api'),
     path('StudentAttendanceHistoryByDateRangeJson', StudentAttendanceHistoryByDateRangeJson.as_view(),
          name='StudentAttendanceHistoryByDateRangeJson'),
+    path('StudentAttendanceMonthWiseSummaryApi', StudentAttendanceMonthWiseSummaryApi,
+         name='StudentAttendanceMonthWiseSummaryApi'),
+    path('StudentAttendanceSubjectWiseSummaryApi', StudentAttendanceSubjectWiseSummaryApi,
+         name='StudentAttendanceSubjectWiseSummaryApi'),
     path('StudentFeeDetailsJson', StudentFeeDetailsJson.as_view(), name='StudentFeeDetailsJson'),
 
 ]

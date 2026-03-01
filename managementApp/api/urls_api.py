@@ -4,6 +4,9 @@ from .views_api import *
 
 urlpatterns = [
     # api
+    path('get_school_detail_api', get_school_detail_api, name='get_school_detail_api'),
+    path('update_school_detail_api', update_school_detail_api, name='update_school_detail_api'),
+
     path('add_class', add_class, name='add_class'),
     path('class_list', StandardListJson.as_view(), name='class_list'),
 

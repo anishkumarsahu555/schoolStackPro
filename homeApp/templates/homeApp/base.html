@@ -19,10 +19,9 @@
         <title>SCHOOLS-STACK</title>
     {% endblock %}
 
-    {% progressive_web_app_meta %}
-
-    <link rel="icon" href="{% static 'sw/images/favicon.ico' %}" sizes="any">
-    <link rel="apple-touch-icon" href="{% static 'sw/images/apple-touch-icon.png' %}">
+    <link rel="icon" href="{% if app_icon_url %}{{ app_icon_url }}{% else %}{% static 'sw/images/favicon.ico' %}{% endif %}" sizes="any">
+    <link rel="apple-touch-icon" href="{% if app_install_icon_url %}{{ app_install_icon_url }}{% else %}{% static 'sw/images/apple-touch-icon.png' %}{% endif %}">
+    <link rel="manifest" href="{% url 'homeApp:dynamic_manifest' %}">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
     <link rel="stylesheet" type="text/css"
@@ -1105,6 +1104,8 @@
 
         .main-content {
             margin-top: 40px;
+            padding-left: 5px;
+            padding-right: 5px;
         }
 
         @media (min-width: 768px) {
@@ -1369,7 +1370,7 @@
         <a href="#" class="sidebar-menu-toggler item" data-target="#sidebar">
             <i class="sidebar icon"></i>
         </a>
-        <img class="logo logoImg" src="{% if request.session.current_session.SchoolLogo %}{{ request.session.current_session.SchoolLogo }}{% else %}{% static 'sw/images/icon-192.png' %}{% endif %}">
+        <img class="logo logoImg" src="{% if app_icon_url %}{{ app_icon_url }}{% elif request.session.current_session.SchoolLogo %}{{ request.session.current_session.SchoolLogo }}{% else %}{% static 'sw/images/icon-192.png' %}{% endif %}">
         <a href="#" class="header item">
 
             SCHOOLS-STACK

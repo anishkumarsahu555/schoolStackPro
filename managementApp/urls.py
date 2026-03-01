@@ -4,6 +4,7 @@ from .views import *
 urlpatterns = [
     #admin
     path('home/', admin_home, name='admin_home'),
+    path('school-detail/', school_detail, name='school_detail'),
     path('manage-class/', manage_class, name='manage_class'),
 
     # subjects

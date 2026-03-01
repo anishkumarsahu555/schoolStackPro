@@ -5,7 +5,7 @@ from django.db.models import Sum, Count, Q
 from django.db.models.functions import TruncMonth
 from django.shortcuts import render
 
-from homeApp.models import SchoolSession
+from homeApp.models import SchoolSession, SchoolDetail
 from homeApp.utils import login_required
 from managementApp.models import *
 from utils.custom_decorators import check_groups
@@ -60,6 +60,29 @@ def _grade_from_percentage(value):
     if value >= 40:
         return 'D'
     return 'F'
+
+
+def _resolve_school_from_context(student, current_session_id):
+    school = None
+    if student and student.schoolID_id:
+        school = SchoolDetail.objects.filter(pk=student.schoolID_id, isDeleted=False).first()
+    if not school and current_session_id:
+        school = SchoolDetail.objects.filter(
+            schoolsession__id=current_session_id,
+            schoolsession__isDeleted=False,
+            isDeleted=False,
+        ).distinct().first()
+    return school
+
+
+@login_required
+@check_groups('Student')
+def student_school_detail(request):
+    student, current_session_id = _bootstrap_student_context(request)
+    school = _resolve_school_from_context(student, current_session_id)
+    return render(request, 'studentApp/school_detail.html', {
+        'school': school,
+    })
 
 
 @login_required

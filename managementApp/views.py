@@ -5,6 +5,7 @@ from django.db.models import Count
 from django.shortcuts import render, get_object_or_404, redirect
 
 from homeApp.utils import login_required
+from homeApp.models import SchoolDetail
 from managementApp.models import *
 from managementApp.signals import pre_save_with_user
 from utils.custom_decorators import check_groups
@@ -57,6 +58,25 @@ def admin_home(request):
         'class_values_json': json.dumps([row['total'] for row in class_distribution]),
     }
     return render(request, 'managementApp/dashboard.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def school_detail(request):
+    school_id = request.session.get('current_session', {}).get('SchoolID')
+    school = None
+    if school_id:
+        school = SchoolDetail.objects.filter(pk=school_id, isDeleted=False).first()
+    if not school:
+        school = SchoolDetail.objects.filter(
+            ownerID__userID_id=request.user.id,
+            isDeleted=False
+        ).order_by('-datetime').first()
+
+    context = {
+        'school': school,
+    }
+    return render(request, 'managementApp/school/school_detail.html', context)
 
 
 @login_required
