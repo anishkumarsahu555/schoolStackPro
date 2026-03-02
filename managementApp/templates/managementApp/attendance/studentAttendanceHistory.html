@@ -195,6 +195,8 @@
                                         <th>IsPresent</th>
                                         <th>IsAbsent</th>
                                         <th>Reason</th>
+                                        <th>EditedBy</th>
+                                        <th>UpdatedOn</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -453,10 +455,10 @@
                 left: 1,
                 right: 1
             },
-            buttons: [{
+                buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [0,1, 2, 3]
+                    columns: [0, 1, 2, 3, 4, 5]
                 }
             }
                 {% comment %}      , {
@@ -471,6 +473,8 @@
                 {"name": "isPresent", "targets": 1, "orderable": true},
                 {"name": "isPresent", "targets": 2, "orderable": true},
                 {"name": "absentReason", "targets": 3, "orderable": true},
+                {"name": "lastEditedBy", "targets": 4, "orderable": true},
+                {"name": "lastUpdatedOn", "targets": 5, "orderable": true},
             ],
             aaSorting: [[0, 'asc']],
             "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],

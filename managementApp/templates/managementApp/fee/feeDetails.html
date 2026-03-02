@@ -151,6 +151,8 @@
                                         <th>PayDate</th>
                                         <th>Amount</th>
                                         <th>Note</th>
+                                        <th>EditedBy</th>
+                                        <th>UpdatedOn</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -348,10 +350,10 @@
                 left: 1,
                 right: 1
             },
-            buttons: [{
+                buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [0,1, 2, 3,4]
+                    columns: [0, 1, 2, 3, 4, 5, 6]
                 }
             }
                 {% comment %}      , {
@@ -367,6 +369,8 @@
                 {"name": "payDate", "targets": 2, "orderable": true},
                 {"name": "amount", "targets": 3, "orderable": true},
                 {"name": "note", "targets": 4, "orderable": true},
+                {"name": "lastEditedBy", "targets": 5, "orderable": true},
+                {"name": "lastUpdatedOn", "targets": 6, "orderable": true},
             ],
             aaSorting: [[1, 'asc']],
             "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],

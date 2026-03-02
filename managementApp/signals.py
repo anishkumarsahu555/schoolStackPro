@@ -1,4 +1,5 @@
-from django.dispatch import receiver, Signal
+from django.contrib.auth.models import User
+from django.dispatch import Signal, receiver
 
 from homeApp.utils import get_current_school_session, action_taken_by
 from managementApp.models import *
@@ -23,15 +24,29 @@ pre_save_with_user = Signal()
 @receiver(pre_save_with_user, sender=EventType)
 @receiver(pre_save_with_user, sender=Event)
 @receiver(pre_save_with_user, sender=StudentIdCardRecord)
+@receiver(pre_save_with_user, sender=LeaveType)
+@receiver(pre_save_with_user, sender=LeaveApplication)
+@receiver(pre_save_with_user, sender=LeaveActionLog)
 def update_fields_from_signal(sender, instance, **kwargs):
-    # Check if the instance is being created (has no primary key yet)
-    # if instance.pk is None:
-    request = kwargs.get('user', None)
-    extra_detail = get_current_school_session(request)
-    action_by = action_taken_by(request)
-    instance.sessionID_id = extra_detail['SessionID']
-    instance.schoolID_id = extra_detail['SchoolID']
-    instance.lastEditedBy = action_by['actionTakenBy']
+    user_id = kwargs.get('user')
+    if not user_id:
+        return
+
+    user = User.objects.filter(pk=user_id).only('username', 'first_name', 'last_name').first()
+    if user:
+        full_name = f'{(user.first_name or "").strip()} {(user.last_name or "").strip()}'.strip()
+        editor_name = full_name or user.username or 'N/A'
+        instance.updatedByUserID_id = user.pk
+    else:
+        editor_name = action_taken_by(user_id).get('actionTakenBy') or 'N/A'
+
+    if not getattr(instance, 'sessionID_id', None) or not getattr(instance, 'schoolID_id', None):
+        extra_detail = get_current_school_session(user_id)
+        if extra_detail:
+            instance.sessionID_id = extra_detail.get('SessionID')
+            instance.schoolID_id = extra_detail.get('SchoolID')
+
+    instance.lastEditedBy = editor_name
     instance.save()
 
 # Connect the signal

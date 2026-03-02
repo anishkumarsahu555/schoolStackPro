@@ -225,6 +225,7 @@ def teacher_apply_leave_api(request):
             schoolID_id=school_id,
             sessionID_id=session_id,
             lastEditedBy=teacher.name or request.user.username,
+            updatedByUserID_id=request.user.id,
         )
 
         add_leave_log(
@@ -307,6 +308,7 @@ def teacher_update_leave_api(request):
             leave.attachment = attachment
         leave.schoolID_id = school_id
         leave.lastEditedBy = teacher.name or request.user.username
+        leave.updatedByUserID_id = request.user.id
         leave.save()
 
         add_leave_log(
@@ -352,6 +354,7 @@ def teacher_cancel_leave_api(request):
         leave.actionByUserID_id = request.user.id
         leave.actionRemark = 'Cancelled by applicant'
         leave.lastEditedBy = teacher.name or request.user.username
+        leave.updatedByUserID_id = request.user.id
         leave.save()
 
         add_leave_log(

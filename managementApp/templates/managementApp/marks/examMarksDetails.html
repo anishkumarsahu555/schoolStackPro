@@ -132,6 +132,7 @@
                                 <th>Pass Mark</th>
                                 <th>Mark Obtained</th>
                                 <th>Note</th>
+                                <th>Edited By</th>
                                 <th>Updated On</th>
                             </tr>
                             </thead>
@@ -331,9 +332,10 @@
                     {name: 'examID__passMarks', targets: 3, orderable: true},
                     {name: 'mark', targets: 4, orderable: true},
                     {name: 'note', targets: 5, orderable: true},
-                    {name: 'lastUpdatedOn', targets: 6, orderable: true}
+                    {name: 'lastEditedBy', targets: 6, orderable: true},
+                    {name: 'lastUpdatedOn', targets: 7, orderable: true}
                 ],
-                aaSorting: [[6, 'desc']],
+                aaSorting: [[7, 'desc']],
                 lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'All']],
                 pageLength: 25,
                 processing: true,

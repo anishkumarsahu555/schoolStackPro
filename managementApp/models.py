@@ -52,6 +52,7 @@ class TeacherDetail(models.Model):
     salary = models.FloatField(default=0.0)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     def __str__(self):
         return self.name
@@ -78,6 +79,7 @@ class Standard(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     def __str__(self):
         return self.name + self.sessionID.sessionYear
@@ -132,6 +134,7 @@ class Subjects(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     def __str__(self):
         return self.name + self.sessionID.sessionYear
@@ -149,6 +152,7 @@ class AssignSubjectsToClass(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     def __str__(self):
         return self.standardID.name + ' - ' + self.sessionID.sessionYear
@@ -170,6 +174,7 @@ class AssignSubjectsToTeacher(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     def __str__(self):
         return self.teacherID.name + ' - ' + self.sessionID.sessionYear
@@ -195,6 +200,7 @@ class Parent(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     # ================= NEW FIELDS (FROM PDF) =================
     fatherOccupation = models.CharField(max_length=500, blank=True, null=True)
@@ -280,6 +286,7 @@ class Student(models.Model):
     tuitionFee = models.FloatField(default=0.0)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     # ================= NEW FIELDS (FROM PDF) =================
     idMark = models.CharField(max_length=500, blank=True, null=True)
@@ -347,6 +354,7 @@ class Exam(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     def __str__(self):
         return self.name + self.sessionID.sessionYear
@@ -368,6 +376,7 @@ class AssignExamToClass(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     def __str__(self):
         return self.examID.name + ' - ' + self.sessionID.sessionYear
@@ -394,6 +403,7 @@ class ExamTimeTable(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     class Meta:
         verbose_name_plural = 'k) Exam Time Table'
@@ -425,6 +435,7 @@ class StudentAttendance(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     class Meta:
         verbose_name_plural = 'p) Student Attendance'
@@ -446,6 +457,7 @@ class TeacherAttendance(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     class Meta:
         verbose_name_plural = 'q) Teacher Attendance'
@@ -468,6 +480,7 @@ class StudentFee(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     class Meta:
         verbose_name_plural = 'r) Student Fee'
@@ -490,6 +503,7 @@ class MarkOfStudentsByExam(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     class Meta:
         verbose_name_plural = 's) Mark Of Students By Exam'
@@ -516,6 +530,7 @@ class EventType(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     class Meta:
         verbose_name_plural = 't) Events Type'
@@ -534,6 +549,8 @@ class Event(models.Model):
     endDate = models.DateField(blank=True, null=True)
     datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
     isDeleted = models.BooleanField(default=False)
 
     def __str__(self):
@@ -564,6 +581,7 @@ class StudentIdCardRecord(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     class Meta:
         verbose_name_plural = 'w) Student ID Card Records'
@@ -590,6 +608,7 @@ class LeaveType(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     class Meta:
         verbose_name_plural = 'x) Leave Types'
@@ -630,6 +649,7 @@ class LeaveApplication(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     class Meta:
         verbose_name_plural = 'y) Leave Applications'
@@ -665,6 +685,7 @@ class LeaveActionLog(models.Model):
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
 
     class Meta:
         verbose_name_plural = 'z) Leave Action Logs'

@@ -128,7 +128,8 @@
                                 <th>Start Date</th>
                                 <th>End Date</th>
                                 <th>Description</th>
-                                <th>AddedOn</th>
+                                <th>EditedBy</th>
+                                <th>UpdatedOn</th>
                                 <th>Actions</th>
                             </tr>
                             </thead>
@@ -211,7 +212,7 @@
                 },
                 buttons: [{
                     extend: 'excel',
-                    exportOptions: {columns: [0, 1, 2, 3, 4, 5, 6]}
+                    exportOptions: {columns: [0, 1, 2, 3, 4, 5, 6, 7]}
                 }],
                 columnDefs: [
                     {name: 'eventID__name', targets: 0, orderable: true},
@@ -220,8 +221,9 @@
                     {name: 'startDate', targets: 3, orderable: true},
                     {name: 'endDate', targets: 4, orderable: true},
                     {name: 'message', targets: 5, orderable: true},
-                    {name: 'datetime', targets: 6, orderable: true},
-                    {name: 'action', targets: 7, orderable: false}
+                    {name: 'lastEditedBy', targets: 6, orderable: true},
+                    {name: 'lastUpdatedOn', targets: 7, orderable: true},
+                    {name: 'action', targets: 8, orderable: false}
                 ],
                 aaSorting: [[3, 'asc']],
                 lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],

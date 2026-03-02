@@ -51,7 +51,8 @@
                         <th>Status</th>
                         <th>Attachment</th>
                         <th>Reason</th>
-                        <th>Applied On</th>
+                        <th>EditedBy</th>
+                        <th>Updated On</th>
                         <th>Actions</th>
                     </tr>
                     </thead>
@@ -107,8 +108,9 @@
                     {name: 'status', targets: 6},
                     {name: 'attachment', targets: 7, orderable: false},
                     {name: 'reason', targets: 8, orderable: false},
-                    {name: 'datetime', targets: 9},
-                    {name: 'action', targets: 10, orderable: false}
+                    {name: 'lastEditedBy', targets: 9},
+                    {name: 'lastUpdatedOn', targets: 10},
+                    {name: 'action', targets: 11, orderable: false}
                 ]
             });
         });

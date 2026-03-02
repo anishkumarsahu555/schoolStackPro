@@ -142,6 +142,8 @@
                                 <th>EmpCode</th>
                                 <th>IsPresent</th>
                                 <th>Reason for Absent</th>
+                                <th>EditedBy</th>
+                                <th>UpdatedOn</th>
                                 <th>Actions</th>
                             </tr>
                             </thead>
@@ -234,7 +236,7 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [1, 2, 3, 4,5]
+                    columns: [1, 2, 3, 4, 5, 6, 7]
                 }
             }
                 {% comment %}      , {
@@ -251,7 +253,9 @@
                 {"name": "teacherID.employeeCode", "targets": 3, "orderable": true},
                 {"name": "isPresent", "targets": 4, "orderable": true},
                 {"name": "absentReason", "targets": 5, "orderable": true},
-                {"name": "action", "targets": 6, "orderable": false}
+                {"name": "lastEditedBy", "targets": 6, "orderable": true},
+                {"name": "lastUpdatedOn", "targets": 7, "orderable": true},
+                {"name": "action", "targets": 8, "orderable": false}
             ],
             aaSorting: [[1, 'asc']],
             "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],

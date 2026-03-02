@@ -55,6 +55,11 @@ def _current_session_id(request):
     return request.session.get("current_session", {}).get("Id")
 
 
+def _editor_name(user):
+    full_name = user.get_full_name().strip()
+    return full_name or user.username
+
+
 def _count_approved_teacher_leave_days(session_id, teacher_id, start_date, end_date):
     leaves = LeaveApplication.objects.filter(
         isDeleted=False,
@@ -156,7 +161,8 @@ def update_school_detail_api(request):
         if not school.address:
             return ErrorResponse('Address is required.').to_json_response()
 
-        school.lastEditedBy = request.user.username
+        school.lastEditedBy = _editor_name(request.user)
+        school.updatedByUserID_id = request.user.id
         school.save()
 
         current_session = dict(request.session.get('current_session', {}))
@@ -329,12 +335,12 @@ def update_class(request):
 
 class StandardListJson(BaseDatatableView):
     order_columns = ['name', 'section', 'classTeacher', 'startingRoll', 'endingRoll', 'classLocation', 'lastEditedBy',
-                     'datetime']             
+                     'lastUpdatedOn']
 
     def get_initial_queryset(self):
         return Standard.objects.select_related('classTeacher').only(
             'id', 'name', 'section', 'startingRoll', 'endingRoll', 'classLocation',
-            'lastEditedBy', 'datetime', 'classTeacher__name'
+            'lastEditedBy', 'lastUpdatedOn', 'classTeacher__name'
         ).filter(
             isDeleted__exact=False,
             sessionID_id=self.request.session["current_session"]["Id"],
@@ -370,8 +376,8 @@ class StandardListJson(BaseDatatableView):
                 escape(item.startingRoll),
                 escape(item.endingRoll),
                 escape(item.classLocation),
-                escape(item.lastEditedBy),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -466,7 +472,7 @@ def add_subject(request):
 
 
 class SubjectListJson(BaseDatatableView):
-    order_columns = ['name', 'lastEditedBy', 'datetime']
+    order_columns = ['name', 'lastEditedBy', 'lastUpdatedOn']
 
     def get_initial_queryset(self):
         return Subjects.objects.only(
@@ -499,8 +505,8 @@ class SubjectListJson(BaseDatatableView):
 
             json_data.append([
                 escape(item.name),
-                escape(item.lastEditedBy),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -608,13 +614,13 @@ def add_subject_to_class(request):
 
 
 class AssignSubjectToClassListJson(BaseDatatableView):
-    order_columns = ['standardID.name', 'subjectID.name', 'lastEditedBy', 'datetime']
+    order_columns = ['standardID.name', 'subjectID.name', 'lastEditedBy', 'lastUpdatedOn']
 
     def get_initial_queryset(self):
         return AssignSubjectsToClass.objects.select_related(
             'standardID', 'subjectID'
         ).only(
-            'id', 'lastEditedBy', 'datetime',
+            'id', 'lastEditedBy', 'lastUpdatedOn',
             'standardID__name', 'standardID__section',
             'subjectID__name'
         ).filter(
@@ -660,8 +666,8 @@ class AssignSubjectToClassListJson(BaseDatatableView):
             json_data.append([
                 escape(name),
                 escape(item.subjectID.name),
-                escape(item.lastEditedBy),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -802,13 +808,13 @@ def add_subject_to_teacher(request):
 
 class AssignSubjectToTeacherListJson(BaseDatatableView):
     order_columns = ['assignedSubjectID.standardID.name', 'assignedSubjectID.standardID.section',
-                     'assignedSubjectID.subjectID.name', 'teacherID.name', 'subjectBranch', 'lastEditedBy', 'datetime']
+                     'assignedSubjectID.subjectID.name', 'teacherID.name', 'subjectBranch', 'lastEditedBy', 'lastUpdatedOn']
 
     def get_initial_queryset(self):
         return AssignSubjectsToTeacher.objects.select_related(
             'assignedSubjectID__standardID', 'assignedSubjectID__subjectID', 'teacherID'
         ).only(
-            'id', 'subjectBranch', 'lastEditedBy', 'datetime',
+            'id', 'subjectBranch', 'lastEditedBy', 'lastUpdatedOn',
             'assignedSubjectID__standardID__name', 'assignedSubjectID__standardID__section',
             'assignedSubjectID__subjectID__name', 'teacherID__name'
         ).filter(
@@ -853,8 +859,8 @@ class AssignSubjectToTeacherListJson(BaseDatatableView):
                 escape(item.assignedSubjectID.subjectID.name),
                 escape(item.teacherID.name),
                 escape(item.subjectBranch),
-                escape(item.lastEditedBy),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -863,13 +869,13 @@ class AssignSubjectToTeacherListJson(BaseDatatableView):
 
 
 class AssignSubjectToClassListJson(BaseDatatableView):
-    order_columns = ['standardID.name', 'subjectID.name', 'lastEditedBy', 'datetime']
+    order_columns = ['standardID.name', 'subjectID.name', 'lastEditedBy', 'lastUpdatedOn']
 
     def get_initial_queryset(self):
         return AssignSubjectsToClass.objects.select_related(
             'standardID', 'subjectID'
         ).only(
-            'id', 'lastEditedBy', 'datetime',
+            'id', 'lastEditedBy', 'lastUpdatedOn',
             'standardID__name', 'standardID__section',
             'subjectID__name'
         ).filter(
@@ -915,8 +921,8 @@ class AssignSubjectToClassListJson(BaseDatatableView):
             json_data.append([
                 escape(name),
                 escape(item.subjectID.name),
-                escape(item.lastEditedBy),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -1193,7 +1199,7 @@ def update_teacher_api(request):
 
 class TeacherListJson(BaseDatatableView):
     order_columns = ['photo', 'name', 'email', 'phoneNumber', 'employeeCode', 'gender', 'staffType', 'presentCity',
-                     'isActive', 'lastEditedBy', 'datetime']
+                     'isActive', 'lastEditedBy', 'lastUpdatedOn']
 
     def get_initial_queryset(self):
         return TeacherDetail.objects.only(
@@ -1246,8 +1252,8 @@ class TeacherListJson(BaseDatatableView):
                 escape(item.staffType),
                 escape(item.presentCity),
                 escape(item.isActive),
-                escape(item.lastEditedBy),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -1451,7 +1457,7 @@ def get_student_list_by_class_api(request):
 class StudentListJson(BaseDatatableView):
     order_columns = ['photo', 'name', 'standardID.name', 'gender', 'parentID.fatherName',
                      'parentID.phoneNumber', 'presentCity',
-                     'isActive', 'lastEditedBy', 'datetime']
+                     'isActive', 'lastEditedBy', 'lastUpdatedOn']
 
     def get_initial_queryset(self):
         return Student.objects.select_related('standardID', 'parentID').only(
@@ -1514,8 +1520,8 @@ class StudentListJson(BaseDatatableView):
                 escape(item.parentID.phoneNumber),
                 escape(item.presentCity),
                 escape(item.isActive),
-                escape(item.lastEditedBy),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -1533,7 +1539,7 @@ class StudentIdCardRecordListJson(BaseDatatableView):
         'validTill',
         'remark',
         'lastEditedBy',
-        'datetime',
+        'lastUpdatedOn',
     ]
 
     def get_initial_queryset(self):
@@ -1572,7 +1578,7 @@ class StudentIdCardRecordListJson(BaseDatatableView):
                 | Q(validTill__icontains=search)
                 | Q(remark__icontains=search)
                 | Q(lastEditedBy__icontains=search)
-                | Q(datetime__icontains=search)
+                | Q(lastUpdatedOn__icontains=search)
             )
         return qs
 
@@ -1602,7 +1608,7 @@ class StudentIdCardRecordListJson(BaseDatatableView):
                 escape(item.validTill.strftime('%d-%m-%Y') if item.validTill else 'Upto 2026'),
                 escape(item.remark or 'N/A'),
                 escape(item.lastEditedBy or 'N/A'),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p') if item.datetime else 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 preview_action,
             ])
         return json_data
@@ -1837,7 +1843,7 @@ def add_exam(request):
 
 
 class ExamListJson(BaseDatatableView):
-    order_columns = ['name', 'lastEditedBy', 'datetime']
+    order_columns = ['name', 'lastEditedBy', 'lastUpdatedOn']
 
     def get_initial_queryset(self):
         return Exam.objects.only(
@@ -1870,8 +1876,8 @@ class ExamListJson(BaseDatatableView):
 
             json_data.append([
                 escape(item.name),
-                escape(item.lastEditedBy),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -2134,7 +2140,7 @@ class ExamTimeTableListJson(BaseDatatableView):
         'endTime',
         'roomNo',
         'lastEditedBy',
-        'datetime'
+        'lastUpdatedOn'
     ]
 
     def get_initial_queryset(self):
@@ -2187,7 +2193,7 @@ class ExamTimeTableListJson(BaseDatatableView):
                 escape(item.endTime.strftime('%I:%M %p') if item.endTime else 'N/A'),
                 escape(item.roomNo if item.roomNo else 'N/A'),
                 escape(item.lastEditedBy if item.lastEditedBy else 'N/A'),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p') if item.datetime else 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
             ])
         return json_data
@@ -2378,13 +2384,13 @@ def add_exam_to_class(request):
 
 class AssignExamToClassListJson(BaseDatatableView):
     order_columns = ['standardID.name', 'standardID.section',
-                     'examID.name', 'fullMarks', 'passMarks', 'startDate', 'endDate', 'lastEditedBy', 'datetime']
+                     'examID.name', 'fullMarks', 'passMarks', 'startDate', 'endDate', 'lastEditedBy', 'lastUpdatedOn']
 
     def get_initial_queryset(self):
         return AssignExamToClass.objects.select_related(
             'standardID', 'examID'
         ).only(
-            'id', 'fullMarks', 'passMarks', 'startDate', 'endDate', 'lastEditedBy', 'datetime',
+            'id', 'fullMarks', 'passMarks', 'startDate', 'endDate', 'lastEditedBy', 'lastUpdatedOn',
             'standardID__name', 'standardID__section',
             'examID__name'
         ).filter(
@@ -2439,8 +2445,8 @@ class AssignExamToClassListJson(BaseDatatableView):
                 escape(item.passMarks),
                 escape(item.startDate.strftime('%d-%m-%Y')),
                 escape(item.endDate.strftime('%d-%m-%Y')),
-                escape(item.lastEditedBy),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -2553,7 +2559,7 @@ def get_exam_list_by_class_api(request):
 # Attendance ------------------------------------------------------------------
 
 class TakeStudentAttendanceByClassJson(BaseDatatableView):
-    order_columns = ['studentID.photo', 'studentID.name', 'studentID.roll', 'isPresent', 'absentReason']
+    order_columns = ['studentID.photo', 'studentID.name', 'studentID.roll', 'isPresent', 'absentReason', 'lastEditedBy', 'lastUpdatedOn']
 
     @transaction.atomic
     def get_initial_queryset(self):
@@ -2702,6 +2708,8 @@ class TakeStudentAttendanceByClassJson(BaseDatatableView):
                 escape(item.studentID.roll or 'N/A'),
                 is_present,
                 reason,
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -2944,7 +2952,7 @@ class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
 
 
 class StudentAttendanceHistoryByDateRangeAndStudentJson(BaseDatatableView):
-    order_columns = ['attendanceDate', 'isPresent', 'isPresent', 'absentReason']
+    order_columns = ['attendanceDate', 'isPresent', 'isPresent', 'absentReason', 'lastEditedBy', 'lastUpdatedOn']
 
     @transaction.atomic
     def get_initial_queryset(self):
@@ -3005,6 +3013,8 @@ class StudentAttendanceHistoryByDateRangeAndStudentJson(BaseDatatableView):
                 escape(Present),
                 escape(Absent),
                 escape(item.absentReason),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
 
             ])
 
@@ -3013,7 +3023,7 @@ class StudentAttendanceHistoryByDateRangeAndStudentJson(BaseDatatableView):
 
 class TakeTeacherAttendanceJson(BaseDatatableView):
     order_columns = ['teacherID.photo', 'teacherID.name', 'teacherID.staffType', 'teacherID.employeeCode', 'isPresent',
-                     'absentReason']
+                     'absentReason', 'lastEditedBy', 'lastUpdatedOn']
 
     @transaction.atomic
     def get_initial_queryset(self):
@@ -3106,6 +3116,8 @@ class TakeTeacherAttendanceJson(BaseDatatableView):
                 escape(item.teacherID.employeeCode or 'N/A'),
                 is_present,
                 reason,
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -3304,7 +3316,7 @@ class StaffAttendanceHistoryByDateRangeJson(BaseDatatableView):
 
 
 class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
-    order_columns = ['attendanceDate', 'isPresent', 'isPresent', 'isPresent', 'absentReason']
+    order_columns = ['attendanceDate', 'isPresent', 'isPresent', 'isPresent', 'absentReason', 'lastEditedBy', 'lastUpdatedOn']
 
     @transaction.atomic
     def get_initial_queryset(self):
@@ -3396,6 +3408,8 @@ class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
                 escape(Absent),
                 escape(Leave),
                 escape(item.absentReason),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
 
             ])
 
@@ -3404,7 +3418,7 @@ class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
 
 # Student fee ---------------------------------------------------------------
 class FeeByStudentJson(BaseDatatableView):
-    order_columns = ['month', 'isPaid', 'payDate', 'amount', 'note']
+    order_columns = ['month', 'isPaid', 'payDate', 'amount', 'note', 'lastEditedBy', 'lastUpdatedOn']
 
     @transaction.atomic
     def get_initial_queryset(self):
@@ -3456,7 +3470,7 @@ class FeeByStudentJson(BaseDatatableView):
                 is_present = '''
             <div class="ui checkbox">
   <input type="checkbox" name="isPresent{}" id="isPresent{}" checked >
-  <label>Mark as Present</label>
+  <label>Mark as Pay</label>
 </div>
             '''.format(item.pk, item.pk)
             else:
@@ -3487,6 +3501,8 @@ class FeeByStudentJson(BaseDatatableView):
                 payDate,
                 amount,
                 reason,
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -3621,7 +3637,7 @@ class StudentFeeDetailsByClassJson(BaseDatatableView):
 
 
 class StudentFeeDetailsByStudentJson(BaseDatatableView):
-    order_columns = ['month', 'isPaid', 'payDate', 'amount', 'note']
+    order_columns = ['month', 'isPaid', 'payDate', 'amount', 'note', 'lastEditedBy', 'lastUpdatedOn']
 
     @transaction.atomic
     def get_initial_queryset(self):
@@ -3666,6 +3682,8 @@ class StudentFeeDetailsByStudentJson(BaseDatatableView):
                 payDate,
                 escape(item.amount),
                 escape(item.note),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
 
             ])
 
@@ -3674,7 +3692,7 @@ class StudentFeeDetailsByStudentJson(BaseDatatableView):
 
 # Marks of Students by Subject ---------------------------------
 class MarksOfSubjectsByStudentJson(BaseDatatableView):
-    order_columns = ['studentID.photo', 'studentID.name', 'studentID.roll', 'examID.fullMarks', 'examID.passMarks', 'mark', 'note']
+    order_columns = ['studentID.photo', 'studentID.name', 'studentID.roll', 'examID.fullMarks', 'examID.passMarks', 'mark', 'note', 'lastEditedBy', 'lastUpdatedOn']
 
     @transaction.atomic
     def get_initial_queryset(self):
@@ -3747,6 +3765,8 @@ class MarksOfSubjectsByStudentJson(BaseDatatableView):
                 item.examID.passMarks,
                 marks_obtained,
                 note,
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -3844,6 +3864,7 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
         'examID__passMarks',
         'mark',
         'note',
+        'lastEditedBy',
         'lastUpdatedOn',
     ]
 
@@ -3876,6 +3897,7 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
                 | Q(examID__passMarks__icontains=search)
                 | Q(mark__icontains=search)
                 | Q(note__icontains=search)
+                | Q(lastEditedBy__icontains=search)
                 | Q(lastUpdatedOn__icontains=search)
             )
         return qs
@@ -3903,6 +3925,7 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
                 escape(pass_mark),
                 escape(item.mark if item.mark is not None else 0),
                 escape(item.note or ''),
+                escape(item.lastEditedBy or 'N/A'),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
             ])
         return json_data
@@ -3952,7 +3975,7 @@ def get_event_type_list_api(request):
 
 
 class EventTypeListJson(BaseDatatableView):
-    order_columns = ['name', 'audience', 'description', 'datetime']
+    order_columns = ['name', 'audience', 'description', 'lastEditedBy', 'lastUpdatedOn']
 
     def get_initial_queryset(self):
         return EventType.objects.filter(
@@ -3967,7 +3990,8 @@ class EventTypeListJson(BaseDatatableView):
                 Q(name__icontains=search)
                 | Q(audience__icontains=search)
                 | Q(description__icontains=search)
-                | Q(datetime__icontains=search)
+                | Q(lastEditedBy__icontains=search)
+                | Q(lastUpdatedOn__icontains=search)
             )
         return qs
 
@@ -3985,7 +4009,8 @@ class EventTypeListJson(BaseDatatableView):
                 escape(item.name or 'N/A'),
                 escape(item.get_audience_display()),
                 escape(item.description or ''),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p') if item.datetime else 'N/A'),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
             ])
         return json_data
@@ -4155,11 +4180,11 @@ def add_event_api(request):
 
 class EventListJson(BaseDatatableView):
     order_columns = ['eventID__name', 'eventID__audience', 'title', 'startDate',
-                     'endDate', 'message', 'datetime']
+                     'endDate', 'message', 'lastEditedBy', 'lastUpdatedOn']
 
     def get_initial_queryset(self):
         return Event.objects.select_related('eventID').only(
-            'id', 'title', 'startDate', 'endDate', 'message', 'datetime',
+            'id', 'title', 'startDate', 'endDate', 'message', 'lastEditedBy', 'lastUpdatedOn',
             'eventID__name', 'eventID__audience'
         ).filter(
             isDeleted__exact=False,
@@ -4175,7 +4200,7 @@ class EventListJson(BaseDatatableView):
                     startDate__icontains=search)| Q(
                     endDate__icontains=search)| Q(
                     message__icontains=search)
-                |  Q(datetime__icontains=search)
+                |  Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
             )
 
         return qs
@@ -4197,7 +4222,8 @@ class EventListJson(BaseDatatableView):
                 escape(item.startDate.strftime('%d-%m-%Y')),
                 escape(item.endDate.strftime('%d-%m-%Y')),
                 escape(item.message),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])
@@ -4290,13 +4316,13 @@ class ParentsListJson(BaseDatatableView):
                      'motherName', 'motherPhone', 
                      'guardianName', 'guardianPhone',
                      'totalFamilyMembers',
-                     'datetime']
+                     'lastEditedBy', 'lastUpdatedOn']
 
     def get_initial_queryset(self):
         current_session_id = self.request.session["current_session"]["Id"]
         return Parent.objects.only(
             'id', 'fatherName', 'fatherPhone', 'motherName', 'motherPhone',
-            'guardianName', 'guardianPhone', 'totalFamilyMembers', 'datetime'
+            'guardianName', 'guardianPhone', 'totalFamilyMembers', 'lastEditedBy', 'lastUpdatedOn'
         ).prefetch_related(
             Prefetch(
                 'student_set',
@@ -4321,7 +4347,8 @@ class ParentsListJson(BaseDatatableView):
                     motherName__icontains=search)| Q(
                     motherPhone__icontains=search)
                 |  Q(guardianName__icontains=search) | Q(guardianPhone__icontains=search)
-                |  Q(totalFamilyMembers__icontains=search) | Q(datetime__icontains=search)
+                |  Q(totalFamilyMembers__icontains=search)
+                | Q(lastEditedBy__icontains=search) | Q(lastUpdatedOn__icontains=search)
             )
 
         return qs
@@ -4365,7 +4392,8 @@ class ParentsListJson(BaseDatatableView):
                 escape(item.guardianPhone if item.guardianPhone else 'N/A'),
                 escape(item.totalFamilyMembers if item.totalFamilyMembers else '1'),
                 f'<div class="parent-students-wrap">{students_markup}</div>',
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
             ])

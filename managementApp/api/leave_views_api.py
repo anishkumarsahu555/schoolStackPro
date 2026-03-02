@@ -15,6 +15,11 @@ from utils.custom_response import ErrorResponse, SuccessResponse
 from utils.logger import logger
 
 
+def _editor_name(user):
+    full_name = user.get_full_name().strip()
+    return full_name or user.username
+
+
 def _session_payload(request):
     current = request.session.get('current_session', {})
     return current.get('Id'), current.get('SchoolID')
@@ -62,7 +67,7 @@ def get_leave_type_list_api(request):
 @method_decorator(login_required, name='dispatch')
 @method_decorator(check_groups('Admin', 'Owner'), name='dispatch')
 class LeaveTypeListJson(BaseDatatableView):
-    order_columns = ['name', 'code', 'applicableFor', 'requiresApproval', 'isActive', 'datetime', 'id']
+    order_columns = ['name', 'code', 'applicableFor', 'requiresApproval', 'isActive', 'lastEditedBy', 'lastUpdatedOn', 'id']
 
     def get_initial_queryset(self):
         session_id, _ = _session_payload(self.request)
@@ -79,6 +84,7 @@ class LeaveTypeListJson(BaseDatatableView):
                 | Q(code__icontains=search)
                 | Q(applicableFor__icontains=search)
                 | Q(lastEditedBy__icontains=search)
+                | Q(lastUpdatedOn__icontains=search)
             )
         return qs
 
@@ -99,7 +105,8 @@ class LeaveTypeListJson(BaseDatatableView):
                 escape(item.get_applicableFor_display()),
                 f'<span class="ui tiny {"green" if item.requiresApproval else "grey"} label">{"Yes" if item.requiresApproval else "No"}</span>',
                 f'<span class="ui tiny {"green" if item.isActive else "red"} label">{"Active" if item.isActive else "Inactive"}</span>',
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p') if item.datetime else 'N/A'),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
             ])
         return rows
@@ -140,7 +147,8 @@ def add_leave_type_api(request):
             isActive=is_active,
             sessionID_id=session_id,
             schoolID_id=school_id,
-            lastEditedBy=request.user.username,
+            lastEditedBy=_editor_name(request.user),
+            updatedByUserID_id=request.user.id,
         )
         return SuccessResponse('Leave type added successfully.', extra={'color': 'green'}).to_json_response()
     except Exception as exc:
@@ -207,7 +215,8 @@ def update_leave_type_api(request):
         obj.applicableFor = applicable_for
         obj.requiresApproval = requires_approval
         obj.isActive = is_active
-        obj.lastEditedBy = request.user.username
+        obj.lastEditedBy = _editor_name(request.user)
+        obj.updatedByUserID_id = request.user.id
         obj.save()
 
         return SuccessResponse('Leave type updated successfully.', extra={'color': 'green'}).to_json_response()
@@ -229,7 +238,8 @@ def delete_leave_type(request):
         obj = LeaveType.objects.get(pk=int(row_id), isDeleted=False, sessionID_id=session_id)
         obj.isDeleted = True
         obj.isActive = False
-        obj.lastEditedBy = request.user.username
+        obj.lastEditedBy = _editor_name(request.user)
+        obj.updatedByUserID_id = request.user.id
         obj.save()
         return SuccessResponse('Leave type deleted successfully.', extra={'color': 'green'}).to_json_response()
     except Exception:
@@ -249,7 +259,8 @@ class LeaveApplicationListJson(BaseDatatableView):
         'status',
         'id',
         'reason',
-        'datetime',
+        'lastEditedBy',
+        'lastUpdatedOn',
         'id',
     ]
 
@@ -279,6 +290,8 @@ class LeaveApplicationListJson(BaseDatatableView):
                 | Q(leaveTypeID__name__icontains=search)
                 | Q(reason__icontains=search)
                 | Q(status__icontains=search)
+                | Q(lastEditedBy__icontains=search)
+                | Q(lastUpdatedOn__icontains=search)
             )
         return qs
 
@@ -312,7 +325,8 @@ class LeaveApplicationListJson(BaseDatatableView):
                 _status_badge(item.status),
                 attachment,
                 escape(item.reason or ''),
-                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p') if item.datetime else 'N/A'),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
             ])
         return rows
@@ -346,7 +360,8 @@ def review_leave_application_api(request):
         leave_obj.actionRemark = remark
         leave_obj.actionByUserID_id = request.user.id
         leave_obj.actionOn = datetime.now()
-        leave_obj.lastEditedBy = request.user.username
+        leave_obj.lastEditedBy = _editor_name(request.user)
+        leave_obj.updatedByUserID_id = request.user.id
         leave_obj.save()
 
         add_leave_log(
@@ -356,7 +371,7 @@ def review_leave_application_api(request):
             user_id=request.user.id,
             school_id=school_id,
             session_id=session_id,
-            actor_label=request.user.username,
+            actor_label=_editor_name(request.user),
         )
 
         if status_value == 'approved':

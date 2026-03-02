@@ -103,4 +103,5 @@ def add_leave_log(*, leave_obj, action, remark, user_id, school_id, session_id, 
         schoolID_id=school_id,
         sessionID_id=session_id,
         lastEditedBy=actor_label,
+        updatedByUserID_id=user_id,
     )

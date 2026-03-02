@@ -88,7 +88,8 @@
                             <th>Name</th>
                             <th>Audience</th>
                             <th>Description</th>
-                            <th>AddedOn</th>
+                            <th>EditedBy</th>
+                            <th>UpdatedOn</th>
                             <th>Actions</th>
                         </tr>
                         </thead>
@@ -138,16 +139,17 @@
                 },
                 buttons: [{
                     extend: 'excel',
-                    exportOptions: {columns: [0, 1, 2, 3]}
+                    exportOptions: {columns: [0, 1, 2, 3, 4]}
                 }],
                 columnDefs: [
                     {name: 'name', targets: 0, orderable: true},
                     {name: 'audience', targets: 1, orderable: true},
                     {name: 'description', targets: 2, orderable: true},
-                    {name: 'datetime', targets: 3, orderable: true},
-                    {name: 'action', targets: 4, orderable: false}
+                    {name: 'lastEditedBy', targets: 3, orderable: true},
+                    {name: 'lastUpdatedOn', targets: 4, orderable: true},
+                    {name: 'action', targets: 5, orderable: false}
                 ],
-                aaSorting: [[3, 'desc']],
+                aaSorting: [[4, 'desc']],
                 lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
                 pageLength: 10,
                 processing: true,

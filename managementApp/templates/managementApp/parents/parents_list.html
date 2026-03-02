@@ -108,7 +108,8 @@
                                 <th>GuardianPhone</th>
                                 <th>TotalFamilyMembers</th>
                                 <th>Students</th>
-                                <th>AddedOn</th>
+                                <th>EditedBy</th>
+                                <th>UpdatedOn</th>
                                 <th>Actions</th>
                             </tr>
                             </thead>
@@ -141,7 +142,7 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
                 }
             }
                 {% comment %}      , {
@@ -160,8 +161,9 @@
                 {"name": "guardianPhone", "targets": 5, "orderable": true},
                 {"name": "totalFamilyMembers", "targets": 6, "orderable": true},
                 {"name": "student_html", "targets": 7, "orderable": true, "className": "parent-students-cell"},
-                {"name": "datetime", "targets": 8, "orderable": true},
-                {"name": "action", "targets": 9, "orderable": false}
+                {"name": "lastEditedBy", "targets": 8, "orderable": true},
+                {"name": "lastUpdatedOn", "targets": 9, "orderable": true},
+                {"name": "action", "targets": 10, "orderable": false}
             ],
             aaSorting: [[0, 'asc']],
             "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],

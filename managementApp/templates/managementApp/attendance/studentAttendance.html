@@ -205,6 +205,8 @@
                                 <th>RollNo.</th>
                                 <th>IsPresent</th>
                                 <th>Reason for Absent</th>
+                                <th>EditedBy</th>
+                                <th>UpdatedOn</th>
                                 <th>Actions</th>
                             </tr>
                             </thead>
@@ -414,7 +416,7 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [1, 2, 3, 4]
+                    columns: [1, 2, 3, 4, 5, 6]
                 }
             }
                 {% comment %}      , {
@@ -430,7 +432,9 @@
                 {"name": "studentID.roll", "targets": 2, "orderable": true},
                 {"name": "isPresent", "targets": 3, "orderable": true},
                 {"name": "absentReason", "targets": 4, "orderable": true},
-                {"name": "action", "targets": 5, "orderable": false}
+                {"name": "lastEditedBy", "targets": 5, "orderable": true},
+                {"name": "lastUpdatedOn", "targets": 6, "orderable": true},
+                {"name": "action", "targets": 7, "orderable": false}
             ],
             aaSorting: [[2, 'desc']],
             "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],

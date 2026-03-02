@@ -89,6 +89,8 @@
                                 <th>Paid Date</th>
                                 <th>Amount</th>
                                 <th>Remark</th>
+                                <th>EditedBy</th>
+                                <th>UpdatedOn</th>
                                 <th>Actions</th>
                             </tr>
                             </thead>
@@ -232,7 +234,7 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [0,1, 2, 3, 4]
+                    columns: [0, 1, 2, 3, 4, 5, 6]
                 }
             }
             ],
@@ -242,7 +244,9 @@
                 {"name": "payDate", "targets": 2, "orderable": true},
                 {"name": "amount", "targets": 3, "orderable": true},
                 {"name": "note", "targets": 4, "orderable": true},
-                {"name": "action", "targets": 5, "orderable": false}
+                {"name": "lastEditedBy", "targets": 5, "orderable": true},
+                {"name": "lastUpdatedOn", "targets": 6, "orderable": true},
+                {"name": "action", "targets": 7, "orderable": false}
             ],
             aaSorting: [[1, 'desc']],
             "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],

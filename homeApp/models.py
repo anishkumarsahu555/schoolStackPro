@@ -16,6 +16,7 @@ class SchoolOwner(models.Model):
     datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
     isDeleted = models.BooleanField(default=False)
 
     def __str__(self):
@@ -47,6 +48,7 @@ class SchoolDetail(models.Model):
     datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
     isDeleted = models.BooleanField(default=False)
 
     def __str__(self):
@@ -65,6 +67,7 @@ class SchoolSocialLink(models.Model):
     datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
     isDeleted = models.BooleanField(default=False)
 
     def __str__(self):
@@ -81,6 +84,7 @@ class SchoolSession(models.Model):
     datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
     isDeleted = models.BooleanField(default=False)
 
     def __str__(self):
