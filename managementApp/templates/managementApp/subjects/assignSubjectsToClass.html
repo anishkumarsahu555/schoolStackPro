@@ -27,6 +27,163 @@
         input[type=search] {
             width: 100px !important;
         }
+
+        #addForm #standard.ui.selection.dropdown,
+        #addForm #subjects.ui.multiple.search.selection.dropdown {
+            height: 42px !important;
+            min-height: 42px !important;
+            background: var(--app-surface) !important;
+            border-color: var(--app-border) !important;
+            font-size: 0.9rem !important;
+            font-weight: 400 !important;
+            padding-top: 0.65rem !important;
+            padding-bottom: 0.65rem !important;
+        }
+
+        #addForm #subjects.ui.multiple.search.selection.dropdown {
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+        }
+
+        #addForm #standard.ui.selection.dropdown > .default.text,
+        #addForm #standard.ui.selection.dropdown > .text,
+        #addForm #subjects.ui.multiple.search.selection.dropdown > .default.text,
+        #addForm #subjects.ui.multiple.search.selection.dropdown > .text {
+            font-size: 0.9rem !important;
+            font-weight: 400 !important;
+            color: var(--app-muted) !important;
+            line-height: 1.2 !important;
+        }
+
+        #addForm #subjects.ui.multiple.search.selection.dropdown > .label {
+            font-size: 0.8rem !important;
+            font-weight: 400 !important;
+            line-height: 1.2 !important;
+            margin: 0.15rem 0.25rem 0.15rem 0 !important;
+        }
+
+        #addForm #subjects.ui.multiple.search.selection.dropdown > input.search {
+            margin: 0 !important;
+            line-height: 1.2 !important;
+            font-size: 0.9rem !important;
+            font-weight: 400 !important;
+            min-height: auto !important;
+            padding: 0 !important;
+        }
+
+        #addForm #subjects.ui.multiple.search.selection.dropdown > .default.text {
+            margin: 0 !important;
+            line-height: 1.2 !important;
+        }
+
+        #addForm #subjects.ui.multiple.search.selection.dropdown > .dropdown.icon,
+        #addForm #standard.ui.selection.dropdown > .dropdown.icon {
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+        }
+
+        html[data-theme="dark"] #addForm #standard.ui.selection.dropdown,
+        html[data-theme="dark"] #addForm #subjects.ui.multiple.search.selection.dropdown {
+            background: #1b2431 !important;
+            border-color: #364357 !important;
+        }
+
+        html[data-theme="dark"] #addForm #subjects.ui.multiple.search.selection.dropdown > .label {
+            background: #223246 !important;
+            color: #dfe8f6 !important;
+            border-color: #42516a !important;
+        }
+
+        html[data-theme="dark"] #addForm #subjects.ui.multiple.search.selection.dropdown > .label > .delete.icon {
+            color: #c4cfdf !important;
+        }
+
+        #tableFilterForm button.ui.basic.button {
+            background: var(--app-hover) !important;
+            color: var(--app-text) !important;
+            border: 1px solid var(--app-border) !important;
+            box-shadow: none !important;
+        }
+
+        #tableFilterForm button.ui.basic.button:hover {
+            background: var(--app-active) !important;
+            border-color: var(--app-brand) !important;
+            color: var(--app-text) !important;
+        }
+
+        #tableFilterForm button.ui.basic.button i.icon {
+            color: inherit !important;
+            opacity: 1 !important;
+        }
+
+        html[data-theme="dark"] #tableFilterForm button.ui.basic.button {
+            background: #202a38 !important;
+            color: #e5edf8 !important;
+            border-color: #3a475d !important;
+        }
+
+        html[data-theme="dark"] #tableFilterForm button.ui.basic.button:hover {
+            background: #2a3950 !important;
+            border-color: #6ea8ff !important;
+            color: #f0f6ff !important;
+        }
+
+        @media (max-width: 767px) {
+            #addForm .fields {
+                display: block !important;
+                margin: 0 0 0.5rem !important;
+            }
+
+            #addForm .fields > .field {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 100% !important;
+                flex: 1 1 100% !important;
+                margin: 0 0 0.5rem !important;
+                padding-top: 0 !important;
+            }
+
+            #addForm .fields > .field.button-row {
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.4rem !important;
+                flex-wrap: nowrap !important;
+            }
+
+            #addForm .fields > .field.button-row .ui.button {
+                width: auto !important;
+                margin: 0 !important;
+                white-space: nowrap !important;
+            }
+
+            #tableFilterForm .fields {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+                margin: 0 0 0.5rem !important;
+            }
+
+            #tableFilterForm .fields > .field.filter-half {
+                width: calc(50% - 0.25rem) !important;
+                max-width: calc(50% - 0.25rem) !important;
+                min-width: calc(50% - 0.25rem) !important;
+                flex: 1 1 calc(50% - 0.25rem) !important;
+                margin: 0 0 0.5rem !important;
+                padding-top: 0 !important;
+            }
+
+            #tableFilterForm .fields > .field.button-row.filter-actions {
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.4rem !important;
+                flex-wrap: nowrap !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 100% !important;
+                flex: 1 1 100% !important;
+            }
+        }
     </style>
 
     <div class="ui left aligned basic  grid">
@@ -65,7 +222,7 @@
                             </div>
 
 
-                            <div class="field" style="padding-top: 2.2em;">
+                            <div class="field button-row" style="padding-top: 2.2em;">
                                 <button type="button" id="saveBtn" class="ui mini green button saveBtn"
                                         onclick="addData()">
                                     <i class="icon plus square"></i>
@@ -88,6 +245,35 @@
                             </div>
                         </div>
 
+                    </form>
+                </div>
+
+                <div class="ui segment">
+                    <form class="ui tiny form" id="tableFilterForm">
+                        <div class="three fields">
+                            <div class="field filter-half">
+                                <label>Filter by Class</label>
+                                <select class="ui clearable search dropdown" id="filterStandard">
+                                    <option value="">All Classes</option>
+                                </select>
+                            </div>
+                            <div class="field filter-half">
+                                <label>Filter by Subject</label>
+                                <select class="ui clearable search dropdown" id="filterSubject">
+                                    <option value="">All Subjects</option>
+                                </select>
+                            </div>
+                            <div class="field button-row filter-actions" style="padding-top: 2.2em;">
+                                <button type="button" class="ui mini blue button filter-apply-btn" onclick="applyTableFilters()">
+                                    <i class="filter icon"></i>
+                                    Apply
+                                </button>
+                                <button type="button" class="ui mini basic button filter-clear-btn" onclick="clearTableFilters()">
+                                    <i class="undo icon"></i>
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
                     </form>
                 </div>
 
@@ -162,12 +348,17 @@
 
                     $('#standard').html('');
                     $('#standard').append(' <option value="">Search By Class Name</option>');
+                    $('#filterStandard').html('');
+                    $('#filterStandard').append('<option value="">All Classes</option>');
                     var j;
                     for (j = 0; j < response.data.length; j++) {
-
-                        $('#standard').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+                        var optionHtml = '<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>';
+                        $('#standard').append(optionHtml);
+                        $('#filterStandard').append(optionHtml);
 
                     }
+                    $('#standard').dropdown('refresh');
+                    $('#filterStandard').dropdown('refresh');
 
                 },
 
@@ -192,12 +383,17 @@
 
                     $('#subjects').html('');
                     $('#subjects').append(' <option value="">Search By Subject Name</option>');
+                    $('#filterSubject').html('');
+                    $('#filterSubject').append(' <option value="">All Subjects</option>');
                     var j;
                     for (j = 0; j < response.data.length; j++) {
-
-                        $('#subjects').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+                        var optionHtml = '<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>';
+                        $('#subjects').append(optionHtml);
+                        $('#filterSubject').append(optionHtml);
 
                     }
+                    $('#subjects').dropdown('refresh');
+                    $('#filterSubject').dropdown('refresh');
 
                 },
 
@@ -300,8 +496,24 @@
             "pageLength": 10,
             "processing": true,
             "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:AssignSubjectToClassListJson' %}"
+            "ajax": {
+                "url": "{% url 'managementAppAPI:AssignSubjectToClassListJson' %}",
+                "data": function (d) {
+                    d.class_filter = $('#filterStandard').val() || '';
+                    d.subject_filter = $('#filterSubject').val() || '';
+                }
+            }
         });
+
+        function applyTableFilters() {
+            subjectTab.ajax.reload();
+        }
+
+        function clearTableFilters() {
+            $('#filterStandard').val('').change();
+            $('#filterSubject').val('').change();
+            applyTableFilters();
+        }
 
 
         function delData(id) {

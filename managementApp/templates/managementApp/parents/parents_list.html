@@ -28,6 +28,54 @@
         input[type=search] {
             width: 100px !important;
         }
+
+        #TeacherTable td.parent-students-cell {
+            white-space: normal !important;
+            min-width: 270px;
+            max-width: 380px;
+            vertical-align: top !important;
+        }
+
+        .parent-students-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .parent-student-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0.45rem;
+            border: 1px solid var(--app-border);
+            background: var(--app-surface);
+            border-radius: 8px;
+        }
+
+        .parent-student-chip img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .parent-student-chip .parent-student-meta {
+            min-width: 0;
+        }
+
+        .parent-student-chip .student-name {
+            font-weight: 600;
+            line-height: 1.15;
+            word-break: break-word;
+        }
+
+        .parent-student-chip .student-sub {
+            font-size: 0.78rem;
+            color: var(--app-muted);
+            line-height: 1.1;
+            word-break: break-word;
+        }
     </style>
 
     <div class="ui right aligned basic  grid">
@@ -111,7 +159,7 @@
                 {"name": "guardianName", "targets": 4, "orderable": true},
                 {"name": "guardianPhone", "targets": 5, "orderable": true},
                 {"name": "totalFamilyMembers", "targets": 6, "orderable": true},
-                {"name": "student_html", "targets": 7, "orderable": true},
+                {"name": "student_html", "targets": 7, "orderable": true, "className": "parent-students-cell"},
                 {"name": "datetime", "targets": 8, "orderable": true},
                 {"name": "action", "targets": 9, "orderable": false}
             ],

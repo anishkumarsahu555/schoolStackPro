@@ -27,6 +27,70 @@
         input[type=search] {
             width: 100px !important;
         }
+
+        #addForm .fields,
+        #tableFilterForm .fields {
+            align-items: flex-end !important;
+        }
+
+        #addForm .field.action-buttons,
+        #tableFilterForm .field.filter-actions {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.45rem !important;
+            flex-wrap: nowrap !important;
+        }
+
+        #addForm .field.action-buttons .ui.button,
+        #tableFilterForm .field.filter-actions .ui.button {
+            margin: 0 !important;
+            white-space: nowrap !important;
+        }
+
+        @media (max-width: 767px) {
+            #tableFilterForm .fields {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+                margin: 0 0 0.5rem !important;
+            }
+
+            #tableFilterForm .fields > .field.filter-half {
+                width: calc(50% - 0.25rem) !important;
+                max-width: calc(50% - 0.25rem) !important;
+                min-width: calc(50% - 0.25rem) !important;
+                flex: 1 1 calc(50% - 0.25rem) !important;
+                margin: 0 !important;
+            }
+
+            #tableFilterForm .fields > .field.filter-actions {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 100% !important;
+                flex: 1 1 100% !important;
+                margin: 0 !important;
+                padding-top: 0 !important;
+            }
+
+            #addForm .marks-dates-actions-row > .field.action-buttons {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 100% !important;
+                flex: 1 1 100% !important;
+                padding-top: 0 !important;
+            }
+
+            #addForm .two.fields.exam-class-row {
+                display: block !important;
+            }
+
+            #addForm .two.fields.exam-class-row > .field {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 100% !important;
+                margin-bottom: 0.5rem !important;
+            }
+        }
     </style>
 
     <div class="ui left aligned basic  grid">
@@ -46,39 +110,36 @@
                     <form class="ui tiny form" id="addForm">{% csrf_token %}
                         <input type="hidden" id="editID">
 
-                        <div class="four fields">
-
-                            <div class="three wide field required">
+                        <div class="two fields exam-class-row">
+                            <div class="field required">
                                 <label>Exam Name</label>
                                 <select class="ui clearable search dropdown" id="exam">
                                     <option value="">Search By Exam Name</option>
                                 </select>
 
                             </div>
-
-                            <div class="seven wide field required">
+                            <div class="field required">
                                 <label>Class - Section</label>
                                 <select class="ui fluid search dropdown" multiple="" id="standard">
                                     <option value="">Search By Class Name</option>
                                 </select>
 
                             </div>
-                            <div class="three wide field">
+                        </div>
+
+                        <div class="five fields marks-dates-actions-row">
+                            <div class="field">
                                 <label>Full Mark</label>
                                 <input type="number" name="fmark" placeholder="Full Mark" id="fmark">
 
 
                             </div>
-                            <div class="three wide field">
+                            <div class="field">
                                 <label>Pass Mark</label>
                                 <input type="number" name="pmark" placeholder="Pass Mark" id="pmark">
 
 
                             </div>
-
-
-                        </div>
-                        <div class="three fields">
                             <div class="field">
                                 <label>Start Date</label>
                                 <div class="ui calendar" id="startDate">
@@ -98,7 +159,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="field" style="padding-top: 2.2em;">
+                            <div class="field action-buttons" style="padding-top: 2.2em;">
                                 <button type="button" id="saveBtn" class="ui mini green button saveBtn"
                                         onclick="addData()">
                                     <i class="icon plus square"></i>
@@ -127,6 +188,32 @@
 
                 <div class="row" style="padding-left: 5px; padding-right: 5px">
                     <div class="wide">
+                        <div class="ui tiny form" id="tableFilterForm" style="margin-bottom: 0.65rem;">
+                            <div class="fields">
+                                <div class="field filter-half">
+                                    <label>Filter Class</label>
+                                    <select class="ui search dropdown" id="filter_standard">
+                                        <option value="">All Classes</option>
+                                    </select>
+                                </div>
+                                <div class="field filter-half">
+                                    <label>Filter Exam</label>
+                                    <select class="ui search dropdown" id="filter_exam">
+                                        <option value="">All Exams</option>
+                                    </select>
+                                </div>
+                                <div class="field filter-actions">
+                                    <button type="button" class="ui mini blue button filter-apply-btn" onclick="applyTableFilters()">
+                                        <i class="filter icon"></i>
+                                        Apply
+                                    </button>
+                                    <button type="button" class="ui mini basic button filter-clear-btn" onclick="clearTableFilters()">
+                                        <i class="undo icon"></i>
+                                        Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
                         <table class="ui unstackable tiny sortable celled very nowrap very compact table"
                                id="SubjectTable"
@@ -240,12 +327,18 @@
 
                     $('#standard').html('');
                     $('#standard').append(' <option value="">Search By Class Name</option>');
+                    $('#filter_standard').html('');
+                    $('#filter_standard').append(' <option value="">All Classes</option>');
                     var j;
                     for (j = 0; j < response.data.length; j++) {
 
-                        $('#standard').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+                        let optionHtml = '<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>';
+                        $('#standard').append(optionHtml);
+                        $('#filter_standard').append(optionHtml);
 
                     }
+                    $('#standard').dropdown('refresh');
+                    $('#filter_standard').dropdown('refresh');
 
                 },
 
@@ -271,12 +364,18 @@
 
                     $('#exam').html('');
                     $('#exam').append(' <option value="">Search By Exam Name</option>');
+                    $('#filter_exam').html('');
+                    $('#filter_exam').append(' <option value="">All Exams</option>');
                     var j;
                     for (j = 0; j < response.data.length; j++) {
 
-                        $('#exam').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
+                        let optionHtml = '<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>';
+                        $('#exam').append(optionHtml);
+                        $('#filter_exam').append(optionHtml);
 
                     }
+                    $('#exam').dropdown('refresh');
+                    $('#filter_exam').dropdown('refresh');
 
                 },
 
@@ -391,8 +490,24 @@
             "pageLength": 10,
             "processing": true,
             "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:AssignExamToClassListJson' %}"
+            "ajax": {
+                "url": "{% url 'managementAppAPI:AssignExamToClassListJson' %}",
+                "data": function (d) {
+                    d.class_filter = $('#filter_standard').val() || '';
+                    d.exam_filter = $('#filter_exam').val() || '';
+                }
+            }
         });
+
+        function applyTableFilters() {
+            subjectTab.ajax.reload();
+        }
+
+        function clearTableFilters() {
+            $('#filter_standard').dropdown('clear');
+            $('#filter_exam').dropdown('clear');
+            applyTableFilters();
+        }
 
 
         function delData(id) {

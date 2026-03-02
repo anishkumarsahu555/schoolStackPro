@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import json
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
@@ -622,6 +623,14 @@ class AssignSubjectToClassListJson(BaseDatatableView):
         ).order_by('standardID__name')
 
     def filter_queryset(self, qs):
+        class_filter = self.request.GET.get('class_filter')
+        subject_filter = self.request.GET.get('subject_filter')
+
+        if class_filter and str(class_filter).isdigit():
+            qs = qs.filter(standardID_id=int(class_filter))
+
+        if subject_filter and str(subject_filter).isdigit():
+            qs = qs.filter(subjectID_id=int(subject_filter))
 
         search = self.request.GET.get('search[value]', None)
         if search:
@@ -869,6 +878,14 @@ class AssignSubjectToClassListJson(BaseDatatableView):
         ).order_by('standardID__name')
 
     def filter_queryset(self, qs):
+        class_filter = self.request.GET.get('class_filter')
+        subject_filter = self.request.GET.get('subject_filter')
+
+        if class_filter and str(class_filter).isdigit():
+            qs = qs.filter(standardID_id=int(class_filter))
+
+        if subject_filter and str(subject_filter).isdigit():
+            qs = qs.filter(subjectID_id=int(subject_filter))
 
         search = self.request.GET.get('search[value]', None)
         if search:
@@ -2377,6 +2394,14 @@ class AssignExamToClassListJson(BaseDatatableView):
             'standardID__name')
 
     def filter_queryset(self, qs):
+        class_filter = self.request.GET.get('class_filter')
+        exam_filter = self.request.GET.get('exam_filter')
+
+        if class_filter and str(class_filter).isdigit():
+            qs = qs.filter(standardID_id=int(class_filter))
+
+        if exam_filter and str(exam_filter).isdigit():
+            qs = qs.filter(examID_id=int(exam_filter))
 
         search = self.request.GET.get('search[value]', None)
         if search:
@@ -2721,6 +2746,82 @@ def add_student_attendance_by_class(request):
             return _api_response({'status': 'error'}, safe=False)
 
 
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_student_attendance_bulk_by_class(request):
+    if request.method != 'POST':
+        return _api_response({'status': 'error', 'message': 'Invalid request method.'}, safe=False)
+
+    try:
+        raw_entries = request.POST.get('entries', '[]')
+        entries = json.loads(raw_entries)
+        if not isinstance(entries, list) or len(entries) == 0:
+            return _api_response({'status': 'error', 'message': 'No attendance entries found.', 'color': 'red'}, safe=False)
+    except Exception:
+        return _api_response({'status': 'error', 'message': 'Invalid attendance payload.', 'color': 'red'}, safe=False)
+
+    updated_count = 0
+    blocked_students = []
+    current_session_id = request.session["current_session"]["Id"]
+
+    for entry in entries:
+        try:
+            attendance_id = int(entry.get('id'))
+        except Exception:
+            continue
+
+        is_present = bool(entry.get('isPresent'))
+        reason = (entry.get('reason') or '').strip()
+
+        try:
+            instance = StudentAttendance.objects.select_related('studentID').get(
+                pk=attendance_id,
+                isDeleted=False,
+                sessionID_id=current_session_id
+            )
+        except StudentAttendance.DoesNotExist:
+            continue
+
+        if is_present:
+            leave_obj = approved_leave_for_date(
+                session_id=instance.sessionID_id,
+                role='student',
+                date_value=instance.attendanceDate.date() if instance.attendanceDate else None,
+                student_id=instance.studentID_id
+            )
+            if leave_obj:
+                blocked_students.append(instance.studentID.name if instance.studentID else f'ID {attendance_id}')
+                continue
+
+        instance.isPresent = is_present
+        instance.absentReason = '' if is_present else reason
+        pre_save_with_user.send(sender=StudentAttendance, instance=instance, user=request.user.pk)
+        instance.save()
+        updated_count += 1
+
+    if updated_count == 0 and blocked_students:
+        return _api_response(
+            {'status': 'error', 'message': 'Could not update attendance. Some students are on approved leave.', 'color': 'orange'},
+            safe=False
+        )
+
+    if blocked_students:
+        blocked_preview = ', '.join(blocked_students[:3])
+        extra_text = f' (blocked: {blocked_preview}{"..." if len(blocked_students) > 3 else ""})'
+        return _api_response(
+            {'status': 'success',
+             'message': f'Updated {updated_count} attendance record(s). {len(blocked_students)} skipped due to approved leave{extra_text}.',
+             'color': 'orange'},
+            safe=False
+        )
+
+    return _api_response(
+        {'status': 'success', 'message': f'Updated {updated_count} attendance record(s) successfully.', 'color': 'success'},
+        safe=False
+    )
+
+
 class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
     order_columns = ['photo', 'name', 'roll']
 
@@ -3002,7 +3103,7 @@ class TakeTeacherAttendanceJson(BaseDatatableView):
                 images,
                 escape(item.teacherID.name),
                 escape(item.teacherID.staffType),
-                float(escape(item.teacherID.employeeCode)),
+                escape(item.teacherID.employeeCode or 'N/A'),
                 is_present,
                 reason,
                 action,
@@ -3047,6 +3148,82 @@ def add_staff_attendance_api(request):
         except:
 
             return _api_response({'status': 'error'}, safe=False)
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_staff_attendance_bulk_api(request):
+    if request.method != 'POST':
+        return _api_response({'status': 'error', 'message': 'Invalid request method.'}, safe=False)
+
+    try:
+        raw_entries = request.POST.get('entries', '[]')
+        entries = json.loads(raw_entries)
+        if not isinstance(entries, list) or len(entries) == 0:
+            return _api_response({'status': 'error', 'message': 'No attendance entries found.', 'color': 'red'}, safe=False)
+    except Exception:
+        return _api_response({'status': 'error', 'message': 'Invalid attendance payload.', 'color': 'red'}, safe=False)
+
+    updated_count = 0
+    blocked_staff = []
+    current_session_id = request.session["current_session"]["Id"]
+
+    for entry in entries:
+        try:
+            attendance_id = int(entry.get('id'))
+        except Exception:
+            continue
+
+        is_present = bool(entry.get('isPresent'))
+        reason = (entry.get('reason') or '').strip()
+
+        try:
+            instance = TeacherAttendance.objects.select_related('teacherID').get(
+                pk=attendance_id,
+                isDeleted=False,
+                sessionID_id=current_session_id
+            )
+        except TeacherAttendance.DoesNotExist:
+            continue
+
+        if is_present:
+            leave_obj = approved_leave_for_date(
+                session_id=instance.sessionID_id,
+                role='teacher',
+                date_value=instance.attendanceDate.date() if instance.attendanceDate else None,
+                teacher_id=instance.teacherID_id
+            )
+            if leave_obj:
+                blocked_staff.append(instance.teacherID.name if instance.teacherID else f'ID {attendance_id}')
+                continue
+
+        instance.isPresent = is_present
+        instance.absentReason = '' if is_present else reason
+        pre_save_with_user.send(sender=TeacherAttendance, instance=instance, user=request.user.pk)
+        instance.save()
+        updated_count += 1
+
+    if updated_count == 0 and blocked_staff:
+        return _api_response(
+            {'status': 'error', 'message': 'Could not update attendance. Some staff are on approved leave.', 'color': 'orange'},
+            safe=False
+        )
+
+    if blocked_staff:
+        blocked_preview = ', '.join(blocked_staff[:3])
+        extra_text = f' (blocked: {blocked_preview}{"..." if len(blocked_staff) > 3 else ""})'
+        return _api_response(
+            {'status': 'success',
+             'message': f'Updated {updated_count} attendance record(s). {len(blocked_staff)} skipped due to approved leave{extra_text}.',
+             'color': 'orange'},
+            safe=False
+        )
+
+    return _api_response(
+        {'status': 'success', 'message': f'Updated {updated_count} attendance record(s) successfully.', 'color': 'success'},
+        safe=False
+    )
 
 
 class StaffAttendanceHistoryByDateRangeJson(BaseDatatableView):
@@ -4162,13 +4339,22 @@ class ParentsListJson(BaseDatatableView):
             students = getattr(item, 'active_students', [])
             student_html = []
             for s in students:
+                student_name = escape(s.name or 'N/A')
+                roll_no = escape(str(s.roll) if s.roll is not None else 'N/A')
+                class_name = escape(s.standardID.name if s.standardID else 'N/A')
+                section = ''
+                if s.standardID and s.standardID.hasSection == "Yes" and s.standardID.section:
+                    section = f"-{escape(s.standardID.section)}"
                 student_html.append(f'''
-                    <a class="ui blue image label">
-                    <img src="{_safe_image_url(s.photo)}">
-                    {s.name}
-                    <div class="detail">Roll: {s.roll} Class: {s.standardID.name if s.standardID else 'N/A'} { "-"+s.standardID.section if s.standardID and s.standardID.hasSection == "Yes" else ''}</div>
-                    </a>
+                    <div class="parent-student-chip">
+                        <img src="{_safe_image_url(s.photo)}" alt="{student_name}">
+                        <div class="parent-student-meta">
+                            <div class="student-name">{student_name}</div>
+                            <div class="student-sub">Roll: {roll_no} | Class: {class_name}{section}</div>
+                        </div>
+                    </div>
                     ''')
+            students_markup = ''.join(student_html) if student_html else '<span class="ui grey text">N/A</span>'
 
             json_data.append([
                 escape(item.fatherName),
@@ -4178,7 +4364,7 @@ class ParentsListJson(BaseDatatableView):
                 escape(item.guardianName),
                 escape(item.guardianPhone if item.guardianPhone else 'N/A'),
                 escape(item.totalFamilyMembers if item.totalFamilyMembers else '1'),
-                ''.join(student_html),
+                f'<div class="parent-students-wrap">{students_markup}</div>',
                 escape(item.datetime.strftime('%d-%m-%Y %I:%M %p')),
                 action,
 

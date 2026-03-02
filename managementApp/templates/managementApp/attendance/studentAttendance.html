@@ -27,6 +27,49 @@
         input[type=search] {
             width: 100px !important;
         }
+
+        .bulk-attendance-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            margin: 0.35rem 0 0.45rem;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 767px) {
+            .bulk-attendance-actions {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.45rem;
+                justify-content: stretch;
+                width: 100%;
+                margin-top: 0.2rem;
+            }
+
+            .bulk-attendance-actions .ui.button {
+                width: 100%;
+                margin: 0 !important;
+                min-height: 34px;
+                padding: 0.58em 0.65em !important;
+                font-size: 0.78rem !important;
+                line-height: 1.1 !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 0.32rem;
+                white-space: nowrap;
+            }
+
+            .bulk-attendance-actions .bulk-save-all-btn {
+                grid-column: 1 / -1;
+            }
+
+            #classFormDiv .field button.ui.button,
+            #subjectFormDiv .field button.ui.button {
+                width: 100%;
+                min-height: 34px;
+            }
+        }
     </style>
 
     <div class="ui left aligned basic  grid">
@@ -137,6 +180,20 @@
 
                 <div class="row" style="padding-left: 5px; padding-right: 5px;display: none;" id="AttendanceTableDiv">
                     <div class="wide">
+                        <div class="bulk-attendance-actions">
+                            <button type="button" class="ui mini basic green button" onclick="markAllAttendance(true)">
+                                <i class="check icon"></i>
+                                Mark All Present
+                            </button>
+                            <button type="button" class="ui mini basic orange button" onclick="markAllAttendance(false)">
+                                <i class="times icon"></i>
+                                Mark All Absent
+                            </button>
+                            <button type="button" class="ui mini blue button bulk-save-all-btn" onclick="showBulkSaveModal()">
+                                <i class="save icon"></i>
+                                Save All
+                            </button>
+                        </div>
 
                         <table class="ui unstackable tiny sortable celled very nowrap very compact table"
                                id="SubjectTable"
@@ -156,6 +213,20 @@
                         </table>
                     </div>
 
+                </div>
+
+                <div class="ui mini modal" id="bulkAttendanceConfirmModal">
+                    <div class="header">Confirm Bulk Attendance Save</div>
+                    <div class="content">
+                        <p id="bulkAttendanceConfirmText">Are you sure you want to save attendance for all visible students?</p>
+                    </div>
+                    <div class="actions">
+                        <div class="ui cancel button">Cancel</div>
+                        <button type="button" class="ui right labeled icon green button" onclick="submitBulkAttendance()">
+                            Confirm
+                            <i class="check icon"></i>
+                        </button>
+                    </div>
                 </div>
 
             </div>
@@ -413,6 +484,74 @@
 
 
 
+        }
+
+        function collectVisibleAttendanceEntries() {
+            const entries = [];
+            $('input[id^="isPresent"]').each(function () {
+                const id = String($(this).attr('id')).replace('isPresent', '');
+                if (!id) return;
+                entries.push({
+                    id: Number(id),
+                    isPresent: $(this).prop('checked'),
+                    reason: ($('#reason' + id).val() || '').trim()
+                });
+            });
+            return entries;
+        }
+
+        function markAllAttendance(isPresent) {
+            $('input[id^="isPresent"]').each(function () {
+                $(this).prop('checked', isPresent);
+            });
+            if (isPresent) {
+                $('input[id^="reason"]').val('');
+            }
+        }
+
+        function showBulkSaveModal() {
+            const entries = collectVisibleAttendanceEntries();
+            if (!entries.length) {
+                addErrorNotification('No attendance rows available to save.');
+                return;
+            }
+            $('#bulkAttendanceConfirmText').text('Save attendance for ' + entries.length + ' student(s)?');
+            $('#bulkAttendanceConfirmModal').modal('show');
+        }
+
+        function submitBulkAttendance() {
+            const entries = collectVisibleAttendanceEntries();
+            if (!entries.length) {
+                $('#bulkAttendanceConfirmModal').modal('hide');
+                addErrorNotification('No attendance rows available to save.');
+                return;
+            }
+
+            const data = new FormData();
+            data.append('entries', JSON.stringify(entries));
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+            $.ajax({
+                type: 'post',
+                url: "{% url 'managementAppAPI:add_student_attendance_bulk_by_class' %}",
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function (response) {
+                    $('#bulkAttendanceConfirmModal').modal('hide');
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        subjectTab.ajax.reload(null, false);
+                    } else {
+                        addErrorNotification(response.message || 'Unable to save bulk attendance.');
+                    }
+                },
+                error: function () {
+                    $('#bulkAttendanceConfirmModal').modal('hide');
+                    addErrorNotification('Unable to save bulk attendance.');
+                }
+            });
         }
 
     </script>

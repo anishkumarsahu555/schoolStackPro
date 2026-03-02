@@ -27,6 +27,35 @@
         input[type=search] {
             width: 100px !important;
         }
+
+        @media (max-width: 767px) {
+            #addForm .fields {
+                display: block !important;
+                margin: 0 0 0.5rem !important;
+            }
+
+            #addForm .fields > .field {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 100% !important;
+                flex: 1 1 100% !important;
+                margin: 0 0 0.5rem !important;
+                padding-top: 0 !important;
+            }
+
+            #addForm .fields > .field.button-row {
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.4rem !important;
+                flex-wrap: nowrap !important;
+            }
+
+            #addForm .fields > .field.button-row .ui.button {
+                width: auto !important;
+                margin: 0 !important;
+                white-space: nowrap !important;
+            }
+        }
     </style>
 
     <div class="ui left aligned basic  grid">
@@ -71,7 +100,7 @@
                             </div>
 
 
-                            <div class="field" style="padding-top: 2.2em;">
+                            <div class="field button-row" style="padding-top: 2.2em;">
                                 <button type="button" id="saveBtn" class="ui mini green button saveBtn"
                                         onclick="addData()">
                                     <i class="icon plus square"></i>

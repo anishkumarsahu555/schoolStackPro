@@ -41,6 +41,29 @@
             .id-actions-row {
                 justify-content: flex-start;
             }
+
+            #idCardTableFilterForm .fields {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+
+            #idCardTableFilterForm .fields > .field.filter-half {
+                flex: 1 1 calc(50% - 0.25rem) !important;
+                min-width: calc(50% - 0.25rem) !important;
+                margin: 0 !important;
+            }
+
+            #idCardTableFilterForm .fields > .field.filter-actions {
+                flex: 1 1 100% !important;
+                min-width: 100% !important;
+                margin: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 0.4rem !important;
+                flex-wrap: nowrap !important;
+                padding-top: 0 !important;
+            }
         }
     </style>
 
@@ -117,15 +140,15 @@
 
             <div class="row" style="padding-left: 5px; padding-right: 5px">
                 <div class="wide">
-                    <div class="ui tiny form" style="margin-bottom: 0.65rem;">
+                    <div class="ui tiny form" id="idCardTableFilterForm" style="margin-bottom: 0.65rem;">
                         <div class="fields">
-                            <div class="field">
+                            <div class="field filter-half">
                                 <label>Filter Class</label>
                                 <select class="ui search dropdown" id="filter_class">
                                     <option value="">All Classes</option>
                                 </select>
                             </div>
-                            <div class="field">
+                            <div class="field filter-half">
                                 <label>Filter Action</label>
                                 <select class="ui search dropdown" id="filter_action">
                                     <option value="">All Actions</option>
@@ -134,18 +157,14 @@
                                     <option value="reissue">Re-Issue</option>
                                 </select>
                             </div>
-                            <div class="field">
-                                <label>Filter Edited By</label>
-                                <input type="text" id="filter_editor" placeholder="Type editor name">
-                            </div>
-                            <div class="field" style="padding-top: 2em;">
-                                <button type="button" class="ui mini button" onclick="applyDataTableFilters()">
+                            <div class="field filter-actions" style="padding-top: 2em;">
+                                <button type="button" class="ui mini blue button filter-apply-btn" onclick="applyDataTableFilters()">
                                     <i class="filter icon"></i>
-                                    Apply Filter
+                                    Apply
                                 </button>
-                                <button type="button" class="ui mini red button" onclick="clearDataTableFilters()">
-                                    <i class="times icon"></i>
-                                    Clear Filter
+                                <button type="button" class="ui mini basic button filter-clear-btn" onclick="clearDataTableFilters()">
+                                    <i class="undo icon"></i>
+                                    Reset
                                 </button>
                             </div>
                         </div>
@@ -217,11 +236,6 @@
             $('#valid_till').on('input', function () { clearFieldError('valid_till'); });
             $('#filter_class').on('change', function () { applyDataTableFilters(); });
             $('#filter_action').on('change', function () { applyDataTableFilters(); });
-            $('#filter_editor').on('input', function () {
-                if ($(this).val().length >= 2 || $(this).val().length === 0) {
-                    applyDataTableFilters();
-                }
-            });
             $('#remark').on('input', function () {
                 if ($(this).val().length > 250) {
                     $(this).val($(this).val().slice(0, 250));
@@ -265,7 +279,6 @@
                         d.standard = $('#filter_class').val() || '';
                         d.student = $('#student').val() || '';
                         d.action_filter = $('#filter_action').val() || '';
-                        d.edited_by_filter = $('#filter_editor').val() || '';
                     }
                 }
             });
@@ -467,8 +480,6 @@
             $('#student').dropdown('clear');
             $('#action_type').dropdown('set selected', 'print');
             $('#valid_tillCal').calendar('set date', new Date(2026, 11, 31));
-            clearDataTableFilters();
-            trackerTab.ajax.reload();
         }
 
         function applyDataTableFilters() {
@@ -478,7 +489,6 @@
         function clearDataTableFilters() {
             $('#filter_class').dropdown('clear');
             $('#filter_action').dropdown('clear');
-            $('#filter_editor').val('');
             trackerTab.ajax.reload();
         }
     </script>

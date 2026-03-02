@@ -12,6 +12,29 @@
             display: none;
         }
 
+        @media (max-width: 767px) {
+            #addForm .mobile-roll-row,
+            #EditForm .mobile-roll-row {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+
+            #addForm .mobile-roll-row .roll-pair-field,
+            #EditForm .mobile-roll-row .roll-pair-field {
+                flex: 1 1 calc(50% - 0.25rem) !important;
+                min-width: calc(50% - 0.25rem) !important;
+                margin: 0 !important;
+            }
+
+            #addForm .mobile-roll-row .mobile-full-after-roll,
+            #EditForm .mobile-roll-row .mobile-full-after-roll {
+                flex: 1 1 100% !important;
+                min-width: 100% !important;
+                margin: 0 !important;
+            }
+        }
+
         #unassignTeacherBtn i.icon {
             color: #db2828 !important;
             opacity: 1 !important;
@@ -104,20 +127,20 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="four fields">
-                                    <div class="field required">
+                                <div class="four fields mobile-roll-row">
+                                    <div class="field required roll-pair-field">
                                         <label>Start Roll</label>
                                         <input type="number" name="startRoll0" id="startRoll0" placeholder="Start Roll">
                                     </div>
-                                    <div class="field required">
+                                    <div class="field required roll-pair-field">
                                         <label>End Roll</label>
                                         <input type="number" name="endRoll0" id="endRoll0" placeholder="End Roll">
                                     </div>
-                                    <div class="field required showSectionDiv">
+                                    <div class="field required showSectionDiv mobile-full-after-roll">
                                         <label>Section</label>
                                         <input type="text" name="section" id="section0" placeholder="Section">
                                     </div>
-                                     <div class="field"> </div>
+                                     <div class="field mobile-full-after-roll"> </div>
 
 
 
@@ -202,20 +225,20 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div class="four fields">
-                                    <div class="field required">
+                                <div class="four fields mobile-roll-row">
+                                    <div class="field required roll-pair-field">
                                         <label>Start Roll</label>
                                         <input type="number" name="startRoll0Edit" id="startRoll0Edit" placeholder="Start Roll">
                                     </div>
-                                    <div class="field required">
+                                    <div class="field required roll-pair-field">
                                         <label>End Roll</label>
                                         <input type="number" name="endRoll0Edit" id="endRoll0Edit" placeholder="End Roll">
                                     </div>
-                                    <div class="field required" style="display: none" id="sectionDiveEdit">
+                                    <div class="field required mobile-full-after-roll" style="display: none" id="sectionDiveEdit">
                                         <label>Section</label>
                                         <input type="text" name="sectionEdit" id="section0Edit" placeholder="Section">
                                     </div>
-                                     <div class="field"> </div>
+                                     <div class="field mobile-full-after-roll"> </div>
 
 
 
