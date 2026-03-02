@@ -1,0 +1,475 @@
+{% extends 'teacherApp/index.html' %}
+
+{% block title %}
+    <title>My Attendance</title>
+{% endblock %}
+
+{% block body %}
+    <style>
+        .month-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: .6rem;
+            flex-wrap: wrap;
+            margin-bottom: .75rem;
+        }
+
+        .month-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--dm-text, #1f2f43);
+        }
+
+        .att-summary {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: .7rem;
+            margin-bottom: .75rem;
+        }
+
+        .att-card {
+            border: 1px solid var(--dm-border, #d8e2f0);
+            border-radius: 12px;
+            background: var(--dm-card-bg, #fff);
+            padding: .7rem .8rem;
+            box-shadow: 0 6px 14px rgba(29, 48, 77, .08);
+        }
+
+        .att-label {
+            font-size: .74rem;
+            text-transform: uppercase;
+            color: var(--dm-muted, #5f6d7d);
+            margin-bottom: .22rem;
+            letter-spacing: .3px;
+        }
+
+        .att-value {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--dm-text, #1f2f43);
+        }
+
+        .att-grid {
+            display: grid;
+            gap: .6rem;
+        }
+
+        .calendar-month {
+            border: 1px solid var(--dm-border, #d8e2f0);
+            border-radius: 14px;
+            background: var(--dm-card-bg, #fff);
+            box-shadow: 0 8px 20px rgba(29, 48, 77, .08);
+            overflow: hidden;
+            margin-bottom: .8rem;
+        }
+
+        .calendar-month-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: .4rem;
+            padding: .65rem .8rem;
+            border-bottom: 1px solid var(--dm-border, #d8e2f0);
+        }
+
+        .calendar-legend {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            font-size: .74rem;
+            color: var(--dm-muted, #5f6d7d);
+        }
+
+        .calendar-legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .calendar-legend-dot.present { background: #1f8a4f; }
+        .calendar-legend-dot.absent { background: #b32929; }
+        .calendar-legend-dot.leave { background: #916315; }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+        }
+
+        .calendar-weekday {
+            padding: .4rem .3rem;
+            text-align: center;
+            font-size: .74rem;
+            color: var(--dm-muted, #5f6d7d);
+            border-bottom: 1px solid var(--dm-border, #d8e2f0);
+            font-weight: 700;
+        }
+
+        .calendar-day {
+            min-height: 76px;
+            padding: .28rem;
+            border-right: 1px solid var(--dm-border, #d8e2f0);
+            border-bottom: 1px solid var(--dm-border, #d8e2f0);
+            display: flex;
+            flex-direction: column;
+            gap: .2rem;
+            background: transparent;
+        }
+
+        .calendar-day:nth-child(7n) { border-right: none; }
+        .calendar-day.outside { opacity: .42; }
+
+        .calendar-day-num {
+            font-size: .76rem;
+            color: var(--dm-text, #1f2f43);
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .calendar-status {
+            font-size: .66rem;
+            border-radius: 999px;
+            padding: .1rem .35rem;
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid transparent;
+            font-weight: 700;
+            width: fit-content;
+        }
+
+        .calendar-status.present {
+            background: rgba(44, 150, 90, .14);
+            color: #1f8a4f;
+            border-color: rgba(44, 150, 90, .28);
+        }
+
+        .calendar-status.absent {
+            background: rgba(234, 91, 91, .14);
+            color: #b32929;
+            border-color: rgba(234, 91, 91, .3);
+        }
+
+        .calendar-status.leave {
+            background: rgba(242, 189, 92, .18);
+            color: #916315;
+            border-color: rgba(242, 189, 92, .34);
+        }
+
+        .calendar-status.none {
+            background: rgba(140, 154, 177, .12);
+            color: #5d6c84;
+            border-color: rgba(140, 154, 177, .25);
+        }
+
+        .att-row {
+            border: 1px solid var(--dm-border, #d8e2f0);
+            border-radius: 12px;
+            background: var(--dm-card-bg, #fff);
+            padding: .65rem .75rem;
+        }
+
+        .att-row-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: .4rem;
+            margin-bottom: .35rem;
+        }
+
+        .att-date {
+            font-weight: 700;
+            color: var(--dm-text, #1f2f43);
+        }
+
+        .att-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: .16rem .55rem;
+            border-radius: 999px;
+            font-size: .72rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .att-chip.present {
+            background: rgba(44, 150, 90, .14);
+            color: #1f8a4f;
+            border-color: rgba(44, 150, 90, .28);
+        }
+
+        .att-chip.absent {
+            background: rgba(234, 91, 91, .14);
+            color: #b32929;
+            border-color: rgba(234, 91, 91, .3);
+        }
+
+        .att-chip.leave {
+            background: rgba(242, 189, 92, .18);
+            color: #916315;
+            border-color: rgba(242, 189, 92, .34);
+        }
+
+        .att-reason {
+            font-size: .82rem;
+            color: var(--dm-muted, #5f6d7d);
+        }
+
+        .att-empty {
+            border: 1px dashed var(--dm-border, #d8e2f0);
+            border-radius: 12px;
+            text-align: center;
+            padding: 1rem;
+            color: var(--dm-muted, #5f6d7d);
+            background: var(--dm-card-bg, #fff);
+        }
+
+        html[data-theme="dark"] .att-card,
+        html[data-theme="dark"] .att-row,
+        html[data-theme="dark"] .att-empty {
+            background: #111a2b !important;
+            border-color: #2a3856 !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, .32) !important;
+        }
+
+        html[data-theme="dark"] .calendar-month {
+            background: #111a2b !important;
+            border-color: #2a3856 !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, .32) !important;
+        }
+
+        html[data-theme="dark"] .calendar-month-head,
+        html[data-theme="dark"] .calendar-weekday,
+        html[data-theme="dark"] .calendar-day {
+            border-color: #2a3856 !important;
+        }
+
+        html[data-theme="dark"] .att-value,
+        html[data-theme="dark"] .att-date,
+        html[data-theme="dark"] .month-title,
+        html[data-theme="dark"] .calendar-day-num {
+            color: #e6eefc !important;
+        }
+
+        html[data-theme="dark"] .att-label,
+        html[data-theme="dark"] .att-reason,
+        html[data-theme="dark"] .att-empty,
+        html[data-theme="dark"] .calendar-weekday,
+        html[data-theme="dark"] .calendar-legend {
+            color: #9fb1cd !important;
+        }
+
+        @media (max-width: 980px) {
+            .att-summary {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    </style>
+
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div class="item active">My Attendance History</div>
+            </div>
+
+            <div class="month-toolbar">
+                <div>
+                    <button type="button" class="ui mini button" id="prevMonthBtn"><i class="chevron left icon"></i>Prev</button>
+                    <button type="button" class="ui mini button" id="todayMonthBtn"><i class="dot circle outline icon"></i>Current</button>
+                    <button type="button" class="ui mini button" id="nextMonthBtn">Next<i class="chevron right icon"></i></button>
+                </div>
+                <h4 class="month-title" id="monthTitle">Month</h4>
+            </div>
+
+            <div class="att-summary">
+                <div class="att-card"><div class="att-label">Present</div><div class="att-value" id="presentCount">0</div></div>
+                <div class="att-card"><div class="att-label">Absent</div><div class="att-value" id="absentCount">0</div></div>
+                <div class="att-card"><div class="att-label">Leave</div><div class="att-value" id="leaveCount">0</div></div>
+                <div class="att-card"><div class="att-label">Working Days</div><div class="att-value" id="workingCount">0</div></div>
+                <div class="att-card"><div class="att-label">Percentage</div><div class="att-value" id="percentageValue">0%</div></div>
+            </div>
+
+            <div class="calendar-month">
+                <div class="calendar-month-head">
+                    <h4 class="month-title" id="calendarMonthTitle">Month</h4>
+                    <div class="calendar-legend">
+                        <span class="calendar-legend-dot present"></span>Present
+                        <span class="calendar-legend-dot absent"></span>Absent
+                        <span class="calendar-legend-dot leave"></span>Leave
+                    </div>
+                </div>
+                <div class="calendar-grid" id="calendarGridWrap"></div>
+            </div>
+
+            <div class="att-grid" id="attendanceRows"></div>
+            <div class="att-empty" id="attendanceEmpty" style="display:none;">No attendance data found for selected range.</div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let selectedMonthDate = new Date();
+
+        function formatDate(date) {
+            if (!date) return '';
+            const d = String(date.getDate()).padStart(2, '0');
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const y = date.getFullYear();
+            return d + '/' + m + '/' + y;
+        }
+
+        function safeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function firstDayOfMonth(dateObj) {
+            return new Date(dateObj.getFullYear(), dateObj.getMonth(), 1);
+        }
+
+        function lastDayOfMonth(dateObj) {
+            return new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 0);
+        }
+
+        function getMonthTitle(dateObj) {
+            return dateObj.toLocaleString(undefined, {month: 'long', year: 'numeric'});
+        }
+
+        function formatDateKey(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + d;
+        }
+
+        function getMonthCalendarCells(year, monthIndex) {
+            const first = new Date(year, monthIndex, 1);
+            const firstWeekDay = first.getDay();
+            const start = new Date(year, monthIndex, 1 - firstWeekDay);
+            const cells = [];
+            for (let i = 0; i < 42; i++) {
+                const d = new Date(start);
+                d.setDate(start.getDate() + i);
+                cells.push(d);
+            }
+            return cells;
+        }
+
+        function renderMonthCalendar(rows) {
+            const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const year = selectedMonthDate.getFullYear();
+            const monthIndex = selectedMonthDate.getMonth();
+            const cells = getMonthCalendarCells(year, monthIndex);
+
+            const statusMap = {};
+            rows.forEach(function (row) {
+                const parts = String(row.date || '').split('-');
+                if (parts.length !== 3) return;
+                const dateObj = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+                statusMap[formatDateKey(dateObj)] = row;
+            });
+
+            let html = '';
+            weekdayLabels.forEach(function (w) {
+                html += '<div class="calendar-weekday">' + w + '</div>';
+            });
+            cells.forEach(function (d) {
+                const inMonth = d.getMonth() === monthIndex;
+                const key = formatDateKey(d);
+                const entry = statusMap[key];
+                let statusClass = 'none';
+                let statusText = 'No Data';
+                let titleText = '';
+                if (entry) {
+                    statusClass = entry.status || 'absent';
+                    statusText = statusClass === 'present' ? 'Present' : (statusClass === 'leave' ? 'Leave' : 'Absent');
+                    if (entry.reason) titleText = ' title="' + safeHtml(entry.reason) + '"';
+                }
+                html += '<div class="calendar-day ' + (inMonth ? '' : 'outside') + '">';
+                html += '<div class="calendar-day-num">' + d.getDate() + '</div>';
+                if (inMonth) {
+                    html += '<span class="calendar-status ' + statusClass + '"' + titleText + '>' + statusText + '</span>';
+                }
+                html += '</div>';
+            });
+            $('#calendarGridWrap').html(html);
+        }
+
+        function renderAttendance(data) {
+            $('#presentCount').text(data.present || 0);
+            $('#absentCount').text(data.absent || 0);
+            $('#leaveCount').text(data.leave || 0);
+            $('#workingCount').text(data.working || 0);
+            $('#percentageValue').text((data.percentage || 0) + '%');
+
+            const rows = Array.isArray(data.rows) ? data.rows : [];
+            const wrap = $('#attendanceRows');
+            wrap.html('');
+            renderMonthCalendar(rows);
+            if (!rows.length) {
+                $('#attendanceEmpty').show();
+                return;
+            }
+            $('#attendanceEmpty').hide();
+
+            rows.forEach(function (row) {
+                const status = row.status || 'absent';
+                const chipLabel = status === 'present' ? 'Present' : (status === 'leave' ? 'Leave' : 'Absent');
+                const html = '' +
+                    '<div class="att-row">' +
+                    '<div class="att-row-top">' +
+                    '<div class="att-date">' + safeHtml(row.date) + '</div>' +
+                    '<span class="att-chip ' + safeHtml(status) + '">' + chipLabel + '</span>' +
+                    '</div>' +
+                    '<div class="att-reason"><b>Reason:</b> ' + safeHtml(row.reason || 'N/A') + '</div>' +
+                    '</div>';
+                wrap.append(html);
+            });
+        }
+
+        function fetchAttendance() {
+            const startDate = formatDate(firstDayOfMonth(selectedMonthDate));
+            const endDate = formatDate(lastDayOfMonth(selectedMonthDate));
+            $('#monthTitle').text(getMonthTitle(selectedMonthDate));
+            $('#calendarMonthTitle').text(getMonthTitle(selectedMonthDate));
+            $.ajax({
+                type: 'get',
+                url: "{% url 'teacherAppAPI:teacher_self_attendance_history_api' %}",
+                data: {startDate: startDate, endDate: endDate},
+                success: function (response) {
+                    if (!response.success) {
+                        addErrorNotification(response.message || 'Unable to load attendance');
+                        return;
+                    }
+                    renderAttendance(response.data || {});
+                },
+                error: function () {
+                    addErrorNotification('Unable to load attendance');
+                }
+            });
+        }
+
+        $(function () {
+            $('#prevMonthBtn').on('click', function () {
+                selectedMonthDate = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() - 1, 1);
+                fetchAttendance();
+            });
+            $('#nextMonthBtn').on('click', function () {
+                selectedMonthDate = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() + 1, 1);
+                fetchAttendance();
+            });
+            $('#todayMonthBtn').on('click', function () {
+                selectedMonthDate = new Date();
+                fetchAttendance();
+            });
+
+            fetchAttendance();
+        });
+    </script>
+{% endblock %}

@@ -146,6 +146,16 @@
         <i class="calendar plus outline icon"></i>
         <span>Manage Event</span>
     </a>
+
+    <div class="nav-section">Leave</div>
+    <a class="nav-item {% if request.resolver_match.url_name == 'manage_leave_types' %}active{% endif %}" href="{% url 'managementApp:manage_leave_types' %}">
+        <i class="tags icon"></i>
+        <span>Manage Leave Types</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'manage_leave_applications' %}active{% endif %}" href="{% url 'managementApp:manage_leave_applications' %}">
+        <i class="calendar check outline icon"></i>
+        <span>Leave Applications</span>
+    </a>
     {% comment %} <a class="nav-item" href="#">
         <i class="list alternate outline icon"></i>
         <span>Events List</span>

@@ -10,6 +10,15 @@ from .views_api import (
     get_assigned_student_list_by_class_api,
     TeacherStudentFeeDetailsByClassJson,
     TeacherStudentFeeDetailsByStudentJson,
+    teacher_self_attendance_history_api,
+)
+from .leave_views_api import (
+    TeacherLeaveApplicationListJson,
+    get_teacher_leave_type_list_api,
+    teacher_apply_leave_api,
+    teacher_cancel_leave_api,
+    teacher_update_leave_api,
+    get_teacher_leave_detail_api,
 )
 
 urlpatterns = [
@@ -22,4 +31,11 @@ urlpatterns = [
     path('TeacherStudentFeeDetailsByClassJson', TeacherStudentFeeDetailsByClassJson.as_view(), name='TeacherStudentFeeDetailsByClassJson'),
     path('TeacherStudentFeeDetailsByStudentJson', TeacherStudentFeeDetailsByStudentJson.as_view(), name='TeacherStudentFeeDetailsByStudentJson'),
     path('TeacherEventListJson', TeacherEventListJson.as_view(), name='TeacherEventListJson'),
+    path('teacher_self_attendance_history_api', teacher_self_attendance_history_api, name='teacher_self_attendance_history_api'),
+    path('TeacherLeaveApplicationListJson', TeacherLeaveApplicationListJson.as_view(), name='TeacherLeaveApplicationListJson'),
+    path('get_teacher_leave_type_list_api', get_teacher_leave_type_list_api, name='get_teacher_leave_type_list_api'),
+    path('teacher_apply_leave_api', teacher_apply_leave_api, name='teacher_apply_leave_api'),
+    path('teacher_update_leave_api', teacher_update_leave_api, name='teacher_update_leave_api'),
+    path('teacher_cancel_leave_api', teacher_cancel_leave_api, name='teacher_cancel_leave_api'),
+    path('get_teacher_leave_detail_api', get_teacher_leave_detail_api, name='get_teacher_leave_detail_api'),
 ]

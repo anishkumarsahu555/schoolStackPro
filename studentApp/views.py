@@ -312,6 +312,13 @@ def student_events(request):
 
 @login_required
 @check_groups('Student')
+def student_leave_applications(request):
+    _bootstrap_student_context(request)
+    return render(request, 'studentApp/leave_applications.html', {})
+
+
+@login_required
+@check_groups('Student')
 def student_my_details(request):
     student, _ = _bootstrap_student_context(request)
     if not student:

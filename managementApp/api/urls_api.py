@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views_api import *
+from .leave_views_api import *
 
 urlpatterns = [
     # api
@@ -126,6 +127,16 @@ urlpatterns = [
 
     #parent
     path('ParentsListJson', ParentsListJson.as_view(), name='ParentsListJson'),
+
+    # leave types and applications
+    path('get_leave_type_list_api', get_leave_type_list_api, name='get_leave_type_list_api'),
+    path('LeaveTypeListJson', LeaveTypeListJson.as_view(), name='LeaveTypeListJson'),
+    path('add_leave_type_api', add_leave_type_api, name='add_leave_type_api'),
+    path('get_leave_type_detail', get_leave_type_detail, name='get_leave_type_detail'),
+    path('update_leave_type_api', update_leave_type_api, name='update_leave_type_api'),
+    path('delete_leave_type', delete_leave_type, name='delete_leave_type'),
+    path('LeaveApplicationListJson', LeaveApplicationListJson.as_view(), name='LeaveApplicationListJson'),
+    path('review_leave_application_api', review_leave_application_api, name='review_leave_application_api'),
 
 
 ]

@@ -77,6 +77,10 @@
             background: #b32929;
         }
 
+        .calendar-legend-dot.leave {
+            background: #916315;
+        }
+
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -144,6 +148,12 @@
             border-color: rgba(234, 91, 91, 0.3);
         }
 
+        .calendar-status.leave {
+            background: rgba(242, 189, 92, 0.18);
+            color: #916315;
+            border-color: rgba(242, 189, 92, 0.34);
+        }
+
         .calendar-status.none {
             background: rgba(140, 154, 177, 0.12);
             color: #5d6c84;
@@ -194,6 +204,12 @@
             background: rgba(234, 91, 91, 0.14);
             color: #b32929;
             border-color: rgba(234, 91, 91, 0.3);
+        }
+
+        .attendance-chip.leave {
+            background: rgba(242, 189, 92, 0.18);
+            color: #916315;
+            border-color: rgba(242, 189, 92, 0.34);
         }
 
         .attendance-header-row {
@@ -509,7 +525,7 @@
                 html += '<div class="calendar-month">';
                 html += '<div class="calendar-month-head">';
                 html += '<h4 class="calendar-month-title">' + safeHtml(monthLabelByKey(mk)) + '</h4>';
-                html += '<div class="calendar-legend"><span class="calendar-legend-dot present"></span>Present <span class="calendar-legend-dot absent"></span>Absent</div>';
+                html += '<div class="calendar-legend"><span class="calendar-legend-dot present"></span>Present <span class="calendar-legend-dot absent"></span>Absent <span class="calendar-legend-dot leave"></span>Leave</div>';
                 html += '</div>';
                 html += '<div class="calendar-grid">';
 
@@ -521,8 +537,9 @@
                     const key = formatDateKey(d);
                     const inMonth = d.getMonth() === monthIndex;
                     const entry = statusByDate[key];
-                    const statusClass = entry ? (entry.present ? 'present' : 'absent') : 'none';
-                    const statusText = entry ? (entry.present ? 'Present' : 'Absent') : 'No Class';
+                    const isLeave = entry && !entry.present && String(entry.reason || '').toLowerCase().indexOf('approved leave') === 0;
+                    const statusClass = entry ? (entry.present ? 'present' : (isLeave ? 'leave' : 'absent')) : 'none';
+                    const statusText = entry ? (entry.present ? 'Present' : (isLeave ? 'Leave' : 'Absent')) : 'No Class';
                     const titleText = entry && entry.reason ? (' title="' + safeHtml(entry.reason) + '"') : '';
                     html += '<div class="calendar-day ' + (inMonth ? '' : 'outside') + '">';
                     html += '<div class="calendar-day-num">' + d.getDate() + '</div>';
@@ -569,8 +586,9 @@
                     renderAttendanceCalendar(rows);
                     const cards = rows.map(function (row) {
                         const isPresent = (row[1] || '').toLowerCase() === 'yes';
-                        const chipClass = isPresent ? 'present' : 'absent';
-                        const chipText = isPresent ? 'Present' : 'Absent';
+                        const isLeave = !isPresent && String(row[3] || '').toLowerCase().indexOf('approved leave') === 0;
+                        const chipClass = isPresent ? 'present' : (isLeave ? 'leave' : 'absent');
+                        const chipText = isPresent ? 'Present' : (isLeave ? 'Leave' : 'Absent');
                         return '' +
                             '<div class="attendance-card">' +
                             '<div class="attendance-header-row">' +
@@ -611,6 +629,7 @@
                             '<div><b>Total Classes:</b> ' + safeHtml(row.total) + '</div>' +
                             '<div><b>Present:</b> ' + safeHtml(row.present) + '</div>' +
                             '<div><b>Absent:</b> ' + safeHtml(row.absent) + '</div>' +
+                            '<div><b>Leave:</b> ' + safeHtml(row.leave || 0) + '</div>' +
                             '</div>' +
                             '</div>';
                     });
@@ -643,6 +662,7 @@
                             '<div><b>Total Classes:</b> ' + safeHtml(row.total) + '</div>' +
                             '<div><b>Present:</b> ' + safeHtml(row.present) + '</div>' +
                             '<div><b>Absent:</b> ' + safeHtml(row.absent) + '</div>' +
+                            '<div><b>Leave:</b> ' + safeHtml(row.leave || 0) + '</div>' +
                             '</div>' +
                             '</div>';
                     });

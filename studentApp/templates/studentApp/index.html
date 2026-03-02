@@ -62,5 +62,12 @@
             <i class="calendar alternate outline icon"></i>
             <span>Events</span>
         </a>
+
+        <div class="nav-section">Leave</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'student_leave_applications' %}active{% endif %}"
+           href="{% url 'studentApp:student_leave_applications' %}">
+            <i class="calendar check outline icon"></i>
+            <span>My Leave Applications</span>
+        </a>
     </div>
 {% endblock %}

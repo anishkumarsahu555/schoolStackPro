@@ -1,0 +1,153 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Leave Applications</title>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            <div class="ui pointing secondary menu">
+                <div class="item active">Leave Applications</div>
+            </div>
+
+            <div class="ui tiny form segment">
+                <div class="fields">
+                    <div class="three wide field">
+                        <label>Role</label>
+                        <select class="ui dropdown" id="roleFilter">
+                            <option value="">All</option>
+                            <option value="teacher">Teacher</option>
+                            <option value="student">Student</option>
+                        </select>
+                    </div>
+                    <div class="three wide field">
+                        <label>Status</label>
+                        <select class="ui dropdown" id="statusFilter">
+                            <option value="">All</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="two wide field" style="padding-top:1.8rem;">
+                        <button class="ui mini blue button" type="button" onclick="reloadLeaveTable()"><i class="search icon"></i>Filter</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" style="padding-left: 5px; padding-right: 5px;">
+                <table class="ui unstackable tiny sortable celled nowrap very compact table" id="leaveAppTable" style="width:100%;">
+                    <thead>
+                    <tr>
+                        <th>Role</th>
+                        <th>Applicant</th>
+                        <th>Leave Type</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Total Days</th>
+                        <th>Status</th>
+                        <th>Attachment</th>
+                        <th>Reason</th>
+                        <th>Applied On</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui tiny modal" id="reviewLeaveModal">
+        <div class="header">Review Leave Application</div>
+        <div class="content">
+            <div class="ui tiny form">
+                <div class="field">
+                    <label>Remark</label>
+                    <textarea id="reviewRemark" rows="3" placeholder="Optional remark"></textarea>
+                </div>
+            </div>
+            <input type="hidden" id="reviewLeaveId">
+            <input type="hidden" id="reviewLeaveStatus">
+        </div>
+        <div class="actions">
+            <div class="ui cancel button">Cancel</div>
+            <button class="ui green button" type="button" onclick="submitReviewLeave()">Submit</button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let leaveAppTable;
+
+        $(function () {
+            $('.ui.dropdown').dropdown();
+            leaveAppTable = $('#leaveAppTable').DataTable({
+                scrollX: true,
+                stateSave: true,
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "{% url 'managementAppAPI:LeaveApplicationListJson' %}",
+                    data: function (d) {
+                        d.role = $('#roleFilter').val();
+                        d.status = $('#statusFilter').val();
+                    }
+                },
+                columnDefs: [
+                    {name: 'applicantRole', targets: 0},
+                    {name: 'applicantName', targets: 1},
+                    {name: 'leaveTypeID__name', targets: 2},
+                    {name: 'startDate', targets: 3},
+                    {name: 'endDate', targets: 4},
+                    {name: 'totalDays', targets: 5},
+                    {name: 'status', targets: 6},
+                    {name: 'attachment', targets: 7, orderable: false},
+                    {name: 'reason', targets: 8, orderable: false},
+                    {name: 'datetime', targets: 9},
+                    {name: 'action', targets: 10, orderable: false}
+                ]
+            });
+        });
+
+        function reloadLeaveTable() {
+            leaveAppTable.ajax.reload();
+        }
+
+        function reviewLeave(id, actionType) {
+            $('#reviewLeaveId').val(id);
+            $('#reviewLeaveStatus').val(actionType);
+            $('#reviewRemark').val('');
+            $('#reviewLeaveModal').modal('show');
+        }
+
+        function submitReviewLeave() {
+            let fd = new FormData();
+            fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            fd.append('id', $('#reviewLeaveId').val());
+            fd.append('status', $('#reviewLeaveStatus').val());
+            fd.append('remark', $('#reviewRemark').val());
+
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:review_leave_application_api' %}",
+                data: fd,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.success) {
+                        addSuccessNotification(res.message, res.color || 'green');
+                        $('#reviewLeaveModal').modal('hide');
+                        leaveAppTable.ajax.reload(null, false);
+                    } else addErrorNotification(res.message, res.color || 'red');
+                },
+                error: function () {
+                    addErrorNotification('Unable to review leave.');
+                }
+            });
+        }
+    </script>
+{% endblock %}

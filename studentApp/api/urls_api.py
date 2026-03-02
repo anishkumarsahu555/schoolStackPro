@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views_api import *
+from .leave_views_api import *
 
 urlpatterns = [
     # api
@@ -14,5 +15,11 @@ urlpatterns = [
     path('StudentAttendanceSubjectWiseSummaryApi', StudentAttendanceSubjectWiseSummaryApi,
          name='StudentAttendanceSubjectWiseSummaryApi'),
     path('StudentFeeDetailsJson', StudentFeeDetailsJson.as_view(), name='StudentFeeDetailsJson'),
+    path('get_student_leave_type_list_api', get_student_leave_type_list_api, name='get_student_leave_type_list_api'),
+    path('StudentLeaveApplicationListJson', StudentLeaveApplicationListJson.as_view(), name='StudentLeaveApplicationListJson'),
+    path('student_apply_leave_api', student_apply_leave_api, name='student_apply_leave_api'),
+    path('student_update_leave_api', student_update_leave_api, name='student_update_leave_api'),
+    path('student_cancel_leave_api', student_cancel_leave_api, name='student_cancel_leave_api'),
+    path('get_student_leave_detail_api', get_student_leave_detail_api, name='get_student_leave_detail_api'),
 
 ]

@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Sum
 from django.http import JsonResponse
@@ -6,7 +8,17 @@ from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
-from managementApp.models import Student, TeacherDetail, AssignSubjectsToTeacher, Event, StudentFee, Standard
+from managementApp.models import (
+    Student,
+    TeacherDetail,
+    AssignSubjectsToTeacher,
+    Event,
+    StudentFee,
+    Standard,
+    TeacherAttendance,
+    LeaveApplication,
+)
+from managementApp.signals import pre_save_with_user
 from utils.conts import MONTHS_LIST
 from utils.custom_decorators import check_groups
 from utils.image_utils import safe_image_url, avatar_image_html
@@ -18,6 +30,19 @@ def _safe_image_url(image_field, fallback_path='images/default_avatar.svg'):
 
 def _avatar_image_html(image_field):
     return avatar_image_html(image_field)
+
+
+def _teacher_daily_status_priority(status):
+    ranking = {'absent': 1, 'leave': 2, 'present': 3}
+    return ranking.get(status, 0)
+
+
+def _teacher_status_from_row(is_present, reason):
+    if is_present:
+        return 'present'
+    if (reason or '').strip().lower().startswith('approved leave'):
+        return 'leave'
+    return 'absent'
 
 
 @method_decorator(login_required, name='dispatch')
@@ -546,3 +571,117 @@ class TeacherStudentFeeDetailsByStudentJson(BaseDatatableView):
                 escape(item.note or ''),
             ])
         return json_data
+
+
+@login_required
+@check_groups('Teaching')
+def teacher_self_attendance_history_api(request):
+    teacher = TeacherDetail.objects.filter(
+        userID_id=request.user.id,
+        isDeleted=False,
+    ).order_by('-datetime').first()
+    if not teacher:
+        return JsonResponse({'success': True, 'data': {
+            'present': 0, 'absent': 0, 'leave': 0, 'working': 0, 'percentage': 0, 'rows': []
+        }}, safe=False)
+
+    current_session_id = request.session.get('current_session', {}).get('Id') or teacher.sessionID_id
+    if not current_session_id:
+        return JsonResponse({'success': True, 'data': {
+            'present': 0, 'absent': 0, 'leave': 0, 'working': 0, 'percentage': 0, 'rows': []
+        }}, safe=False)
+
+    start_raw = (request.GET.get('startDate') or '').strip()
+    end_raw = (request.GET.get('endDate') or '').strip()
+    try:
+        start_date = datetime.strptime(start_raw, '%d/%m/%Y').date() if start_raw else datetime.now().date().replace(day=1)
+        end_date = datetime.strptime(end_raw, '%d/%m/%Y').date() if end_raw else datetime.now().date()
+        if end_date < start_date:
+            return JsonResponse({'success': False, 'message': 'End date cannot be before start date.'}, safe=False)
+    except ValueError:
+        return JsonResponse({'success': False, 'message': 'Invalid date format.'}, safe=False)
+
+    leave_qs = LeaveApplication.objects.select_related('leaveTypeID').filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        applicantRole='teacher',
+        teacherID_id=teacher.id,
+        status='approved',
+        startDate__lte=end_date,
+        endDate__gte=start_date,
+    )
+    for leave in leave_qs:
+        leave_type_name = leave.leaveTypeID.name if leave.leaveTypeID else 'Leave'
+        leave_reason = f'Approved Leave: {leave_type_name}'
+        day = max(start_date, leave.startDate)
+        last_day = min(end_date, leave.endDate)
+        while day <= last_day:
+            exists = TeacherAttendance.objects.filter(
+                isDeleted=False,
+                sessionID_id=current_session_id,
+                teacherID_id=teacher.id,
+                attendanceDate__date=day,
+            ).exists()
+            if not exists:
+                attendance_dt = datetime(day.year, day.month, day.day)
+                instance = TeacherAttendance(
+                    teacherID_id=teacher.id,
+                    attendanceDate=attendance_dt,
+                    isPresent=False,
+                    isDeleted=False,
+                    absentReason=leave_reason,
+                )
+                pre_save_with_user.send(sender=TeacherAttendance, instance=instance, user=request.user.pk)
+            day += timedelta(days=1)
+
+    attendance_rows = TeacherAttendance.objects.filter(
+        isDeleted=False,
+        isHoliday=False,
+        sessionID_id=current_session_id,
+        teacherID_id=teacher.id,
+        attendanceDate__date__gte=start_date,
+        attendanceDate__date__lte=end_date,
+    ).values('attendanceDate', 'isPresent', 'absentReason').order_by('attendanceDate')
+
+    day_map = {}
+    for row in attendance_rows:
+        attendance_dt = row.get('attendanceDate')
+        if not attendance_dt:
+            continue
+        day_key = attendance_dt.date()
+        status = _teacher_status_from_row(row.get('isPresent'), row.get('absentReason'))
+        reason = row.get('absentReason') or ''
+        prev = day_map.get(day_key)
+        if not prev or _teacher_daily_status_priority(status) >= _teacher_daily_status_priority(prev['status']):
+            day_map[day_key] = {'status': status, 'reason': reason}
+
+    present = sum(1 for v in day_map.values() if v['status'] == 'present')
+    leave = sum(1 for v in day_map.values() if v['status'] == 'leave')
+    absent = sum(1 for v in day_map.values() if v['status'] == 'absent')
+    working = present + absent + leave
+    percentage = round((present * 100.0 / working), 2) if working else 0
+
+    data_rows = []
+    for day_key in sorted(day_map.keys()):
+        status = day_map[day_key]['status']
+        reason = day_map[day_key]['reason']
+        data_rows.append({
+            'date': day_key.strftime('%d-%m-%Y'),
+            'present': 'Yes' if status == 'present' else 'No',
+            'absent': 'Yes' if status == 'absent' else 'No',
+            'leave': 'Yes' if status == 'leave' else 'No',
+            'reason': reason or '',
+            'status': status,
+        })
+
+    return JsonResponse({
+        'success': True,
+        'data': {
+            'present': present,
+            'absent': absent,
+            'leave': leave,
+            'working': working,
+            'percentage': percentage,
+            'rows': data_rows,
+        }
+    }, safe=False)

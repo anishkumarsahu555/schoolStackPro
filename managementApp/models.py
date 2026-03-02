@@ -570,3 +570,104 @@ class StudentIdCardRecord(models.Model):
         indexes = [
             models.Index(fields=['sessionID', 'studentID', 'isDeleted', 'datetime'], name='sid_sess_stu_del_idx'),
         ]
+
+
+class LeaveType(models.Model):
+    APPLICABLE_FOR_CHOICES = (
+        ('both', 'Both'),
+        ('teacher', 'Teacher'),
+        ('student', 'Student'),
+    )
+
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    code = models.CharField(max_length=50, blank=True, null=True)
+    applicableFor = models.CharField(max_length=20, choices=APPLICABLE_FOR_CHOICES, default='both')
+    requiresApproval = models.BooleanField(default=True)
+    isActive = models.BooleanField(default=True)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = 'x) Leave Types'
+        indexes = [
+            models.Index(fields=['sessionID', 'isDeleted', 'isActive'], name='lt_sess_del_act_idx'),
+        ]
+
+
+class LeaveApplication(models.Model):
+    ROLE_CHOICES = (
+        ('teacher', 'Teacher'),
+        ('student', 'Student'),
+    )
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('cancelled', 'Cancelled'),
+    )
+
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    leaveTypeID = models.ForeignKey(LeaveType, blank=True, null=True, on_delete=models.SET_NULL)
+    applicantUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL)
+    teacherID = models.ForeignKey(TeacherDetail, blank=True, null=True, on_delete=models.CASCADE)
+    studentID = models.ForeignKey(Student, blank=True, null=True, on_delete=models.CASCADE)
+    applicantRole = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    startDate = models.DateField()
+    endDate = models.DateField()
+    totalDays = models.PositiveIntegerField(default=1)
+    reason = models.TextField(blank=True, null=True)
+    attachment = models.FileField(upload_to=UPLOAD_TO_PATTERNS, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    actionRemark = models.TextField(blank=True, null=True)
+    actionByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='leave_actions')
+    actionOn = models.DateTimeField(blank=True, null=True)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = 'y) Leave Applications'
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(startDate__lte=models.F('endDate')),
+                name='leave_application_start_before_end'
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['sessionID', 'applicantRole', 'status', 'isDeleted'], name='la_sess_role_stat_idx'),
+            models.Index(fields=['sessionID', 'teacherID', 'status', 'isDeleted'], name='la_sess_tchr_stat_idx'),
+            models.Index(fields=['sessionID', 'studentID', 'status', 'isDeleted'], name='la_sess_stu_stat_idx'),
+        ]
+
+
+class LeaveActionLog(models.Model):
+    ACTION_CHOICES = (
+        ('created', 'Created'),
+        ('updated', 'Updated'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('cancelled', 'Cancelled'),
+    )
+
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    leaveID = models.ForeignKey(LeaveApplication, on_delete=models.CASCADE)
+    action = models.CharField(max_length=30, choices=ACTION_CHOICES)
+    remark = models.TextField(blank=True, null=True)
+    actionByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = 'z) Leave Action Logs'
+        indexes = [
+            models.Index(fields=['sessionID', 'leaveID', 'isDeleted', 'datetime'], name='lal_sess_leave_dt_idx'),
+        ]

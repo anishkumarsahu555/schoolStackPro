@@ -96,6 +96,7 @@
                                         <th>EmpCode</th>
                                         <th>Present Count</th>
                                         <th>Absent Count</th>
+                                        <th>Leave Count</th>
                                         <th>Working Days</th>
                                         <th>Percentage (%)</th>
                                     </tr>
@@ -164,6 +165,7 @@
                                         <th>Date</th>
                                         <th>IsPresent</th>
                                         <th>IsAbsent</th>
+                                        <th>IsLeave</th>
                                         <th>Reason</th>
                                     </tr>
                                     </thead>
@@ -287,7 +289,7 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [1, 2, 3, 4, 5, 6, 7]
+                    columns: [1, 2, 3, 4, 5, 6, 7, 8]
                 }
             }
 
@@ -299,8 +301,9 @@
                 {"name": "employeeCode", "targets": 3, "orderable": true},
                 {"name": "PresentCount", "targets": 4, "orderable": false},
                 {"name": "AbsentCount", "targets": 5, "orderable": false},
-                {"name": "total", "targets": 6, "orderable": false},
-                {"name": "action", "targets": 7, "orderable": false}
+                {"name": "LeaveCount", "targets": 6, "orderable": false},
+                {"name": "total", "targets": 7, "orderable": false},
+                {"name": "action", "targets": 8, "orderable": false}
             ],
             aaSorting: [[1, 'asc']],
             "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
@@ -322,7 +325,7 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [0, 1, 2, 3]
+                    columns: [0, 1, 2, 3, 4]
                 }
             }
             ],
@@ -330,7 +333,8 @@
                 {"name": "attendanceDate", "targets": 0, "orderable": true},
                 {"name": "isPresent", "targets": 1, "orderable": true},
                 {"name": "isPresent", "targets": 2, "orderable": true},
-                {"name": "absentReason", "targets": 3, "orderable": true},
+                {"name": "isPresent", "targets": 3, "orderable": true},
+                {"name": "absentReason", "targets": 4, "orderable": true},
             ],
             aaSorting: [[0, 'asc']],
             "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],

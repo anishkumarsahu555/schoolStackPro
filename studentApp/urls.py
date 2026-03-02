@@ -17,5 +17,6 @@ urlpatterns = [
     path('exams/', student_exam_details, name='student_exam_details'),
     path('progress-report-cards/', student_progress_report_cards, name='student_progress_report_cards'),
     path('events/', student_events, name='student_events'),
+    path('leave-applications/', student_leave_applications, name='student_leave_applications'),
 
 ]

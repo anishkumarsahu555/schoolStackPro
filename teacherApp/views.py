@@ -308,6 +308,15 @@ def teacher_student_attendance(request):
 
 @login_required
 @check_groups('Teaching')
+def teacher_attendance_history(request):
+    _, _, is_class_teacher = _bootstrap_teacher_context(request)
+    return render(request, 'teacherApp/teacher_attendance_history.html', {
+        'is_class_teacher': is_class_teacher,
+    })
+
+
+@login_required
+@check_groups('Teaching')
 def teacher_manage_event(request):
     _, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
     if 'current_session' not in request.session:
@@ -487,6 +496,15 @@ def teacher_assigned_class(request):
             'not_class_teacher_message': 'This section is available only for assigned class teachers.',
         })
     return render(request, 'teacherApp/assigned_class.html', {'is_class_teacher': True})
+
+
+@login_required
+@check_groups('Teaching')
+def teacher_leave_applications(request):
+    _, _, is_class_teacher = _bootstrap_teacher_context(request)
+    return render(request, 'teacherApp/leave_applications.html', {
+        'is_class_teacher': is_class_teacher,
+    })
 
 
 @login_required

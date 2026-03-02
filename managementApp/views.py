@@ -541,6 +541,18 @@ def manage_event_type(request):
     }
     return render(request, 'managementApp/events/manage_event_type.html', context)
 
+
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_leave_types(request):
+    return render(request, 'managementApp/leave/manage_leave_types.html', {})
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_leave_applications(request):
+    return render(request, 'managementApp/leave/manage_leave_applications.html', {})
+
 # ----Parents -------------------
 @login_required
 @check_groups('Admin', 'Owner')

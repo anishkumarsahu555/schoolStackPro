@@ -50,6 +50,8 @@ urlpatterns = [
     #events
     path('manage_event/', manage_event, name='manage_event'),
     path('manage_event_type/', manage_event_type, name='manage_event_type'),
+    path('manage_leave_types/', manage_leave_types, name='manage_leave_types'),
+    path('manage_leave_applications/', manage_leave_applications, name='manage_leave_applications'),
     # path('event_list/', event_list, name='event_list'),
 
     #parents

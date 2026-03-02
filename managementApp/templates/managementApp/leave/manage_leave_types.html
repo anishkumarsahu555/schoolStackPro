@@ -1,0 +1,307 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Manage Leave Types</title>
+{% endblock %}
+
+{% block body %}
+    <style>
+        #leaveTypeTable_wrapper .dt-buttons {
+            float: right;
+            margin-left: 8px;
+        }
+
+        #leaveTypeTable_wrapper .dt-buttons .button {
+            padding: .55em .9em;
+            font-size: .78rem;
+            border-radius: 6px;
+        }
+
+        #leaveTypeTable_filter {
+            float: right;
+            margin-bottom: 8px;
+        }
+
+        #leaveTypeTable_length {
+            float: left;
+            margin-bottom: 8px;
+        }
+
+        .leave-action-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+    </style>
+
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div class="item active">Manage Leave Types</div>
+            </div>
+
+            <div class="ui segment">
+                <form class="ui tiny form" id="leaveTypeForm">{% csrf_token %}
+                    <input type="hidden" id="editID">
+                    <div class="fields">
+                        <div class="five wide required field">
+                            <label>Name</label>
+                            <input type="text" id="name" placeholder="Ex: Sick Leave">
+                        </div>
+                        <div class="three wide field">
+                            <label>Code</label>
+                            <input type="text" id="code" placeholder="SL">
+                        </div>
+                        <div class="three wide required field">
+                            <label>Applicable For</label>
+                            <select class="ui dropdown" id="applicableFor">
+                                <option value="both">Both</option>
+                                <option value="teacher">Teacher</option>
+                                <option value="student">Student</option>
+                            </select>
+                        </div>
+                        <div class="two wide field">
+                            <label>Need Approval</label>
+                            <select class="ui dropdown" id="requiresApproval">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <div class="two wide field">
+                            <label>Active</label>
+                            <select class="ui dropdown" id="isActive">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <div class="three wide field" style="padding-top: 1.9rem;">
+                            <div class="leave-action-group">
+                                <button type="button" class="ui mini green button" id="addBtn" onclick="submitLeaveType()"><i class="plus icon"></i>Add</button>
+                                <button type="button" class="ui mini orange button" id="updateBtn" onclick="updateLeaveType()" style="display:none;"><i class="redo icon"></i>Update</button>
+                                <button type="button" class="ui mini red basic button" id="clearBtn" onclick="resetForm()"><i class="undo icon"></i>Clear</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="row" style="padding-left: 5px; padding-right: 5px;">
+                <table class="ui unstackable tiny sortable celled nowrap very compact table" id="leaveTypeTable" style="width:100%;">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Code</th>
+                        <th>Applicable For</th>
+                        <th>Need Approval</th>
+                        <th>Status</th>
+                        <th>Added On</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui basic modal" id="deleteLeaveTypeModal">
+        <div class="ui icon header"><i class="trash alternate red icon"></i>Delete Leave Type</div>
+        <div class="content"><p>Are you sure you want to delete this leave type?</p></div>
+        <div class="actions">
+            <div class="ui basic red cancel button"><i class="remove icon"></i>No</div>
+            <button class="ui green ok button" onclick="confirmDeleteLeaveType()"><i class="check icon"></i>Yes</button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let leaveTypeTable;
+        let deleteId = null;
+        let isSubmitting = false;
+
+        $(function () {
+            $('.ui.dropdown').dropdown();
+            bindValidationEvents();
+            leaveTypeTable = $('#leaveTypeTable').DataTable({
+                dom: 'Blfrtip',
+                scrollX: true,
+                stateSave: true,
+                processing: true,
+                serverSide: true,
+                buttons: [
+                    {
+                        extend: 'excel',
+                        exportOptions: {columns: [0, 1, 2, 3, 4, 5]}
+                    }
+                ],
+                ajax: "{% url 'managementAppAPI:LeaveTypeListJson' %}",
+                columnDefs: [
+                    {name: 'name', targets: 0},
+                    {name: 'code', targets: 1},
+                    {name: 'applicableFor', targets: 2},
+                    {name: 'requiresApproval', targets: 3},
+                    {name: 'isActive', targets: 4},
+                    {name: 'datetime', targets: 5},
+                    {name: 'action', targets: 6, orderable: false}
+                ]
+            });
+        });
+
+        function bindValidationEvents() {
+            $('#name').on('input', function () {
+                const value = ($(this).val() || '').trim();
+                $(this).closest('.field').toggleClass('error', !value);
+            });
+        }
+
+        function validateLeaveTypeForm() {
+            let valid = true;
+            const nameValue = ($('#name').val() || '').trim();
+            $('#name').closest('.field').toggleClass('error', !nameValue);
+            if (!nameValue) valid = false;
+            return valid;
+        }
+
+        function toggleSubmitState(enabled) {
+            isSubmitting = !enabled;
+            $('#addBtn, #updateBtn, #clearBtn').prop('disabled', !enabled);
+            if (!enabled) {
+                if ($('#updateBtn').is(':visible')) {
+                    $('#updateBtn').html('<i class="spinner loading icon"></i>Updating');
+                } else {
+                    $('#addBtn').html('<i class="spinner loading icon"></i>Saving');
+                }
+            } else {
+                $('#addBtn').html('<i class="plus icon"></i>Add');
+                $('#updateBtn').html('<i class="redo icon"></i>Update');
+            }
+        }
+
+        function payload() {
+            let fd = new FormData();
+            fd.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            fd.append('editID', ($('#editID').val() || '').trim());
+            fd.append('name', ($('#name').val() || '').trim());
+            fd.append('code', $('#code').val());
+            fd.append('applicableFor', $('#applicableFor').val());
+            fd.append('requiresApproval', $('#requiresApproval').val());
+            fd.append('isActive', $('#isActive').val());
+            return fd;
+        }
+
+        function submitLeaveType() {
+            if (isSubmitting) return;
+            if (!validateLeaveTypeForm()) {
+                requiredFieldError();
+                return;
+            }
+            toggleSubmitState(false);
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:add_leave_type_api' %}",
+                data: payload(),
+                contentType: false,
+                processData: false,
+                success: function (res) {
+                    if (res.success) {
+                        addSuccessNotification(res.message, res.color || 'green');
+                        resetForm();
+                        leaveTypeTable.ajax.reload(null, false);
+                    } else addErrorNotification(res.message, res.color || 'red');
+                    toggleSubmitState(true);
+                },
+                error: function () {
+                    addErrorNotification('Unable to save leave type.');
+                    toggleSubmitState(true);
+                }
+            });
+        }
+
+        function editLeaveType(id) {
+            $.get("{% url 'managementAppAPI:get_leave_type_detail' %}", {id: id}, function (res) {
+                if (!res.success) {
+                    addErrorNotification(res.message || 'Unable to load leave type.');
+                    return;
+                }
+                $('#editID').val(res.data.id);
+                $('#name').val(res.data.name);
+                $('#code').val(res.data.code);
+                $('#applicableFor').dropdown('set selected', res.data.applicableFor);
+                $('#requiresApproval').dropdown('set selected', String(res.data.requiresApproval));
+                $('#isActive').dropdown('set selected', String(res.data.isActive));
+                $('#addBtn').hide();
+                $('#updateBtn').show();
+            });
+        }
+
+        function updateLeaveType() {
+            if (isSubmitting) return;
+            if (!validateLeaveTypeForm()) {
+                requiredFieldError();
+                return;
+            }
+            toggleSubmitState(false);
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:update_leave_type_api' %}",
+                data: payload(),
+                contentType: false,
+                processData: false,
+                success: function (res) {
+                    if (res.success) {
+                        addSuccessNotification(res.message, res.color || 'green');
+                        resetForm();
+                        leaveTypeTable.ajax.reload(null, false);
+                    } else addErrorNotification(res.message, res.color || 'red');
+                    toggleSubmitState(true);
+                },
+                error: function () {
+                    addErrorNotification('Unable to update leave type.');
+                    toggleSubmitState(true);
+                }
+            });
+        }
+
+        function deleteLeaveType(id) {
+            deleteId = id;
+            $('#deleteLeaveTypeModal').modal('show');
+        }
+
+        function confirmDeleteLeaveType() {
+            if (!deleteId) return;
+            let fd = new FormData();
+            fd.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            fd.append('id', deleteId);
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:delete_leave_type' %}",
+                data: fd,
+                contentType: false,
+                processData: false,
+                success: function (res) {
+                    if (res.success) {
+                        addSuccessNotification(res.message, res.color || 'green');
+                        leaveTypeTable.ajax.reload(null, false);
+                        $('#deleteLeaveTypeModal').modal('hide');
+                    } else addErrorNotification(res.message, res.color || 'red');
+                },
+                error: function () {
+                    addErrorNotification('Unable to delete leave type.');
+                }
+            });
+        }
+
+        function resetForm() {
+            $('#leaveTypeForm')[0].reset();
+            $('#leaveTypeForm .field').removeClass('error');
+            $('#applicableFor').dropdown('set selected', 'both');
+            $('#requiresApproval').dropdown('set selected', 'true');
+            $('#isActive').dropdown('set selected', 'true');
+            $('#editID').val('');
+            $('#addBtn').show();
+            $('#updateBtn').hide();
+            toggleSubmitState(true);
+        }
+    </script>
+{% endblock %}

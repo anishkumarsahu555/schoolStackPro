@@ -1,0 +1,279 @@
+{% extends 'studentApp/index.html' %}
+
+{% block title %}
+    <title>My Leave Applications</title>
+{% endblock %}
+
+{% block body %}
+    <style>
+        html[data-theme="dark"] #leaveForm input[type="file"],
+        html[data-theme="dark"] #leaveForm .ui.input input,
+        html[data-theme="dark"] #leaveForm .ui.calendar .ui.input input {
+            background: #0f1726 !important;
+            border-color: #2c3a57 !important;
+            color: #e6eefc !important;
+        }
+
+        html[data-theme="dark"] #leaveForm input[type="file"]::file-selector-button {
+            background: #1f2f4d;
+            color: #e6eefc;
+            border: 1px solid #38507a;
+            border-radius: 4px;
+            padding: .45em .75em;
+            margin-right: .7em;
+            cursor: pointer;
+        }
+
+        html[data-theme="dark"] #leaveForm input[type="file"]::-webkit-file-upload-button {
+            background: #1f2f4d;
+            color: #e6eefc;
+            border: 1px solid #38507a;
+            border-radius: 4px;
+            padding: .45em .75em;
+            margin-right: .7em;
+            cursor: pointer;
+        }
+    </style>
+
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div class="item active">My Leave Applications</div>
+            </div>
+
+            <div class="ui segment">
+                <form class="ui tiny form" id="leaveForm">{% csrf_token %}
+                    <input type="hidden" id="editID">
+                    <div class="fields">
+                        <div class="four wide required field">
+                            <label>Leave Type</label>
+                            <select class="ui dropdown" id="leaveTypeID">
+                                <option value="">Select Leave Type</option>
+                            </select>
+                        </div>
+                        <div class="three wide required field">
+                            <label>Start Date</label>
+                            <div class="ui calendar" id="startDateCal">
+                                <div class="ui input left icon">
+                                    <i class="calendar icon"></i>
+                                    <input type="text" id="startDate" placeholder="Start Date">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="three wide required field">
+                            <label>End Date</label>
+                            <div class="ui calendar" id="endDateCal">
+                                <div class="ui input left icon">
+                                    <i class="calendar icon"></i>
+                                    <input type="text" id="endDate" placeholder="End Date">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="three wide field">
+                            <label>Attachment</label>
+                            <input type="file" id="attachment">
+                        </div>
+                        <div class="three wide required field">
+                            <label>Reason</label>
+                            <input type="text" id="reason" placeholder="Reason for leave">
+                        </div>
+                    </div>
+                    <button type="button" class="ui mini green button" id="addBtn" onclick="submitLeave()"><i class="plus icon"></i>Apply</button>
+                    <button type="button" class="ui mini orange button" id="updateBtn" onclick="updateLeave()" style="display:none;"><i class="redo icon"></i>Update</button>
+                    <button type="button" class="ui mini red button" onclick="resetLeaveForm()"><i class="undo icon"></i>Clear</button>
+                </form>
+            </div>
+
+            <div class="row" style="padding-left:5px; padding-right:5px;">
+                <table class="ui unstackable tiny sortable celled nowrap very compact table" id="leaveTable" style="width:100%;">
+                    <thead>
+                    <tr>
+                        <th>Leave Type</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Total Days</th>
+                        <th>Status</th>
+                        <th>Attachment</th>
+                        <th>Reason</th>
+                        <th>Remark</th>
+                        <th>Applied On</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let leaveTable;
+
+        $(function () {
+            $('.ui.dropdown').dropdown();
+            $('#startDateCal').calendar({
+                monthFirst: false,
+                type: 'date',
+                formatter: {
+                    date: function (date) {
+                        if (!date) return '';
+                        return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                    }
+                }
+            });
+            $('#endDateCal').calendar({
+                monthFirst: false,
+                type: 'date',
+                formatter: {
+                    date: function (date) {
+                        if (!date) return '';
+                        return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                    }
+                }
+            });
+            loadLeaveTypes();
+
+            leaveTable = $('#leaveTable').DataTable({
+                scrollX: true,
+                stateSave: true,
+                processing: true,
+                serverSide: true,
+                ajax: "{% url 'studentAppAPI:StudentLeaveApplicationListJson' %}",
+                columnDefs: [
+                    {name: 'leaveTypeID__name', targets: 0},
+                    {name: 'startDate', targets: 1},
+                    {name: 'endDate', targets: 2},
+                    {name: 'totalDays', targets: 3},
+                    {name: 'status', targets: 4},
+                    {name: 'attachment', targets: 5, orderable: false},
+                    {name: 'reason', targets: 6, orderable: false},
+                    {name: 'actionRemark', targets: 7, orderable: false},
+                    {name: 'datetime', targets: 8},
+                    {name: 'action', targets: 9, orderable: false}
+                ]
+            });
+        });
+
+        function loadLeaveTypes() {
+            $.get("{% url 'studentAppAPI:get_student_leave_type_list_api' %}", function (res) {
+                if (!res.success) return;
+                let html = '<option value="">Select Leave Type</option>';
+                (res.data || []).forEach(function (row) {
+                    html += '<option value="' + row.ID + '">' + row.Name + '</option>';
+                });
+                $('#leaveTypeID').html(html).dropdown('refresh');
+            });
+        }
+
+        function buildPayload() {
+            let fd = new FormData();
+            fd.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            fd.append('editID', $('#editID').val());
+            fd.append('leaveTypeID', $('#leaveTypeID').val());
+            fd.append('startDate', $('#startDate').val());
+            fd.append('endDate', $('#endDate').val());
+            fd.append('reason', $('#reason').val());
+            if ($('#attachment')[0].files.length) fd.append('attachment', $('#attachment')[0].files[0]);
+            return fd;
+        }
+
+        function validateLeaveForm() {
+            return $('#leaveTypeID').val() && $('#startDate').val() && $('#endDate').val() && $('#reason').val().trim();
+        }
+
+        function submitLeave() {
+            if (!validateLeaveForm()) {
+                requiredFieldError();
+                return;
+            }
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'studentAppAPI:student_apply_leave_api' %}",
+                data: buildPayload(),
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.success) {
+                        addSuccessNotification(res.message, res.color || 'green');
+                        resetLeaveForm();
+                        leaveTable.ajax.reload(null, false);
+                    } else addErrorNotification(res.message, res.color || 'red');
+                },
+                error: function () {
+                    addErrorNotification('Unable to submit leave.');
+                }
+            });
+        }
+
+        function editLeave(id) {
+            $.get("{% url 'studentAppAPI:get_student_leave_detail_api' %}", {id: id}, function (res) {
+                if (!res.success) {
+                    addErrorNotification(res.message || 'Unable to load leave.');
+                    return;
+                }
+                $('#editID').val(res.data.id);
+                $('#leaveTypeID').dropdown('set selected', String(res.data.leaveTypeID));
+                $('#startDate').val(res.data.startDate);
+                $('#endDate').val(res.data.endDate);
+                $('#reason').val(res.data.reason);
+                $('#addBtn').hide();
+                $('#updateBtn').show();
+            });
+        }
+
+        function updateLeave() {
+            if (!validateLeaveForm()) {
+                requiredFieldError();
+                return;
+            }
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'studentAppAPI:student_update_leave_api' %}",
+                data: buildPayload(),
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.success) {
+                        addSuccessNotification(res.message, res.color || 'green');
+                        resetLeaveForm();
+                        leaveTable.ajax.reload(null, false);
+                    } else addErrorNotification(res.message, res.color || 'red');
+                },
+                error: function () {
+                    addErrorNotification('Unable to update leave.');
+                }
+            });
+        }
+
+        function cancelLeave(id) {
+            let fd = new FormData();
+            fd.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            fd.append('id', id);
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'studentAppAPI:student_cancel_leave_api' %}",
+                data: fd,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.success) {
+                        addSuccessNotification(res.message, res.color || 'green');
+                        leaveTable.ajax.reload(null, false);
+                    } else addErrorNotification(res.message, res.color || 'red');
+                },
+                error: function () {
+                    addErrorNotification('Unable to cancel leave.');
+                }
+            });
+        }
+
+        function resetLeaveForm() {
+            $('#leaveForm')[0].reset();
+            $('#editID').val('');
+            $('#leaveTypeID').dropdown('clear');
+            $('#addBtn').show();
+            $('#updateBtn').hide();
+        }
+    </script>
+{% endblock %}

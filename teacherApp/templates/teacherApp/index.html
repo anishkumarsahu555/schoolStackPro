@@ -46,6 +46,11 @@
             <i class="tasks icon"></i>
             <span>Student Attendance</span>
         </a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_attendance_history' %}active{% endif %}"
+           href="{% url 'teacherApp:teacher_attendance_history' %}">
+            <i class="calendar check outline icon"></i>
+            <span>My Attendance</span>
+        </a>
 
         <div class="nav-section">Exams</div>
         <a class="nav-item {% if request.resolver_match.url_name == 'teacher_exam_timetable' %}active{% endif %}"
@@ -76,6 +81,13 @@
            href="{% url 'teacherApp:teacher_manage_event' %}">
             <i class="calendar plus outline icon"></i>
             <span>Events List</span>
+        </a>
+
+        <div class="nav-section">Leave</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_leave_applications' %}active{% endif %}"
+           href="{% url 'teacherApp:teacher_leave_applications' %}">
+            <i class="calendar check outline icon"></i>
+            <span>My Leave Applications</span>
         </a>
     </div>
 {% endblock %}

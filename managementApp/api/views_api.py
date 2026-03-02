@@ -13,6 +13,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from homeApp.models import SchoolDetail
 from managementApp.models import *
 from managementApp.signals import pre_save_with_user
+from managementApp.leave_utils import approved_leave_for_date, approved_leave_map_for_date
 from utils.conts import MONTHS_LIST
 from utils.get_school_detail import get_school_id
 
@@ -51,6 +52,30 @@ def _api_response(payload, safe=False, status=200):
 
 def _current_session_id(request):
     return request.session.get("current_session", {}).get("Id")
+
+
+def _count_approved_teacher_leave_days(session_id, teacher_id, start_date, end_date):
+    leaves = LeaveApplication.objects.filter(
+        isDeleted=False,
+        sessionID_id=session_id,
+        applicantRole='teacher',
+        teacherID_id=teacher_id,
+        status='approved',
+        startDate__lte=end_date,
+        endDate__gte=start_date,
+    ).only('startDate', 'endDate')
+
+    days = set()
+    for leave in leaves:
+        overlap_start = max(start_date, leave.startDate)
+        overlap_end = min(end_date, leave.endDate)
+        if overlap_end < overlap_start:
+            continue
+        current_day = overlap_start
+        while current_day <= overlap_end:
+            days.add(current_day)
+            current_day += timedelta(days=1)
+    return len(days)
 
 
 def _safe_image_url(image_field, fallback_path='images/default_avatar.svg'):
@@ -2517,16 +2542,31 @@ class TakeStudentAttendanceByClassJson(BaseDatatableView):
                 students = Student.objects.select_related().filter(isDeleted__exact=False, standardID_id=int(standard),
                                                                    sessionID_id=self.request.session["current_session"][
                                                                        "Id"]).order_by('roll')
+                leave_map = approved_leave_map_for_date(
+                    session_id=self.request.session["current_session"]["Id"],
+                    role='student',
+                    date_value=aDate.date(),
+                    ids=[s.id for s in students]
+                )
                 for s in students:
+                    leave_obj = leave_map.get(s.id)
+                    leave_reason = ''
+                    if leave_obj:
+                        leave_reason = f"Approved Leave: {leave_obj.leaveTypeID.name if leave_obj.leaveTypeID else 'Leave'}"
                     try:
-                        StudentAttendance.objects.get(studentID_id=s.id, attendanceDate__icontains=aDate,
-                                                      standardID_id=int(standard), bySubject=False,
-                                                      sessionID_id=self.request.session["current_session"]["Id"])
+                        attendance_obj = StudentAttendance.objects.get(studentID_id=s.id, attendanceDate__icontains=aDate,
+                                                                       standardID_id=int(standard), bySubject=False,
+                                                                       sessionID_id=self.request.session["current_session"]["Id"])
+                        if leave_reason and (attendance_obj.isPresent or not attendance_obj.absentReason):
+                            attendance_obj.isPresent = False
+                            attendance_obj.absentReason = leave_reason
+                            pre_save_with_user.send(sender=StudentAttendance, instance=attendance_obj, user=self.request.user.pk)
+                            attendance_obj.save()
 
                     except:
                         instance = StudentAttendance.objects.create(studentID_id=s.id, attendanceDate=aDate,
                                                                     standardID_id=int(standard), isPresent=False,
-                                                                    bySubject=False, )
+                                                                    bySubject=False, absentReason=leave_reason)
                         pre_save_with_user.send(sender=StudentAttendance, instance=instance, user=self.request.user.pk)
 
                 return StudentAttendance.objects.select_related().filter(isDeleted__exact=False, bySubject=False,
@@ -2546,17 +2586,34 @@ class TakeStudentAttendanceByClassJson(BaseDatatableView):
                                                                        sessionID_id=
                                                                        self.request.session["current_session"][
                                                                            "Id"]).order_by('roll')
+                    leave_map = approved_leave_map_for_date(
+                        session_id=self.request.session["current_session"]["Id"],
+                        role='student',
+                        date_value=sDate.date(),
+                        ids=[s.id for s in students]
+                    )
                     for s in students:
+                        leave_obj = leave_map.get(s.id)
+                        leave_reason = ''
+                        if leave_obj:
+                            leave_reason = f"Approved Leave: {leave_obj.leaveTypeID.name if leave_obj.leaveTypeID else 'Leave'}"
                         try:
-                            StudentAttendance.objects.get(studentID_id=s.id, attendanceDate__icontains=sDate,
-                                                          standardID_id=obj.standardID_id, bySubject=True,
-                                                          subjectID_id=obj.subjectID_id,
-                                                          sessionID_id=self.request.session["current_session"]["Id"])
+                            attendance_obj = StudentAttendance.objects.get(studentID_id=s.id, attendanceDate__icontains=sDate,
+                                                                           standardID_id=obj.standardID_id, bySubject=True,
+                                                                           subjectID_id=obj.subjectID_id,
+                                                                           sessionID_id=self.request.session["current_session"]["Id"])
+                            if leave_reason and (attendance_obj.isPresent or not attendance_obj.absentReason):
+                                attendance_obj.isPresent = False
+                                attendance_obj.absentReason = leave_reason
+                                pre_save_with_user.send(sender=StudentAttendance, instance=attendance_obj,
+                                                        user=self.request.user.pk)
+                                attendance_obj.save()
                         except:
                             instance = StudentAttendance.objects.create(studentID_id=s.id, attendanceDate=sDate,
                                                                         subjectID_id=obj.subjectID_id,
                                                                         standardID_id=obj.standardID_id,
-                                                                        isPresent=False, bySubject=True)
+                                                                        isPresent=False, bySubject=True,
+                                                                        absentReason=leave_reason)
                             pre_save_with_user.send(sender=StudentAttendance, instance=instance,
                                                     user=self.request.user.pk)
                     return StudentAttendance.objects.select_related().filter(isDeleted__exact=False, bySubject=True,
@@ -2636,11 +2693,22 @@ def add_student_attendance_by_class(request):
         isPresent = request.POST.get("isPresent")
         reason = request.POST.get("reason")
         try:
-            instance = StudentAttendance.objects.get(pk=int(id))
+            instance = StudentAttendance.objects.select_related('studentID').get(pk=int(id))
             if isPresent == 'true':
                 isPresent = True
             else:
                 isPresent = False
+            if isPresent:
+                leave_obj = approved_leave_for_date(
+                    session_id=instance.sessionID_id,
+                    role='student',
+                    date_value=instance.attendanceDate.date() if instance.attendanceDate else None,
+                    student_id=instance.studentID_id
+                )
+                if leave_obj:
+                    return _api_response(
+                        {'status': 'error', 'message': 'Cannot mark present on approved leave date.', 'color': 'orange'},
+                        safe=False)
             instance.isPresent = isPresent
             instance.absentReason = reason
             pre_save_with_user.send(sender=StudentAttendance, instance=instance, user=request.user.pk)
@@ -2855,14 +2923,29 @@ class TakeTeacherAttendanceJson(BaseDatatableView):
                                                                      sessionID_id=
                                                                      self.request.session["current_session"][
                                                                          "Id"])
+            leave_map = approved_leave_map_for_date(
+                session_id=self.request.session["current_session"]["Id"],
+                role='teacher',
+                date_value=aDate.date(),
+                ids=[s.id for s in teachers]
+            )
             for s in teachers:
+                leave_obj = leave_map.get(s.id)
+                leave_reason = ''
+                if leave_obj:
+                    leave_reason = f"Approved Leave: {leave_obj.leaveTypeID.name if leave_obj.leaveTypeID else 'Leave'}"
                 try:
-                    TeacherAttendance.objects.get(attendanceDate__icontains=aDate, isDeleted=False, teacherID_id=s.id,
-                                                  sessionID_id=self.request.session["current_session"]["Id"])
+                    attendance_obj = TeacherAttendance.objects.get(attendanceDate__icontains=aDate, isDeleted=False, teacherID_id=s.id,
+                                                                   sessionID_id=self.request.session["current_session"]["Id"])
+                    if leave_reason and (attendance_obj.isPresent or not attendance_obj.absentReason):
+                        attendance_obj.isPresent = False
+                        attendance_obj.absentReason = leave_reason
+                        pre_save_with_user.send(sender=TeacherAttendance, instance=attendance_obj, user=self.request.user.pk)
+                        attendance_obj.save()
 
                 except:
                     instance = TeacherAttendance.objects.create(attendanceDate=aDate, isDeleted=False,
-                                                                teacherID_id=s.id)
+                                                                teacherID_id=s.id, absentReason=leave_reason)
                     pre_save_with_user.send(sender=TeacherAttendance, instance=instance, user=self.request.user.pk)
 
             return TeacherAttendance.objects.select_related().filter(isDeleted__exact=False,
@@ -2938,11 +3021,22 @@ def add_staff_attendance_api(request):
         isPresent = request.POST.get("isPresent")
         reason = request.POST.get("reason")
         try:
-            instance = TeacherAttendance.objects.get(pk=int(id))
+            instance = TeacherAttendance.objects.select_related('teacherID').get(pk=int(id))
             if isPresent == 'true':
                 isPresent = True
             else:
                 isPresent = False
+            if isPresent:
+                leave_obj = approved_leave_for_date(
+                    session_id=instance.sessionID_id,
+                    role='teacher',
+                    date_value=instance.attendanceDate.date() if instance.attendanceDate else None,
+                    teacher_id=instance.teacherID_id
+                )
+                if leave_obj:
+                    return _api_response(
+                        {'status': 'error', 'message': 'Cannot mark present on approved leave date.', 'color': 'orange'},
+                        safe=False)
             instance.isPresent = isPresent
             instance.absentReason = reason
             pre_save_with_user.send(sender=TeacherAttendance, instance=instance, user=request.user.pk)
@@ -2989,20 +3083,27 @@ class StaffAttendanceHistoryByDateRangeJson(BaseDatatableView):
 
             for item in qs:
                 images = _avatar_image_html(item.photo)
-                present_count = TeacherAttendance.objects.filter(teacherID_id=item.id, isPresent=True,
-                                                                 isHoliday=False, isDeleted=False,
-                                                                 attendanceDate__range=[dateRangeStartDate,
-                                                                                        dateRangeEndDate + timedelta(
-                                                                                            days=1)],
-                                                                 ).count()
-                absent_count = TeacherAttendance.objects.filter(teacherID_id=item.id, isPresent=False,
-                                                                isHoliday=False, isDeleted=False,
-                                                                attendanceDate__range=[dateRangeStartDate,
-                                                                                       dateRangeEndDate + timedelta(
-                                                                                           days=1)]).count()
+                attendance_qs = TeacherAttendance.objects.filter(
+                    teacherID_id=item.id,
+                    isHoliday=False,
+                    isDeleted=False,
+                    sessionID_id=self.request.session["current_session"]["Id"],
+                    attendanceDate__range=[dateRangeStartDate, dateRangeEndDate + timedelta(days=1)],
+                )
+                leave_count = _count_approved_teacher_leave_days(
+                    session_id=self.request.session["current_session"]["Id"],
+                    teacher_id=item.id,
+                    start_date=dateRangeStartDate.date(),
+                    end_date=dateRangeEndDate.date(),
+                )
+                present_count = attendance_qs.filter(isPresent=True).count()
+                absent_count = attendance_qs.filter(isPresent=False).exclude(
+                    absentReason__istartswith='Approved Leave'
+                ).count()
+                total_days = present_count + absent_count + leave_count
 
-                if present_count + absent_count != 0:
-                    percentage = present_count / (present_count + absent_count) * 100
+                if total_days != 0:
+                    percentage = present_count / total_days * 100
                 else:
                     # Handle the case when the denominator is zero
                     percentage = 0
@@ -3014,7 +3115,8 @@ class StaffAttendanceHistoryByDateRangeJson(BaseDatatableView):
                     escape(item.employeeCode),
                     present_count,
                     absent_count,
-                    present_count + absent_count,
+                    leave_count,
+                    total_days,
                     round(percentage, 2)
 
                 ])
@@ -3025,7 +3127,7 @@ class StaffAttendanceHistoryByDateRangeJson(BaseDatatableView):
 
 
 class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
-    order_columns = ['attendanceDate', 'isPresent', 'isPresent', 'absentReason']
+    order_columns = ['attendanceDate', 'isPresent', 'isPresent', 'isPresent', 'absentReason']
 
     @transaction.atomic
     def get_initial_queryset(self):
@@ -3035,15 +3137,49 @@ class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
             ByStudentEndDate = self.request.GET.get("ByStudentEndDate")
             ByStudentStartDate = datetime.strptime(ByStudentStartDate, '%d/%m/%Y')
             ByStudentEndDate = datetime.strptime(ByStudentEndDate, '%d/%m/%Y')
+            session_id = self.request.session["current_session"]["Id"]
+            teacher_id = int(ByStaffStaff)
+
+            approved_leaves = LeaveApplication.objects.select_related('leaveTypeID').filter(
+                isDeleted=False,
+                sessionID_id=session_id,
+                applicantRole='teacher',
+                teacherID_id=teacher_id,
+                status='approved',
+                startDate__lte=ByStudentEndDate.date(),
+                endDate__gte=ByStudentStartDate.date(),
+            )
+            for leave in approved_leaves:
+                leave_type_name = leave.leaveTypeID.name if leave.leaveTypeID else 'Leave'
+                leave_reason = f'Approved Leave: {leave_type_name}'
+                day = max(ByStudentStartDate.date(), leave.startDate)
+                end_day = min(ByStudentEndDate.date(), leave.endDate)
+                while day <= end_day:
+                    attendance_dt = datetime(day.year, day.month, day.day)
+                    exists = TeacherAttendance.objects.filter(
+                        isDeleted=False,
+                        sessionID_id=session_id,
+                        teacherID_id=teacher_id,
+                        attendanceDate__date=day,
+                    ).exists()
+                    if not exists:
+                        instance = TeacherAttendance(
+                            attendanceDate=attendance_dt,
+                            isDeleted=False,
+                            teacherID_id=teacher_id,
+                            isPresent=False,
+                            absentReason=leave_reason,
+                        )
+                        pre_save_with_user.send(sender=TeacherAttendance, instance=instance, user=self.request.user.pk)
+                    day += timedelta(days=1)
 
             return TeacherAttendance.objects.select_related().filter(isDeleted__exact=False, isHoliday=False,
-                                                                     teacherID_id=int(ByStaffStaff),
+                                                                     teacherID_id=teacher_id,
                                                                      attendanceDate__range=[ByStudentStartDate,
                                                                                             ByStudentEndDate + timedelta(
                                                                                                 days=1)],
                                                                      sessionID_id=
-                                                                     self.request.session["current_session"][
-                                                                         "Id"]).order_by('attendanceDate')
+                                                                     session_id).order_by('attendanceDate')
 
 
         except:
@@ -3063,17 +3199,25 @@ class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            if item.isPresent == True:
+            is_leave = (item.absentReason or '').strip().lower().startswith('approved leave')
+            if item.isPresent is True:
                 Present = 'Yes'
                 Absent = 'No'
+                Leave = 'No'
             else:
                 Present = 'No'
-                Absent = 'Yes'
+                if is_leave:
+                    Absent = 'No'
+                    Leave = 'Yes'
+                else:
+                    Absent = 'Yes'
+                    Leave = 'No'
 
             json_data.append([
                 escape(item.attendanceDate.strftime('%d-%m-%Y')),
                 escape(Present),
                 escape(Absent),
+                escape(Leave),
                 escape(item.absentReason),
 
             ])
