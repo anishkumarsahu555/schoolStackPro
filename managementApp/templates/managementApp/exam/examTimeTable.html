@@ -45,107 +45,315 @@
         .exam-preview {
             margin-top: 1rem;
             border: 1px solid var(--app-border);
-            border-radius: 12px;
-            padding: 0.9rem;
+            border-radius: 14px;
+            padding: 0.85rem;
             background: var(--app-surface);
+            box-shadow: 0 10px 24px rgba(22, 32, 52, 0.08);
         }
 
-        .exam-preview .toolbar {
-            display: flex;
-            gap: 0.55rem;
-            flex-wrap: wrap;
+        .exam-preview .preview-sheet-header {
+            border: 1px solid var(--app-border);
+            border-radius: 12px;
+            padding: 0.9rem 0.95rem;
+            background: linear-gradient(180deg, var(--app-surface) 0%, var(--app-hover) 100%);
+            text-align: center;
             margin-bottom: 0.75rem;
         }
 
-        .exam-preview .chip {
-            border: 1px solid var(--app-border);
-            background: var(--app-surface);
-            color: var(--app-text);
-            border-radius: 999px;
-            padding: 0.38rem 0.75rem;
-            font-size: 0.8rem;
-            cursor: pointer;
+        .exam-preview .school-head {
+            display: grid;
+            grid-template-columns: 56px auto;
+            gap: 0.65rem;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.65rem;
         }
 
-        .exam-preview .chip.active {
-            border-color: var(--app-brand);
-            background: var(--app-active);
-            color: var(--app-brand);
-            font-weight: 700;
-        }
-
-        .exam-preview .exam-card {
-            border: 1px solid var(--app-border);
+        .exam-preview .school-logo {
+            width: 56px;
+            height: 56px;
             border-radius: 10px;
-            margin-bottom: 0.7rem;
-            overflow: hidden;
+            border: 1px solid var(--app-border);
+            object-fit: cover;
+            background: var(--app-surface);
         }
 
-        .exam-preview .exam-head {
+        .exam-preview .school-name {
+            margin: 0;
+            color: var(--app-text);
+            font-size: 1rem;
+            font-weight: 800;
+            line-height: 1.25;
+            text-align: left;
+        }
+
+        .exam-preview .school-address {
+            margin: 0.15rem 0 0;
+            color: var(--app-muted);
+            font-size: 0.8rem;
+            text-align: left;
+        }
+
+        .exam-preview .preview-title {
+            margin: 0;
+            color: var(--app-text);
+            font-size: 1.08rem;
+            font-weight: 800;
+            letter-spacing: .02em;
+        }
+
+        .exam-preview .preview-subtitle {
+            margin: 0.26rem 0 0;
+            color: var(--app-muted);
+            font-size: 0.82rem;
+        }
+
+        .exam-preview .preview-strip {
+            display: inline-block;
+            margin-top: 0.6rem;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 0.35rem 0.9rem;
+            border-radius: 6px;
+            font-weight: 700;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+            font-size: 0.78rem;
+        }
+
+        .exam-preview .preview-filter-bar {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.6rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .exam-preview .summary-line {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 0.9rem;
-            background: var(--app-surface);
-            cursor: pointer;
-        }
-
-        .exam-preview .exam-title {
-            margin: 0;
-            color: var(--app-text);
-            font-size: 0.96rem;
-        }
-
-        .exam-preview .exam-meta {
+            flex-wrap: wrap;
+            gap: 0.45rem;
             color: var(--app-muted);
-            font-size: 0.8rem;
+            font-size: 0.82rem;
+            margin-bottom: 0.65rem;
         }
 
-        .exam-preview .exam-body {
-            display: none;
-            border-top: 1px solid var(--app-border);
-            padding: 0.55rem;
+        .exam-preview .time-banner {
+            border: 1px solid var(--app-border);
+            border-radius: 8px;
+            padding: 0.45rem 0.65rem;
+            background: var(--app-hover);
+            color: var(--app-text);
+            font-weight: 700;
         }
 
-        .exam-preview .exam-card.expanded .exam-body {
-            display: block;
+        .exam-preview .class-block {
+            border: 1px solid var(--app-border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+            background: var(--app-surface);
         }
 
-        .exam-preview .slot-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr .85fr .85fr .75fr 1fr;
+        .exam-preview .class-head {
+            background: #111827;
+            color: #ffffff;
+            padding: 0.58rem 0.72rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             gap: 0.5rem;
-            border-bottom: 1px dashed var(--app-border);
-            padding: 0.5rem 0.3rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: .02em;
+            text-transform: uppercase;
+        }
+
+        .exam-preview .table-wrap {
+            overflow-x: auto;
+        }
+
+        .exam-preview table {
+            width: 100%;
+            min-width: 920px;
+            border-collapse: collapse;
+            background: var(--app-surface);
+            table-layout: fixed;
+        }
+
+        .exam-preview thead th {
+            background: #111827;
+            color: #ffffff;
+            border: 1px solid #293246;
+            padding: 0.56rem 0.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .exam-preview tbody td {
+            border: 1px solid var(--app-border);
+            padding: 0.56rem 0.5rem;
+            color: var(--app-text);
+            font-size: 0.83rem;
+            vertical-align: top;
+            word-wrap: break-word;
+            overflow-wrap: anywhere;
+        }
+
+        .exam-preview tbody tr:nth-child(even) td {
+            background: color-mix(in srgb, var(--app-hover) 65%, transparent);
+        }
+
+        .exam-preview .time-chip {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--app-brand);
+            color: var(--app-brand);
+            background: var(--app-active);
+            border-radius: 999px;
+            padding: 0.16rem 0.55rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .exam-preview .col-date { width: 24%; }
+        .exam-preview .col-exam { width: 16%; }
+        .exam-preview .col-subject { width: 20%; }
+        .exam-preview .col-room { width: 12%; }
+        .exam-preview .col-note { width: 28%; }
+
+        .exam-preview .schedule-day {
+            display: grid;
+            gap: 0.18rem;
+            line-height: 1.25;
+        }
+
+        .exam-preview .schedule-day .day-date {
+            font-weight: 700;
             color: var(--app-text);
             font-size: 0.84rem;
+            letter-spacing: .01em;
         }
 
-        .exam-preview .slot-row.header {
-            color: var(--app-muted);
-            font-size: 0.74rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--app-border);
-        }
-
-        .exam-preview .slot-row:last-child {
-            border-bottom: none;
+        .exam-preview .schedule-day .time {
+            margin-top: 0.12rem;
         }
 
         .exam-preview .empty-note {
+            display: none;
             text-align: center;
             color: var(--app-muted);
-            padding: 1rem 0.4rem;
+            border: 1px dashed var(--app-border);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 0.65rem;
+        }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 10mm;
+            }
+
+            .ui.top.fixed.menu,
+            .ui.sidebar,
+            .ui.pointing.secondary.menu,
+            #addForm,
+            #ExamTimeTable_wrapper,
+            #deleteDataModal,
+            .exam-preview .preview-filter-bar,
+            .exam-preview .summary-line,
+            .print-hide {
+                display: none !important;
+            }
+
+            .main-content {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .ui.segment,
+            .exam-preview,
+            .exam-preview .class-block {
+                border: 0 !important;
+                box-shadow: none !important;
+                background: #ffffff !important;
+            }
+
+            .exam-preview .table-wrap {
+                overflow: visible !important;
+                border: 0 !important;
+                border-radius: 0 !important;
+            }
+
+            .exam-preview table {
+                min-width: 0 !important;
+                width: 100% !important;
+                table-layout: fixed !important;
+                font-size: 11px !important;
+            }
+
+            .exam-preview thead th,
+            .exam-preview tbody td {
+                padding: 4px 5px !important;
+                font-size: 11px !important;
+                line-height: 1.25 !important;
+                color: #111827 !important;
+                border-color: #9ca3af !important;
+                background: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .exam-preview .time-chip {
+                border-color: #1d4ed8 !important;
+                color: #1d4ed8 !important;
+                background: #ffffff !important;
+            }
+
+            .exam-preview .preview-sheet-header,
+            .exam-preview .class-block {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
+            .exam-preview .class-head {
+                border-bottom: 1px solid #9ca3af !important;
+                color: #111827 !important;
+                background: #ffffff !important;
+            }
+
+            .exam-preview table thead th:nth-child(2),
+            .exam-preview table tbody td:nth-child(2) {
+                display: none !important;
+            }
         }
 
         @media (max-width: 900px) {
-            .exam-preview .slot-row {
-                grid-template-columns: 1fr 1fr;
+            .exam-preview .preview-filter-bar {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .exam-preview .preview-filter-bar {
+                grid-template-columns: 1fr;
             }
 
-            .exam-preview .slot-row.header {
-                display: none;
+            .exam-preview .school-head {
+                grid-template-columns: 1fr;
+                text-align: center;
+                justify-items: center;
+            }
+
+            .exam-preview .school-name,
+            .exam-preview .school-address {
+                text-align: center;
             }
         }
     </style>
@@ -157,11 +365,6 @@
             </div>
 
             <div class="ui segment">
-                <h4 class="ui horizontal left aligned divider header">
-                    <i class="left align icon"></i>
-                    Add/Edit Exam Schedule
-                </h4>
-
                 <form class="ui tiny form" id="addForm">{% csrf_token %}
                     <input type="hidden" id="editID">
                     <div class="three fields">
@@ -236,12 +439,42 @@
                             <i class="icon times circle"></i>
                             Clear
                         </button>
+                        <a href="{% url 'managementApp:manage_exam_timetable_preview' %}" class="ui mini blue button">
+                            <i class="icon eye"></i>
+                            Open Interactive Preview
+                        </a>
                     </div>
                 </form>
             </div>
 
             <div class="row" style="padding-left: 5px; padding-right: 5px">
                 <div class="wide">
+                    <div class="ui tiny form" style="margin-bottom: .55rem;">
+                        <div class="fields">
+                            <div class="four wide field">
+                                <label>Filter Class</label>
+                                <select class="ui search dropdown" id="listStandardFilter">
+                                    <option value="">All Classes</option>
+                                </select>
+                            </div>
+                            <div class="four wide field">
+                                <label>Filter Exam</label>
+                                <select class="ui search dropdown" id="listExamFilter">
+                                    <option value="">All Exams</option>
+                                </select>
+                            </div>
+                            <div class="four wide field" style="padding-top: 1.95rem;">
+                                <button class="ui mini blue button" type="button" id="filterListBtn">
+                                    <i class="search icon"></i>
+                                    Filter
+                                </button>
+                                <button class="ui mini red button" type="button" id="clearListFilterBtn">
+                                    <i class="times icon"></i>
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <table class="ui unstackable tiny sortable celled very nowrap very compact table"
                            id="ExamTimeTable"
                            style="margin-top: 5px;width: 100%">
@@ -263,63 +496,6 @@
                         <tbody></tbody>
                     </table>
                 </div>
-            </div>
-
-            <div class="exam-preview">
-                <h4 class="ui header" style="margin-top:0;">Exam-wise Interactive Preview</h4>
-                {% regroup timetable_rows by examID as exam_groups %}
-
-                {% if timetable_rows %}
-                    <div class="toolbar" id="previewExamFilterBar">
-                        <button class="chip active" type="button" data-exam="all">All Exams</button>
-                        {% for exam_group in exam_groups %}
-                            <button class="chip" type="button" data-exam="{{ exam_group.grouper.id|default:'na' }}">
-                                {{ exam_group.grouper.name|default:'N/A' }}
-                            </button>
-                        {% endfor %}
-                    </div>
-
-                    <div id="previewExamGroupsWrap">
-                        {% for exam_group in exam_groups %}
-                            <div class="exam-card {% if forloop.first %}expanded{% endif %}" data-exam-group="{{ exam_group.grouper.id|default:'na' }}">
-                                <div class="exam-head">
-                                    <div>
-                                        <h5 class="exam-title">{{ exam_group.grouper.name|default:'N/A' }}</h5>
-                                        <div class="exam-meta">{{ exam_group.list|length }} schedule(s)</div>
-                                    </div>
-                                    <i class="angle down icon"></i>
-                                </div>
-                                <div class="exam-body">
-                                    <div class="slot-row header">
-                                        <div>Class</div>
-                                        <div>Subject</div>
-                                        <div>Date</div>
-                                        <div>Start</div>
-                                        <div>End</div>
-                                        <div>Room / Note</div>
-                                    </div>
-                                    {% for row in exam_group.list %}
-                                        <div class="slot-row">
-                                            <div>{{ row.standardID.name|default:'N/A' }}{% if row.standardID.section %} - {{ row.standardID.section }}{% endif %}</div>
-                                            <div>{{ row.subjectID.name|default:'N/A' }}</div>
-                                            <div>{{ row.examDate|date:'d M Y'|default:'N/A' }}</div>
-                                            <div>{{ row.startTime|time:'h:i A'|default:'N/A' }}</div>
-                                            <div>{{ row.endTime|time:'h:i A'|default:'N/A' }}</div>
-                                            <div>
-                                                {{ row.roomNo|default:'N/A' }}
-                                                {% if row.note %}
-                                                    <div style="color:var(--app-muted);font-size:.78rem;">{{ row.note }}</div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="empty-note">No timetable entries found yet.</div>
-                {% endif %}
             </div>
 
             <div class="ui small modal" id="deleteDataModal">
@@ -396,9 +572,13 @@
             success: function (response) {
                 $('#standard').html('');
                 $('#standard').append('<option value="">Search By Class Name</option>');
+                $('#listStandardFilter').html('');
+                $('#listStandardFilter').append('<option value="">All Classes</option>');
                 for (let j = 0; j < response.data.length; j++) {
                     $('#standard').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
+                    $('#listStandardFilter').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
                 }
+                $('#listStandardFilter').dropdown();
             },
             error: function () {
                 addErrorNotification();
@@ -413,9 +593,13 @@
             success: function (response) {
                 $('#exam').html('');
                 $('#exam').append('<option value="">Search By Exam Name</option>');
+                $('#listExamFilter').html('');
+                $('#listExamFilter').append('<option value="">All Exams</option>');
                 for (let j = 0; j < response.data.length; j++) {
                     $('#exam').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
+                    $('#listExamFilter').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
                 }
+                $('#listExamFilter').dropdown();
             },
             error: function () {
                 addErrorNotification();
@@ -583,7 +767,23 @@
         pageLength: 10,
         processing: true,
         serverSide: true,
-        ajax: "{% url 'managementAppAPI:ExamTimeTableListJson' %}"
+        ajax: {
+            url: "{% url 'managementAppAPI:ExamTimeTableListJson' %}",
+            data: function (d) {
+                d.standardFilter = $('#listStandardFilter').val() || '';
+                d.examFilter = $('#listExamFilter').val() || '';
+            }
+        }
+    });
+
+    $('#filterListBtn').on('click', function () {
+        examTimeTable.ajax.reload();
+    });
+
+    $('#clearListFilterBtn').on('click', function () {
+        $('#listStandardFilter').dropdown('clear');
+        $('#listExamFilter').dropdown('clear');
+        examTimeTable.ajax.reload();
     });
 
     function delData(id) {
@@ -691,29 +891,5 @@
         clearValidationErrors();
     }
 
-    (function () {
-        const cards = document.querySelectorAll('#previewExamGroupsWrap .exam-card');
-        const chips = document.querySelectorAll('#previewExamFilterBar .chip');
-
-        cards.forEach(function (card) {
-            const head = card.querySelector('.exam-head');
-            if (!head) return;
-            head.addEventListener('click', function () {
-                card.classList.toggle('expanded');
-            });
-        });
-
-        chips.forEach(function (chip) {
-            chip.addEventListener('click', function () {
-                const selected = chip.getAttribute('data-exam');
-                chips.forEach(function (c) { c.classList.remove('active'); });
-                chip.classList.add('active');
-                cards.forEach(function (card) {
-                    const group = card.getAttribute('data-exam-group');
-                    card.style.display = (selected === 'all' || selected === group) ? '' : 'none';
-                });
-            });
-        });
-    })();
 </script>
 {% endblock %}

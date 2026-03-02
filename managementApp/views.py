@@ -255,6 +255,11 @@ def assign_exams_to_class(request):
 @login_required
 @check_groups('Admin', 'Owner')
 def manage_exam_timetable(request):
+    context = _exam_timetable_preview_context(request)
+    return render(request, 'managementApp/exam/examTimeTable.html', context)
+
+
+def _exam_timetable_preview_context(request):
     current_session_id = request.session.get('current_session', {}).get('Id')
     timetable_rows = ExamTimeTable.objects.select_related(
         'standardID', 'examID', 'subjectID'
@@ -262,10 +267,31 @@ def manage_exam_timetable(request):
         isDeleted=False,
         sessionID_id=current_session_id,
     ).order_by('examID__name', 'examDate', 'startTime', 'standardID__name') if current_session_id else ExamTimeTable.objects.none()
+
+    school_detail = None
+    school_id = request.session.get('current_session', {}).get('SchoolID')
+    if school_id:
+        school_detail = SchoolDetail.objects.filter(pk=school_id, isDeleted=False).first()
+    if not school_detail and current_session_id:
+        school_detail = SchoolDetail.objects.filter(
+            schoolsession__id=current_session_id,
+            schoolsession__isDeleted=False,
+            isDeleted=False
+        ).distinct().first()
+
     context = {
         'timetable_rows': timetable_rows,
+        'school_detail': school_detail,
+        'exam_year': request.session.get('current_session', {}).get('currentSessionYear') or 'Exam Year',
     }
-    return render(request, 'managementApp/exam/examTimeTable.html', context)
+    return context
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_exam_timetable_preview(request):
+    context = _exam_timetable_preview_context(request)
+    return render(request, 'managementApp/exam/examTimeTablePreview.html', context)
 
 
 # attendance

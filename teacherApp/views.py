@@ -350,6 +350,11 @@ def teacher_exam_timetable(request):
         return render(request, 'teacherApp/exam_timetable.html', {
             'is_class_teacher': is_class_teacher,
             'timetable_rows': [],
+            'class_options': [],
+            'exam_options': [],
+            'default_class_id': '',
+            'default_exam_id': '',
+            'school_detail': None,
         })
 
     assigned_class_ids = list(AssignSubjectsToTeacher.objects.filter(
@@ -360,17 +365,57 @@ def teacher_exam_timetable(request):
     ).values_list('assignedSubjectID__standardID_id', flat=True).distinct())
     assigned_class_ids = [cid for cid in assigned_class_ids if cid]
 
-    timetable_rows = ExamTimeTable.objects.select_related(
+    timetable_rows = list(ExamTimeTable.objects.select_related(
         'standardID', 'examID', 'subjectID'
     ).filter(
         isDeleted=False,
         sessionID_id=current_session_id,
         standardID_id__in=assigned_class_ids,
-    ).order_by('examID__name', 'examDate', 'startTime', 'standardID__name')
+    ).order_by('standardID__name', 'standardID__section', 'examDate', 'startTime', 'examID__name', 'subjectID__name'))
+
+    class_options = []
+    seen_classes = set()
+    for row in timetable_rows:
+        if not row.standardID_id or row.standardID_id in seen_classes:
+            continue
+        seen_classes.add(row.standardID_id)
+        section = f" - {row.standardID.section}" if row.standardID and row.standardID.section else ''
+        class_options.append({
+            'id': row.standardID_id,
+            'label': f"{row.standardID.name or 'N/A'}{section}",
+        })
+
+    exam_meta = {}
+    for row in timetable_rows:
+        if not row.examID_id:
+            continue
+        label = row.examID.name if row.examID else 'N/A'
+        row_date = row.examDate
+        if row.examID_id not in exam_meta:
+            exam_meta[row.examID_id] = {'id': row.examID_id, 'label': label, 'latest_date': row_date}
+        else:
+            prev_date = exam_meta[row.examID_id]['latest_date']
+            if row_date and (prev_date is None or row_date > prev_date):
+                exam_meta[row.examID_id]['latest_date'] = row_date
+
+    exam_options = sorted(
+        exam_meta.values(),
+        key=lambda x: (x['latest_date'] is None, x['latest_date']),
+        reverse=True
+    )
+
+    default_class_id = str(class_options[0]['id']) if class_options else ''
+    default_exam_id = str(exam_options[0]['id']) if exam_options else ''
+    school_detail = teacher.schoolID
 
     return render(request, 'teacherApp/exam_timetable.html', {
         'is_class_teacher': is_class_teacher,
         'timetable_rows': timetable_rows,
+        'class_options': class_options,
+        'exam_options': exam_options,
+        'default_class_id': default_class_id,
+        'default_exam_id': default_exam_id,
+        'school_detail': school_detail,
     })
 
 

@@ -413,9 +413,9 @@
                                 <tr>
                                     <td>
                                         {% if s.photo %}
-                                            <img class="ui avatar image" src="{{ s.photo.thumbnail.url }}" alt="{{ s.name }}">
+                                            <img class="ui avatar image" src="{{ s.photo.url }}" alt="{{ s.name }}">
                                         {% else %}
-                                            <i class="user circle icon"></i>
+                                            <img class="ui avatar image" src="{% static 'images/default_avatar.svg' %}" alt="Default Student Photo">
                                         {% endif %}
                                     </td>
                                     <td>{{ s.name|default:"N/A" }}</td>
@@ -442,9 +442,9 @@
                                 <div class="ward-mobile-head">
                                     <div style="display:flex; align-items:center; gap:0.55rem;">
                                         {% if s.photo %}
-                                            <img class="ui avatar image" src="{{ s.photo.thumbnail.url }}" alt="{{ s.name }}">
+                                            <img class="ui avatar image" src="{{ s.photo.url }}" alt="{{ s.name }}">
                                         {% else %}
-                                            <i class="user circle icon"></i>
+                                            <img class="ui avatar image" src="{% static 'images/default_avatar.svg' %}" alt="Default Student Photo">
                                         {% endif %}
                                         <span class="ward-mobile-name">{{ s.name|default:"N/A" }}</span>
                                     </div>

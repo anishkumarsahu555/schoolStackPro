@@ -30,7 +30,7 @@
         }
     </style>
 
-    <div class="ui right aligned basic  grid">
+    <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
             <div class="ui  pointing secondary menu">
                 <div style="cursor: pointer;" class="item active" data-tab="user"
@@ -51,6 +51,26 @@
 
                 <div class="row" style="padding-left: 5px; padding-right: 5px">
                     <div class="wide">
+                        <div class="ui tiny form" style="margin-bottom: .55rem; text-align: left;">
+                            <div class="fields">
+                                <div class="four wide field">
+                                    <label>Filter By Class</label>
+                                    <select class="ui search dropdown" id="listStandardFilter">
+                                        <option value="">All Classes</option>
+                                    </select>
+                                </div>
+                                <div class="four wide field" style="padding-top: 1.95rem;">
+                                    <button class="ui mini blue button" type="button" id="applyClassFilterBtn">
+                                        <i class="search icon"></i>
+                                        Filter
+                                    </button>
+                                    <button class="ui mini red button" type="button" id="clearClassFilterBtn">
+                                        <i class="times icon"></i>
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
                         <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="StudentTable"
                                style="margin-top: 5px;width: 100%">
@@ -124,6 +144,26 @@
 {% block js %}
     <script>
         let studentTab
+
+        function loadClassFilterList() {
+            $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}",
+                success: function (response) {
+                    $('#listStandardFilter').html('');
+                    $('#listStandardFilter').append('<option value=\"\">All Classes</option>');
+                    for (let j = 0; j < response.data.length; j++) {
+                        $('#listStandardFilter').append('<option value=\"' + response.data[j]['ID'] + '\">' + response.data[j]['Name'] + '</option>');
+                    }
+                    $('#listStandardFilter').dropdown();
+                },
+                error: function () {
+                    addErrorNotification();
+                }
+            });
+        }
+        $(loadClassFilterList());
+
         // user Details
 
         studentTab = $('#StudentTable').DataTable({
@@ -166,7 +206,21 @@
             "pageLength": 10,
             "processing": true,
             "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:StudentListJson' %}"
+            "ajax": {
+                "url": "{% url 'managementAppAPI:StudentListJson' %}",
+                "data": function (d) {
+                    d.standardFilter = $('#listStandardFilter').val() || '';
+                }
+            }
+        });
+
+        $('#applyClassFilterBtn').on('click', function () {
+            studentTab.ajax.reload();
+        });
+
+        $('#clearClassFilterBtn').on('click', function () {
+            $('#listStandardFilter').dropdown('clear');
+            studentTab.ajax.reload();
         });
 
 

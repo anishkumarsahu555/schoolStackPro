@@ -61,7 +61,7 @@
                                         </div>
                                         <div class="avatar-preview">
                                             <div id="cImg"
-                                            style="background-image: url({% if instance.photo.thumbnail.url %}{{ instance.photo.thumbnail.url }}{% else %}{% static 'images/add_photo.svg' %}{% endif %});">
+                                            style="background-image: url({% if instance.photo %}{{ instance.photo.url }}{% else %}{% static 'images/add_photo.svg' %}{% endif %});">
 
                                             </div>
                                         </div>

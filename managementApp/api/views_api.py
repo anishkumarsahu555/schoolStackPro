@@ -5,6 +5,7 @@ from django.contrib.auth.models import Group
 from django.db import transaction, IntegrityError
 from django.db.models import Q, Prefetch
 from django.http import JsonResponse as DjangoJsonResponse
+from django.templatetags.static import static
 from django.utils.crypto import get_random_string
 from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
@@ -50,6 +51,27 @@ def _api_response(payload, safe=False, status=200):
 
 def _current_session_id(request):
     return request.session.get("current_session", {}).get("Id")
+
+
+def _safe_image_url(image_field, fallback_path='images/default_avatar.svg'):
+    if not image_field:
+        return static(fallback_path)
+
+    thumbnail = getattr(image_field, 'thumbnail', None)
+    if thumbnail:
+        try:
+            return thumbnail.url
+        except Exception:
+            pass
+
+    try:
+        return image_field.url
+    except Exception:
+        return static(fallback_path)
+
+
+def _avatar_image_html(image_field):
+    return '<img class="ui avatar image" src="{}">'.format(_safe_image_url(image_field))
 
 
 @login_required
@@ -1173,7 +1195,7 @@ class TeacherListJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
+            images = _avatar_image_html(item.photo)
 
             action = '''<a href="/management/teacher_detail/{}/" data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button purple">
                 <i class="eye icon"></i>
@@ -1413,6 +1435,9 @@ class StudentListJson(BaseDatatableView):
         )
 
     def filter_queryset(self, qs):
+        standard_filter = (self.request.GET.get('standardFilter') or '').strip()
+        if standard_filter.isdigit():
+            qs = qs.filter(standardID_id=int(standard_filter))
 
         search = self.request.GET.get('search[value]', None)
         if search:
@@ -1433,7 +1458,7 @@ class StudentListJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
+            images = _avatar_image_html(item.photo)
 
             action = '''<a href="/management/student_detail/{}/" data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button purple">
                 <i class="eye icon"></i>
@@ -2092,6 +2117,14 @@ class ExamTimeTableListJson(BaseDatatableView):
         ).order_by('-examDate', 'startTime')
 
     def filter_queryset(self, qs):
+        standard_filter = (self.request.GET.get('standardFilter') or '').strip()
+        exam_filter = (self.request.GET.get('examFilter') or '').strip()
+
+        if standard_filter.isdigit():
+            qs = qs.filter(standardID_id=int(standard_filter))
+        if exam_filter.isdigit():
+            qs = qs.filter(examID_id=int(exam_filter))
+
         search = self.request.GET.get('search[value]', None)
         if search:
             qs = qs.filter(
@@ -2567,9 +2600,9 @@ class TakeStudentAttendanceByClassJson(BaseDatatableView):
         json_data = []
         for item in qs:
             if item.studentID and item.studentID.photo:
-                images = '<img class="ui avatar image" src="{}">'.format(item.studentID.photo.thumbnail.url)
+                images = _avatar_image_html(item.studentID.photo)
             else:
-                images = '<i class="user circle icon" style="font-size: 1.4rem;"></i>'
+                images = _avatar_image_html(None)
 
             action = '''<button class="ui mini primary button" onclick="pushAttendance({})">
   Save
@@ -2704,7 +2737,7 @@ class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
         dateRangeEndDate = datetime.strptime(dateRangeEndDate, '%d/%m/%Y')
         json_data = []
         for item in qs:
-            images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
+            images = _avatar_image_html(item.photo)
             if dateRangeSubject == "all":
                 present_count = StudentAttendance.objects.filter(studentID_id=item.id, isPresent=True, bySubject=False,
                                                                  isHoliday=False,
@@ -2870,7 +2903,7 @@ class TakeTeacherAttendanceJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            images = '<img class="ui avatar image" src="{}">'.format(item.teacherID.photo.thumbnail.url)
+            images = _avatar_image_html(item.teacherID.photo)
 
             action = '''<button class="ui mini primary button" onclick="pushAttendance({})">
   Save
@@ -2968,7 +3001,7 @@ class StaffAttendanceHistoryByDateRangeJson(BaseDatatableView):
             dateRangeEndDate = datetime.strptime(dateRangeEndDate, '%d/%m/%Y')
 
             for item in qs:
-                images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
+                images = _avatar_image_html(item.photo)
                 present_count = TeacherAttendance.objects.filter(teacherID_id=item.id, isPresent=True,
                                                                  isHoliday=False, isDeleted=False,
                                                                  attendanceDate__range=[dateRangeStartDate,
@@ -3256,7 +3289,7 @@ class StudentFeeDetailsByClassJson(BaseDatatableView):
                     elif month == 'December':
                         December = 'Paid'
 
-            images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
+            images = _avatar_image_html(item.photo)
             json_data.append([
                 images,
                 escape(item.name),
@@ -3395,9 +3428,9 @@ class MarksOfSubjectsByStudentJson(BaseDatatableView):
             </div>
                         '''.format(item.pk, item.pk, item.note)
             if item.studentID and item.studentID.photo:
-                images = '<img class="ui avatar image" src="{}">'.format(item.studentID.photo.thumbnail.url)
+                images = _avatar_image_html(item.studentID.photo)
             else:
-                images = '<i class="user circle icon" style="font-size: 1.4rem;"></i>'
+                images = _avatar_image_html(None)
             json_data.append([
                 images,
                 escape(item.studentID.name),
@@ -3482,9 +3515,9 @@ class StudentMarksDetailsByClassAndExamJson(BaseDatatableView):
                 marks.append(exam_sub_list_by_student.mark if exam_sub_list_by_student else 0)
 
             if item.photo:
-                images = '<img class="ui avatar image" src="{}">'.format(item.photo.thumbnail.url)
+                images = _avatar_image_html(item.photo)
             else:
-                images = '<i class="user circle icon" style="font-size: 1.4rem;"></i>'
+                images = _avatar_image_html(None)
             json_data.append([
                 images,
                 escape(item.name),
@@ -4000,7 +4033,7 @@ class ParentsListJson(BaseDatatableView):
             for s in students:
                 student_html.append(f'''
                     <a class="ui blue image label">
-                    <img src="{s.photo.thumbnail.url if s.photo else ''}">
+                    <img src="{_safe_image_url(s.photo)}">
                     {s.name}
                     <div class="detail">Roll: {s.roll} Class: {s.standardID.name if s.standardID else 'N/A'} { "-"+s.standardID.section if s.standardID and s.standardID.hasSection == "Yes" else ''}</div>
                     </a>

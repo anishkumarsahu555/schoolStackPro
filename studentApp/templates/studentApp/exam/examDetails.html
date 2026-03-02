@@ -7,139 +7,300 @@
 
 {% block css %}
     <style>
-        .exam-page .top-grid {
+        .exam-page .sheet-shell {
+            border: 1px solid var(--app-border);
+            border-radius: 14px;
+            background: var(--app-surface);
+            padding: 0.85rem;
+            box-shadow: 0 10px 24px rgba(22, 32, 52, 0.08);
+        }
+
+        .exam-page .sheet-header {
+            border: 1px solid var(--app-border);
+            border-radius: 12px;
+            padding: 0.9rem 0.95rem;
+            background: linear-gradient(180deg, var(--app-surface) 0%, var(--app-hover) 100%);
+            text-align: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .exam-page .school-head {
+            display: grid;
+            grid-template-columns: 56px auto;
+            gap: 0.65rem;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.65rem;
+        }
+
+        .exam-page .school-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            border: 1px solid var(--app-border);
+            object-fit: cover;
+            background: var(--app-surface);
+        }
+
+        .exam-page .school-name {
+            margin: 0;
+            color: var(--app-text);
+            font-size: 1rem;
+            font-weight: 800;
+            line-height: 1.25;
+            text-align: left;
+        }
+
+        .exam-page .school-address {
+            margin: 0.15rem 0 0;
+            color: var(--app-muted);
+            font-size: 0.8rem;
+            text-align: left;
+        }
+
+        .exam-page .sheet-title {
+            margin: 0;
+            color: var(--app-text);
+            font-size: 1.08rem;
+            font-weight: 800;
+            letter-spacing: .02em;
+        }
+
+        .exam-page .sheet-subtitle {
+            margin: 0.26rem 0 0;
+            color: var(--app-muted);
+            font-size: 0.82rem;
+        }
+
+        .exam-page .schedule-strip {
+            display: inline-block;
+            margin-top: 0.6rem;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 0.35rem 0.9rem;
+            border-radius: 6px;
+            font-weight: 700;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+            font-size: 0.78rem;
+        }
+
+        .exam-page .filter-bar {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.8rem;
-            margin-bottom: 0.9rem;
-        }
-
-        .exam-page .mini-stat {
-            border: 1px solid var(--app-border);
-            border-radius: 12px;
-            padding: 0.75rem 0.85rem;
-            background: var(--app-surface);
-        }
-
-        .exam-page .mini-label {
-            color: var(--app-muted);
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: .03em;
-        }
-
-        .exam-page .mini-value {
-            color: var(--app-text);
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-top: 0.2rem;
-        }
-
-        .exam-page .toolbar {
-            display: flex;
             gap: 0.6rem;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 0.8rem;
+            margin-bottom: 0.75rem;
         }
 
-        .exam-page .chip {
-            border: 1px solid var(--app-border);
-            background: var(--app-surface);
-            color: var(--app-text);
-            padding: 0.42rem 0.8rem;
-            border-radius: 999px;
-            font-size: 0.82rem;
-            cursor: pointer;
-        }
-
-        .exam-page .chip.active {
-            background: var(--app-active);
-            color: var(--app-brand);
-            border-color: var(--app-brand);
-            font-weight: 700;
-        }
-
-        .exam-page .exam-card {
-            border: 1px solid var(--app-border);
-            border-radius: 12px;
-            margin-bottom: 0.8rem;
-            overflow: hidden;
-        }
-
-        .exam-page .exam-head {
-            background: var(--app-surface);
-            color: var(--app-text);
+        .exam-page .summary-line {
             display: flex;
             justify-content: space-between;
-            gap: 0.8rem;
             align-items: center;
-            padding: 0.9rem 1rem;
-            cursor: pointer;
-        }
-
-        .exam-page .exam-title {
-            margin: 0;
-            font-size: 1rem;
-        }
-
-        .exam-page .exam-meta {
+            flex-wrap: wrap;
+            gap: 0.45rem;
             color: var(--app-muted);
             font-size: 0.82rem;
+            margin-bottom: 0.65rem;
         }
 
-        .exam-page .exam-body {
-            border-top: 1px solid var(--app-border);
-            padding: 0.6rem;
-            display: none;
+        .exam-page .time-banner {
+            border: 1px solid var(--app-border);
+            border-radius: 8px;
+            padding: 0.45rem 0.65rem;
+            background: var(--app-hover);
+            color: var(--app-text);
+            font-weight: 700;
+        }
+
+        .exam-page .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--app-border);
+            border-radius: 12px;
             background: var(--app-surface);
         }
 
-        .exam-page .exam-card.expanded .exam-body {
-            display: block;
+        .exam-page table {
+            width: 100%;
+            min-width: 920px;
+            border-collapse: collapse;
+            background: var(--app-surface);
+            table-layout: fixed;
         }
 
-        .exam-page .slot-row {
-            display: grid;
-            grid-template-columns: 1.2fr 0.85fr 0.85fr 0.8fr 1.2fr;
-            gap: 0.5rem;
-            border-bottom: 1px dashed var(--app-border);
-            padding: 0.55rem 0.3rem;
-            font-size: 0.86rem;
-            color: var(--app-text);
-        }
-
-        .exam-page .slot-row.header {
-            color: var(--app-muted);
-            font-size: 0.76rem;
-            font-weight: 700;
+        .exam-page thead th {
+            background: #111827;
+            color: #ffffff;
+            border: 1px solid #293246;
+            padding: 0.56rem 0.5rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: .03em;
-            border-bottom: 1px solid var(--app-border);
-            padding-top: 0.2rem;
+            text-align: left;
+            white-space: nowrap;
         }
 
-        .exam-page .slot-row:last-child {
-            border-bottom: none;
+        .exam-page tbody td {
+            border: 1px solid var(--app-border);
+            padding: 0.56rem 0.5rem;
+            color: var(--app-text);
+            font-size: 0.83rem;
+            vertical-align: top;
+            word-wrap: break-word;
+            overflow-wrap: anywhere;
+        }
+
+        .exam-page tbody tr:nth-child(even) td {
+            background: color-mix(in srgb, var(--app-hover) 65%, transparent);
+        }
+
+        .exam-page .time-chip {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--app-brand);
+            color: var(--app-brand);
+            background: var(--app-active);
+            border-radius: 999px;
+            padding: 0.16rem 0.55rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .exam-page .col-day { width: 14%; }
+        .exam-page .col-date { width: 15%; }
+        .exam-page .col-time { width: 20%; }
+        .exam-page .col-subject { width: 24%; }
+        .exam-page .col-room { width: 10%; }
+        .exam-page .col-note { width: 17%; }
+
+        .exam-page .instructions {
+            border: 1px dashed var(--app-border);
+            border-radius: 10px;
+            background: var(--app-surface);
+            padding: 0.7rem 0.8rem;
+            margin-top: 0.8rem;
+        }
+
+        .exam-page .instructions h4 {
+            margin: 0 0 0.45rem;
+            color: var(--app-text);
+            font-size: 0.98rem;
+        }
+
+        .exam-page .instructions ul {
+            margin: 0;
+            padding-left: 1.1rem;
+            color: var(--app-muted);
+            font-size: 0.82rem;
+            line-height: 1.45;
         }
 
         .exam-page .empty-note {
+            display: none;
             text-align: center;
             color: var(--app-muted);
-            padding: 1.2rem 0.4rem;
+            border: 1px dashed var(--app-border);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 0.65rem;
         }
 
-        @media (max-width: 900px) {
-            .exam-page .top-grid {
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 10mm;
+            }
+
+            .ui.top.fixed.menu,
+            .ui.sidebar,
+            .ui.pointing.secondary.menu,
+            .exam-page .filter-bar,
+            .exam-page .summary-line,
+            .exam-page .empty-note,
+            .exam-page .print-hide {
+                display: none !important;
+            }
+
+            .main-content {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .exam-page .sheet-shell {
+                border: 0 !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+            }
+
+            .exam-page .table-wrap {
+                overflow: visible !important;
+                border: 0 !important;
+                border-radius: 0 !important;
+            }
+
+            .exam-page table {
+                min-width: 0 !important;
+                width: 100% !important;
+                table-layout: fixed !important;
+                font-size: 11px !important;
+            }
+
+            .exam-page thead th,
+            .exam-page tbody td {
+                padding: 4px 5px !important;
+                font-size: 11px !important;
+                line-height: 1.25 !important;
+                color: #111827 !important;
+                border-color: #9ca3af !important;
+                background: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .exam-page .time-chip {
+                border-color: #1d4ed8 !important;
+                color: #1d4ed8 !important;
+                background: #ffffff !important;
+            }
+
+            .exam-page .sheet-header,
+            .exam-page .table-wrap,
+            .exam-page .instructions {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+
+            .exam-page .instructions {
+                margin-top: 8px !important;
+                padding: 8px !important;
+            }
+        }
+
+        @media (max-width: 980px) {
+            .exam-page .filter-bar {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .exam-page .filter-bar {
                 grid-template-columns: 1fr;
             }
 
-            .exam-page .slot-row {
-                grid-template-columns: 1fr 1fr;
+            .exam-page .sheet-title {
+                font-size: 1.05rem;
             }
 
-            .exam-page .slot-row.header {
-                display: none;
+            .exam-page .school-head {
+                grid-template-columns: 1fr;
+                text-align: center;
+                justify-items: center;
+            }
+
+            .exam-page .school-name,
+            .exam-page .school-address {
+                text-align: center;
             }
         }
     </style>
@@ -152,70 +313,97 @@
                 <div style="cursor: pointer;" class="item active">Exam Details</div>
             </div>
 
-            <div class="ui segment">
-                <div class="top-grid">
-                    <div class="mini-stat">
-                        <div class="mini-label">Total Exams</div>
-                        <div class="mini-value">{{ exams|length }}</div>
-                    </div>
-                    <div class="mini-stat">
-                        <div class="mini-label">Scheduled Papers</div>
-                        <div class="mini-value">{{ timetable_rows|length }}</div>
-                    </div>
-                    <div class="mini-stat">
-                        <div class="mini-label">Class</div>
-                        <div class="mini-value">{% if exams and exams.0.standardID %}{{ exams.0.standardID.name }}{% if exams.0.standardID.section %} - {{ exams.0.standardID.section }}{% endif %}{% else %}N/A{% endif %}</div>
-                    </div>
-                </div>
-
-                {% regroup timetable_rows by examID as exam_groups %}
-
+            <div class="sheet-shell">
                 {% if timetable_rows %}
-                    <div class="toolbar" id="examFilterBar">
-                        <button class="chip active" type="button" data-exam="all">All Exams</button>
-                        {% for exam_group in exam_groups %}
-                            <button class="chip" type="button" data-exam="{{ exam_group.grouper.id|default:'na' }}">{{ exam_group.grouper.name|default:'N/A' }}</button>
-                        {% endfor %}
+                    <div class="ui tiny form filter-bar">
+                        <div class="field">
+                            <label>Class</label>
+                            <input type="text" value="{{ class_label }}" readonly>
+                        </div>
+                        <div class="field">
+                            <label>Exam</label>
+                            <select class="ui search dropdown" id="examFilter" data-default="{{ default_exam_id }}">
+                                <option value="">All Exams</option>
+                                {% for ex in exam_options %}
+                                    <option value="{{ ex.id }}" {% if default_exam_id and default_exam_id == ex.id|stringformat:"s" %}selected{% endif %}>{{ ex.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field" style="padding-top: 1.95rem;">
+                            <button class="ui mini red button" type="button" id="clearFilterBtn">
+                                <i class="times icon"></i>
+                                Clear
+                            </button>
+                            <button class="ui mini blue button print-hide" type="button" id="printBtn">
+                                <i class="print icon"></i>
+                                Print
+                            </button>
+                        </div>
                     </div>
 
-                    <div id="examGroupsWrap">
-                        {% for exam_group in exam_groups %}
-                            <div class="exam-card {% if forloop.first %}expanded{% endif %}" data-exam-group="{{ exam_group.grouper.id|default:'na' }}">
-                                <div class="exam-head">
-                                    <div>
-                                        <h4 class="exam-title">{{ exam_group.grouper.name|default:'N/A' }}</h4>
-                                        <div class="exam-meta">{{ exam_group.list|length }} paper(s)</div>
-                                    </div>
-                                    <i class="angle down icon"></i>
-                                </div>
-                                <div class="exam-body">
-                                    <div class="slot-row header">
-                                        <div>Subject</div>
-                                        <div>Date</div>
-                                        <div>Start</div>
-                                        <div>End</div>
-                                        <div>Room / Note</div>
-                                    </div>
-                                    {% for row in exam_group.list %}
-                                        <div class="slot-row">
-                                            <div>{{ row.subjectID.name|default:'N/A' }}</div>
-                                            <div>{{ row.examDate|date:'d M Y'|default:'N/A' }}</div>
-                                            <div>{{ row.startTime|time:'h:i A'|default:'N/A' }}</div>
-                                            <div>{{ row.endTime|time:'h:i A'|default:'N/A' }}</div>
-                                            <div>
-                                                {{ row.roomNo|default:'N/A' }}
-                                                {% if row.note %}
-                                                    <div style="color: var(--app-muted); font-size: .8rem;">{{ row.note }}</div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
+                    <div class="sheet-header">
+                        <div class="school-head">
+                            <img class="school-logo"
+                                 src="{% if school_detail and school_detail.logo %}{{ school_detail.logo.url }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}"
+                                 alt="School Logo">
+                            <div>
+                                <h3 class="school-name">{% if school_detail and school_detail.schoolName %}{{ school_detail.schoolName }}{% else %}School Name{% endif %}</h3>
+                                <p class="school-address">
+                                    {% if school_detail and school_detail.address %}{{ school_detail.address }}{% else %}School Address{% endif %}
+                                    {% if school_detail and school_detail.city %}, {{ school_detail.city }}{% endif %}
+                                    {% if school_detail and school_detail.state %}, {{ school_detail.state }}{% endif %}
+                                </p>
                             </div>
-                        {% endfor %}
+                        </div>
+                        <h2 class="sheet-title" id="dynamicScheduleTitle">School Examination Schedule</h2>
+                        <p class="sheet-subtitle" id="dynamicScheduleSubtitle">Class-wise date sheet with day, date, and exact exam timing</p>
+                        <span class="schedule-strip" id="dynamicScheduleStrip">Official Examination Time Table</span>
                     </div>
+
+                    <div class="summary-line">
+                        <div id="rowCounter">0 schedule(s)</div>
+                        <div class="time-banner">Time shown in 12-hour format</div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th class="col-day">Day</th>
+                                <th class="col-date">Date</th>
+                                <th class="col-time">Time</th>
+                                <th class="col-subject">Subject</th>
+                                <th class="col-room">Room</th>
+                                <th class="col-note">Note</th>
+                            </tr>
+                            </thead>
+                            <tbody id="examTableBody">
+                            {% for row in timetable_rows %}
+                                <tr data-exam-id="{{ row.examID.id|default:'' }}">
+                                    <td>{{ row.examDate|date:'l'|default:'N/A' }}</td>
+                                    <td>{{ row.examDate|date:'d M Y'|default:'N/A' }}</td>
+                                    <td><span class="time-chip">{{ row.startTime|time:'h:i A'|default:'N/A' }} - {{ row.endTime|time:'h:i A'|default:'N/A' }}</span></td>
+                                    <td>{{ row.subjectID.name|default:'N/A' }}</td>
+                                    <td>{{ row.roomNo|default:'N/A' }}</td>
+                                    <td>{{ row.note|default:'N/A' }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="instructions">
+                        <h4>Instructions</h4>
+                        <ul>
+                            <li>Report to the exam room at least 20 minutes before start time.</li>
+                            <li>Bring required admit card/stationery as instructed by school.</li>
+                            <li>Check updates regularly in case of schedule changes.</li>
+                        </ul>
+                    </div>
+
+                    <div class="empty-note" id="emptyNote">No timetable rows match the selected exam.</div>
                 {% else %}
-                    <div class="empty-note">No timetable available.</div>
+                    <div class="empty-note" style="display:block;">No timetable available.</div>
                 {% endif %}
             </div>
         </div>
@@ -225,30 +413,64 @@
 {% block js %}
     <script>
         (function () {
-            const cards = document.querySelectorAll('#examGroupsWrap .exam-card');
-            const chips = document.querySelectorAll('#examFilterBar .chip');
+            const examFilter = document.getElementById('examFilter');
+            const clearBtn = document.getElementById('clearFilterBtn');
+            const printBtn = document.getElementById('printBtn');
+            const emptyNote = document.getElementById('emptyNote');
+            const rowCounter = document.getElementById('rowCounter');
+            const titleEl = document.getElementById('dynamicScheduleTitle');
+            const subtitleEl = document.getElementById('dynamicScheduleSubtitle');
+            const stripEl = document.getElementById('dynamicScheduleStrip');
+            const rows = Array.from(document.querySelectorAll('#examTableBody tr'));
 
-            cards.forEach(function (card) {
-                const head = card.querySelector('.exam-head');
-                if (!head) return;
-                head.addEventListener('click', function () {
-                    card.classList.toggle('expanded');
+            if (!examFilter || !rows.length) return;
+
+            const defaultExam = (examFilter.getAttribute('data-default') || '').trim();
+            const classLabel = '{{ class_label|default:"N/A"|escapejs }}';
+            const examYear = '{{ exam_year|default:"Exam Year"|escapejs }}';
+
+            $('#examFilter').dropdown();
+            if (defaultExam) {
+                $('#examFilter').dropdown('set selected', defaultExam);
+            }
+
+            function applyFilter() {
+                const selectedExam = (examFilter.value || '').trim();
+                const selectedExamLabel = selectedExam
+                    ? ((examFilter.options[examFilter.selectedIndex] || {}).text || 'All Exams')
+                    : 'All Exams';
+
+                let visible = 0;
+                rows.forEach(function (row) {
+                    const examId = row.getAttribute('data-exam-id') || '';
+                    const show = !selectedExam || examId === selectedExam;
+                    row.style.display = show ? '' : 'none';
+                    if (show) visible += 1;
                 });
+
+                rowCounter.textContent = visible + (visible === 1 ? ' schedule' : ' schedules');
+                emptyNote.style.display = visible > 0 ? 'none' : 'block';
+                titleEl.textContent = classLabel + ' - ' + selectedExamLabel + ' Schedule';
+                subtitleEl.textContent = 'Class-wise date sheet for ' + examYear;
+                stripEl.textContent = selectedExamLabel + ' | ' + examYear;
+            }
+
+            examFilter.addEventListener('change', applyFilter);
+            clearBtn.addEventListener('click', function () {
+                if (defaultExam) {
+                    $('#examFilter').dropdown('set selected', defaultExam);
+                } else {
+                    $('#examFilter').dropdown('clear');
+                }
+                applyFilter();
             });
-
-            chips.forEach(function (chip) {
-                chip.addEventListener('click', function () {
-                    const selected = chip.getAttribute('data-exam');
-                    chips.forEach(function (c) { c.classList.remove('active'); });
-                    chip.classList.add('active');
-
-                    cards.forEach(function (card) {
-                        const group = card.getAttribute('data-exam-group');
-                        const visible = selected === 'all' || selected === group;
-                        card.style.display = visible ? '' : 'none';
-                    });
+            if (printBtn) {
+                printBtn.addEventListener('click', function () {
+                    window.print();
                 });
-            });
+            }
+
+            applyFilter();
         })();
     </script>
 {% endblock %}

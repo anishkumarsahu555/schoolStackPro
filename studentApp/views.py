@@ -239,22 +239,59 @@ def student_exam_details(request):
     student, current_session_id = _bootstrap_student_context(request)
     exams = []
     timetable_rows = []
+    exam_options = []
+    default_exam_id = ''
+    exam_year = request.session.get('current_session', {}).get('currentSessionYear') or ''
     if student and student.standardID_id and current_session_id:
-        exams = AssignExamToClass.objects.select_related('examID', 'standardID').filter(
+        session_obj = SchoolSession.objects.filter(pk=current_session_id, isDeleted=False).first()
+        if session_obj and session_obj.sessionYear:
+            exam_year = session_obj.sessionYear
+        exams = list(AssignExamToClass.objects.select_related('examID', 'standardID').filter(
             isDeleted=False,
             standardID_id=student.standardID_id,
             sessionID_id=current_session_id,
-        ).order_by('startDate', 'examID__name')
-        timetable_rows = ExamTimeTable.objects.select_related(
+        ).order_by('startDate', 'examID__name'))
+        timetable_rows = list(ExamTimeTable.objects.select_related(
             'standardID', 'examID', 'subjectID'
         ).filter(
             isDeleted=False,
             standardID_id=student.standardID_id,
             sessionID_id=current_session_id,
-        ).order_by('examID__name', 'examDate', 'startTime', 'subjectID__name')
+        ).order_by('examDate', 'startTime', 'examID__name', 'subjectID__name'))
+
+        exam_meta = {}
+        for row in timetable_rows:
+            if not row.examID_id:
+                continue
+            label = row.examID.name if row.examID else 'N/A'
+            row_date = row.examDate
+            if row.examID_id not in exam_meta:
+                exam_meta[row.examID_id] = {'id': row.examID_id, 'label': label, 'latest_date': row_date}
+            else:
+                prev_date = exam_meta[row.examID_id]['latest_date']
+                if row_date and (prev_date is None or row_date > prev_date):
+                    exam_meta[row.examID_id]['latest_date'] = row_date
+        exam_options = sorted(
+            exam_meta.values(),
+            key=lambda x: (x['latest_date'] is None, x['latest_date']),
+            reverse=True
+        )
+        default_exam_id = str(exam_options[0]['id']) if exam_options else ''
+
+    class_label = 'N/A'
+    if student and student.standardID:
+        class_label = student.standardID.name or 'N/A'
+        if student.standardID.section:
+            class_label += f' - {student.standardID.section}'
+
     return render(request, 'studentApp/exam/examDetails.html', {
         'exams': exams,
         'timetable_rows': timetable_rows,
+        'exam_options': exam_options,
+        'default_exam_id': default_exam_id,
+        'school_detail': student.schoolID if student else None,
+        'class_label': class_label,
+        'exam_year': exam_year or 'Exam Year',
     })
 
 

@@ -1,21 +1,25 @@
-{% extends 'teacherApp/index.html' %}
+{% extends 'managementApp/index.html' %}
 {% load static %}
 
 {% block title %}
-    <title>Exam Time Table</title>
+    <title>Exam Time Table Preview</title>
 {% endblock %}
 
-{% block css %}
+{% block body %}
     <style>
-        .exam-page .sheet-shell {
+        .exam-preview-page {
+            margin-top: 0.2rem;
+        }
+
+        .exam-preview {
             border: 1px solid var(--app-border);
             border-radius: 14px;
-            background: var(--app-surface);
             padding: 0.85rem;
+            background: var(--app-surface);
             box-shadow: 0 10px 24px rgba(22, 32, 52, 0.08);
         }
 
-        .exam-page .sheet-header {
+        .exam-preview .preview-sheet-header {
             border: 1px solid var(--app-border);
             border-radius: 12px;
             padding: 0.9rem 0.95rem;
@@ -24,16 +28,16 @@
             margin-bottom: 0.75rem;
         }
 
-        .exam-page .school-head {
+        .exam-preview .school-head {
             display: grid;
             grid-template-columns: 56px auto;
             gap: 0.65rem;
             align-items: center;
-            margin-bottom: 0.65rem;
             justify-content: center;
+            margin-bottom: 0.65rem;
         }
 
-        .exam-page .school-logo {
+        .exam-preview .school-logo {
             width: 56px;
             height: 56px;
             border-radius: 10px;
@@ -42,21 +46,23 @@
             background: var(--app-surface);
         }
 
-        .exam-page .school-name {
+        .exam-preview .school-name {
             margin: 0;
             color: var(--app-text);
             font-size: 1rem;
             font-weight: 800;
             line-height: 1.25;
+            text-align: left;
         }
 
-        .exam-page .school-address {
+        .exam-preview .school-address {
             margin: 0.15rem 0 0;
             color: var(--app-muted);
             font-size: 0.8rem;
+            text-align: left;
         }
 
-        .exam-page .sheet-title {
+        .exam-preview .preview-title {
             margin: 0;
             color: var(--app-text);
             font-size: 1.08rem;
@@ -64,13 +70,13 @@
             letter-spacing: .02em;
         }
 
-        .exam-page .sheet-subtitle {
+        .exam-preview .preview-subtitle {
             margin: 0.26rem 0 0;
             color: var(--app-muted);
             font-size: 0.82rem;
         }
 
-        .exam-page .schedule-strip {
+        .exam-preview .preview-strip {
             display: inline-block;
             margin-top: 0.6rem;
             background: #0f172a;
@@ -83,14 +89,14 @@
             font-size: 0.78rem;
         }
 
-        .exam-page .filter-bar {
+        .exam-preview .preview-filter-bar {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 0.6rem;
             margin-bottom: 0.75rem;
         }
 
-        .exam-page .summary-line {
+        .exam-preview .summary-line {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -101,7 +107,7 @@
             margin-bottom: 0.65rem;
         }
 
-        .exam-page .time-banner {
+        .exam-preview .time-banner {
             border: 1px solid var(--app-border);
             border-radius: 8px;
             padding: 0.45rem 0.65rem;
@@ -110,7 +116,7 @@
             font-weight: 700;
         }
 
-        .exam-page .class-block {
+        .exam-preview .class-block {
             border: 1px solid var(--app-border);
             border-radius: 12px;
             overflow: hidden;
@@ -118,7 +124,7 @@
             background: var(--app-surface);
         }
 
-        .exam-page .class-head {
+        .exam-preview .class-head {
             background: #111827;
             color: #ffffff;
             padding: 0.58rem 0.72rem;
@@ -132,11 +138,11 @@
             text-transform: uppercase;
         }
 
-        .exam-page .table-wrap {
+        .exam-preview .table-wrap {
             overflow-x: auto;
         }
 
-        .exam-page table {
+        .exam-preview table {
             width: 100%;
             min-width: 920px;
             border-collapse: collapse;
@@ -144,7 +150,7 @@
             table-layout: fixed;
         }
 
-        .exam-page thead th {
+        .exam-preview thead th {
             background: #111827;
             color: #ffffff;
             border: 1px solid #293246;
@@ -156,7 +162,7 @@
             white-space: nowrap;
         }
 
-        .exam-page tbody td {
+        .exam-preview tbody td {
             border: 1px solid var(--app-border);
             padding: 0.56rem 0.5rem;
             color: var(--app-text);
@@ -166,11 +172,11 @@
             overflow-wrap: anywhere;
         }
 
-        .exam-page tbody tr:nth-child(even) td {
+        .exam-preview tbody tr:nth-child(even) td {
             background: color-mix(in srgb, var(--app-hover) 65%, transparent);
         }
 
-        .exam-page .time-chip {
+        .exam-preview .time-chip {
             display: inline-flex;
             align-items: center;
             border: 1px solid var(--app-brand);
@@ -183,52 +189,15 @@
             white-space: nowrap;
         }
 
-        .exam-page .col-date { width: 24%; }
-        .exam-page .col-exam { width: 16%; }
-        .exam-page .col-subject { width: 20%; }
-        .exam-page .col-room { width: 12%; }
-        .exam-page .col-note { width: 28%; }
+        .exam-preview .col-day { width: 12%; }
+        .exam-preview .col-date { width: 13%; }
+        .exam-preview .col-time { width: 19%; }
+        .exam-preview .col-exam { width: 14%; }
+        .exam-preview .col-subject { width: 18%; }
+        .exam-preview .col-room { width: 9%; }
+        .exam-preview .col-note { width: 15%; }
 
-        .exam-page .schedule-day {
-            display: grid;
-            gap: 0.18rem;
-            line-height: 1.25;
-        }
-
-        .exam-page .schedule-day .day-date {
-            font-weight: 700;
-            color: var(--app-text);
-            font-size: 0.84rem;
-            letter-spacing: .01em;
-        }
-
-        .exam-page .schedule-day .time {
-            margin-top: 0.12rem;
-        }
-
-        .exam-page .instructions {
-            border: 1px dashed var(--app-border);
-            border-radius: 10px;
-            background: var(--app-surface);
-            padding: 0.7rem 0.8rem;
-            margin-top: 0.8rem;
-        }
-
-        .exam-page .instructions h4 {
-            margin: 0 0 0.45rem;
-            color: var(--app-text);
-            font-size: 0.98rem;
-        }
-
-        .exam-page .instructions ul {
-            margin: 0;
-            padding-left: 1.1rem;
-            color: var(--app-muted);
-            font-size: 0.82rem;
-            line-height: 1.45;
-        }
-
-        .exam-page .empty-note {
+        .exam-preview .empty-note {
             display: none;
             text-align: center;
             color: var(--app-muted);
@@ -247,10 +216,10 @@
             .ui.top.fixed.menu,
             .ui.sidebar,
             .ui.pointing.secondary.menu,
-            .exam-page .filter-bar,
-            .exam-page .summary-line,
-            .exam-page .empty-note,
-            .exam-page .print-hide {
+            .exam-preview .preview-filter-bar,
+            .exam-preview .summary-line,
+            .exam-preview .empty-note,
+            .print-hide {
                 display: none !important;
             }
 
@@ -259,28 +228,28 @@
                 padding: 0 !important;
             }
 
-            .exam-page .sheet-shell {
+            .exam-preview,
+            .exam-preview .class-block {
                 border: 0 !important;
                 box-shadow: none !important;
-                padding: 0 !important;
                 background: #ffffff !important;
             }
 
-            .exam-page .table-wrap {
+            .exam-preview .table-wrap {
                 overflow: visible !important;
                 border: 0 !important;
                 border-radius: 0 !important;
             }
 
-            .exam-page table {
+            .exam-preview table {
                 min-width: 0 !important;
                 width: 100% !important;
                 table-layout: fixed !important;
                 font-size: 11px !important;
             }
 
-            .exam-page thead th,
-            .exam-page tbody td {
+            .exam-preview thead th,
+            .exam-preview tbody td {
                 padding: 4px 5px !important;
                 font-size: 11px !important;
                 line-height: 1.25 !important;
@@ -291,100 +260,103 @@
                 print-color-adjust: exact;
             }
 
-            .exam-page .time-chip {
+            .exam-preview .time-chip {
                 border-color: #1d4ed8 !important;
                 color: #1d4ed8 !important;
                 background: #ffffff !important;
             }
 
-            .exam-page .sheet-header,
-            .exam-page .class-block,
-            .exam-page .instructions {
+            .exam-preview .preview-sheet-header,
+            .exam-preview .class-block {
                 break-inside: avoid;
                 page-break-inside: avoid;
             }
 
-            .exam-page .instructions {
-                margin-top: 8px !important;
-                padding: 8px !important;
+            .exam-preview .class-head {
+                border-bottom: 1px solid #9ca3af !important;
+                color: #111827 !important;
+                background: #ffffff !important;
+            }
+
+            .exam-preview table thead th:nth-child(4),
+            .exam-preview table tbody td:nth-child(4) {
+                display: none !important;
             }
         }
 
-        @media (max-width: 980px) {
-            .exam-page .filter-bar {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+        @media (max-width: 900px) {
+            .exam-preview .preview-filter-bar {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
         @media (max-width: 640px) {
-            .exam-page .filter-bar {
+            .exam-preview .preview-filter-bar {
                 grid-template-columns: 1fr;
             }
 
-            .exam-page .sheet-title {
-                font-size: 1.05rem;
-            }
-
-            .exam-page .school-head {
+            .exam-preview .school-head {
                 grid-template-columns: 1fr;
                 text-align: center;
                 justify-items: center;
             }
+
+            .exam-preview .school-name,
+            .exam-preview .school-address {
+                text-align: center;
+            }
         }
     </style>
-{% endblock %}
 
-{% block body %}
-    <div class="exam-page ui left aligned basic grid">
+    <div class="exam-preview-page ui left aligned basic grid">
         <div class="sixteen wide column">
             <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active">Exam Time Table</div>
+                <a class="item" href="{% url 'managementApp:manage_exam_timetable' %}">
+                    <i class="left arrow icon"></i>
+                    Back
+                </a>
+                <div style="cursor: pointer;" class="item active">Exam-wise Interactive Preview</div>
             </div>
 
-            <div class="sheet-shell">
-                {% if timetable_rows %}
-                    {% regroup timetable_rows by standardID as class_groups %}
+            <div class="exam-preview">
+                {% regroup timetable_rows by standardID as class_groups %}
+                {% regroup timetable_rows by examID as exam_groups %}
 
-                    <div class="ui tiny form filter-bar">
+                {% if timetable_rows %}
+                    <div class="ui tiny form preview-filter-bar">
                         <div class="field">
                             <label>Class</label>
-                            <select class="ui search dropdown" id="classFilter" data-default="{{ default_class_id }}">
+                            <select class="ui search dropdown" id="previewClassFilter">
                                 <option value="">All Classes</option>
-                                {% for cls in class_options %}
-                                    <option value="{{ cls.id }}" {% if default_class_id and default_class_id == cls.id|stringformat:"s" %}selected{% endif %}>
-                                        {{ cls.label }}
-                                    </option>
+                                {% for cg in class_groups %}
+                                    <option value="{{ cg.grouper.id }}">{{ cg.grouper.name|default:'N/A' }}{% if cg.grouper.section %} - {{ cg.grouper.section }}{% endif %}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="field">
                             <label>Exam</label>
-                            <select class="ui search dropdown" id="examFilter" data-default="{{ default_exam_id }}">
+                            <select class="ui search dropdown" id="previewExamFilter">
                                 <option value="">All Exams</option>
-                                {% for ex in exam_options %}
-                                    <option value="{{ ex.id }}" {% if default_exam_id and default_exam_id == ex.id|stringformat:"s" %}selected{% endif %}>{{ ex.label }}</option>
+                                {% for eg in exam_groups %}
+                                    <option value="{{ eg.grouper.id }}">{{ eg.grouper.name|default:'N/A' }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="field" style="padding-top: 1.95rem;">
-                            <button class="ui mini red button" type="button" id="clearFilterBtn">
-                                <i class="times icon"></i>
-                                Clear
+                            <button class="ui mini red button" type="button" id="previewClearBtn">
+                                <i class="times icon"></i> Clear
                             </button>
                         </div>
                         <div class="field print-hide" style="padding-top: 1.95rem;">
-                            <button class="ui mini blue button" type="button" id="printBtn">
-                                <i class="print icon"></i>
-                                Print
+                            <button class="ui mini blue button" type="button" id="previewPrintBtn">
+                                <i class="print icon"></i> Print
                             </button>
                         </div>
                     </div>
 
-                    <div class="sheet-header">
+                    <div class="preview-sheet-header">
                         <div class="school-head">
-                            <img class="school-logo"
-                                 src="{% if school_detail and school_detail.logo %}{{ school_detail.logo.url }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}"
-                                 alt="School Logo">
+                            <img class="school-logo" src="{% if school_detail and school_detail.logo %}{{ school_detail.logo.url }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}" alt="School Logo">
                             <div>
                                 <h3 class="school-name">{% if school_detail and school_detail.schoolName %}{{ school_detail.schoolName }}{% else %}School Name{% endif %}</h3>
                                 <p class="school-address">
@@ -394,18 +366,18 @@
                                 </p>
                             </div>
                         </div>
-                        <h2 class="sheet-title" id="dynamicScheduleTitle">School Examination Schedule</h2>
-                        <p class="sheet-subtitle" id="dynamicScheduleSubtitle">Class-wise date sheet with day, date, and exact exam timing</p>
-                        <span class="schedule-strip" id="dynamicScheduleStrip">Official Examination Time Table</span>
+                        <h2 class="preview-title" id="previewDynamicTitle">School Examination Schedule</h2>
+                        <p class="preview-subtitle" id="previewDynamicSubtitle">Class-wise date sheet with day, date, and exact exam timing</p>
+                        <span class="preview-strip" id="previewDynamicStrip">Official Examination Time Table</span>
                     </div>
 
                     <div class="summary-line">
-                        <div id="blockCounter">0 class block(s)</div>
-                        <div id="rowCounter">0 schedule(s)</div>
+                        <div id="previewBlockCounter">0 class block(s)</div>
+                        <div id="previewRowCounter">0 schedule(s)</div>
                         <div class="time-banner">Time shown in 12-hour format</div>
                     </div>
 
-                    <div id="classBlocksWrap">
+                    <div id="previewClassBlocksWrap">
                         {% for cg in class_groups %}
                             <section class="class-block" data-class-id="{{ cg.grouper.id }}">
                                 <header class="class-head">
@@ -416,7 +388,9 @@
                                     <table>
                                         <thead>
                                         <tr>
-                                            <th class="col-date">Day / Date / Time</th>
+                                            <th class="col-day">Day</th>
+                                            <th class="col-date">Date</th>
+                                            <th class="col-time">Time</th>
                                             <th class="col-exam">Exam</th>
                                             <th class="col-subject">Subject</th>
                                             <th class="col-room">Room</th>
@@ -426,14 +400,9 @@
                                         <tbody>
                                         {% for row in cg.list %}
                                             <tr data-exam-id="{{ row.examID.id|default:'' }}">
-                                                <td>
-                                                    <div class="schedule-day">
-                                                        <span class="day-date">{{ row.examDate|date:'D'|default:'N/A' }}, {{ row.examDate|date:'d M Y'|default:'N/A' }}</span>
-                                                        <span class="time">
-                                                            <span class="time-chip">{{ row.startTime|time:'h:i A'|default:'N/A' }} - {{ row.endTime|time:'h:i A'|default:'N/A' }}</span>
-                                                        </span>
-                                                    </div>
-                                                </td>
+                                                <td>{{ row.examDate|date:'l'|default:'N/A' }}</td>
+                                                <td>{{ row.examDate|date:'d M Y'|default:'N/A' }}</td>
+                                                <td><span class="time-chip">{{ row.startTime|time:'h:i A'|default:'N/A' }} - {{ row.endTime|time:'h:i A'|default:'N/A' }}</span></td>
                                                 <td>{{ row.examID.name|default:'N/A' }}</td>
                                                 <td>{{ row.subjectID.name|default:'N/A' }}</td>
                                                 <td>{{ row.roomNo|default:'N/A' }}</td>
@@ -446,19 +415,9 @@
                             </section>
                         {% endfor %}
                     </div>
-
-                    <div class="instructions">
-                        <h4>Instructions</h4>
-                        <ul>
-                            <li>Students should report to exam hall at least 20 minutes before start time.</li>
-                            <li>Ensure subject-wise seating and room allocation are checked before exam day.</li>
-                            <li>Any schedule change should be notified through school notice/event immediately.</li>
-                        </ul>
-                    </div>
-
-                    <div class="empty-note" id="emptyNote">No timetable rows match the selected filters.</div>
+                    <div class="empty-note" id="previewEmptyNote">No timetable rows match the selected filters.</div>
                 {% else %}
-                    <div class="empty-note" style="display:block;">No exam timetable available for your assigned classes.</div>
+                    <div class="empty-note" style="display:block;">No timetable entries found yet.</div>
                 {% endif %}
             </div>
         </div>
@@ -468,32 +427,24 @@
 {% block js %}
     <script>
         (function () {
-            const classFilter = document.getElementById('classFilter');
-            const examFilter = document.getElementById('examFilter');
-            const clearBtn = document.getElementById('clearFilterBtn');
-            const printBtn = document.getElementById('printBtn');
-            const emptyNote = document.getElementById('emptyNote');
-            const blockCounter = document.getElementById('blockCounter');
-            const rowCounter = document.getElementById('rowCounter');
-            const titleEl = document.getElementById('dynamicScheduleTitle');
-            const subtitleEl = document.getElementById('dynamicScheduleSubtitle');
-            const stripEl = document.getElementById('dynamicScheduleStrip');
-            const blocks = Array.from(document.querySelectorAll('#classBlocksWrap .class-block'));
-            const defaultClass = (classFilter.getAttribute('data-default') || '').trim();
-            const defaultExam = (examFilter.getAttribute('data-default') || '').trim();
-            const sessionYear = '{{ request.session.current_session.currentSessionYear|default:"Exam Year" }}';
+            const classFilter = document.getElementById('previewClassFilter');
+            const examFilter = document.getElementById('previewExamFilter');
+            const clearBtn = document.getElementById('previewClearBtn');
+            const printBtn = document.getElementById('previewPrintBtn');
+            const emptyNote = document.getElementById('previewEmptyNote');
+            const blockCounter = document.getElementById('previewBlockCounter');
+            const rowCounter = document.getElementById('previewRowCounter');
+            const titleEl = document.getElementById('previewDynamicTitle');
+            const subtitleEl = document.getElementById('previewDynamicSubtitle');
+            const stripEl = document.getElementById('previewDynamicStrip');
+            const blocks = Array.from(document.querySelectorAll('#previewClassBlocksWrap .class-block'));
+            const sessionYear = '{{ exam_year|default:"Exam Year"|escapejs }}';
 
-            if (!blocks.length) return;
+            if (!classFilter || !examFilter || !blocks.length) return;
 
-            $('#classFilter, #examFilter').dropdown();
-            if (defaultClass) {
-                $('#classFilter').dropdown('set selected', defaultClass);
-            }
-            if (defaultExam) {
-                $('#examFilter').dropdown('set selected', defaultExam);
-            }
+            $('#previewClassFilter, #previewExamFilter').dropdown();
 
-            function applyFilters() {
+            function applyPreviewFilters() {
                 const selectedClass = (classFilter.value || '').trim();
                 const selectedExam = (examFilter.value || '').trim();
                 const selectedClassLabel = selectedClass
@@ -533,40 +484,28 @@
 
                 blockCounter.textContent = visibleBlockCount + ' class block(s)';
                 rowCounter.textContent = visibleRowCount + (visibleRowCount === 1 ? ' schedule' : ' schedules');
-                emptyNote.style.display = visibleRowCount > 0 ? 'none' : 'block';
-                if (titleEl) {
-                    titleEl.textContent = selectedClassLabel + ' - ' + selectedExamLabel + ' Schedule';
-                }
-                if (subtitleEl) {
-                    subtitleEl.textContent = 'Class-wise date sheet for ' + sessionYear;
-                }
-                if (stripEl) {
-                    stripEl.textContent = selectedExamLabel + ' | ' + sessionYear;
-                }
+                if (emptyNote) emptyNote.style.display = visibleRowCount > 0 ? 'none' : 'block';
+                if (titleEl) titleEl.textContent = selectedClassLabel + ' - ' + selectedExamLabel + ' Schedule';
+                if (subtitleEl) subtitleEl.textContent = 'Class-wise date sheet for ' + sessionYear;
+                if (stripEl) stripEl.textContent = selectedExamLabel + ' | ' + sessionYear;
             }
 
-            classFilter.addEventListener('change', applyFilters);
-            examFilter.addEventListener('change', applyFilters);
-            clearBtn.addEventListener('click', function () {
-                if (defaultClass) {
-                    $('#classFilter').dropdown('set selected', defaultClass);
-                } else {
-                    $('#classFilter').dropdown('clear');
-                }
-                if (defaultExam) {
-                    $('#examFilter').dropdown('set selected', defaultExam);
-                } else {
-                    $('#examFilter').dropdown('clear');
-                }
-                applyFilters();
-            });
+            classFilter.addEventListener('change', applyPreviewFilters);
+            examFilter.addEventListener('change', applyPreviewFilters);
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function () {
+                    $('#previewClassFilter').dropdown('clear');
+                    $('#previewExamFilter').dropdown('clear');
+                    applyPreviewFilters();
+                });
+            }
             if (printBtn) {
                 printBtn.addEventListener('click', function () {
                     window.print();
                 });
             }
 
-            applyFilters();
+            applyPreviewFilters();
         })();
     </script>
 {% endblock %}
