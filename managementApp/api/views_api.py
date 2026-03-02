@@ -5,7 +5,6 @@ from django.contrib.auth.models import Group
 from django.db import transaction, IntegrityError
 from django.db.models import Q, Prefetch
 from django.http import JsonResponse as DjangoJsonResponse
-from django.templatetags.static import static
 from django.utils.crypto import get_random_string
 from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
@@ -22,6 +21,7 @@ from utils.logger import logger
 from utils.custom_response import SuccessResponse, ErrorResponse
 from utils.cache_modfier import add_item_to_existing_cache, delete_item_from_existing_cache, update_item_in_existing_cache
 from utils.custom_decorators import check_groups
+from utils.image_utils import safe_image_url, avatar_image_html, optimize_uploaded_image
 
 
 def _api_response(payload, safe=False, status=200):
@@ -54,24 +54,11 @@ def _current_session_id(request):
 
 
 def _safe_image_url(image_field, fallback_path='images/default_avatar.svg'):
-    if not image_field:
-        return static(fallback_path)
-
-    thumbnail = getattr(image_field, 'thumbnail', None)
-    if thumbnail:
-        try:
-            return thumbnail.url
-        except Exception:
-            pass
-
-    try:
-        return image_field.url
-    except Exception:
-        return static(fallback_path)
+    return safe_image_url(image_field, fallback_path=fallback_path)
 
 
 def _avatar_image_html(image_field):
-    return '<img class="ui avatar image" src="{}">'.format(_safe_image_url(image_field))
+    return avatar_image_html(image_field)
 
 
 @login_required
@@ -136,7 +123,7 @@ def update_school_detail_api(request):
         school.website = (request.POST.get('website') or '').strip()
         logo = request.FILES.get('logo')
         if logo:
-            school.logo = logo
+            school.logo = optimize_uploaded_image(logo, max_width=1024, max_height=1024, jpeg_quality=85)
 
         if not school.schoolName:
             return ErrorResponse('School name is required.').to_json_response()
@@ -1015,7 +1002,7 @@ def add_teacher_api(request):
             instance.phoneNumber = phone
             instance.aadhar = aadhar
             instance.qualification = qualification
-            instance.photo = imageUpload
+            instance.photo = optimize_uploaded_image(imageUpload)
             instance.presentAddress = address
             instance.presentCity = city
             instance.presentState = state
@@ -1109,7 +1096,7 @@ def update_teacher_api(request):
             instance.aadhar = aadhar
             instance.qualification = qualification
             if imageUpload:
-                instance.photo = imageUpload
+                instance.photo = optimize_uploaded_image(imageUpload)
             instance.presentAddress = address
             instance.presentCity = city
             instance.presentState = state
@@ -1376,7 +1363,7 @@ def add_student_api(request):
 
     # ---------- IMAGE ----------
     if "imageUpload" in files_data:
-        student_obj.photo = files_data["imageUpload"]
+        student_obj.photo = optimize_uploaded_image(files_data["imageUpload"])
 
     # ---------- USER ----------
     username = 'STU' + get_random_string(5, '1234567890')
@@ -1768,7 +1755,7 @@ def edit_student_api(request):
 
         # ---------- IMAGE ----------
         if "imageUpload" in files_data:
-            student_obj.photo = files_data["imageUpload"]
+            student_obj.photo = optimize_uploaded_image(files_data["imageUpload"])
 
         # ---------- FINAL SAVE ----------
         pre_save_with_user.send(sender=Student, instance=student_obj, user=request.user.pk)

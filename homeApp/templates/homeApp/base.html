@@ -1382,21 +1382,29 @@
             <i class="moon icon" id="themeToggleIcon"></i>
         </a>
 
-        <div class="ui dropdown item">
-            <i class="calendar check icon"></i>
-            <span data-tooltip="Change Session" data-position="bottom center"
-                  data-variation="tiny">{{ request.session.current_session.currentSessionYear }}</span>
-            <div class="menu">
-
-                {% for foo in request.session.session_list %}
-                    <a href="#" class="item" onclick="showSessionModal({{ foo.Id }})">
-                        <i class="circle outline icon"></i>
-                        {{ foo.currentSessionYear }}
-                    </a>
-                {% endfor %}
-
+        {% if request.path|slice:":9" == "/teacher/" or request.path|slice:":9" == "/student/" %}
+            <div class="item">
+                <i class="calendar check icon"></i>
+                <span data-tooltip="Current Session" data-position="bottom center"
+                      data-variation="tiny">{{ request.session.current_session.currentSessionYear|default:"N/A" }}</span>
             </div>
-        </div>
+        {% else %}
+            <div class="ui dropdown item">
+                <i class="calendar check icon"></i>
+                <span data-tooltip="Change Session" data-position="bottom center"
+                      data-variation="tiny">{{ request.session.current_session.currentSessionYear }}</span>
+                <div class="menu">
+
+                    {% for foo in request.session.session_list %}
+                        <a href="#" class="item" onclick="showSessionModal({{ foo.Id }})">
+                            <i class="circle outline icon"></i>
+                            {{ foo.currentSessionYear }}
+                        </a>
+                    {% endfor %}
+
+                </div>
+            </div>
+        {% endif %}
         <div class="ui dropdown item">
             <i class="user cirlce icon"></i>
             <div class="menu">
@@ -1428,29 +1436,31 @@
     </div>
 </div>
 
-<div class="ui mini test modal front transition" id="sessionModal">
-    <div class="header">
-        Change School Session?
-    </div>
-    <div class="content">
-        <p>Are you sure you want to change the school session?</p>
-        <input type="hidden" id="sessionID">
-        <span class="ui text small red">Note: Alterations made to the school session will not be reflected in the database.</span>
-    </div>
-    <div class="actions">
-        <div class="ui negative button">
-            No
+{% if request.path|slice:":9" != "/teacher/" and request.path|slice:":9" != "/student/" %}
+    <div class="ui mini test modal front transition" id="sessionModal">
+        <div class="header">
+            Change School Session?
         </div>
-        <button class="ui right labeled icon button green saveBtn" onclick="changeSession()">
-            Submit
-            <i class="checkmark icon"></i>
-        </button>
-        <button style="display: none" class="ui right labeled icon button green saveBtnLoad">
-            Saving ...
-            <i class="checkmark icon"></i>
-        </button>
+        <div class="content">
+            <p>Are you sure you want to change the school session?</p>
+            <input type="hidden" id="sessionID">
+            <span class="ui text small red">Note: Alterations made to the school session will not be reflected in the database.</span>
+        </div>
+        <div class="actions">
+            <div class="ui negative button">
+                No
+            </div>
+            <button class="ui right labeled icon button green saveBtn" onclick="changeSession()">
+                Submit
+                <i class="checkmark icon"></i>
+            </button>
+            <button style="display: none" class="ui right labeled icon button green saveBtnLoad">
+                Saving ...
+                <i class="checkmark icon"></i>
+            </button>
+        </div>
     </div>
-</div>
+{% endif %}
 
 
 <script src="https://frontendfunn.github.io/semantic-ui-admin-dashboard-template/js/script.js"></script>

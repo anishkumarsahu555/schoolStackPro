@@ -1,7 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Sum
 from django.http import JsonResponse
-from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
@@ -10,27 +9,15 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from managementApp.models import Student, TeacherDetail, AssignSubjectsToTeacher, Event, StudentFee, Standard
 from utils.conts import MONTHS_LIST
 from utils.custom_decorators import check_groups
+from utils.image_utils import safe_image_url, avatar_image_html
 
 
 def _safe_image_url(image_field, fallback_path='images/default_avatar.svg'):
-    if not image_field:
-        return static(fallback_path)
-
-    thumbnail = getattr(image_field, 'thumbnail', None)
-    if thumbnail:
-        try:
-            return thumbnail.url
-        except Exception:
-            pass
-
-    try:
-        return image_field.url
-    except Exception:
-        return static(fallback_path)
+    return safe_image_url(image_field, fallback_path=fallback_path)
 
 
 def _avatar_image_html(image_field):
-    return '<img class="ui avatar image" src="{}">'.format(_safe_image_url(image_field))
+    return avatar_image_html(image_field)
 
 
 @method_decorator(login_required, name='dispatch')
