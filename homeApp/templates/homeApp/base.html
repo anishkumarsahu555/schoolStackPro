@@ -48,6 +48,7 @@
             --app-hover: #f1f3f4;
             --app-active: #e8f0fe;
             --app-brand: #1a73e8;
+            --top-nav-height: 60px;
         }
 
         html[data-theme="dark"] {
@@ -71,14 +72,19 @@
             scroll-behavior: smooth;
         }
 
-       .material-sidenav {
+.material-sidenav {
     width: 280px;
-    {% comment %} height: 100vh; {% endcomment %}
     background: var(--app-surface);
     box-shadow: 2px 0 8px rgba(0,0,0,0.05);
     padding: 12px 0;
     font-family: 'Roboto', sans-serif;
     border-right: 1px solid var(--app-border);
+}
+
+#sidebar.ui.sidebar.material-sidenav {
+    display: flex !important;
+    flex-direction: column;
+    background: var(--app-surface) !important;
 }
 
 .sidenav-header {
@@ -1089,12 +1095,46 @@
             width: 6px;
         }
 
+        html,
+        body {
+            height: 100% !important;
+            min-height: 100% !important;
+            overflow: hidden !important;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        body.pushable {
+            height: 100% !important;
+            min-height: 100% !important;
+            overflow: hidden !important;
+        }
+
+        body.pushable > .pusher {
+            height: 100% !important;
+            min-height: 100% !important;
+            overflow: hidden !important;
+            position: relative;
+        }
+
         .ui.vertical.menu.sidebar-menu {
-            margin-top: 40px !important;
-            max-height: calc(100% - 40px) !important;
-            height: calc(100% - 40px) !important;
+            position: fixed !important;
+            top: var(--top-nav-height) !important;
+            bottom: 0 !important;
+            margin-top: 0 !important;
+            max-height: none !important;
+            height: auto !important;
+            min-height: 0 !important;
             overflow-y: auto !important;
             overflow-x: hidden;
+        }
+
+        #sidebar.material-sidenav,
+        #sidebar.ui.sidebar {
+            top: var(--top-nav-height) !important;
+            bottom: 0 !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
         }
 
         .ui.vertical.menu.sidebar-menu .item i.icon {
@@ -1103,9 +1143,36 @@
         }
 
         .main-content {
-            margin-top: 40px;
+            margin-top: var(--top-nav-height);
+            height: calc(100vh - var(--top-nav-height));
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            -webkit-overflow-scrolling: touch;
             padding-left: 5px;
             padding-right: 5px;
+        }
+
+        #pullRefreshIndicator {
+            position: fixed;
+            top: calc(var(--top-nav-height) + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1060;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--app-text);
+            background: var(--app-surface);
+            border: 1px solid var(--app-border);
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .16s ease;
+        }
+
+        #pullRefreshIndicator.show {
+            opacity: 1;
         }
 
         @media (min-width: 768px) {
@@ -1116,6 +1183,21 @@
                 width: 15rem !important;
             }
 
+            #sidebar.ui.sidebar {
+                visibility: visible !important;
+                transform: none !important;
+                -webkit-transform: none !important;
+                left: 0 !important;
+            }
+
+            #mobileSidebarBackdrop {
+                display: none !important;
+            }
+
+            #pullRefreshIndicator {
+                display: none !important;
+            }
+
             .main-content {
                 margin-left: 15rem;
             }
@@ -1123,6 +1205,130 @@
             .sidebar-menu-toggler {
                 display: none !important;
             }
+        }
+
+        @media (max-width: 767px) {
+            :root {
+                --top-nav-height: 56px;
+            }
+
+            .ui.top.fixed.menu {
+                min-height: var(--top-nav-height) !important;
+                height: var(--top-nav-height) !important;
+                padding: 0 4px !important;
+                z-index: 1050 !important;
+            }
+
+            .ui.top.fixed.menu .left.menu .item,
+            .ui.top.fixed.menu .right.menu .item {
+                padding: 0.65rem 0.55rem !important;
+                min-height: var(--top-nav-height) !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+
+            .ui.top.fixed.menu .header.item {
+                max-width: 40vw;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-size: 0.9rem !important;
+                padding-left: 0.35rem !important;
+                padding-right: 0.35rem !important;
+            }
+
+            .logoImg {
+                width: 24px;
+                height: 24px;
+                margin: 0;
+            }
+
+            .ui.top.fixed.menu .right.menu {
+                margin-left: auto !important;
+            }
+
+            .ui.top.fixed.menu .right.menu .ui.dropdown.item > span,
+            .ui.top.fixed.menu .right.menu > .item > span {
+                max-width: 26vw;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: inline-block;
+                vertical-align: middle;
+            }
+
+            .ui.sidebar.material-sidenav.sidebar-menu {
+                width: min(86vw, 320px) !important;
+                top: var(--top-nav-height) !important;
+                bottom: 0 !important;
+                margin-top: 0 !important;
+                max-height: none !important;
+                height: auto !important;
+                padding-bottom: calc(16px + env(safe-area-inset-bottom));
+                z-index: 1041 !important;
+                left: 0 !important;
+                transform: translateX(-100%) !important;
+                -webkit-transform: translateX(-100%) !important;
+                transition: transform .22s ease !important;
+                visibility: visible !important;
+            }
+
+            #sidebar.ui.sidebar.mobile-open {
+                transform: translateX(0) !important;
+                -webkit-transform: translateX(0) !important;
+            }
+
+            #mobileSidebarBackdrop {
+                position: fixed;
+                top: var(--top-nav-height);
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(15, 23, 42, 0.42);
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity .18s ease;
+                z-index: 1040;
+            }
+
+            #mobileSidebarBackdrop.open {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            body.mobile-sidebar-open {
+                overflow: hidden !important;
+                touch-action: none;
+            }
+
+            .material-sidenav .nav-section {
+                padding: 10px 14px 6px;
+            }
+
+            .material-sidenav .nav-item {
+                padding: 12px 14px;
+                font-size: 13px;
+            }
+
+            .main-content {
+                margin-left: 0 !important;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .ui.top.fixed.menu .right.menu .ui.dropdown.item > span,
+            .ui.top.fixed.menu .right.menu > .item > span {
+                display: none !important;
+            }
+
+            .ui.top.fixed.menu .header.item {
+                max-width: 34vw;
+            }
+        }
+
+        body.pushable:not(.dimmed),
+        body.pushable.dimmed {
+            overflow: hidden !important;
         }
 
         .custom_search {
@@ -1142,9 +1348,30 @@
         .logoImg {
             width: 30px;
             height: 30px;
-            margin: 5px;
-            position: relative;
-            left: 10px;
+            margin: 0;
+            object-fit: contain;
+            display: block;
+        }
+
+        .ui.top.fixed.menu .left.menu {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ui.top.fixed.menu .left.menu .nav-brand-logo.item {
+            padding: 0.4rem 0.35rem !important;
+            min-height: var(--top-nav-height) !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .ui.top.fixed.menu .left.menu .header.item {
+            display: flex !important;
+            align-items: center !important;
+            margin: 0 !important;
+            line-height: 1 !important;
+            padding-left: 0.2rem !important;
         }
 
         .ui.inverted.menu .active.item {
@@ -1361,6 +1588,7 @@
         </div>
     </div>
 </div>
+<div id="mobileSidebarBackdrop"></div>
 
 <!-- sidebar -->
 <!-- top nav -->
@@ -1370,9 +1598,10 @@
         <a href="#" class="sidebar-menu-toggler item" data-target="#sidebar">
             <i class="sidebar icon"></i>
         </a>
-        <img class="logo logoImg" src="{% if app_icon_url %}{{ app_icon_url }}{% elif request.session.current_session.SchoolLogo %}{{ request.session.current_session.SchoolLogo }}{% else %}{% static 'sw/images/icon-192.png' %}{% endif %}">
+        <a href="#" class="item nav-brand-logo">
+            <img class="logo logoImg" src="{% if app_icon_url %}{{ app_icon_url }}{% elif request.session.current_session.SchoolLogo %}{{ request.session.current_session.SchoolLogo }}{% else %}{% static 'sw/images/icon-192.png' %}{% endif %}">
+        </a>
         <a href="#" class="header item">
-
             SCHOOLS-STACK
         </a>
     </div>
@@ -1396,10 +1625,25 @@
                 <div class="menu">
 
                     {% for foo in request.session.session_list %}
-                        <a href="#" class="item" onclick="showSessionModal({{ foo.Id }})">
-                            <i class="circle outline icon"></i>
-                            {{ foo.currentSessionYear }}
-                        </a>
+                        {% if foo.Id == request.session.current_session.Id %}
+                            <a href="#"
+                               class="item active selected"
+                               onclick="showSessionModal({{ foo.Id }})">
+                                <i class="check circle icon"></i>
+                                {{ foo.currentSessionYear }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% for foo in request.session.session_list|dictsortreversed:"currentSessionYear" %}
+                        {% if foo.Id != request.session.current_session.Id %}
+                            <a href="#"
+                               class="item"
+                               onclick="showSessionModal({{ foo.Id }})">
+                                <i class="circle outline icon"></i>
+                                {{ foo.currentSessionYear }}
+                            </a>
+                        {% endif %}
                     {% endfor %}
 
                 </div>
@@ -1430,6 +1674,7 @@
 
 
 </div>
+<div id="pullRefreshIndicator">Pull to refresh</div>
 <div class="preloader">
     <div class="ui active dimmer">
         <div class="ui medium text loader">Loading</div>
@@ -1463,10 +1708,187 @@
 {% endif %}
 
 
-<script src="https://frontendfunn.github.io/semantic-ui-admin-dashboard-template/js/script.js"></script>
-
 <script>
-    $('.menu .item').tab();
+    $('.menu .item[data-tab]').tab();
+    $('.ui.dropdown').dropdown({
+        fullTextSearch: false
+    });
+
+    (function initMobileSidebar() {
+        var $sidebar = $('#sidebar');
+        var $backdrop = $('#mobileSidebarBackdrop');
+        var $pusher = $('.pusher');
+        var $body = $('body');
+        if (!$sidebar.length) {
+            return;
+        }
+
+        function isMobile() {
+            return window.matchMedia('(max-width: 767px)').matches;
+        }
+
+        function enforceDesktopScroll() {
+            if (isMobile()) return;
+            $sidebar.removeClass('mobile-open animating transition visible');
+            $backdrop.removeClass('open');
+            $body.removeClass('mobile-sidebar-open dimmed pushed');
+            $pusher.removeClass('dimmed pushed').css({
+                transform: '',
+                '-webkit-transform': '',
+                overflow: '',
+                height: '',
+                minHeight: ''
+            });
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        }
+
+        function openMobileSidebar() {
+            if (!isMobile()) return;
+            $sidebar.addClass('mobile-open');
+            $backdrop.addClass('open');
+            $('body').addClass('mobile-sidebar-open');
+        }
+
+        function closeMobileSidebar() {
+            $sidebar.removeClass('mobile-open');
+            $backdrop.removeClass('open');
+            $('body').removeClass('mobile-sidebar-open');
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        }
+
+        function syncSidebarMode() {
+            if (!isMobile()) {
+                closeMobileSidebar();
+                enforceDesktopScroll();
+            }
+        }
+
+        $('.sidebar-menu-toggler').off('click').on('click.mobileNav', function (e) {
+            e.preventDefault();
+            if (!isMobile()) return;
+            if ($sidebar.hasClass('mobile-open')) {
+                closeMobileSidebar();
+            } else {
+                openMobileSidebar();
+            }
+        });
+
+        $sidebar.on('click.mobileNav', 'a[href]', function () {
+            var href = $(this).attr('href') || '';
+            if (isMobile() && href && href !== '#') {
+                closeMobileSidebar();
+            }
+        });
+
+        $backdrop.off('click.mobileNav').on('click.mobileNav', function () {
+            closeMobileSidebar();
+        });
+
+        $(window).off('resize.mobileNav').on('resize.mobileNav', function () {
+            syncSidebarMode();
+        });
+
+        $(window).on('pageshow.mobileNav', function () {
+            syncSidebarMode();
+        });
+
+        $(document).on('readystatechange.mobileNav visibilitychange.mobileNav', function () {
+            if (!isMobile()) {
+                setTimeout(enforceDesktopScroll, 0);
+            }
+        });
+
+        $(document).on('keydown.mobileNav', function (e) {
+            if (e.key === 'Escape' && $sidebar.hasClass('mobile-open')) {
+                closeMobileSidebar();
+            }
+        });
+
+        syncSidebarMode();
+        enforceDesktopScroll();
+    })();
+
+    (function initMobilePullToRefresh() {
+        if (!window.matchMedia('(max-width: 767px)').matches) return;
+
+        var content = document.querySelector('.main-content');
+        var indicator = document.getElementById('pullRefreshIndicator');
+        if (!content || !indicator) return;
+
+        var startY = 0;
+        var pullDistance = 0;
+        var pulling = false;
+        var readyToRefresh = false;
+        var REFRESH_THRESHOLD = 74;
+        var MAX_PULL = 100;
+
+        function updateIndicator(text, show) {
+            indicator.textContent = text;
+            indicator.classList.toggle('show', !!show);
+        }
+
+        function resetPull() {
+            content.style.transform = '';
+            content.style.transition = 'transform .18s ease';
+            setTimeout(function () {
+                content.style.transition = '';
+            }, 180);
+            updateIndicator('Pull to refresh', false);
+            pullDistance = 0;
+            pulling = false;
+            readyToRefresh = false;
+        }
+
+        content.addEventListener('touchstart', function (e) {
+            if (document.body.classList.contains('mobile-sidebar-open')) return;
+            if (content.scrollTop > 0) return;
+            if (!e.touches || e.touches.length !== 1) return;
+            startY = e.touches[0].clientY;
+            pulling = true;
+            pullDistance = 0;
+            readyToRefresh = false;
+            content.style.transition = '';
+        }, {passive: true});
+
+        content.addEventListener('touchmove', function (e) {
+            if (!pulling || !e.touches || e.touches.length !== 1) return;
+            var deltaY = e.touches[0].clientY - startY;
+            if (deltaY <= 0) {
+                resetPull();
+                return;
+            }
+            if (content.scrollTop > 0) {
+                resetPull();
+                return;
+            }
+            e.preventDefault();
+            pullDistance = Math.min(MAX_PULL, deltaY * 0.58);
+            content.style.transform = 'translateY(' + pullDistance + 'px)';
+            readyToRefresh = pullDistance >= REFRESH_THRESHOLD;
+            updateIndicator(readyToRefresh ? 'Release to refresh' : 'Pull to refresh', true);
+        }, {passive: false});
+
+        content.addEventListener('touchend', function () {
+            if (!pulling) return;
+            if (readyToRefresh) {
+                updateIndicator('Refreshing...', true);
+                content.style.transition = 'transform .14s ease';
+                content.style.transform = 'translateY(0)';
+                setTimeout(function () {
+                    window.location.reload();
+                }, 120);
+                return;
+            }
+            resetPull();
+        }, {passive: true});
+
+        content.addEventListener('touchcancel', function () {
+            if (!pulling) return;
+            resetPull();
+        }, {passive: true});
+    })();
 
     function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
@@ -1686,7 +2108,20 @@
             .accordion()
         ;
     $.fn.DataTable.ext.pager.numbers_length = 4;
+
+    function removeAllExcelButtons() {
+        $('.dataTables_wrapper .buttons-excel').remove();
+        $('.dataTables_wrapper .dt-buttons .ui.button').filter(function () {
+            return ($(this).text() || '').trim().toLowerCase() === 'excel';
+        }).remove();
+    }
+
+    $(document).on('init.dt', function () {
+        removeAllExcelButtons();
+    });
+
     $(document).ready(function () {
+        removeAllExcelButtons();
         // initialize the form an fields
         $('.ui.form')
             .form({
