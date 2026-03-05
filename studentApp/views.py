@@ -313,8 +313,33 @@ def student_events(request):
 @login_required
 @check_groups('Student')
 def student_leave_applications(request):
-    _bootstrap_student_context(request)
-    return render(request, 'studentApp/leave_applications.html', {})
+    student, current_session_id = _bootstrap_student_context(request)
+    if not student or not current_session_id:
+        return render(request, 'studentApp/leave_applications.html', {
+            'leave_rows': [],
+            'pending_count': 0,
+            'approved_count': 0,
+            'other_count': 0,
+            'student_not_found': True,
+        })
+
+    leave_rows = list(LeaveApplication.objects.select_related('leaveTypeID').filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        studentID_id=student.id,
+    ).order_by('-datetime'))
+
+    pending_count = sum(1 for row in leave_rows if (row.status or '').lower() == 'pending')
+    approved_count = sum(1 for row in leave_rows if (row.status or '').lower() == 'approved')
+    other_count = len(leave_rows) - pending_count - approved_count
+
+    return render(request, 'studentApp/leave_applications.html', {
+        'leave_rows': leave_rows,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'other_count': other_count,
+        'student_not_found': False,
+    })
 
 
 @login_required

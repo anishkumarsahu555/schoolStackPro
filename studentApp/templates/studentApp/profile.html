@@ -4,6 +4,28 @@
     <title>My Profile</title>
 {% endblock %}
 
+{% block css %}
+    <style>
+        @media (max-width: 767px) {
+            body.student-mobile-route .detail-shell {
+                margin-top: 0.15rem !important;
+            }
+
+            body.student-mobile-route .detail-shell .sixteen.wide.column {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+        }
+
+        html[data-theme="dark"] body.student-mobile-route .detail-shell .ui.segment,
+        html[data-theme="dark"] body.student-mobile-route .detail-shell .ui.card,
+        html[data-theme="dark"] body.student-mobile-route .detail-shell .ui.table {
+            border-color: #324a73 !important;
+            box-shadow: 0 10px 22px rgba(1, 7, 18, 0.32) !important;
+        }
+    </style>
+{% endblock %}
+
 {% block body %}
     <div class="ui left aligned basic grid detail-shell" style="margin-left:0;margin-right:0;">
         <div class="sixteen wide column" style="padding-left:0;padding-right:0;">
