@@ -5,53 +5,334 @@
     <title>Assigned Subjects</title>
 {% endblock %}
 
-{% block css %}
+{% block body %}
     <style>
-        #TeacherAssignedSubjectTable_length {
-            left: 20px;
-            position: absolute;
+        .subject-shell {
+            display: grid;
+            gap: 0.85rem;
         }
 
-        #TeacherAssignedSubjectTable_filter {
-            float: right;
+        .subject-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.7rem;
         }
 
-        .dt-buttons {
-            position: absolute;
-            left: 174px;
+        .stat-box {
+            border-radius: 14px;
+            border: 1px solid var(--dm-border, #d8e2f0);
+            background: var(--dm-card-bg, #ffffff);
+            padding: 0.7rem 0.8rem;
+            box-shadow: 0 6px 16px rgba(29, 48, 77, 0.08);
         }
 
-        input[type=search] {
-            width: 100px !important;
+        .stat-box.total {
+            background: rgba(42, 111, 216, 0.1);
+            border-color: rgba(42, 111, 216, 0.28);
+        }
+
+        .stat-box.total .stat-value {
+            color: #1e57ad;
+        }
+
+        .stat-box.classes {
+            background: rgba(44, 150, 90, 0.12);
+            border-color: rgba(44, 150, 90, 0.34);
+        }
+
+        .stat-box.classes .stat-value {
+            color: #1f8a4f;
+        }
+
+        .stat-box.subjects {
+            background: rgba(246, 153, 63, 0.12);
+            border-color: rgba(246, 153, 63, 0.35);
+        }
+
+        .stat-box.subjects .stat-value {
+            color: #c06a13;
+        }
+
+        .stat-label {
+            color: var(--dm-muted, #5f6d7d);
+            font-size: 0.78rem;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .stat-value {
+            color: var(--dm-text, #1f2f43);
+            font-weight: 700;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .subject-filter {
+            border-radius: 14px;
+            border: 1px solid var(--dm-border, #d8e2f0);
+            background: var(--dm-card-bg, #ffffff);
+            padding: 0.75rem;
+        }
+
+        .subject-wrap {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(275px, 1fr));
+            gap: 0.8rem;
+        }
+
+        .subject-card {
+            border: 1px solid var(--dm-border, #d8e2f0);
+            border-radius: 14px;
+            background: var(--dm-card-bg, #ffffff);
+            box-shadow: 0 6px 18px rgba(30, 54, 92, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 170px;
+        }
+
+        .subject-date {
+            background: linear-gradient(180deg, #2a6fd8 0%, #1e57ad 100%);
+            color: #fff;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .subject-date .subject-name {
+            font-size: 0.88rem;
+            font-weight: 700;
+            line-height: 1.25;
+            text-align: left;
+            word-break: break-word;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .subject-content {
+            padding: 0.72rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+
+        .subject-meta {
+            color: var(--dm-muted, #5f6d7d);
+            font-size: 0.8rem;
+            display: grid;
+            gap: 0.15rem;
+        }
+
+        .subject-meta b {
+            color: var(--dm-text, #2d4059);
+        }
+
+        .subject-desc {
+            color: var(--dm-text, #1f2f43);
+            font-size: 0.84rem;
+            line-height: 1.46;
+            border-top: 1px dashed var(--dm-border, #d8e2f0);
+            padding-top: 0.4rem;
+        }
+
+        .subject-empty {
+            border: 1px dashed var(--dm-border, #d8e2f0);
+            border-radius: 14px;
+            padding: 1.15rem;
+            text-align: center;
+            color: var(--dm-muted, #5f6d7d);
+            background: var(--dm-card-bg, #ffffff);
+        }
+
+        html[data-theme="dark"] .stat-box,
+        html[data-theme="dark"] .subject-filter,
+        html[data-theme="dark"] .subject-card,
+        html[data-theme="dark"] .subject-empty {
+            background: #111a2b !important;
+            border-color: #2a3856 !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32) !important;
+        }
+
+        html[data-theme="dark"] .stat-box.total {
+            background: rgba(110, 159, 247, 0.16) !important;
+            border-color: rgba(110, 159, 247, 0.38) !important;
+        }
+
+        html[data-theme="dark"] .stat-box.total .stat-value {
+            color: #cfe2ff !important;
+        }
+
+        html[data-theme="dark"] .stat-box.classes {
+            background: rgba(56, 184, 110, 0.16) !important;
+            border-color: rgba(56, 184, 110, 0.42) !important;
+        }
+
+        html[data-theme="dark"] .stat-box.classes .stat-value {
+            color: #71e1a7 !important;
+        }
+
+        html[data-theme="dark"] .stat-box.subjects {
+            background: rgba(245, 186, 88, 0.16) !important;
+            border-color: rgba(245, 186, 88, 0.42) !important;
+        }
+
+        html[data-theme="dark"] .stat-box.subjects .stat-value {
+            color: #ffd68a !important;
+        }
+
+        html[data-theme="dark"] .stat-label,
+        html[data-theme="dark"] .subject-meta,
+        html[data-theme="dark"] .subject-empty {
+            color: #9fb1cd !important;
+        }
+
+        html[data-theme="dark"] .stat-value,
+        html[data-theme="dark"] .subject-meta b,
+        html[data-theme="dark"] .subject-desc {
+            color: #e6eefc !important;
+        }
+
+        html[data-theme="dark"] .subject-desc {
+            border-top-color: #314262 !important;
+        }
+
+        html[data-theme="dark"] #subjectSearch,
+        html[data-theme="dark"] .subject-filter .ui.dropdown,
+        html[data-theme="dark"] .subject-filter .ui.search.dropdown > .text,
+        html[data-theme="dark"] .subject-filter .ui.search.dropdown .menu > .item {
+            color: #e6eefc !important;
+        }
+
+        html[data-theme="dark"] .subject-filter .ui.input > input {
+            background: #0f1726 !important;
+            border-color: #2c3a57 !important;
+            color: #e6eefc !important;
+        }
+
+        @media (max-width: 767px) {
+            body.teacher-mobile-route .subject-filter .fields {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                align-items: flex-end;
+                gap: 0.5rem;
+                margin: 0 !important;
+            }
+
+            body.teacher-mobile-route .subject-filter .fields > .field {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            body.teacher-mobile-route .subject-filter .fields > .field:first-child {
+                flex: 1 1 auto !important;
+                min-width: 0 !important;
+            }
+
+            body.teacher-mobile-route .subject-filter .fields > .field:last-child {
+                flex: 0 0 104px !important;
+                width: 104px !important;
+                min-width: 104px !important;
+                padding-top: 0 !important;
+            }
+
+            body.teacher-mobile-route .subject-filter .fields > .field:last-child .ui.button {
+                height: 38px !important;
+                margin-top: 0 !important;
+            }
+
+            .subject-stats {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 0.5rem;
+            }
+
+            .stat-box {
+                padding: 0.6rem 0.55rem;
+            }
+
+            .stat-label {
+                font-size: 0.68rem;
+            }
+
+            .stat-value {
+                font-size: 0.96rem;
+            }
+
+            .subject-content {
+                padding: 0.64rem;
+            }
         }
     </style>
-{% endblock %}
 
-{% block body %}
-    <div class="ui left aligned basic  grid">
+    <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
+            <div class="ui pointing secondary menu">
                 <div style="cursor: pointer;" class="item active" data-tab="user">Assigned Subjects</div>
             </div>
-            <div class="ui tab " data-tab="user">
-                <div class="row" style="padding-left: 5px; padding-right: 5px">
-                    <div class="wide">
-                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
-                               id="TeacherAssignedSubjectTable"
-                               style="margin-top: 5px;width: 100%">
-                            <thead>
-                            <tr>
-                                <th>Class</th>
-                                <th>Section</th>
-                                <th>Subject</th>
-                                <th>Branch</th>
-                                <th>Assigned On</th>
-                            </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+
+            <div class="subject-shell">
+                <div class="subject-stats">
+                    <div class="stat-box total">
+                        <div class="stat-label">Total Assigned</div>
+                        <div class="stat-value" id="statTotal">{{ assigned_subjects|length }}</div>
+                    </div>
+                    <div class="stat-box classes">
+                        <div class="stat-label">Classes</div>
+                        <div class="stat-value" id="statClasses">0</div>
+                    </div>
+                    <div class="stat-box subjects">
+                        <div class="stat-label">Subjects</div>
+                        <div class="stat-value" id="statSubjects">0</div>
                     </div>
                 </div>
+
+                <div class="subject-filter ui tiny form">
+                    <div class="fields">
+                        <div class="twelve wide field">
+                            <label>Search</label>
+                            <input type="text" id="subjectSearch" placeholder="Search class, section, subject">
+                        </div>
+                        <div class="four wide field" style="padding-top:2em;">
+                            <button class="ui mini red button fluid" type="button" id="clearSubjectSearch">
+                                <i class="times icon"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {% if assigned_subjects %}
+                    <div class="subject-wrap" id="subjectWrap">
+                        {% for row in assigned_subjects %}
+                            {% with class_name=row.assignedSubjectID.standardID.name|default:'N/A' section_name=row.assignedSubjectID.standardID.section|default:'' %}
+                                <div class="subject-card"
+                                     data-subject="{{ row.assignedSubjectID.subjectID.name|default:'N/A'|lower|escape }}"
+                                     data-class="{{ class_name|lower|escape }}"
+                                     data-section="{{ section_name|lower|escape }}"
+                                     data-class-key="{{ class_name|lower|escape }}|{{ section_name|lower|escape }}"
+                                     data-class-label="{% if section_name %}{{ class_name|escape }} - {{ section_name|escape }}{% else %}{{ class_name|escape }}{% endif %}"
+                                     data-branch="{{ row.subjectBranch|default:'Main'|lower|escape }}"
+                                     data-month="{{ row.datetime|date:'Y-m' }}">
+                                    <div class="subject-date">
+                                        <div class="subject-name">{{ row.assignedSubjectID.subjectID.name|default:'N/A' }}</div>
+                                    </div>
+                                    <div class="subject-content">
+                                        <div class="subject-meta">
+                                            <div><b>Class:</b> {% if section_name %}{{ class_name }} - {{ section_name }}{% else %}{{ class_name }}{% endif %}</div>
+                                            <div><b>Assigned On:</b> {{ row.datetime|date:'d M Y, h:i A'|default:'N/A' }}</div>
+                                        </div>
+                                        <div class="subject-desc">Subject allocation for the current academic session.</div>
+                                    </div>
+                                </div>
+                            {% endwith %}
+                        {% endfor %}
+                    </div>
+                    <div class="subject-empty" id="subjectEmpty" style="display:none;">No assigned subjects match the selected filters.</div>
+                {% else %}
+                    <div class="subject-empty">No subjects assigned yet.</div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -59,35 +340,56 @@
 
 {% block js %}
     <script>
-        let teacherAssignedSubjectTab;
+        function applySubjectFilters() {
+            const q = ($('#subjectSearch').val() || '').toLowerCase().trim();
 
-        teacherAssignedSubjectTab = $('#TeacherAssignedSubjectTable').DataTable({
-            dom: 'Blfrtip',
-            scrollY: '350px',
-            scrollX: true,
-            stateSave: true,
-            fixedColumns: {
-                left: 1
-            },
-            buttons: [{
-                extend: 'excel',
-                exportOptions: {
-                    columns: [0, 1, 2, 3, 4]
+            const cards = document.querySelectorAll('#subjectWrap .subject-card');
+            let visibleCount = 0;
+            const classes = new Set();
+            const subjects = new Set();
+
+            cards.forEach(function (card) {
+                const subject = card.getAttribute('data-subject') || '';
+                const className = card.getAttribute('data-class') || '';
+                const section = card.getAttribute('data-section') || '';
+                const branchValue = card.getAttribute('data-branch') || '';
+                const cardClassKey = card.getAttribute('data-class-key') || '';
+
+                const source = subject + ' ' + className + ' ' + section + ' ' + branchValue;
+                const matchesSearch = !q || source.indexOf(q) !== -1;
+
+                const show = matchesSearch;
+                card.style.display = show ? '' : 'none';
+
+                if (show) {
+                    visibleCount += 1;
+                    classes.add(cardClassKey);
+                    subjects.add(subject);
                 }
-            }],
-            columnDefs: [
-                {name: 'assignedSubjectID__standardID__name', targets: 0, orderable: true},
-                {name: 'assignedSubjectID__standardID__section', targets: 1, orderable: true},
-                {name: 'assignedSubjectID__subjectID__name', targets: 2, orderable: true},
-                {name: 'subjectBranch', targets: 3, orderable: true},
-                {name: 'datetime', targets: 4, orderable: true}
-            ],
-            aaSorting: [[0, 'asc']],
-            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
-            pageLength: 10,
-            processing: true,
-            serverSide: true,
-            ajax: "{% url 'teacherAppAPI:TeacherAssignedSubjectsListJson' %}"
-        });
+            });
+
+            document.getElementById('statTotal').textContent = String(visibleCount);
+            document.getElementById('statClasses').textContent = String(classes.size);
+            document.getElementById('statSubjects').textContent = String(subjects.size);
+
+            const empty = document.getElementById('subjectEmpty');
+            if (empty) {
+                empty.style.display = visibleCount === 0 ? '' : 'none';
+            }
+        }
+
+        function initSubjectFilters() {
+            const cards = document.querySelectorAll('#subjectWrap .subject-card');
+            if (!cards.length) return;
+            $('#subjectSearch').on('input', applySubjectFilters);
+            $('#clearSubjectSearch').on('click', function () {
+                $('#subjectSearch').val('');
+                applySubjectFilters();
+                $('#subjectSearch').focus();
+            });
+            applySubjectFilters();
+        }
+
+        $(initSubjectFilters);
     </script>
 {% endblock %}

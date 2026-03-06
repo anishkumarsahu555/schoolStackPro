@@ -6,6 +6,229 @@
 
 {% block body %}
     <style>
+        #leaveFormContainer {
+            border-radius: 14px;
+        }
+
+        #updateBtn {
+            display: none;
+        }
+
+        #updateBtn.is-active {
+            display: inline-flex !important;
+        }
+
+        #addBtn.is-hidden {
+            display: none !important;
+        }
+
+        .teacher-leave-desktop {
+            display: block;
+        }
+
+        .teacher-leave-mobile {
+            display: none;
+        }
+
+        .leave-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.6rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .leave-stat {
+            border-radius: 14px;
+            border: 1px solid var(--dm-border, #d8e2f0);
+            background: var(--dm-card-bg, #ffffff);
+            padding: 0.68rem 0.7rem;
+            box-shadow: 0 6px 16px rgba(29, 48, 77, 0.08);
+        }
+
+        .leave-stat .label {
+            color: var(--dm-muted, #5f6d7d);
+            font-size: 0.72rem;
+            margin-bottom: 0.24rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .leave-stat .value {
+            color: var(--dm-text, #1f2f43);
+            font-weight: 800;
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        .leave-stat.pending {
+            background: rgba(246, 153, 63, 0.12);
+            border-color: rgba(246, 153, 63, 0.35);
+        }
+
+        .leave-stat.pending .value {
+            color: #c06a13;
+        }
+
+        .leave-stat.approved {
+            background: rgba(44, 150, 90, 0.12);
+            border-color: rgba(44, 150, 90, 0.34);
+        }
+
+        .leave-stat.approved .value {
+            color: #1f8a4f;
+        }
+
+        .leave-stat.other {
+            background: rgba(42, 111, 216, 0.1);
+            border-color: rgba(42, 111, 216, 0.28);
+        }
+
+        .leave-stat.other .value {
+            color: #1e57ad;
+        }
+
+        .leave-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.72rem;
+        }
+
+        .leave-card {
+            border: 1px solid var(--dm-border, #d8e2f0);
+            border-radius: 14px;
+            background: var(--dm-card-bg, #ffffff);
+            overflow: hidden;
+            box-shadow: 0 6px 18px rgba(30, 54, 92, 0.08);
+            display: grid;
+            grid-template-columns: 54px auto;
+            min-height: 158px;
+        }
+
+        .leave-date {
+            background: linear-gradient(180deg, #2a6fd8 0%, #1e57ad 100%);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.06rem;
+            padding: 0.35rem 0.2rem;
+        }
+
+        .leave-date .day {
+            font-size: 1.03rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .leave-date .month {
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .leave-content {
+            padding: 0.7rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.42rem;
+        }
+
+        .leave-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.4rem;
+        }
+
+        .leave-title {
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.25;
+            color: var(--dm-text, #1f2f43);
+            font-weight: 700;
+        }
+
+        .leave-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.16rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+
+        .leave-chip.pending {
+            background: rgba(246, 153, 63, 0.16);
+            color: #c06a13;
+            border-color: rgba(246, 153, 63, 0.3);
+        }
+
+        .leave-chip.approved {
+            background: rgba(44, 150, 90, 0.15);
+            color: #1f8a4f;
+            border-color: rgba(44, 150, 90, 0.28);
+        }
+
+        .leave-chip.rejected,
+        .leave-chip.cancelled {
+            background: rgba(219, 40, 40, .14);
+            color: #db2828;
+            border-color: rgba(219, 40, 40, .3);
+        }
+
+        .leave-meta {
+            color: var(--dm-muted, #5f6d7d);
+            font-size: 0.77rem;
+            display: grid;
+            gap: 0.16rem;
+        }
+
+        .leave-meta b {
+            color: var(--dm-text, #2d4059);
+        }
+
+        .leave-reason {
+            color: var(--dm-text, #1f2f43);
+            font-size: 0.81rem;
+            line-height: 1.42;
+            border-top: 1px dashed var(--dm-border, #d8e2f0);
+            padding-top: 0.38rem;
+        }
+
+        .leave-actions {
+            display: flex;
+            gap: 0.42rem;
+            flex-wrap: wrap;
+            margin-top: auto;
+            padding-top: 0.32rem;
+        }
+
+        .leave-empty {
+            border: 1px dashed var(--dm-border, #d8e2f0);
+            border-radius: 14px;
+            padding: 1.1rem;
+            text-align: center;
+            color: var(--dm-muted, #5f6d7d);
+            background: var(--dm-card-bg, #ffffff);
+        }
+
+        .leave-cancel-modal .header {
+            border-bottom: 1px solid var(--app-border) !important;
+            color: var(--app-text) !important;
+        }
+
+        .leave-cancel-modal .content {
+            color: var(--app-muted) !important;
+            line-height: 1.45;
+        }
+
+        .leave-cancel-modal .actions {
+            border-top: 1px solid var(--app-border) !important;
+        }
+
         html[data-theme="dark"] #leaveForm input[type="file"],
         html[data-theme="dark"] #leaveForm .ui.input input,
         html[data-theme="dark"] #leaveForm .ui.calendar .ui.input input {
@@ -23,6 +246,131 @@
             margin-right: .7em;
             cursor: pointer;
         }
+
+        html[data-theme="dark"] .leave-stat,
+        html[data-theme="dark"] .leave-card,
+        html[data-theme="dark"] .leave-empty {
+            background: #111a2b !important;
+            border-color: #2a3856 !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32) !important;
+        }
+
+        html[data-theme="dark"] .leave-stat.pending {
+            background: rgba(245, 186, 88, 0.16) !important;
+            border-color: rgba(245, 186, 88, 0.42) !important;
+        }
+
+        html[data-theme="dark"] .leave-stat.pending .value {
+            color: #ffd68a !important;
+        }
+
+        html[data-theme="dark"] .leave-stat.approved {
+            background: rgba(56, 184, 110, 0.16) !important;
+            border-color: rgba(56, 184, 110, 0.42) !important;
+        }
+
+        html[data-theme="dark"] .leave-stat.approved .value {
+            color: #71e1a7 !important;
+        }
+
+        html[data-theme="dark"] .leave-stat.other {
+            background: rgba(110, 159, 247, 0.16) !important;
+            border-color: rgba(110, 159, 247, 0.38) !important;
+        }
+
+        html[data-theme="dark"] .leave-stat.other .value {
+            color: #cfe2ff !important;
+        }
+
+        html[data-theme="dark"] .leave-title,
+        html[data-theme="dark"] .leave-meta b,
+        html[data-theme="dark"] .leave-reason {
+            color: #e6eefc !important;
+        }
+
+        html[data-theme="dark"] .leave-meta,
+        html[data-theme="dark"] .leave-empty {
+            color: #9fb1cd !important;
+        }
+
+        html[data-theme="dark"] .leave-reason {
+            border-top-color: #314262 !important;
+        }
+
+        html[data-theme="dark"] .ui.modal.leave-cancel-modal {
+            background: #111a2b !important;
+            border: 1px solid #2a3856 !important;
+        }
+
+        html[data-theme="dark"] .leave-cancel-modal .header {
+            color: #e6eefc !important;
+            border-bottom-color: #2a3856 !important;
+        }
+
+        html[data-theme="dark"] .leave-cancel-modal .content {
+            color: #9fb1cd !important;
+        }
+
+        html[data-theme="dark"] .leave-cancel-modal .actions {
+            border-top-color: #2a3856 !important;
+        }
+
+        html[data-theme="dark"] body.teacher-mobile-route .leave-date {
+            background: linear-gradient(180deg, #3a6fd8 0%, #2b58a8 100%) !important;
+            color: #f6f9ff !important;
+        }
+
+        @media (max-width: 767px) {
+            body.teacher-mobile-route #leaveForm .fields {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                gap: 0.45rem 0.5rem;
+            }
+
+            body.teacher-mobile-route #leaveForm .fields > .field {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                min-width: 0;
+            }
+
+            body.teacher-mobile-route #leaveForm .fields > .field:nth-child(1),
+            body.teacher-mobile-route #leaveForm .fields > .field:nth-child(4),
+            body.teacher-mobile-route #leaveForm .fields > .field:nth-child(5) {
+                width: 100% !important;
+            }
+
+            body.teacher-mobile-route #leaveForm .fields > .field:nth-child(2),
+            body.teacher-mobile-route #leaveForm .fields > .field:nth-child(3) {
+                width: calc(50% - 0.25rem) !important;
+            }
+
+            body.teacher-mobile-route .teacher-leave-desktop {
+                display: none !important;
+            }
+
+            body.teacher-mobile-route .teacher-leave-mobile {
+                display: block;
+            }
+
+            body.teacher-mobile-route .leave-stats {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 0.5rem;
+            }
+
+            body.teacher-mobile-route .leave-stat {
+                padding: 0.58rem 0.52rem;
+            }
+
+            body.teacher-mobile-route .leave-stat .label {
+                font-size: 0.66rem;
+            }
+
+            body.teacher-mobile-route .leave-stat .value {
+                font-size: 0.93rem;
+            }
+        }
     </style>
 
     <div class="ui left aligned basic grid">
@@ -31,7 +379,7 @@
                 <div class="item active">My Leave Applications</div>
             </div>
 
-            <div class="ui segment">
+            <div class="ui segment" id="leaveFormContainer">
                 <form class="ui tiny form" id="leaveForm">{% csrf_token %}
                     <input type="hidden" id="editID">
                     <div class="fields">
@@ -69,12 +417,12 @@
                         </div>
                     </div>
                     <button type="button" class="ui mini green button" id="addBtn" onclick="submitLeave()"><i class="plus icon"></i>Apply</button>
-                    <button type="button" class="ui mini orange button" id="updateBtn" onclick="updateLeave()" style="display:none;"><i class="redo icon"></i>Update</button>
+                    <button type="button" class="ui mini orange button" id="updateBtn" onclick="updateLeave()"><i class="redo icon"></i>Update</button>
                     <button type="button" class="ui mini red button" onclick="resetLeaveForm()"><i class="undo icon"></i>Clear</button>
                 </form>
             </div>
 
-            <div class="row" style="padding-left:5px; padding-right:5px;">
+            <div class="teacher-leave-desktop row" style="padding-left:5px; padding-right:5px;">
                 <table class="ui unstackable tiny sortable celled nowrap very compact table" id="leaveTable" style="width:100%;">
                     <thead>
                     <tr>
@@ -92,16 +440,112 @@
                     </thead>
                 </table>
             </div>
+
+            <div class="teacher-leave-mobile" style="padding-left:5px; padding-right:5px;">
+                <div class="leave-stats">
+                    <div class="leave-stat pending">
+                        <div class="label">Pending</div>
+                        <div class="value">{{ pending_count|default:0 }}</div>
+                    </div>
+                    <div class="leave-stat approved">
+                        <div class="label">Approved</div>
+                        <div class="value">{{ approved_count|default:0 }}</div>
+                    </div>
+                    <div class="leave-stat other">
+                        <div class="label">Other</div>
+                        <div class="value">{{ other_count|default:0 }}</div>
+                    </div>
+                </div>
+
+                {% if leave_rows %}
+                    <div class="leave-cards">
+                        {% for leave in leave_rows %}
+                            <div class="leave-card">
+                                <div class="leave-date">
+                                    <div class="day">{{ leave.startDate|date:"d" }}</div>
+                                    <div class="month">{{ leave.startDate|date:"M" }}</div>
+                                </div>
+                                <div class="leave-content">
+                                    <div class="leave-top">
+                                        <h4 class="leave-title">{{ leave.leaveTypeID.name|default:"Leave" }}</h4>
+                                        <span class="leave-chip {{ leave.status|default:''|lower }}">{{ leave.status|title|default:"N/A" }}</span>
+                                    </div>
+                                    <div class="leave-meta">
+                                        <div><b>Date:</b> {{ leave.startDate|date:"d M Y" }} to {{ leave.endDate|date:"d M Y" }}</div>
+                                        <div><b>Total Days:</b> {{ leave.totalDays|default:"-" }}</div>
+                                        <div><b>Applied On:</b> {{ leave.datetime|date:"d M Y, h:i A" }}</div>
+                                        <div><b>Attachment:</b> {% if leave.attachment %}<a href="{{ leave.attachment.url }}" target="_blank" rel="noopener">View</a>{% else %}-{% endif %}</div>
+                                        <div><b>Remark:</b> {{ leave.actionRemark|default:"-" }}</div>
+                                    </div>
+                                    <div class="leave-reason">
+                                        <b>Reason:</b> {{ leave.reason|default:"-" }}
+                                    </div>
+                                    {% if leave.status == 'pending' %}
+                                        <div class="leave-actions">
+                                            <button type="button" class="ui mini blue button" onclick="editLeave('{{ leave.id }}')">
+                                                <i class="edit icon"></i>Edit
+                                            </button>
+                                            <button type="button" class="ui mini red button" onclick="cancelLeave('{{ leave.id }}')">
+                                                <i class="ban icon"></i>Cancel
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="leave-empty">No leave applications found.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="ui tiny modal leave-cancel-modal" id="cancelLeaveModal">
+        <div class="header">
+            <i class="warning sign icon" style="color:#db2828;"></i>
+            Cancel Leave Application
+        </div>
+        <div class="content">
+            Are you sure you want to cancel this leave application? This action cannot be undone.
+        </div>
+        <div class="actions">
+            <button type="button" class="ui mini button" id="cancelLeaveNoBtn">No, Keep</button>
+            <button type="button" class="ui mini red button" id="cancelLeaveYesBtn">
+                <i class="ban icon"></i>
+                Yes, Cancel Leave
+            </button>
         </div>
     </div>
 {% endblock %}
 
 {% block js %}
     <script>
-        let leaveTable;
+        let leaveTable = null;
+        let pendingCancelLeaveId = null;
+
+        function isTeacherMobileView() {
+            return document.body.classList.contains('teacher-mobile-route') &&
+                window.matchMedia('(max-width: 767px)').matches;
+        }
+
+        function refreshLeaveData() {
+            if (isTeacherMobileView()) {
+                setTimeout(function () {
+                    window.location.reload();
+                }, 220);
+                return;
+            }
+            if (leaveTable) {
+                leaveTable.ajax.reload(null, false);
+            }
+        }
 
         $(function () {
             $('.ui.dropdown').dropdown();
+            $('#updateBtn').removeClass('is-active');
+            $('#addBtn').removeClass('is-hidden');
+
             $('#startDateCal').calendar({
                 monthFirst: false,
                 type: 'date',
@@ -122,26 +566,42 @@
                     }
                 }
             });
+
             loadLeaveTypes();
 
-            leaveTable = $('#leaveTable').DataTable({
-                scrollX: true,
-                stateSave: true,
-                processing: true,
-                serverSide: true,
-                ajax: "{% url 'teacherAppAPI:TeacherLeaveApplicationListJson' %}",
-                columnDefs: [
-                    {name: 'leaveTypeID__name', targets: 0},
-                    {name: 'startDate', targets: 1},
-                    {name: 'endDate', targets: 2},
-                    {name: 'totalDays', targets: 3},
-                    {name: 'status', targets: 4},
-                    {name: 'attachment', targets: 5, orderable: false},
-                    {name: 'reason', targets: 6, orderable: false},
-                    {name: 'actionRemark', targets: 7, orderable: false},
-                    {name: 'datetime', targets: 8},
-                    {name: 'action', targets: 9, orderable: false}
-                ]
+            if (!isTeacherMobileView()) {
+                leaveTable = $('#leaveTable').DataTable({
+                    scrollX: true,
+                    stateSave: true,
+                    processing: true,
+                    serverSide: true,
+                    ajax: "{% url 'teacherAppAPI:TeacherLeaveApplicationListJson' %}",
+                    columnDefs: [
+                        {name: 'leaveTypeID__name', targets: 0},
+                        {name: 'startDate', targets: 1},
+                        {name: 'endDate', targets: 2},
+                        {name: 'totalDays', targets: 3},
+                        {name: 'status', targets: 4},
+                        {name: 'attachment', targets: 5, orderable: false},
+                        {name: 'reason', targets: 6, orderable: false},
+                        {name: 'actionRemark', targets: 7, orderable: false},
+                        {name: 'datetime', targets: 8},
+                        {name: 'action', targets: 9, orderable: false}
+                    ]
+                });
+            }
+
+            $('#cancelLeaveNoBtn').on('click', function () {
+                pendingCancelLeaveId = null;
+                $('#cancelLeaveModal').modal('hide');
+            });
+
+            $('#cancelLeaveYesBtn').on('click', function () {
+                if (!pendingCancelLeaveId) {
+                    $('#cancelLeaveModal').modal('hide');
+                    return;
+                }
+                executeCancelLeave(pendingCancelLeaveId);
             });
         });
 
@@ -187,8 +647,10 @@
                     if (res.success) {
                         addSuccessNotification(res.message, res.color || 'green');
                         resetLeaveForm();
-                        leaveTable.ajax.reload(null, false);
-                    } else addErrorNotification(res.message, res.color || 'red');
+                        refreshLeaveData();
+                    } else {
+                        addErrorNotification(res.message, res.color || 'red');
+                    }
                 },
                 error: function () {
                     addErrorNotification('Unable to submit leave.');
@@ -207,8 +669,9 @@
                 $('#startDate').val(res.data.startDate);
                 $('#endDate').val(res.data.endDate);
                 $('#reason').val(res.data.reason);
-                $('#addBtn').hide();
-                $('#updateBtn').show();
+                $('#addBtn').addClass('is-hidden');
+                $('#updateBtn').addClass('is-active');
+                window.scrollTo({top: 0, behavior: 'smooth'});
             });
         }
 
@@ -227,8 +690,10 @@
                     if (res.success) {
                         addSuccessNotification(res.message, res.color || 'green');
                         resetLeaveForm();
-                        leaveTable.ajax.reload(null, false);
-                    } else addErrorNotification(res.message, res.color || 'red');
+                        refreshLeaveData();
+                    } else {
+                        addErrorNotification(res.message, res.color || 'red');
+                    }
                 },
                 error: function () {
                     addErrorNotification('Unable to update leave.');
@@ -237,6 +702,14 @@
         }
 
         function cancelLeave(id) {
+            pendingCancelLeaveId = id;
+            $('#cancelLeaveModal').modal({
+                closable: true,
+                autofocus: false
+            }).modal('show');
+        }
+
+        function executeCancelLeave(id) {
             let fd = new FormData();
             fd.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
             fd.append('id', id);
@@ -247,12 +720,18 @@
                 processData: false,
                 contentType: false,
                 success: function (res) {
+                    $('#cancelLeaveModal').modal('hide');
+                    pendingCancelLeaveId = null;
                     if (res.success) {
                         addSuccessNotification(res.message, res.color || 'green');
-                        leaveTable.ajax.reload(null, false);
-                    } else addErrorNotification(res.message, res.color || 'red');
+                        refreshLeaveData();
+                    } else {
+                        addErrorNotification(res.message, res.color || 'red');
+                    }
                 },
                 error: function () {
+                    $('#cancelLeaveModal').modal('hide');
+                    pendingCancelLeaveId = null;
                     addErrorNotification('Unable to cancel leave.');
                 }
             });
@@ -262,8 +741,8 @@
             $('#leaveForm')[0].reset();
             $('#editID').val('');
             $('#leaveTypeID').dropdown('clear');
-            $('#addBtn').show();
-            $('#updateBtn').hide();
+            $('#addBtn').removeClass('is-hidden');
+            $('#updateBtn').removeClass('is-active');
         }
     </script>
 {% endblock %}

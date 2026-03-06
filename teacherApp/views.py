@@ -9,6 +9,7 @@ from homeApp.utils import login_required
 from managementApp.models import (
     Student,
     TeacherDetail,
+    LeaveApplication,
     AssignSubjectsToTeacher,
     Event,
     Standard,
@@ -254,27 +255,31 @@ def teacher_students_list(request):
 @login_required
 @check_groups('Teaching')
 def teacher_assigned_subjects(request):
-    _, _, is_class_teacher = _bootstrap_teacher_context(request)
-    if 'current_session' not in request.session:
-        teacher = TeacherDetail.objects.select_related('sessionID', 'schoolID').filter(
-            userID_id=request.user.id,
-            isDeleted=False,
-        ).order_by('-datetime').first()
-        if teacher and teacher.sessionID:
-            request.session['current_session'] = {
-                'currentSessionYear': teacher.sessionID.sessionYear,
-                'Id': teacher.sessionID_id,
-            }
-            session_qs = SchoolSession.objects.filter(
-                isDeleted=False,
-                schoolID_id=teacher.schoolID_id,
-            ).order_by('-datetime')
-            request.session['session_list'] = [
-                {'currentSessionYear': s.sessionYear, 'Id': s.pk}
-                for s in session_qs
-            ]
+    teacher, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
 
-    return render(request, 'teacherApp/assigned_subjects.html', {'is_class_teacher': is_class_teacher})
+    assigned_subjects = []
+    if teacher:
+        queryset = AssignSubjectsToTeacher.objects.select_related(
+            'assignedSubjectID',
+            'assignedSubjectID__standardID',
+            'assignedSubjectID__subjectID',
+        ).filter(
+            isDeleted=False,
+            teacherID_id=teacher.id,
+            assignedSubjectID__isDeleted=False,
+            assignedSubjectID__standardID__isDeleted=False,
+            assignedSubjectID__subjectID__isDeleted=False,
+        )
+
+        if current_session_id:
+            queryset = queryset.filter(sessionID_id=current_session_id)
+
+        assigned_subjects = queryset.order_by('-datetime')
+
+    return render(request, 'teacherApp/assigned_subjects.html', {
+        'is_class_teacher': is_class_teacher,
+        'assigned_subjects': assigned_subjects,
+    })
 
 
 @login_required
@@ -501,9 +506,28 @@ def teacher_assigned_class(request):
 @login_required
 @check_groups('Teaching')
 def teacher_leave_applications(request):
-    _, _, is_class_teacher = _bootstrap_teacher_context(request)
+    teacher, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
+    leave_rows = []
+    pending_count = 0
+    approved_count = 0
+    other_count = 0
+
+    if teacher and current_session_id:
+        leave_rows = list(LeaveApplication.objects.select_related('leaveTypeID').filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            teacherID_id=teacher.id,
+        ).order_by('-datetime'))
+        pending_count = sum(1 for row in leave_rows if (row.status or '').lower() == 'pending')
+        approved_count = sum(1 for row in leave_rows if (row.status or '').lower() == 'approved')
+        other_count = len(leave_rows) - pending_count - approved_count
+
     return render(request, 'teacherApp/leave_applications.html', {
         'is_class_teacher': is_class_teacher,
+        'leave_rows': leave_rows,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'other_count': other_count,
     })
 
 

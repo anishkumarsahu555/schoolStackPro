@@ -7,22 +7,27 @@
 
 {% block css %}
     <style>
-        #StudentAttendanceTable_length {
-            left: 20px;
-            position: absolute;
-        }
+        @media (max-width: 767px) {
+            body.teacher-mobile-route .ui.tiny.form .three.fields {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+                gap: 0.55rem;
+            }
 
-        #StudentAttendanceTable_filter {
-            float: right;
-        }
+            body.teacher-mobile-route .ui.tiny.form .three.fields > .field {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding-top: 0 !important;
+            }
 
-        .dt-buttons {
-            position: absolute;
-            left: 174px;
-        }
+            body.teacher-mobile-route .ui.tiny.form .ui.mini.buttons {
+                width: 100%;
+                display: flex;
+            }
 
-        input[type=search] {
-            width: 100px !important;
+            body.teacher-mobile-route .ui.tiny.form .ui.mini.buttons .button {
+                flex: 1 1 50%;
+            }
         }
     </style>
 {% endblock %}
@@ -143,16 +148,17 @@
         }
 
         function initAttendanceTable() {
+            const isMobile = window.matchMedia('(max-width: 767px)').matches;
             attendanceTable = $('#StudentAttendanceTable').DataTable({
-                dom: 'Blfrtip',
-                scrollY: '350px',
+                dom: isMobile ? 'lfrtip' : 'Blfrtip',
+                scrollY: isMobile ? '' : '350px',
                 scrollX: true,
                 stateSave: true,
-                fixedColumns: {
+                fixedColumns: isMobile ? false : {
                     left: 1,
                     right: 1
                 },
-                buttons: [{
+                buttons: isMobile ? [] : [{
                     extend: 'excel',
                     exportOptions: {
                         columns: [1, 2, 3, 4]
@@ -171,6 +177,13 @@
                 pageLength: 10,
                 processing: true,
                 serverSide: true,
+                initComplete: function () {
+                    placeAttendanceControlRow();
+                    applyAttendanceSearchInputSize();
+                },
+                drawCallback: function () {
+                    applyAttendanceSearchInputSize();
+                },
                 ajax: "{% url 'managementAppAPI:TakeStudentAttendanceByClassJson' %}?mode=ByClass"
             });
 
@@ -197,8 +210,61 @@
 
             $('#AttendanceTableDiv').show();
             const url = "{% url 'managementAppAPI:TakeStudentAttendanceByClassJson' %}?mode=ByClass&standard=" + standard + "&aDate=" + aDate;
-            attendanceTable.ajax.url(url).load();
+            attendanceTable.ajax.url(url).load(function () {
+                placeAttendanceControlRow();
+                applyAttendanceSearchInputSize();
+                attendanceTable.columns.adjust();
+            });
         }
+
+        function placeAttendanceControlRow() {
+            const wrapper = $('#StudentAttendanceTable_wrapper');
+            if (!wrapper.length) return;
+
+            let row = wrapper.children('.dt-control-row');
+            if (!row.length) {
+                row = $('<div class="dt-control-row"></div>');
+                const firstControl = wrapper.children('.dataTables_length').first();
+                if (firstControl.length) {
+                    firstControl.before(row);
+                } else {
+                    wrapper.prepend(row);
+                }
+            }
+
+            const length = wrapper.children('.dataTables_length');
+            const filter = wrapper.children('.dataTables_filter');
+            row.append(length).append(filter);
+        }
+
+        function applyAttendanceSearchInputSize() {
+            const input = $('#StudentAttendanceTable_wrapper .dataTables_filter input[type="search"]');
+            if (!input.length) return;
+            const isMobile = window.matchMedia('(max-width: 767px)').matches;
+            if (isMobile) {
+                input.css({
+                    width: '92px',
+                    minWidth: '74px',
+                    maxWidth: '110px'
+                });
+                input.attr('placeholder', 'Search');
+            } else {
+                input.css({
+                    width: '130px',
+                    minWidth: '',
+                    maxWidth: ''
+                });
+                input.attr('placeholder', '');
+            }
+        }
+
+        $(window).on('resize', function () {
+            placeAttendanceControlRow();
+            applyAttendanceSearchInputSize();
+            if (attendanceTable) {
+                attendanceTable.columns.adjust();
+            }
+        });
 
         function pushAttendance(id) {
             const isPresent = $('#isPresent' + id).is(':checked');

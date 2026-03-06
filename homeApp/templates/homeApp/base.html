@@ -2004,6 +2004,83 @@
                 width: 100%;
             }
 
+            body.teacher-mobile-route .main-content {
+                margin-left: 0 !important;
+                margin-top: 0 !important;
+                height: 100vh !important;
+                padding: 8px 4px calc(84px + env(safe-area-inset-bottom)) !important;
+                background: var(--app-bg) !important;
+            }
+
+            body.teacher-mobile-route .main-content > .ui.grid,
+            body.teacher-mobile-route .main-content > .ui.basic.grid,
+            body.teacher-mobile-route .main-content > .ui.container,
+            body.teacher-mobile-route .main-content > .ui.segment,
+            body.teacher-mobile-route .main-content > .ui.raised.segment,
+            body.teacher-mobile-route .main-content > .ui.attached.segment {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+
+            body.teacher-mobile-route .main-content .ui.grid > .column {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+
+            body.teacher-mobile-route .main-content .row {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_length,
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_filter {
+                width: 50% !important;
+                margin-bottom: 6px !important;
+                float: left !important;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_length {
+                text-align: left !important;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_filter {
+                text-align: right !important;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_filter label,
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_length label {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                white-space: nowrap;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_filter input {
+                width: 96px !important;
+                min-width: 74px !important;
+                max-width: 110px !important;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_paginate {
+                float: none !important;
+                display: flex !important;
+                justify-content: flex-end !important;
+                width: 100%;
+                text-align: right !important;
+                margin-top: 0.5rem;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_paginate .paginate_button {
+                min-width: 92px;
+                padding: 0.48rem 0.7rem !important;
+                border-radius: 10px !important;
+                margin: 0 0 0 0.3rem !important;
+                line-height: 1.15;
+                text-align: center;
+            }
+
             body.student-mobile-route .main-content .ui.label,
             body.student-mobile-route .main-content .badge {
                 border-radius: 999px !important;
@@ -2016,7 +2093,7 @@
     </style>
 </head>
 
-<body class="{% if request.path|slice:':9' == '/student/' %}student-mobile-route{% endif %}">
+<body class="{% if request.path|slice:':9' == '/student/' or request.path == '/profile/' and role_label == 'Student' %}student-mobile-route{% elif request.path|slice:':9' == '/teacher/' or request.path == '/profile/' and role_label == 'Teacher' %}teacher-mobile-route{% endif %}">
 <!-- sidebar -->
 <div class="ui sidebar material-sidenav vertical menu sidebar-menu" id="sidebar">
 
@@ -2138,7 +2215,7 @@
 
 
 </div>
-{% if request.path|slice:":9" == "/student/" %}
+{% if request.path|slice:":9" == "/student/" or request.path == "/profile/" and role_label == "Student" %}
 <nav class="student-mobile-bottom-nav">
     <a class="student-nav-item {% if request.resolver_match.url_name == 'student_home' or request.resolver_match.url_name == 'student_root' %}active{% endif %}" href="{% url 'studentApp:student_home' %}">
         <i class="home icon"></i>
@@ -2154,9 +2231,33 @@
     </a>
     <a class="student-nav-item {% if request.resolver_match.url_name == 'fee_detail' or request.resolver_match.url_name == 'student_school_detail' %}active{% endif %}" href="{% url 'studentApp:fee_detail' %}">
         <i class="money bill alternate outline icon"></i>
-        <span>Finance</span>
+        <span>Fees</span>
     </a>
     <a class="student-nav-item {% if request.resolver_match.url_name == 'student_my_details' or request.resolver_match.url_name == 'student_id_card' or request.resolver_match.url_name == 'profile_page' %}active{% endif %}" href="{% url 'studentApp:student_my_details' %}">
+        <i class="user outline icon"></i>
+        <span>Profile</span>
+    </a>
+</nav>
+{% endif %}
+{% if request.path|slice:":9" == "/teacher/" or request.path == "/profile/" and role_label == "Teacher" %}
+<nav class="student-mobile-bottom-nav">
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'teacher_home' or request.resolver_match.url_name == 'teacher_root' %}active{% endif %}" href="{% url 'teacherApp:teacher_home' %}">
+        <i class="home icon"></i>
+        <span>Home</span>
+    </a>
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'teacher_student_attendance' or request.resolver_match.url_name == 'teacher_attendance_history' %}active{% endif %}" href="{% url 'teacherApp:teacher_student_attendance' %}">
+        <i class="calendar check outline icon"></i>
+        <span>Attend</span>
+    </a>
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'teacher_assigned_subjects' or request.resolver_match.url_name == 'teacher_exam_timetable' or request.resolver_match.url_name == 'teacher_add_marks' or request.resolver_match.url_name == 'teacher_marks_details' or request.resolver_match.url_name == 'teacher_progress_report_cards' %}active{% endif %}" href="{% url 'teacherApp:teacher_assigned_subjects' %}">
+        <i class="graduation cap icon"></i>
+        <span>Study</span>
+    </a>
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'teacher_manage_event' or request.resolver_match.url_name == 'teacher_leave_applications' %}active{% endif %}" href="{% url 'teacherApp:teacher_manage_event' %}">
+        <i class="calendar alternate outline icon"></i>
+        <span>Events</span>
+    </a>
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'profile_page' %}active{% endif %}" href="{% url 'homeApp:profile_page' %}">
         <i class="user outline icon"></i>
         <span>Profile</span>
     </a>
@@ -2215,7 +2316,17 @@
             return window.matchMedia('(max-width: 767px)').matches;
         }
 
+        function syncTeacherMobileClass() {
+            if (!$body.hasClass('teacher-mobile-route')) return;
+            if (isMobile()) {
+                $body.addClass('student-mobile-route');
+            } else {
+                $body.removeClass('student-mobile-route');
+            }
+        }
+
         function isStudentMobileRoute() {
+            syncTeacherMobileClass();
             return $body.hasClass('student-mobile-route') && isMobile();
         }
 
@@ -2252,6 +2363,7 @@
         }
 
         function syncSidebarMode() {
+            syncTeacherMobileClass();
             if (!isMobile() || isStudentMobileRoute()) {
                 closeMobileSidebar();
                 enforceDesktopScroll();
@@ -2300,6 +2412,7 @@
         });
 
         syncSidebarMode();
+        syncTeacherMobileClass();
         enforceDesktopScroll();
     })();
 
