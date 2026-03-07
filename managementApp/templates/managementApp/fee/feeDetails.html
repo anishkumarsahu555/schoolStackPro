@@ -64,6 +64,11 @@
                                             <i class="icon search"></i>
                                             Search
                                         </button>
+                                        <button type="button" class="ui mini red button"
+                                                onclick="clearAndReset()">
+                                            <i class="icon times circle"></i>
+                                            Clear
+                                        </button>
 
                                     </div>
                                 </div>
@@ -130,6 +135,11 @@
                                                 onclick="searchData('ByStudent')">
                                             <i class="icon search"></i>
                                             Search
+                                        </button>
+                                        <button type="button" class="ui mini red button"
+                                                onclick="clearAndReset()">
+                                            <i class="icon times circle"></i>
+                                            Clear
                                         </button>
 
                                     </div>
@@ -338,7 +348,7 @@
             "pageLength": 100,
             "processing": true,
             "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:TakeStudentAttendanceByClassJson' %}"
+            "ajax": "{% url 'managementAppAPI:StudentFeeDetailsByClassJson' %}"
         });
 
         byStudentTab = $('#byStudentTable').DataTable({
@@ -382,11 +392,15 @@
 
 
         function clearAndReset() {
-            {#$('#addForm').trigger('reset');#}
-            myOwnReset();
-            $('#saveBtn').css('display', '');
-            $('#saveBtnUpdate').css('display', 'none');
-
+            $('#standard').val('');
+            $('#standard').dropdown('clear');
+            $('#standardByStudent').val('');
+            $('#standardByStudent').dropdown('clear');
+            $('#student').html('');
+            $('#student').dropdown('clear');
+            $('#addFormByClass .field, #addForm .field').removeClass('error');
+            subjectTab.clear().draw();
+            byStudentTab.clear().draw();
         }
 
         function pushAttendance(id) {

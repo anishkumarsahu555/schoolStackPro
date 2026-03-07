@@ -763,9 +763,13 @@ def get_subjects_to_class_assign_list_api(request):
 @login_required
 def get_subjects_to_class_assign_list_with_given_class_api(request):
     standard = request.GET.get('standard')
+    try:
+        standard_id = int(standard)
+    except (TypeError, ValueError):
+        return _api_response({'status': 'success', 'data': [], 'color': 'success'}, safe=False)
     rows = AssignSubjectsToClass.objects.filter(
         isDeleted=False,
-        standardID_id=int(standard),
+        standardID_id=standard_id,
         sessionID_id=_current_session_id(request)
     ).values('id', 'subjectID__name').order_by('subjectID__name')
     data = [{'ID': row['id'], 'Name': row['subjectID__name'] or 'N/A'} for row in rows]
@@ -1436,10 +1440,14 @@ def add_student_api(request):
 @login_required
 def get_student_list_by_class_api(request):
     standard = request.GET.get('standard')
+    try:
+        standard_id = int(standard)
+    except (TypeError, ValueError):
+        return _api_response({'status': 'success', 'data': [], 'color': 'success'}, safe=False)
     rows = Student.objects.filter(
         isDeleted=False,
         sessionID_id=_current_session_id(request),
-        standardID_id=int(standard)
+        standardID_id=standard_id
     ).values('id', 'name', 'roll').order_by('roll')
     data = []
     for row in rows:
@@ -2937,10 +2945,17 @@ class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
                 # Handle the case when the denominator is zero
                 percentage = 0
 
+            roll_value = (str(item.roll).strip() if item.roll is not None else '')
+            if roll_value:
+                try:
+                    roll_value = float(roll_value)
+                except (TypeError, ValueError):
+                    roll_value = escape(roll_value)
+
             json_data.append([
                 images,
                 escape(item.name),
-                float(escape(item.roll)),
+                roll_value,
                 present_count,
                 absent_count,
                 present_count + absent_count,
@@ -3614,10 +3629,16 @@ class StudentFeeDetailsByClassJson(BaseDatatableView):
                         December = 'Paid'
 
             images = _avatar_image_html(item.photo)
+            roll_value = (str(item.roll).strip() if item.roll is not None else '')
+            if roll_value:
+                try:
+                    roll_value = float(roll_value)
+                except (TypeError, ValueError):
+                    roll_value = escape(roll_value)
             json_data.append([
                 images,
                 escape(item.name),
-                float(escape(item.roll)),
+                roll_value,
                 January,
                 February,
                 March,

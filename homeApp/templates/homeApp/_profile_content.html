@@ -221,7 +221,7 @@
         <div class="profile-hero-inner">
             <div class="profile-hero-meta">
                 {% if profile_photo_url %}
-                    <img src="{{ profile_photo_url }}" class="profile-avatar-small" alt="Profile Photo" />
+                    <img src="{{ profile_photo_small_url|default:profile_photo_url }}" class="profile-avatar-small" alt="Profile Photo" />
                 {% else %}
                     <div class="profile-avatar-fallback-small">{{ profile_name|default:'U'|slice:":1"|upper }}</div>
                 {% endif %}

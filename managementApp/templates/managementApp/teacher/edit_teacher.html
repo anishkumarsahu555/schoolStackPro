@@ -4,6 +4,46 @@
     <title>Edit Teacher</title>
 {% endblock %}
 {% block css %}
+    <style>
+        #photoCropModal .cropper-stage {
+            width: 320px;
+            height: 320px;
+            margin: 0 auto;
+            border: 1px solid #d4d4d5;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #f8f9fb;
+            touch-action: none;
+        }
+
+        #cropCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            display: block;
+        }
+
+        #cropCanvas.is-dragging {
+            cursor: grabbing;
+        }
+
+        #photoCropModal .cropper-controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        #photoCropModal .cropper-controls input[type="range"] {
+            flex: 1;
+        }
+
+        #photoCropModal .cropper-hint {
+            margin-top: 0.5rem;
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+    </style>
 {% endblock %}
 {% block body %}
 
@@ -35,7 +75,7 @@
                                         </div>
                                         <div class="avatar-preview">
                                             <div id="cImg"
-                                                 style="background-image: url({% if instance.photo_base64 %}data:image/jpeg;base64,{{ instance.photo_base64 }}{% else %}{% static 'images/add_photo.svg' %}{% endif %});">
+                                                 style="background-image: url({% if instance.photo %}{{ instance.photo.thumbnail.url }}{% else %}{% static 'images/add_photo.svg' %}{% endif %});">
                                             </div>
                                         </div>
                                     </div>
@@ -45,6 +85,26 @@
                         </div>
 
 
+                    </div>
+
+
+                    <div class="ui tiny modal" id="photoCropModal">
+                        <div class="header">Crop Photo</div>
+                        <div class="content">
+                            <div class="cropper-stage">
+                                <canvas id="cropCanvas" width="320" height="320"></canvas>
+                            </div>
+                            <div class="cropper-controls">
+                                <label for="cropZoomRange">Zoom</label>
+                                <input type="range" id="cropZoomRange" min="1" max="3" step="0.01" value="1">
+                                <span id="cropZoomValue">100%</span>
+                            </div>
+                            <div class="cropper-hint">Drag image to reposition inside the square.</div>
+                        </div>
+                        <div class="actions">
+                            <button type="button" class="ui button" id="cropCancelBtn">Cancel</button>
+                            <button type="button" class="ui primary button" id="cropApplyBtn">Apply Crop</button>
+                        </div>
                     </div>
 
 
@@ -327,21 +387,180 @@
                 }
             );
 
+        const defaultTeacherPhoto = "{% if instance.photo %}{{ instance.photo.thumbnail.url|escapejs }}{% else %}{% static 'images/add_photo.svg' %}{% endif %}";
+        let croppedImageFile = null;
+        const cropModal = $('#photoCropModal');
+        const cropCanvas = document.getElementById('cropCanvas');
+        const cropCtx = cropCanvas.getContext('2d');
+        const cropZoomRange = document.getElementById('cropZoomRange');
+        const cropZoomValue = document.getElementById('cropZoomValue');
+        const cropState = {
+            image: null,
+            baseScale: 1,
+            zoom: 1,
+            offsetX: 0,
+            offsetY: 0,
+            isDragging: false,
+            dragStartX: 0,
+            dragStartY: 0
+        };
 
-        function readURLPhoto(input) {
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
-                reader.onload = function (e) {
-                    $('#cImg').css('background-image', 'url(' + e.target.result + ')');
-                    $('#cImg').hide();
-                    $('#cImg').fadeIn(650);
-                }
-                reader.readAsDataURL(input.files[0]);
-            }
+        function setPhotoPreview(src) {
+            $('#cImg').css('background-image', 'url(' + src + ')');
+            $('#cImg').hide();
+            $('#cImg').fadeIn(300);
         }
 
-        $("#imageUpload").change(function () {
-            readURLPhoto(this);
+        function clampCropPosition() {
+            const scaledWidth = cropState.image.width * cropState.baseScale * cropState.zoom;
+            const scaledHeight = cropState.image.height * cropState.baseScale * cropState.zoom;
+            const minX = Math.min(0, cropCanvas.width - scaledWidth);
+            const minY = Math.min(0, cropCanvas.height - scaledHeight);
+            cropState.offsetX = Math.min(0, Math.max(minX, cropState.offsetX));
+            cropState.offsetY = Math.min(0, Math.max(minY, cropState.offsetY));
+        }
+
+        function drawCropCanvas() {
+            if (!cropState.image) return;
+            cropCtx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
+            const scale = cropState.baseScale * cropState.zoom;
+            const drawWidth = cropState.image.width * scale;
+            const drawHeight = cropState.image.height * scale;
+            cropCtx.drawImage(cropState.image, cropState.offsetX, cropState.offsetY, drawWidth, drawHeight);
+        }
+
+        function resetCropState(image) {
+            cropState.image = image;
+            cropState.baseScale = Math.max(cropCanvas.width / image.width, cropCanvas.height / image.height);
+            cropState.zoom = 1;
+            cropZoomRange.value = 1;
+            cropZoomValue.textContent = '100%';
+            const initialWidth = image.width * cropState.baseScale;
+            const initialHeight = image.height * cropState.baseScale;
+            cropState.offsetX = (cropCanvas.width - initialWidth) / 2;
+            cropState.offsetY = (cropCanvas.height - initialHeight) / 2;
+            clampCropPosition();
+            drawCropCanvas();
+        }
+
+        function loadImageFromFile(file) {
+            return new Promise(function (resolve, reject) {
+                const image = new Image();
+                const objectUrl = URL.createObjectURL(file);
+                image.onload = function () {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve(image);
+                };
+                image.onerror = function () {
+                    URL.revokeObjectURL(objectUrl);
+                    reject(new Error('Unable to read file'));
+                };
+                image.src = objectUrl;
+            });
+        }
+
+        function canvasToFile(fileName) {
+            return new Promise(function (resolve, reject) {
+                cropCanvas.toBlob(function (blob) {
+                    if (!blob) {
+                        reject(new Error('Unable to crop image'));
+                        return;
+                    }
+                    resolve(new File([blob], fileName, {type: 'image/jpeg'}));
+                }, 'image/jpeg', 0.9);
+            });
+        }
+
+        cropCanvas.addEventListener('pointerdown', function (event) {
+            if (!cropState.image) return;
+            cropState.isDragging = true;
+            cropState.dragStartX = event.clientX;
+            cropState.dragStartY = event.clientY;
+            cropCanvas.classList.add('is-dragging');
+            cropCanvas.setPointerCapture(event.pointerId);
+        });
+
+        cropCanvas.addEventListener('pointermove', function (event) {
+            if (!cropState.isDragging || !cropState.image) return;
+            const moveX = event.clientX - cropState.dragStartX;
+            const moveY = event.clientY - cropState.dragStartY;
+            cropState.dragStartX = event.clientX;
+            cropState.dragStartY = event.clientY;
+            cropState.offsetX += moveX;
+            cropState.offsetY += moveY;
+            clampCropPosition();
+            drawCropCanvas();
+        });
+
+        function stopCanvasDragging() {
+            cropState.isDragging = false;
+            cropCanvas.classList.remove('is-dragging');
+        }
+
+        cropCanvas.addEventListener('pointerup', stopCanvasDragging);
+        cropCanvas.addEventListener('pointercancel', stopCanvasDragging);
+
+        cropZoomRange.addEventListener('input', function (event) {
+            if (!cropState.image) return;
+            const previousScale = cropState.baseScale * cropState.zoom;
+            cropState.zoom = parseFloat(event.target.value || '1');
+            cropZoomValue.textContent = Math.round(cropState.zoom * 100) + '%';
+            const nextScale = cropState.baseScale * cropState.zoom;
+            const imageCenterX = (cropCanvas.width / 2 - cropState.offsetX) / previousScale;
+            const imageCenterY = (cropCanvas.height / 2 - cropState.offsetY) / previousScale;
+            cropState.offsetX = cropCanvas.width / 2 - imageCenterX * nextScale;
+            cropState.offsetY = cropCanvas.height / 2 - imageCenterY * nextScale;
+            clampCropPosition();
+            drawCropCanvas();
+        });
+
+        $("#imageUpload").change(async function () {
+            const selectedFile = this.files && this.files[0];
+            if (!selectedFile) return;
+            try {
+                const image = await loadImageFromFile(selectedFile);
+                resetCropState(image);
+                cropModal.modal({
+                    closable: false
+                }).modal('show');
+            } catch (error) {
+                addErrorNotification('Unable to read selected image.');
+                this.value = '';
+            }
+        });
+
+        $('#cropCancelBtn').on('click', function () {
+            const hasCroppedPhoto = !!croppedImageFile;
+            cropModal.modal('hide');
+            $('#imageUpload').val('');
+            if (!hasCroppedPhoto) {
+                setPhotoPreview(defaultTeacherPhoto);
+            }
+        });
+
+        $('#cropApplyBtn').on('click', async function () {
+            try {
+                const selected = document.getElementById('imageUpload').files[0];
+                if (!selected || !cropState.image) {
+                    addErrorNotification('Please select a photo first.');
+                    return;
+                }
+                const croppedName = (selected.name || 'teacher-photo').replace(/\.[^.]+$/, '') + '-cropped.jpg';
+                croppedImageFile = await canvasToFile(croppedName);
+                const previewURL = URL.createObjectURL(croppedImageFile);
+                setPhotoPreview(previewURL);
+                cropModal.modal('hide');
+            } catch (error) {
+                addErrorNotification('Unable to crop selected image.');
+            }
+        });
+
+        $(document).on('click', 'button[onclick="myOwnReset()"]', function () {
+            setTimeout(function () {
+                croppedImageFile = null;
+                $('#imageUpload').val('');
+                setPhotoPreview(defaultTeacherPhoto);
+            }, 0);
         });
 
         function sameAsPresentAddress() {
@@ -369,7 +588,7 @@
             let dob = $('#dob').val();
             let aadhar = $('#aadhar').val();
             let qualification = $('#qualification').val();
-            let imageUpload = document.getElementById("imageUpload").files[0];
+            let imageUpload = croppedImageFile;
             let address = $('#address').val();
             let city = $('#city').val();
             let state = $('#state').val();
@@ -404,7 +623,7 @@
                 data.append('dob', dob);
                 data.append('aadhar', aadhar);
                 data.append('qualification', qualification);
-                data.append('imageUpload', imageUpload);
+                if (imageUpload) data.append('imageUpload', imageUpload);
                 data.append('address', address);
                 data.append('city', city);
                 data.append('state', state);
@@ -435,7 +654,9 @@
                             addSuccessNotification(response.message, "green");
                             {#subjectTab.ajax.reload(null, false);#}
                             hideLoading();
-                            $('#cImg').css('background-image', 'url( {% static 'images/add_photo.svg' %} )');
+                            croppedImageFile = null;
+                            $('#imageUpload').val('');
+                            setPhotoPreview(defaultTeacherPhoto);
                             window.location.href = "{% url 'managementApp:teacher_list' %}";
 
                         } else {

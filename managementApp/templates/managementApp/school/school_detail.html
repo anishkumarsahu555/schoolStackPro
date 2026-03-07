@@ -125,6 +125,45 @@
             margin-top: 1.1rem;
         }
 
+        #logoCropModal .cropper-stage {
+            width: 320px;
+            height: 320px;
+            margin: 0 auto;
+            border: 1px solid #d4d4d5;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #f8f9fb;
+            touch-action: none;
+        }
+
+        #logoCropCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            display: block;
+        }
+
+        #logoCropCanvas.is-dragging {
+            cursor: grabbing;
+        }
+
+        #logoCropModal .cropper-controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        #logoCropModal .cropper-controls input[type="range"] {
+            flex: 1;
+        }
+
+        #logoCropModal .cropper-hint {
+            margin-top: 0.5rem;
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+
         .info-card {
             background: var(--app-surface) !important;
             color: var(--app-text) !important;
@@ -297,21 +336,211 @@
                         </div>
                     </div>
             </form>
+
+            <div class="ui tiny modal" id="logoCropModal">
+                <div class="header">Crop Logo</div>
+                <div class="content">
+                    <div class="cropper-stage">
+                        <canvas id="logoCropCanvas" width="320" height="320"></canvas>
+                    </div>
+                    <div class="cropper-controls">
+                        <label for="logoCropZoomRange">Zoom</label>
+                        <input type="range" id="logoCropZoomRange" min="1" max="3" step="0.01" value="1">
+                        <span id="logoCropZoomValue">100%</span>
+                    </div>
+                    <div class="cropper-hint">Drag image to reposition inside the square.</div>
+                </div>
+                <div class="actions">
+                    <button type="button" class="ui button" id="logoCropCancelBtn">Cancel</button>
+                    <button type="button" class="ui primary button" id="logoCropApplyBtn">Apply Crop</button>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
 
 {% block js %}
     <script>
-        $('#logo').on('change', function () {
+        const logoCropModal = $('#logoCropModal');
+        const logoCropCanvas = document.getElementById('logoCropCanvas');
+        const logoCropCtx = logoCropCanvas.getContext('2d');
+        const logoCropZoomRange = document.getElementById('logoCropZoomRange');
+        const logoCropZoomValue = document.getElementById('logoCropZoomValue');
+        const initialLogoSrc = $('#logoPreview').attr('src') || '';
+        const hadLogoInitially = $('#logoPreview').is(':visible') && !!initialLogoSrc;
+        let croppedLogoFile = null;
+        let croppedLogoPreviewURL = '';
+        const logoCropState = {
+            image: null,
+            baseScale: 1,
+            zoom: 1,
+            offsetX: 0,
+            offsetY: 0,
+            isDragging: false,
+            dragStartX: 0,
+            dragStartY: 0
+        };
+
+        function setLogoPreview(src) {
+            if (src) {
+                $('#logoPreview').attr('src', src).show();
+                $('#logoPreviewPlaceholder').hide();
+            } else {
+                $('#logoPreview').attr('src', '').hide();
+                $('#logoPreviewPlaceholder').show();
+            }
+        }
+
+        function clampLogoCropPosition() {
+            const scaledWidth = logoCropState.image.width * logoCropState.baseScale * logoCropState.zoom;
+            const scaledHeight = logoCropState.image.height * logoCropState.baseScale * logoCropState.zoom;
+            const minX = Math.min(0, logoCropCanvas.width - scaledWidth);
+            const minY = Math.min(0, logoCropCanvas.height - scaledHeight);
+            logoCropState.offsetX = Math.min(0, Math.max(minX, logoCropState.offsetX));
+            logoCropState.offsetY = Math.min(0, Math.max(minY, logoCropState.offsetY));
+        }
+
+        function drawLogoCropCanvas() {
+            if (!logoCropState.image) return;
+            logoCropCtx.clearRect(0, 0, logoCropCanvas.width, logoCropCanvas.height);
+            const scale = logoCropState.baseScale * logoCropState.zoom;
+            const drawWidth = logoCropState.image.width * scale;
+            const drawHeight = logoCropState.image.height * scale;
+            logoCropCtx.drawImage(logoCropState.image, logoCropState.offsetX, logoCropState.offsetY, drawWidth, drawHeight);
+        }
+
+        function resetLogoCropState(image) {
+            logoCropState.image = image;
+            logoCropState.baseScale = Math.max(logoCropCanvas.width / image.width, logoCropCanvas.height / image.height);
+            logoCropState.zoom = 1;
+            logoCropZoomRange.value = 1;
+            logoCropZoomValue.textContent = '100%';
+            const initialWidth = image.width * logoCropState.baseScale;
+            const initialHeight = image.height * logoCropState.baseScale;
+            logoCropState.offsetX = (logoCropCanvas.width - initialWidth) / 2;
+            logoCropState.offsetY = (logoCropCanvas.height - initialHeight) / 2;
+            clampLogoCropPosition();
+            drawLogoCropCanvas();
+        }
+
+        function loadImageFromFile(file) {
+            return new Promise(function (resolve, reject) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const image = new Image();
+                    image.onload = function () {
+                        resolve(image);
+                    };
+                    image.onerror = function () {
+                        reject(new Error('Unable to read image'));
+                    };
+                    image.src = event.target.result;
+                };
+                reader.onerror = function () {
+                    reject(new Error('Unable to read file'));
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function logoCanvasToFile(fileName) {
+            return new Promise(function (resolve, reject) {
+                logoCropCanvas.toBlob(function (blob) {
+                    if (!blob) {
+                        reject(new Error('Unable to crop logo'));
+                        return;
+                    }
+                    resolve(new File([blob], fileName, {type: 'image/jpeg'}));
+                }, 'image/jpeg', 0.9);
+            });
+        }
+
+        logoCropCanvas.addEventListener('pointerdown', function (event) {
+            if (!logoCropState.image) return;
+            logoCropState.isDragging = true;
+            logoCropState.dragStartX = event.clientX;
+            logoCropState.dragStartY = event.clientY;
+            logoCropCanvas.classList.add('is-dragging');
+            logoCropCanvas.setPointerCapture(event.pointerId);
+        });
+
+        logoCropCanvas.addEventListener('pointermove', function (event) {
+            if (!logoCropState.isDragging || !logoCropState.image) return;
+            const moveX = event.clientX - logoCropState.dragStartX;
+            const moveY = event.clientY - logoCropState.dragStartY;
+            logoCropState.dragStartX = event.clientX;
+            logoCropState.dragStartY = event.clientY;
+            logoCropState.offsetX += moveX;
+            logoCropState.offsetY += moveY;
+            clampLogoCropPosition();
+            drawLogoCropCanvas();
+        });
+
+        function stopLogoCanvasDragging() {
+            logoCropState.isDragging = false;
+            logoCropCanvas.classList.remove('is-dragging');
+        }
+
+        logoCropCanvas.addEventListener('pointerup', stopLogoCanvasDragging);
+        logoCropCanvas.addEventListener('pointercancel', stopLogoCanvasDragging);
+
+        logoCropZoomRange.addEventListener('input', function (event) {
+            if (!logoCropState.image) return;
+            const previousScale = logoCropState.baseScale * logoCropState.zoom;
+            logoCropState.zoom = parseFloat(event.target.value || '1');
+            logoCropZoomValue.textContent = Math.round(logoCropState.zoom * 100) + '%';
+            const nextScale = logoCropState.baseScale * logoCropState.zoom;
+            const imageCenterX = (logoCropCanvas.width / 2 - logoCropState.offsetX) / previousScale;
+            const imageCenterY = (logoCropCanvas.height / 2 - logoCropState.offsetY) / previousScale;
+            logoCropState.offsetX = logoCropCanvas.width / 2 - imageCenterX * nextScale;
+            logoCropState.offsetY = logoCropCanvas.height / 2 - imageCenterY * nextScale;
+            clampLogoCropPosition();
+            drawLogoCropCanvas();
+        });
+
+        $('#logo').on('change', async function () {
             const file = this.files && this.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                $('#logoPreview').attr('src', e.target.result).show();
-                $('#logoPreviewPlaceholder').hide();
-            };
-            reader.readAsDataURL(file);
+            try {
+                const image = await loadImageFromFile(file);
+                resetLogoCropState(image);
+                logoCropModal.modal({
+                    closable: false
+                }).modal('show');
+            } catch (error) {
+                addErrorNotification('Unable to read selected logo.');
+                this.value = '';
+            }
+        });
+
+        $('#logoCropCancelBtn').on('click', function () {
+            const hasCroppedLogo = !!croppedLogoFile;
+            logoCropModal.modal('hide');
+            $('#logo').val('');
+            if (!hasCroppedLogo) {
+                if (hadLogoInitially) {
+                    setLogoPreview(initialLogoSrc);
+                } else {
+                    setLogoPreview('');
+                }
+            }
+        });
+
+        $('#logoCropApplyBtn').on('click', async function () {
+            try {
+                const selected = document.getElementById('logo').files[0];
+                if (!selected || !logoCropState.image) {
+                    addErrorNotification('Please select a logo first.');
+                    return;
+                }
+                const croppedName = (selected.name || 'school-logo').replace(/\.[^.]+$/, '') + '-cropped.jpg';
+                croppedLogoFile = await logoCanvasToFile(croppedName);
+                croppedLogoPreviewURL = URL.createObjectURL(croppedLogoFile);
+                setLogoPreview(croppedLogoPreviewURL);
+                logoCropModal.modal('hide');
+            } catch (error) {
+                addErrorNotification('Unable to crop selected logo.');
+            }
         });
 
         function updateSchoolDetail() {
@@ -328,7 +557,7 @@
             data.append('country', ($('#country').val() || '').trim());
             data.append('pinCode', ($('#pinCode').val() || '').trim());
 
-            const logoFile = $('#logo')[0].files[0];
+            const logoFile = croppedLogoFile || $('#logo')[0].files[0];
             if (logoFile) data.append('logo', logoFile);
             data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
 

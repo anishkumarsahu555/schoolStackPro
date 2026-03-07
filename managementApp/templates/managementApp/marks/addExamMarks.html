@@ -76,6 +76,11 @@
                                         <i class="icon search"></i>
                                         Search
                                     </button>
+                                    <button type="button" class="ui mini red button"
+                                            onclick="clearAndReset()">
+                                        <i class="icon times circle"></i>
+                                        Clear
+                                    </button>
 
                                 </div>
                             </div>
@@ -265,6 +270,18 @@
                 subjectTab.ajax.url('{% url 'managementAppAPI:MarksOfSubjectsByStudentJson' %}?standard=' + standard+ '&exam=' + exam + '&subject=' + subject).load();
 
             }
+        }
+
+        function clearAndReset() {
+            $('#standard').val('');
+            $('#standard').dropdown('clear');
+            $('#exam').html('<option value="">Search By Exam</option>');
+            $('#exam').dropdown('clear');
+            $('#subject').html('<option value="">Search By Subject</option>');
+            $('#subject').dropdown('clear');
+            $('#addFormByClass .field').removeClass('error');
+            $('#AttendanceTableDiv').css('display', 'none');
+            subjectTab.clear().draw();
         }
 
         // user Details

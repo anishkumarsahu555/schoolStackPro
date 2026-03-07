@@ -993,7 +993,7 @@
                                 <a class="student-mobile-profile-link" href="{% url 'homeApp:profile_page' %}">
                                     <div class="student-mobile-avatar">
                                         {% if teacher.photo %}
-                                            <img class="student-mobile-avatar-img" src="{{ teacher.photo.url }}" alt="{{ teacher.name|default:request.user.username }}">
+                                            <img class="student-mobile-avatar-img" src="{{ teacher.photo.thumbnail.url }}" alt="{{ teacher.name|default:request.user.username }}">
                                         {% else %}
                                             {{ teacher.name|default:request.user.username|slice:":1"|upper }}
                                         {% endif %}
