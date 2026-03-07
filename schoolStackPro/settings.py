@@ -99,7 +99,7 @@ WSGI_APPLICATION = 'schoolStackPro.wsgi.application'
 
 
 USE_MYSQL = os.getenv('USE_MYSQL', 'false').lower() == 'true'
-DB_CONN_MAX_AGE = int(os.getenv('DB_CONN_MAX_AGE', '60'))
+DB_CONN_MAX_AGE = int(os.getenv('DB_CONN_MAX_AGE', '0'))
 
 if USE_MYSQL:
     DATABASES = {

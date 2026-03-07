@@ -7,6 +7,14 @@
 
 {% block body %}
     <style>
+        .id-page-shell {
+            border: 1px solid var(--app-border);
+            background: var(--app-surface);
+            border-radius: 16px;
+            padding: 0.8rem;
+            box-shadow: 0 10px 22px rgba(18, 32, 52, 0.08);
+        }
+
         .id-shell {
             display: flex;
             justify-content: center;
@@ -19,6 +27,42 @@
             gap: 0.5rem;
             margin-bottom: 0.55rem;
             flex-wrap: wrap;
+        }
+
+        .id-actions .ui.button {
+            border-radius: 10px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.01em;
+        }
+
+        .id-shell > * {
+            max-width: 100%;
+        }
+
+        html[data-theme="dark"] .id-actions .ui.blue.button {
+            background: var(--app-brand) !important;
+            color: var(--clr-light-a0, #fff) !important;
+        }
+
+        html[data-theme="dark"] .id-actions .ui.teal.button {
+            background: var(--clr-info-a10, #4077d1) !important;
+            color: var(--clr-light-a0, #fff) !important;
+        }
+
+        @media (max-width: 767px) {
+            .id-page-shell {
+                padding: 0.55rem;
+                border-radius: 14px;
+            }
+
+            .id-actions {
+                gap: 0.4rem;
+            }
+
+            .id-actions .ui.button {
+                flex: 1 1 calc(50% - 0.4rem);
+                min-width: 128px;
+            }
         }
 
         @media print {
@@ -49,52 +93,77 @@
                 <div style="cursor: pointer;" class="item active">My ID Card</div>
             </div>
 
-            <div class="id-actions">
-                <button class="ui mini blue button" onclick="window.print()">
-                    <i class="print icon"></i>
-                    Print Card
-                </button>
-                <button class="ui mini green button" onclick="saveStudentCardRecord()">
-                    <i class="save icon"></i>
-                    Save Print Record
-                </button>
-            </div>
+            <div class="id-page-shell">
+                <div class="id-actions">
+                    <button class="ui mini teal button" id="downloadJpegBtn" onclick="downloadStudentCardJpeg()">
+                        <i class="download icon"></i>
+                        Download JPEG
+                    </button>
+                </div>
 
-            <div class="id-shell">
-                {% include 'managementApp/student/student_id_card_embed.html' %}
+                <div class="id-shell">
+                    {% include 'managementApp/student/student_id_card_embed.html' %}
+                </div>
             </div>
         </div>
     </div>
 {% endblock %}
 
 {% block js %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
-        function saveStudentCardRecord() {
-            let data = new FormData();
-            data.append('student_id', '{{ instance.id }}');
-            data.append('action_type', 'print');
-            data.append('valid_till', '2026-12-31');
-            data.append('remark', 'Printed from student app');
-            data.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-
-            $.ajax({
-                type: 'POST',
-                url: "{% url 'managementAppAPI:add_student_id_card_record_api' %}",
-                data: data,
-                contentType: false,
-                processData: false,
-                cache: false,
-                success: function (response) {
-                    if (response.success) {
-                        addSuccessNotification(response.message, response.color || 'green');
-                    } else {
-                        addErrorNotification(response.message, response.color || 'red');
-                    }
-                },
-                error: function () {
-                    addErrorNotification('Unable to save print record.');
-                }
-            });
+        function getCardFileName() {
+            const rawName = "{{ instance.name|default:'student'|escapejs }}";
+            const cleaned = String(rawName)
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '') || 'student';
+            return cleaned + '-id-card.jpg';
         }
+
+        async function downloadStudentCardJpeg() {
+            const card = document.getElementById('student-id-card');
+            const button = document.getElementById('downloadJpegBtn');
+            if (!card) {
+                addErrorNotification('Unable to find ID card for export.');
+                return;
+            }
+            if (typeof html2canvas !== 'function') {
+                addErrorNotification('JPEG export library not loaded.');
+                return;
+            }
+
+            const previousHtml = button ? button.innerHTML : '';
+            if (button) {
+                button.classList.add('loading', 'disabled');
+            }
+
+            try {
+                const canvas = await html2canvas(card, {
+                    backgroundColor: '#ffffff',
+                    scale: Math.max(2, window.devicePixelRatio || 1),
+                    useCORS: true,
+                    allowTaint: false
+                });
+
+                const jpegData = canvas.toDataURL('image/jpeg', 0.95);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = jpegData;
+                downloadLink.download = getCardFileName();
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                addSuccessNotification('JPEG download started.');
+            } catch (error) {
+                addErrorNotification('Unable to generate JPEG. Please try again.');
+            } finally {
+                if (button) {
+                    button.classList.remove('loading', 'disabled');
+                    button.innerHTML = previousHtml;
+                }
+            }
+        }
+
     </script>
 {% endblock %}

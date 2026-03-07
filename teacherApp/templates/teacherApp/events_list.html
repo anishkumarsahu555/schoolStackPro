@@ -26,6 +26,33 @@
             box-shadow: 0 6px 16px rgba(29, 48, 77, 0.08);
         }
 
+        .stat-box.total {
+            background: rgba(42, 111, 216, 0.1);
+            border-color: rgba(42, 111, 216, 0.28);
+        }
+
+        .stat-box.total .stat-value {
+            color: #1e57ad;
+        }
+
+        .stat-box.upcoming {
+            background: rgba(44, 150, 90, 0.12);
+            border-color: rgba(44, 150, 90, 0.34);
+        }
+
+        .stat-box.upcoming .stat-value {
+            color: #1f8a4f;
+        }
+
+        .stat-box.ongoing {
+            background: rgba(246, 153, 63, 0.12);
+            border-color: rgba(246, 153, 63, 0.35);
+        }
+
+        .stat-box.ongoing .stat-value {
+            color: #c06a13;
+        }
+
         .stat-label {
             color: var(--dm-muted, #5f6d7d);
             font-size: 0.78rem;
@@ -182,6 +209,33 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32) !important;
         }
 
+        html[data-theme="dark"] .stat-box.total {
+            background: rgba(110, 159, 247, 0.16) !important;
+            border-color: rgba(110, 159, 247, 0.38) !important;
+        }
+
+        html[data-theme="dark"] .stat-box.total .stat-value {
+            color: #cfe2ff !important;
+        }
+
+        html[data-theme="dark"] .stat-box.upcoming {
+            background: rgba(56, 184, 110, 0.16) !important;
+            border-color: rgba(56, 184, 110, 0.42) !important;
+        }
+
+        html[data-theme="dark"] .stat-box.upcoming .stat-value {
+            color: #71e1a7 !important;
+        }
+
+        html[data-theme="dark"] .stat-box.ongoing {
+            background: rgba(245, 186, 88, 0.16) !important;
+            border-color: rgba(245, 186, 88, 0.42) !important;
+        }
+
+        html[data-theme="dark"] .stat-box.ongoing .stat-value {
+            color: #ffd68a !important;
+        }
+
         html[data-theme="dark"] .stat-label,
         html[data-theme="dark"] .event-meta,
         html[data-theme="dark"] .event-empty {
@@ -213,8 +267,27 @@
         }
 
         @media (max-width: 767px) {
+            body.teacher-mobile-route .events-filter .fields > .field:nth-child(3),
+            body.teacher-mobile-route .events-filter .fields > .field:nth-child(4) {
+                min-width: calc(50% - 0.25rem) !important;
+                flex: 1 1 calc(50% - 0.25rem) !important;
+            }
+
             .events-stats {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 0.5rem;
+            }
+
+            .stat-box {
+                padding: 0.6rem 0.55rem;
+            }
+
+            .stat-label {
+                font-size: 0.68rem;
+            }
+
+            .stat-value {
+                font-size: 0.96rem;
             }
 
             .event-card {
@@ -235,15 +308,15 @@
 
             <div class="events-shell">
                 <div class="events-stats">
-                    <div class="stat-box">
+                    <div class="stat-box total">
                         <div class="stat-label">Total Events</div>
                         <div class="stat-value" id="statTotal">0</div>
                     </div>
-                    <div class="stat-box">
+                    <div class="stat-box upcoming">
                         <div class="stat-label">Upcoming</div>
                         <div class="stat-value" id="statUpcoming">0</div>
                     </div>
-                    <div class="stat-box">
+                    <div class="stat-box ongoing">
                         <div class="stat-label">Ongoing</div>
                         <div class="stat-value" id="statOngoing">0</div>
                     </div>

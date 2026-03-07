@@ -36,6 +36,7 @@
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: .9rem;
+            align-items: start;
         }
 
         .report-page .report-card {
@@ -43,6 +44,7 @@
             border-radius: 12px;
             background: var(--app-surface);
             overflow: hidden;
+            align-self: start;
         }
 
         .report-page .card-head {
@@ -53,6 +55,13 @@
             align-items: center;
             gap: .7rem;
             cursor: pointer;
+        }
+
+        .report-page .card-head-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            flex-shrink: 0;
         }
 
         .report-page .card-title {
@@ -93,6 +102,28 @@
             background: rgba(242, 153, 74, .18);
             color: #f2994a;
             border-color: rgba(242, 153, 74, .35);
+        }
+
+        .report-page .card-toggle-icon {
+            width: 28px;
+            height: 28px;
+            border: 1px solid var(--app-border);
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--app-muted);
+            background: var(--app-hover);
+        }
+
+        .report-page .card-toggle-icon i.icon {
+            margin: 0 !important;
+            transition: transform .2s ease;
+            transform: rotate(0deg);
+        }
+
+        .report-page .report-card.expanded .card-toggle-icon i.icon {
+            transform: rotate(180deg);
         }
 
         .report-page .card-body {
@@ -165,7 +196,7 @@
             .ui.top.fixed.menu,
             .report-page .filter-segment,
             .report-page .ui.pointing.secondary.menu,
-            #printBtn {
+            #downloadReportPdfBtn {
                 display: none !important;
             }
 
@@ -186,6 +217,51 @@
             .report-page .kpi-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
+        }
+
+        @media (max-width: 767px) {
+            body.student-mobile-route .report-page .filter-segment .two.fields > .field {
+                min-width: 100% !important;
+                flex: 1 1 100% !important;
+            }
+
+            body.student-mobile-route .report-page .filter-segment .field[style*="padding-top"] {
+                padding-top: 0.2rem !important;
+                display: flex;
+                gap: 0.45rem;
+                flex-wrap: nowrap;
+                align-items: center;
+            }
+
+            body.student-mobile-route .report-page .filter-segment .field[style*="padding-top"] .ui.button {
+                width: auto !important;
+                flex: 1 1 0;
+                min-width: 0;
+                justify-content: center;
+            }
+        }
+
+        html[data-theme="dark"] body.student-mobile-route .report-page .student-banner {
+            background: linear-gradient(135deg, rgba(83, 129, 214, .2), rgba(37, 74, 133, .16)) !important;
+            border-color: #39547f !important;
+        }
+
+        html[data-theme="dark"] body.student-mobile-route .report-page .badge.pass {
+            background: rgba(56, 184, 110, 0.2) !important;
+            color: #71e1a7 !important;
+            border-color: rgba(56, 184, 110, 0.45) !important;
+        }
+
+        html[data-theme="dark"] body.student-mobile-route .report-page .badge.fail {
+            background: rgba(224, 94, 94, 0.18) !important;
+            color: #ffb3b3 !important;
+            border-color: rgba(224, 94, 94, 0.42) !important;
+        }
+
+        html[data-theme="dark"] body.student-mobile-route .report-page .badge.pending {
+            background: rgba(245, 186, 88, 0.2) !important;
+            color: #ffd68a !important;
+            border-color: rgba(245, 186, 88, 0.45) !important;
         }
     </style>
 {% endblock %}
@@ -213,14 +289,14 @@
                                 </select>
                             </div>
                             <div class="field" style="padding-top: 1.95rem;">
-                                <button class="ui mini primary button" type="submit">
-                                    <i class="search icon"></i> Load
+                                <button class="ui mini green button" type="submit">
+                                    <i class="search icon"></i> Search
                                 </button>
-                                <a class="ui mini button" href="{% url 'studentApp:student_progress_report_cards' %}">
-                                    <i class="undo icon"></i> Reset
+                                <a class="ui mini red button" href="{% url 'studentApp:student_progress_report_cards' %}">
+                                    <i class="undo icon"></i> Clear
                                 </a>
-                                <button id="printBtn" class="ui mini teal button" type="button" onclick="window.print()">
-                                    <i class="print icon"></i> Print
+                                <button id="downloadReportPdfBtn" class="ui mini blue button" type="button">
+                                    <i class="file pdf outline icon"></i> Download PDF
                                 </button>
                             </div>
                         </div>
@@ -235,19 +311,37 @@
                             | Class: {{ student.standardID.name }}{% if student.standardID.section %} - {{ student.standardID.section }}{% endif %}
                         {% endif %}
                     </div>
+                    <div class="meta">
+                        School:
+                        {% if student.schoolID and student.schoolID.schoolName %}
+                            {{ student.schoolID.schoolName }}
+                        {% elif student.schoolID and student.schoolID.name %}
+                            {{ student.schoolID.name }}
+                        {% else %}
+                            School Name
+                        {% endif %}
+                        {% if student.schoolID and student.schoolID.address %}
+                            | {{ student.schoolID.address }}
+                        {% endif %}
+                    </div>
                 </div>
 
                 {% if report_cards %}
                     <div class="cards-wrap" id="reportCardsWrap">
                         {% for card in report_cards %}
-                            <div class="report-card {% if forloop.first %}expanded{% endif %}">
+                            <div class="report-card expanded">
                                 <div class="card-head">
                                     <div>
                                         <h4 class="card-title">{{ card.exam_name }}</h4>
                                         <div class="card-sub">{{ card.exam_date|date:'d M Y'|default:'N/A' }} | Entries: {{ card.entered_marks_count }}/{{ card.subject_count }}</div>
                                     </div>
-                                    <div class="badge {% if card.result == 'Pass' %}pass{% elif card.result == 'Fail' %}fail{% else %}pending{% endif %}">
-                                        {{ card.result }}
+                                    <div class="card-head-actions">
+                                        <div class="badge {% if card.result == 'Pass' %}pass{% elif card.result == 'Fail' %}fail{% else %}pending{% endif %}">
+                                            {{ card.result }}
+                                        </div>
+                                        <span class="card-toggle-icon" aria-hidden="true">
+                                            <i class="chevron down icon"></i>
+                                        </span>
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -289,13 +383,255 @@
 {% endblock %}
 
 {% block js %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script>
         $(document).ready(function () {
+            function syncCardToggleIcon(card) {
+                const head = card.querySelector('.card-head');
+                if (!head) return;
+                head.setAttribute('aria-expanded', card.classList.contains('expanded') ? 'true' : 'false');
+            }
+
             document.querySelectorAll('#reportCardsWrap .report-card .card-head').forEach(function (head) {
+                const card = head.parentElement;
+                if (card) {
+                    syncCardToggleIcon(card);
+                }
                 head.addEventListener('click', function () {
-                    head.parentElement.classList.toggle('expanded');
+                    const targetCard = head.parentElement;
+                    targetCard.classList.toggle('expanded');
+                    syncCardToggleIcon(targetCard);
                 });
             });
+
+            const downloadBtn = document.getElementById('downloadReportPdfBtn');
+            if (!downloadBtn) return;
+
+            function safeFileName(value) {
+                return String(value || '')
+                    .trim()
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '') || 'report-card';
+            }
+
+            function getCardBlocks() {
+                return Array.from(document.querySelectorAll('#reportCardsWrap .report-card'));
+            }
+
+            function collectSubjectRows(cardBody) {
+                return Array.from(cardBody.querySelectorAll('table.subject-table tbody tr')).map(function (tr) {
+                    const cells = tr.querySelectorAll('td');
+                    return [
+                        (cells[0] && cells[0].textContent || '').trim() || 'N/A',
+                        (cells[1] && cells[1].textContent || '').trim() || 'N/A',
+                        (cells[2] && cells[2].textContent || '').trim() || '-'
+                    ];
+                });
+            }
+
+            function loadImageDataUrl(src) {
+                return new Promise(function (resolve) {
+                    if (!src) {
+                        resolve(null);
+                        return;
+                    }
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = function () {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            const size = 120;
+                            canvas.width = size;
+                            canvas.height = size;
+                            const ctx = canvas.getContext('2d');
+                            const radius = 18;
+                            ctx.beginPath();
+                            ctx.moveTo(radius, 0);
+                            ctx.lineTo(size - radius, 0);
+                            ctx.quadraticCurveTo(size, 0, size, radius);
+                            ctx.lineTo(size, size - radius);
+                            ctx.quadraticCurveTo(size, size, size - radius, size);
+                            ctx.lineTo(radius, size);
+                            ctx.quadraticCurveTo(0, size, 0, size - radius);
+                            ctx.lineTo(0, radius);
+                            ctx.quadraticCurveTo(0, 0, radius, 0);
+                            ctx.closePath();
+                            ctx.clip();
+                            ctx.drawImage(img, 0, 0, size, size);
+                            resolve(canvas.toDataURL('image/png'));
+                        } catch (e) {
+                            resolve(null);
+                        }
+                    };
+                    img.onerror = function () {
+                        resolve(null);
+                    };
+                    img.src = src;
+                });
+            }
+
+            async function downloadProgressPdf() {
+                const jsPdfRef = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
+                if (!jsPdfRef) {
+                    addErrorNotification('PDF library unavailable.');
+                    return;
+                }
+
+                const cards = getCardBlocks();
+                if (!cards.length) {
+                    addErrorNotification('No report data found to download.');
+                    return;
+                }
+
+                const originalText = downloadBtn.innerHTML;
+                downloadBtn.classList.add('loading', 'disabled');
+
+                try {
+                    const pdf = new jsPdfRef({
+                        orientation: 'landscape',
+                        unit: 'pt',
+                        format: 'a4'
+                    });
+
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    const marginX = 36;
+                    const studentName = "{{ student.name|default:'Student'|escapejs }}";
+                    const roll = "{{ student.roll|default:'N/A'|escapejs }}";
+                    const classText = "{% if student.standardID %}{{ student.standardID.name|default:'N/A'|escapejs }}{% if student.standardID.section %} - {{ student.standardID.section|escapejs }}{% endif %}{% else %}N/A{% endif %}";
+                    const schoolName = "{% if student.schoolID and student.schoolID.schoolName %}{{ student.schoolID.schoolName|escapejs }}{% elif student.schoolID and student.schoolID.name %}{{ student.schoolID.name|escapejs }}{% else %}School Name{% endif %}";
+                    const schoolAddressParts = [
+                        "{{ student.schoolID.address|default_if_none:''|escapejs }}",
+                        "{{ student.schoolID.city|default_if_none:''|escapejs }}",
+                        "{{ student.schoolID.state|default_if_none:''|escapejs }}"
+                    ].filter(Boolean);
+                    const schoolAddress = schoolAddressParts.join(', ');
+                    const schoolLogoSrc = "{% if student.schoolID and student.schoolID.logo %}{{ student.schoolID.logo.url|escapejs }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}";
+                    const generatedOn = new Date().toLocaleString();
+                    const schoolLogoData = await loadImageDataUrl(schoolLogoSrc);
+
+                    function drawPageHeader() {
+                        pdf.setFillColor(33, 73, 138);
+                        pdf.rect(0, 0, pageWidth, 76, 'F');
+                        pdf.setTextColor(255, 255, 255);
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.setFontSize(16);
+                        pdf.text('PROGRESS REPORT CARD', marginX, 32);
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.setFontSize(10);
+                        pdf.text('Student: ' + studentName + '   |   Roll: ' + roll + '   |   Class: ' + classText, marginX, 52);
+
+                        pdf.setFillColor(245, 249, 255);
+                        pdf.roundedRect(marginX, 84, pageWidth - (marginX * 2), 54, 8, 8, 'F');
+                        if (schoolLogoData) {
+                            pdf.addImage(schoolLogoData, 'PNG', marginX + 8, 90, 42, 42);
+                        }
+                        pdf.setTextColor(40, 50, 65);
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.setFontSize(11);
+                        pdf.text(schoolName || 'School Name', marginX + 58, 104);
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.setFontSize(9);
+                        const infoLeftX = marginX + 58;
+                        const infoRightX = pageWidth - marginX - 8;
+                        const maxAddressWidth = Math.max(180, infoRightX - infoLeftX - 180);
+                        if (schoolAddress) {
+                            const addressLines = pdf.splitTextToSize(schoolAddress, maxAddressWidth);
+                            pdf.text(addressLines, infoLeftX, 118);
+                        }
+                        pdf.text('Generated on: ' + generatedOn, infoRightX, 104, {align: 'right'});
+                        return 154;
+                    }
+
+                    let currentY = drawPageHeader();
+                    cards.forEach(function (card, index) {
+                        const title = (card.querySelector('.card-title') && card.querySelector('.card-title').textContent || 'Exam').trim();
+                        const sub = (card.querySelector('.card-sub') && card.querySelector('.card-sub').textContent || '').trim();
+                        const status = (card.querySelector('.badge') && card.querySelector('.badge').textContent || 'Pending').trim();
+                        const kpis = Array.from(card.querySelectorAll('.kpi')).map(function (kpi) {
+                            const kpiLabel = (kpi.querySelector('.label') && kpi.querySelector('.label').textContent || '').trim();
+                            const kpiValue = (kpi.querySelector('.value') && kpi.querySelector('.value').textContent || '').trim();
+                            return kpiLabel + ': ' + (kpiValue || 'N/A');
+                        }).join('   |   ');
+                        const body = card.querySelector('.card-body');
+                        const subjectRows = body ? collectSubjectRows(body) : [];
+
+                        if (index > 0) {
+                            pdf.addPage();
+                            currentY = drawPageHeader();
+                        }
+
+                        pdf.setTextColor(40, 50, 65);
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.setFontSize(13);
+                        pdf.text(title, marginX, currentY);
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.setFontSize(10);
+                        pdf.text(sub, marginX, currentY + 16);
+                        pdf.text('Result: ' + status, pageWidth - marginX, currentY + 16, {align: 'right'});
+                        pdf.setFontSize(9);
+                        const kpiLines = pdf.splitTextToSize(kpis || 'No summary available', pageWidth - (marginX * 2));
+                        pdf.text(kpiLines, marginX, currentY + 32);
+
+                        const tableStartY = currentY + 48 + (kpiLines.length * 10);
+                        if (typeof pdf.autoTable === 'function') {
+                            pdf.autoTable({
+                                head: [['Subject', 'Marks', 'Note']],
+                                body: subjectRows.length ? subjectRows : [['N/A', 'N/A', 'No subject rows']],
+                                startY: tableStartY,
+                                margin: {left: marginX, right: marginX},
+                                styles: {
+                                    font: 'helvetica',
+                                    fontSize: 9,
+                                    cellPadding: 6,
+                                    textColor: [35, 44, 56],
+                                    lineColor: [206, 219, 235],
+                                    lineWidth: 0.6
+                                },
+                                headStyles: {
+                                    fillColor: [33, 73, 138],
+                                    textColor: [255, 255, 255],
+                                    fontStyle: 'bold',
+                                    halign: 'left'
+                                },
+                                alternateRowStyles: {
+                                    fillColor: [246, 250, 255]
+                                }
+                            });
+                        } else {
+                            let y = tableStartY;
+                            pdf.setFont('helvetica', 'bold');
+                            pdf.text('Subject | Marks | Note', marginX, y);
+                            pdf.setFont('helvetica', 'normal');
+                            y += 12;
+                            subjectRows.forEach(function (row) {
+                                const line = row.join(' | ');
+                                const parts = pdf.splitTextToSize(line, pageWidth - (marginX * 2));
+                                if (y > pageHeight - 30) {
+                                    pdf.addPage();
+                                    y = 24;
+                                }
+                                pdf.text(parts, marginX, y);
+                                y += (parts.length * 11) + 2;
+                            });
+                        }
+
+                    });
+
+                    const fileName = safeFileName(studentName) + '-progress-report.pdf';
+                    pdf.save(fileName);
+                    addSuccessNotification('Progress report PDF downloaded successfully.', 'green');
+                } catch (error) {
+                    addErrorNotification('Unable to download progress report PDF.');
+                } finally {
+                    downloadBtn.classList.remove('loading', 'disabled');
+                    downloadBtn.innerHTML = originalText;
+                }
+            }
+
+            downloadBtn.addEventListener('click', downloadProgressPdf);
         });
     </script>
 {% endblock %}

@@ -7,8 +7,14 @@
 
 {% block css %}
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Quicksand:wght@500;700&display=swap');
+
     .student-dashboard {
         width: 100%;
+    }
+
+    .student-mobile-app {
+        display: none;
     }
 
     .hero-card {
@@ -111,6 +117,76 @@
         margin-top: 1rem !important;
     }
 
+    .student-feature-hub {
+        margin-top: 1rem;
+        display: none !important;
+    }
+
+    .student-feature-hub-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.8rem;
+        margin-bottom: 0.72rem;
+    }
+
+    .student-feature-hub-head .title {
+        margin: 0;
+        font-size: 1.02rem;
+        color: var(--app-text);
+        font-weight: 800;
+    }
+
+    .student-feature-hub-head .sub {
+        font-size: 0.82rem;
+        color: var(--app-muted);
+    }
+
+    .student-feature-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.7rem;
+    }
+
+    .student-feature-item {
+        border: 1px solid var(--app-border);
+        border-radius: 16px;
+        background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+        box-shadow: 0 10px 22px rgba(20, 34, 59, 0.1);
+        padding: 0.8rem 0.72rem;
+        text-decoration: none;
+        color: var(--app-text);
+        display: grid;
+        gap: 0.52rem;
+        min-height: 96px;
+        transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+    }
+
+    .student-feature-item i.icon {
+        margin: 0 !important;
+        width: 34px;
+        height: 34px;
+        border-radius: 11px;
+        background: linear-gradient(135deg, rgba(66, 128, 246, 0.2), rgba(77, 185, 227, 0.22));
+        color: #1d58be !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .student-feature-item span {
+        font-size: 0.84rem;
+        line-height: 1.25;
+        font-weight: 700;
+        color: #233b67;
+    }
+
+    .student-feature-item:hover {
+        transform: translateY(-2px);
+        border-color: rgba(66, 128, 246, 0.38);
+        box-shadow: 0 14px 26px rgba(20, 34, 59, 0.14);
+    }
+
     .list-row {
         display: flex;
         justify-content: space-between;
@@ -195,6 +271,652 @@
     }
 
     @media (max-width: 767px) {
+        .student-dashboard {
+            display: none !important;
+        }
+
+        .student-mobile-app {
+            display: block;
+            min-height: calc(100vh - var(--top-nav-height));
+            background: transparent;
+            font-family: 'Quicksand', sans-serif;
+            color: #0c1830;
+            padding-bottom: 0.8rem;
+        }
+
+        .student-mobile-hero {
+            background: linear-gradient(135deg, #23477f 0%, #1d3a69 52%, #172f56 100%);
+            padding: 0.95rem 1rem 1rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 36px rgba(16, 34, 64, 0.34);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(154, 188, 232, 0.24);
+        }
+
+        .student-mobile-hero:after {
+            content: "";
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: rgba(184, 213, 246, 0.14);
+            top: -130px;
+            right: -108px;
+        }
+
+        .student-mobile-hero:before {
+            content: "";
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: rgba(121, 168, 224, 0.12);
+            bottom: -94px;
+            left: -62px;
+        }
+
+        .student-mobile-topline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.6rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .student-mobile-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.56rem;
+        }
+
+        .student-mobile-profile-link {
+            text-decoration: none;
+            color: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.56rem;
+        }
+
+    .student-mobile-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.28);
+            border: 1px solid rgba(255, 255, 255, 0.42);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        font-weight: 700;
+        font-size: 0.83rem;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .student-mobile-avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        display: block;
+    }
+
+        .student-mobile-profile-name {
+            color: #ffffff;
+            font-size: 1.06rem;
+            font-weight: 700;
+            line-height: 1.15;
+        }
+
+        .student-mobile-profile-sub {
+            color: rgba(237, 242, 255, 0.84);
+            font-size: 0.74rem;
+            margin-top: 0.08rem;
+        }
+
+        .student-mobile-profile-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .student-mobile-profile-icon i.icon {
+            margin: 0 !important;
+            color: inherit !important;
+            font-size: 1rem !important;
+        }
+
+        .student-mobile-profile-icon .theme-toggle-icon {
+            color: inherit !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        .student-mobile-session {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid rgba(233, 238, 255, 0.42);
+            color: rgba(247, 250, 255, 0.95);
+            background: rgba(232, 238, 252, 0.2);
+            border-radius: 999px;
+            font-size: 0.74rem;
+            letter-spacing: 0.02em;
+            text-transform: none;
+            font-weight: 700;
+            padding: 0.42rem 0.7rem;
+            margin-bottom: 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        .student-mobile-name {
+            margin: 0.82rem 0 0;
+            color: #ffffff;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 2.02rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            line-height: 1.05;
+            position: relative;
+            z-index: 2;
+        }
+
+        .student-mobile-class {
+            margin-top: 0.34rem;
+            color: rgba(233, 240, 255, 0.9);
+            text-transform: none;
+            font-size: 0.92rem;
+            letter-spacing: 0.01em;
+            font-weight: 600;
+            position: relative;
+            z-index: 2;
+        }
+
+        .student-mobile-hero-cta {
+            margin-top: 0.72rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            border-radius: 999px;
+            border: 1px solid rgba(188, 215, 247, 0.52);
+            background: rgba(172, 204, 241, 0.16);
+            color: #ecf5ff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 0.34rem 0.7rem;
+            text-decoration: none;
+            position: relative;
+            z-index: 2;
+        }
+
+        .student-mobile-hero-cta i.icon {
+            margin: 0 !important;
+            color: inherit !important;
+        }
+
+        .student-mobile-float-stats {
+            margin-top: 0.85rem;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.52rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .student-mobile-float-stat {
+            background: #ffffff;
+            border: 1px solid #e3e7f2;
+            border-radius: 14px;
+            padding: 0.5rem 0.55rem;
+            box-shadow: 0 9px 18px rgba(31, 36, 70, 0.16);
+        }
+
+        .student-mobile-float-label {
+            font-size: 0.7rem;
+            color: #607196;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .student-mobile-float-value {
+            margin-top: 0.18rem;
+            font-size: 0.95rem;
+            color: #1d2f53;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        .student-mobile-body {
+            padding: 1.1rem 0.4rem 1rem;
+        }
+
+        .student-mobile-search {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            border: 1px solid #d4e1f3;
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(26, 47, 87, 0.1);
+            padding: 0.42rem 0.48rem 0.42rem 0.68rem;
+            margin-bottom: 0.9rem;
+            transition: border-color .16s ease, box-shadow .16s ease;
+        }
+
+        .student-mobile-search:focus-within {
+            border-color: color-mix(in srgb, var(--app-brand, #1a73e8) 45%, #9fb6dc);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-brand, #1a73e8) 16%, transparent);
+        }
+
+        .student-mobile-search-main {
+            flex: 1 1 auto;
+            display: flex;
+            align-items: center;
+            gap: 0.56rem;
+            min-width: 0;
+            margin: 0;
+        }
+
+        .student-mobile-search-main i.icon {
+            margin: 0 !important;
+            color: #5f7398 !important;
+            width: 1.85rem;
+            height: 1.85rem;
+            border-radius: 11px;
+            border: 1px solid #d8e3f2;
+            background: #f1f6fd;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.92rem !important;
+        }
+
+        .student-mobile-search-main input {
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 0.91rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            color: #1f335d;
+            background: transparent;
+        }
+
+        .student-mobile-search-main input::placeholder {
+            color: #7b8faf;
+            font-weight: 500;
+        }
+
+        .student-mobile-search-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 11px;
+            border: 1px solid #d4e2f4;
+            background: #edf4ff;
+            color: #476696;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform .14s ease, background .14s ease, color .14s ease;
+        }
+
+        .student-mobile-search-btn i.icon {
+            margin: 0 !important;
+            color: inherit !important;
+        }
+
+        .student-mobile-search-btn:active {
+            transform: scale(0.95);
+        }
+
+        .student-mobile-search-btn.is-hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.88);
+        }
+
+        .student-mobile-spotlight-wrap {
+            display: flex;
+            gap: 0.65rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+            margin-bottom: 0.9rem;
+            padding-bottom: 0.15rem;
+        }
+
+        .student-mobile-spotlight-wrap::-webkit-scrollbar {
+            display: none;
+        }
+
+        .student-mobile-spotlight {
+            border-radius: 18px;
+            background: linear-gradient(135deg, #2c5b9e 0%, #234b83 100%);
+            color: #fff;
+            padding: 0.9rem;
+            box-shadow: 0 14px 26px rgba(25, 53, 95, 0.34);
+            min-width: 86%;
+            flex: 0 0 86%;
+            scroll-snap-align: start;
+        }
+
+        .student-mobile-spotlight-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .student-mobile-spotlight-title {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .student-mobile-spotlight-count {
+            font-size: 0.8rem;
+            font-weight: 700;
+            opacity: 0.92;
+        }
+
+        .student-mobile-spotlight-value {
+            margin-top: 0.55rem;
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .student-mobile-spotlight-sub {
+            margin-top: 0.2rem;
+            font-size: 0.84rem;
+            color: rgba(236, 244, 255, 0.92);
+        }
+
+        .student-mobile-spotlight-actions {
+            margin-top: 0.72rem;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            border-top: 1px solid rgba(211, 228, 251, 0.4);
+            padding-top: 0.58rem;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .student-mobile-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            background: #ffffff;
+            border: 1px solid #e3e8f2;
+            border-radius: 999px;
+            padding: 0.28rem;
+            margin-bottom: 0.8rem;
+            box-shadow: 0 8px 16px rgba(32, 45, 77, 0.08);
+        }
+
+        .student-mobile-tab {
+            border: none;
+            background: transparent;
+            color: #56698f;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0.44rem 0.3rem;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+
+        .student-mobile-tab.active {
+            background: linear-gradient(135deg, #3568b1 0%, #294f87 100%);
+            color: #fff;
+            box-shadow: 0 8px 14px rgba(30, 63, 112, 0.26);
+        }
+
+        .student-mobile-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1.05rem 0.9rem;
+        }
+
+        .student-mobile-tile {
+            text-decoration: none;
+            color: #1d2f53;
+            display: block;
+            border-radius: 20px;
+            padding: 0.48rem 0.42rem 0.56rem;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(242, 247, 255, 0.98));
+            border: 1px solid #d8e3f6;
+            box-shadow: 0 12px 20px rgba(39, 58, 97, 0.13);
+            min-height: 140px;
+            transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .student-mobile-tile:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #6d98cd 0%, #4c7cb8 100%);
+            opacity: 0.9;
+        }
+
+        .student-mobile-tile.hidden {
+            display: none !important;
+        }
+
+        .student-mobile-icon-wrap {
+            height: 76px;
+            border-radius: 18px;
+            background: linear-gradient(145deg, #6e95cf 0%, #557fb8 100%);
+            border: 1px solid rgba(70, 106, 156, 0.45);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34), 0 10px 16px rgba(27, 45, 82, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform .16s ease, box-shadow .16s ease;
+        }
+
+        .student-mobile-icon-wrap i.icon {
+            margin: 0 !important;
+            font-size: 1.85rem;
+            color: #ffffff !important;
+        }
+
+        .student-mobile-grid .student-mobile-tile:nth-child(4n+1) .student-mobile-icon-wrap {
+            background: linear-gradient(145deg, #6e95cf 0%, #557fb8 100%);
+            border-color: rgba(70, 106, 156, 0.45);
+        }
+
+        .student-mobile-grid .student-mobile-tile:nth-child(4n+2) .student-mobile-icon-wrap {
+            background: linear-gradient(145deg, #57a47b 0%, #3f8e66 100%);
+            border-color: rgba(45, 111, 78, 0.46);
+        }
+
+        .student-mobile-grid .student-mobile-tile:nth-child(4n+3) .student-mobile-icon-wrap {
+            background: linear-gradient(145deg, #d29b53 0%, #b6792f 100%);
+            border-color: rgba(132, 84, 31, 0.46);
+        }
+
+        .student-mobile-grid .student-mobile-tile:nth-child(4n+4) .student-mobile-icon-wrap {
+            background: linear-gradient(145deg, #916fcd 0%, #7859af 100%);
+            border-color: rgba(84, 58, 128, 0.46);
+        }
+
+        .student-mobile-tile-label {
+            margin-top: 0.5rem;
+            font-size: 0.88rem;
+            line-height: 1.06;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+            color: #223e6a;
+            min-height: 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Patrick Hand', cursive;
+            font-weight: 400;
+        }
+
+        .student-mobile-grid .student-mobile-tile-label.small {
+            font-size: 0.8rem;
+            line-height: 1.06;
+        }
+
+        .student-mobile-tile:active .student-mobile-icon-wrap {
+            transform: translateY(1px) scale(0.98);
+            box-shadow: 0 5px 14px rgba(17, 31, 58, 0.14);
+        }
+
+        .student-mobile-tile:hover {
+            transform: translateY(-2px);
+            border-color: rgba(58, 114, 226, 0.42);
+            box-shadow: 0 16px 24px rgba(39, 58, 97, 0.18);
+        }
+
+        .student-mobile-grid .student-mobile-tile:nth-child(3n+1):before {
+            background: linear-gradient(90deg, #6f9bd1 0%, #5f8dc8 100%);
+        }
+
+        .student-mobile-grid .student-mobile-tile:nth-child(3n+2):before {
+            background: linear-gradient(90deg, #628fc7 0%, #567eb2 100%);
+        }
+
+        .student-mobile-grid .student-mobile-tile:nth-child(3n+3):before {
+            background: linear-gradient(90deg, #4f79ad 0%, #3f6799 100%);
+        }
+
+        .student-mobile-stats {
+            margin-top: 1.35rem;
+            display: grid;
+            gap: 0.55rem;
+        }
+
+        .student-mobile-stat {
+            border-radius: 12px;
+            border: 1px solid #d9e1ee;
+            background: #f8fafd;
+            padding: 0.62rem 0.74rem;
+            display: flex;
+            justify-content: space-between;
+            gap: 0.7rem;
+            font-size: 0.78rem;
+            color: #2b3f5f;
+            font-weight: 700;
+        }
+
+        .student-mobile-stat strong {
+            color: #10203f;
+            font-weight: 700;
+        }
+
+        .student-mobile-kpis {
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.62rem;
+        }
+
+        .student-mobile-kpi {
+            background: #f9fcff;
+            border: 1px solid #d4e0f5;
+            border-radius: 14px;
+            padding: 0.64rem 0.7rem;
+            box-shadow: 0 8px 16px rgba(17, 49, 109, 0.08);
+        }
+
+        .student-mobile-kpi-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #4d648e;
+            font-weight: 700;
+        }
+
+        .student-mobile-kpi-value {
+            margin-top: 0.2rem;
+            font-size: 1.08rem;
+            color: #081a3b;
+            font-weight: 700;
+        }
+
+        .student-mobile-panel {
+            margin-top: 0.9rem;
+            background: #f9fcff;
+            border: 1px solid #d4e0f5;
+            border-radius: 16px;
+            box-shadow: 0 8px 18px rgba(17, 49, 109, 0.08);
+            overflow: hidden;
+        }
+
+        .student-mobile-panels.hidden {
+            display: none !important;
+        }
+
+        .student-mobile-panel-head {
+            padding: 0.65rem 0.78rem 0.35rem;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #102a57;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .student-mobile-panel-body {
+            padding: 0.3rem 0.78rem 0.78rem;
+        }
+
+        .student-mobile-row {
+            padding: 0.56rem 0;
+            border-bottom: 1px dashed #cfdbef;
+            display: grid;
+            gap: 0.2rem;
+        }
+
+        .student-mobile-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .student-mobile-row-title {
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: #0f2752;
+        }
+
+        .student-mobile-row-meta {
+            font-size: 0.74rem;
+            color: #4e648f;
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+
+        #attendanceTrendChartMobile {
+            height: 140px !important;
+            max-height: 140px;
+        }
+
+        .student-feature-hub {
+            display: none !important;
+        }
+
         .hero-card {
             padding: 1rem;
             border-radius: 14px;
@@ -213,10 +935,572 @@
             grid-column: 2;
         }
     }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-hero {
+        background: linear-gradient(135deg, #1c3358 0%, #162d4d 52%, #122640 100%) !important;
+        border-color: rgba(122, 152, 199, 0.28) !important;
+        box-shadow: 0 16px 30px rgba(5, 11, 24, 0.46) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-hero:after {
+        background: rgba(109, 149, 202, 0.14) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-hero:before {
+        background: rgba(79, 122, 178, 0.12) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-session,
+    html[data-theme="dark"] .student-mobile-app .student-mobile-profile-icon,
+    html[data-theme="dark"] .student-mobile-app .student-mobile-avatar {
+        background: rgba(123, 157, 204, 0.2) !important;
+        border-color: rgba(160, 188, 225, 0.42) !important;
+        color: #edf4ff !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-profile-sub,
+    html[data-theme="dark"] .student-mobile-app .student-mobile-class {
+        color: #b8cde8 !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-hero-cta {
+        background: rgba(113, 154, 209, 0.2) !important;
+        border-color: rgba(157, 191, 229, 0.45) !important;
+        color: #ecf5ff !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-float-stat {
+        background: #25324a !important;
+        border-color: #3a4b67 !important;
+        box-shadow: 0 8px 16px rgba(4, 9, 20, 0.45) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-float-label {
+        color: #9eb4d3 !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-float-value {
+        color: #f2f7ff !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-spotlight {
+        background: linear-gradient(135deg, #2a4f85 0%, #224474 100%) !important;
+        box-shadow: 0 12px 24px rgba(4, 9, 20, 0.44) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-spotlight-sub {
+        color: #ccddf5 !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-spotlight-actions {
+        border-top-color: rgba(182, 205, 234, 0.35) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-search {
+        background: linear-gradient(180deg, #25324a 0%, #222f45 100%) !important;
+        border-color: #3b4d6c !important;
+        box-shadow: 0 8px 16px rgba(4, 9, 20, 0.42) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-search:focus-within {
+        border-color: #5c7fb6 !important;
+        box-shadow: 0 0 0 3px rgba(116, 169, 255, 0.15) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-search-main i.icon {
+        background: #2b3b56 !important;
+        border-color: #445b81 !important;
+        color: #bfd1ea !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-search-main input {
+        color: #e6f0ff !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-search-main input::placeholder {
+        color: #9cb3d4 !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-search-main i.icon,
+    html[data-theme="dark"] .student-mobile-app .student-mobile-search-btn {
+        color: #a9bfe0 !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-search-btn {
+        background: #30435f !important;
+        border-color: #486289 !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-tabs {
+        background: #252f42 !important;
+        border-color: #3a4a65 !important;
+        box-shadow: 0 8px 14px rgba(4, 9, 20, 0.36) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-tab {
+        color: #b4c8e6 !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-tab.active {
+        background: linear-gradient(135deg, #3f6ca8 0%, #315787 100%) !important;
+        color: #f5f9ff !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-tile {
+        background: linear-gradient(180deg, #252f42 0%, #222c3f 100%) !important;
+        border-color: #3a4a65 !important;
+        box-shadow: 0 10px 18px rgba(4, 9, 20, 0.42) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-icon-wrap {
+        background: linear-gradient(145deg, #3c5f96 0%, #324f7d 100%) !important;
+        border-color: rgba(84, 111, 152, 0.62) !important;
+        box-shadow: inset 0 1px 0 rgba(180, 203, 236, 0.15), 0 8px 14px rgba(3, 7, 16, 0.4) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-icon-wrap i.icon {
+        color: #f4f8ff !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-grid .student-mobile-tile:nth-child(4n+2) .student-mobile-icon-wrap {
+        background: linear-gradient(145deg, #2f7a57 0%, #286548 100%) !important;
+        border-color: rgba(70, 144, 104, 0.56) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-grid .student-mobile-tile:nth-child(4n+3) .student-mobile-icon-wrap {
+        background: linear-gradient(145deg, #9a6c2f 0%, #845a24 100%) !important;
+        border-color: rgba(171, 121, 58, 0.56) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-grid .student-mobile-tile:nth-child(4n+4) .student-mobile-icon-wrap {
+        background: linear-gradient(145deg, #66479c 0%, #573d84 100%) !important;
+        border-color: rgba(126, 98, 174, 0.56) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-tile-label {
+        color: #ecf4ff !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-panel {
+        background: #252f42 !important;
+        border-color: #3a4a65 !important;
+        box-shadow: 0 10px 18px rgba(4, 9, 20, 0.38) !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-panel-head,
+    html[data-theme="dark"] .student-mobile-app .student-mobile-row-title {
+        color: #e9f2ff !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-row,
+    html[data-theme="dark"] .student-mobile-app .student-mobile-row-meta,
+    html[data-theme="dark"] .student-mobile-app .student-mobile-kpi-label,
+    html[data-theme="dark"] .student-mobile-app .list-muted {
+        color: #b8cde8 !important;
+        border-color: #3a4a65 !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-kpi {
+        background: #25324a !important;
+        border-color: #3a4b67 !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-kpi-value,
+    html[data-theme="dark"] .student-mobile-app .student-mobile-stat strong {
+        color: #f2f7ff !important;
+    }
+
+    html[data-theme="dark"] .student-mobile-app .student-mobile-stat {
+        background: #25324a !important;
+        border-color: #3a4b67 !important;
+        color: #c0d3ed !important;
+    }
+
+    @media (max-width: 767px) {
+        .student-mobile-app {
+            color: var(--app-text) !important;
+        }
+
+        .student-mobile-app .student-mobile-hero {
+            background: linear-gradient(
+                135deg,
+                color-mix(in srgb, var(--app-brand) 86%, var(--app-surface)) 0%,
+                color-mix(in srgb, var(--app-brand) 64%, var(--app-bg)) 55%,
+                color-mix(in srgb, var(--app-brand) 48%, var(--app-text)) 100%
+            ) !important;
+            border-color: color-mix(in srgb, var(--app-brand) 28%, var(--app-border)) !important;
+        }
+
+        .student-mobile-app .student-mobile-avatar,
+        .student-mobile-app .student-mobile-profile-icon,
+        .student-mobile-app .student-mobile-session,
+        .student-mobile-app .student-mobile-hero-cta {
+            color: #fff !important;
+            border-color: color-mix(in srgb, #fff 34%, transparent) !important;
+            background: color-mix(in srgb, #fff 16%, transparent) !important;
+        }
+
+        .student-mobile-app .student-mobile-profile-sub,
+        .student-mobile-app .student-mobile-class,
+        .student-mobile-app .student-mobile-spotlight-sub {
+            color: color-mix(in srgb, #fff 82%, transparent) !important;
+        }
+
+        .student-mobile-app .student-mobile-float-stat,
+        .student-mobile-app .student-mobile-search,
+        .student-mobile-app .student-mobile-tabs,
+        .student-mobile-app .student-mobile-tile,
+        .student-mobile-app .student-mobile-panel,
+        .student-mobile-app .student-mobile-kpi,
+        .student-mobile-app .student-mobile-stat {
+            background: var(--app-surface) !important;
+            border-color: var(--app-border) !important;
+            color: var(--app-text) !important;
+            box-shadow: 0 10px 18px color-mix(in srgb, var(--app-border) 45%, transparent) !important;
+        }
+
+        .student-mobile-app .student-mobile-search-main {
+            margin: 0 !important;
+        }
+
+        .student-mobile-app .student-mobile-search-main i.icon,
+        .student-mobile-app .student-mobile-search-btn,
+        .student-mobile-app .student-mobile-float-label,
+        .student-mobile-app .student-mobile-row-meta,
+        .student-mobile-app .student-mobile-kpi-label {
+            color: var(--app-muted) !important;
+        }
+
+        .student-mobile-app .student-mobile-search-btn {
+            background: var(--app-hover) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        .student-mobile-app .student-mobile-search-main input,
+        .student-mobile-app .student-mobile-search-main input::placeholder {
+            color: var(--app-text) !important;
+        }
+
+        .student-mobile-app .student-mobile-search-main input::placeholder {
+            opacity: 0.75;
+        }
+
+        .student-mobile-app .student-mobile-tab {
+            color: var(--app-muted) !important;
+        }
+
+        .student-mobile-app .student-mobile-tab.active {
+            background: var(--app-active) !important;
+            color: var(--app-brand) !important;
+            box-shadow: none !important;
+        }
+
+        .student-mobile-app .student-mobile-spotlight {
+            background: linear-gradient(
+                135deg,
+                color-mix(in srgb, var(--app-brand) 88%, var(--app-surface)) 0%,
+                color-mix(in srgb, var(--app-brand) 72%, var(--app-bg)) 100%
+            ) !important;
+            color: #fff !important;
+            border: 1px solid color-mix(in srgb, var(--app-brand) 34%, transparent) !important;
+        }
+
+        .student-mobile-app .student-mobile-spotlight-actions {
+            border-top-color: color-mix(in srgb, #fff 42%, transparent) !important;
+        }
+
+        .student-mobile-app .student-mobile-tile:before {
+            background: linear-gradient(
+                90deg,
+                color-mix(in srgb, var(--app-brand) 72%, #fff) 0%,
+                var(--app-brand) 100%
+            ) !important;
+        }
+
+        .student-mobile-app .student-mobile-icon-wrap {
+            background: linear-gradient(145deg, #6e95cf 0%, #557fb8 100%) !important;
+            border-color: rgba(70, 106, 156, 0.45) !important;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 10px 16px rgba(27, 45, 82, 0.18) !important;
+        }
+
+        .student-mobile-app .student-mobile-grid .student-mobile-tile:nth-child(4n+2) .student-mobile-icon-wrap {
+            background: linear-gradient(145deg, #57a47b 0%, #3f8e66 100%) !important;
+            border-color: rgba(45, 111, 78, 0.46) !important;
+        }
+
+        .student-mobile-app .student-mobile-grid .student-mobile-tile:nth-child(4n+3) .student-mobile-icon-wrap {
+            background: linear-gradient(145deg, #d29b53 0%, #b6792f 100%) !important;
+            border-color: rgba(132, 84, 31, 0.46) !important;
+        }
+
+        .student-mobile-app .student-mobile-grid .student-mobile-tile:nth-child(4n+4) .student-mobile-icon-wrap {
+            background: linear-gradient(145deg, #916fcd 0%, #7859af 100%) !important;
+            border-color: rgba(84, 58, 128, 0.46) !important;
+        }
+
+        .student-mobile-app .student-mobile-icon-wrap i.icon,
+        .student-mobile-app .student-mobile-tile-label,
+        .student-mobile-app .student-mobile-float-value,
+        .student-mobile-app .student-mobile-kpi-value,
+        .student-mobile-app .student-mobile-panel-head,
+        .student-mobile-app .student-mobile-row-title,
+        .student-mobile-app .student-mobile-stat strong {
+            color: var(--app-text) !important;
+        }
+
+        .student-mobile-app .student-mobile-icon-wrap i.icon {
+            color: #ffffff !important;
+        }
+
+        .student-mobile-app .student-mobile-row {
+            border-bottom-color: var(--app-border) !important;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block body %}
+<div class="student-mobile-app">
+    <section class="student-mobile-hero">
+        <div class="student-mobile-topline">
+            <div class="student-mobile-profile">
+                <a class="student-mobile-profile-link" href="{% url 'studentApp:student_my_details' %}">
+                    <div class="student-mobile-avatar">
+                        {% if student.photo %}
+                            <img class="student-mobile-avatar-img" src="{{ student.photo.url }}" alt="{{ student.name|default:request.user.username }}">
+                        {% else %}
+                            {{ student.name|default:request.user.username|slice:":1"|upper }}
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="student-mobile-profile-name">{{ student.name|default:request.user.username }}</div>
+                        <div class="student-mobile-profile-sub">Student Dashboard</div>
+                    </div>
+                </a>
+            </div>
+            <div style="display:flex; align-items:center; gap:.42rem;">
+                <div class="student-mobile-session">{{ request.session.current_session.currentSessionYear|default:'N/A' }}</div>
+                <button class="student-mobile-profile-icon" id="studentMobileThemeBtn" type="button" aria-label="Toggle theme">
+                    <i class="theme-toggle-icon moon icon" id="studentMobileThemeIcon"></i>
+                </button>
+            </div>
+        </div>
+        <h1 class="student-mobile-name">{{ student.name|default:request.user.username }}</h1>
+        <div class="student-mobile-class">
+            Class - {{ student.standardID.name|default:'N/A' }} {% if student.standardID.section %}| Section {{ student.standardID.section }}{% endif %}
+        </div>
+        <a class="student-mobile-hero-cta" href="{% url 'studentApp:student_progress_report_cards' %}">
+            <i class="chart line icon"></i>
+            View performance
+        </a>
+        <div class="student-mobile-float-stats">
+            <div class="student-mobile-float-stat">
+                <div class="student-mobile-float-label">Attendance</div>
+                <div class="student-mobile-float-value">{{ attendance_month_percent }}%</div>
+            </div>
+            <div class="student-mobile-float-stat">
+                <div class="student-mobile-float-label">Paid</div>
+                <div class="student-mobile-float-value">₹{{ paid_amount|floatformat:0 }}</div>
+            </div>
+            <div class="student-mobile-float-stat">
+                <div class="student-mobile-float-label">Pending</div>
+                <div class="student-mobile-float-value">₹{{ pending_amount|floatformat:0 }}</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="student-mobile-body">
+        {% if student_not_found %}
+            <div class="ui warning message">
+                <div class="header">Student profile not found</div>
+                <p>Your student details are not available for the selected session.</p>
+            </div>
+        {% endif %}
+
+        <div class="student-mobile-spotlight-wrap">
+        <div class="student-mobile-spotlight">
+            <div class="student-mobile-spotlight-top">
+                <h3 class="student-mobile-spotlight-title">My Academic Portfolio</h3>
+                <div class="student-mobile-spotlight-count">1 / 3</div>
+            </div>
+            <div class="student-mobile-spotlight-value">{{ attendance_month_percent }}%</div>
+            <div class="student-mobile-spotlight-sub">Current attendance with fee and progress overview</div>
+            <div class="student-mobile-spotlight-actions">
+                <div>Attendance</div>
+                <div>Exams</div>
+                <div>Fees</div>
+            </div>
+        </div>
+        <div class="student-mobile-spotlight">
+            <div class="student-mobile-spotlight-top">
+                <h3 class="student-mobile-spotlight-title">Fee Dashboard</h3>
+                <div class="student-mobile-spotlight-count">2 / 3</div>
+            </div>
+            <div class="student-mobile-spotlight-value">₹{{ pending_amount|floatformat:0 }}</div>
+            <div class="student-mobile-spotlight-sub">Pending fee amount with current payment status</div>
+            <div class="student-mobile-spotlight-actions">
+                <div>Pending</div>
+                <div>Paid</div>
+                <div>Months</div>
+            </div>
+        </div>
+        <div class="student-mobile-spotlight">
+            <div class="student-mobile-spotlight-top">
+                <h3 class="student-mobile-spotlight-title">Exam Overview</h3>
+                <div class="student-mobile-spotlight-count">3 / 3</div>
+            </div>
+            <div class="student-mobile-spotlight-value">{{ upcoming_exams|length }}</div>
+            <div class="student-mobile-spotlight-sub">Upcoming exams and report card quick access</div>
+            <div class="student-mobile-spotlight-actions">
+                <div>Upcoming</div>
+                <div>Reports</div>
+                <div>Events</div>
+            </div>
+        </div>
+        </div>
+
+        <div class="student-mobile-search">
+            <label class="student-mobile-search-main">
+                <i class="search icon"></i>
+                <input id="studentMobileSearchInput" type="text" placeholder="Type or search module">
+            </label>
+            <button class="student-mobile-search-btn is-hidden" id="studentMobileSearchClearBtn" type="button" aria-label="Clear search">
+                <i class="times icon"></i>
+            </button>
+        </div>
+
+        <div class="student-mobile-tabs" id="studentMobileTabs">
+            <button type="button" class="student-mobile-tab active" data-cat="all">All</button>
+            <button type="button" class="student-mobile-tab" data-cat="study">Study</button>
+            <button type="button" class="student-mobile-tab" data-cat="account">Account</button>
+        </div>
+
+        <div class="student-mobile-grid" id="studentMobileGrid">
+            <a class="student-mobile-tile" data-cat="study" href="{% url 'studentApp:attendance_history' %}">
+                <div class="student-mobile-icon-wrap"><i class="calendar alternate outline icon"></i></div>
+                <div class="student-mobile-tile-label">My Attendance</div>
+            </a>
+            <a class="student-mobile-tile" data-cat="account" href="{% url 'studentApp:fee_detail' %}">
+                <div class="student-mobile-icon-wrap"><i class="credit card outline icon"></i></div>
+                <div class="student-mobile-tile-label">Fee Details</div>
+            </a>
+            <a class="student-mobile-tile" data-cat="account" href="{% url 'studentApp:student_school_detail' %}">
+                <div class="student-mobile-icon-wrap"><i class="school icon"></i></div>
+                <div class="student-mobile-tile-label">School</div>
+            </a>
+            <a class="student-mobile-tile" data-cat="account" href="{% url 'studentApp:student_my_details' %}">
+                <div class="student-mobile-icon-wrap"><i class="id card outline icon"></i></div>
+                <div class="student-mobile-tile-label">My Details</div>
+            </a>
+            <a class="student-mobile-tile" data-cat="account" href="{% url 'studentApp:student_id_card' %}">
+                <div class="student-mobile-icon-wrap"><i class="address card outline icon"></i></div>
+                <div class="student-mobile-tile-label">ID Card</div>
+            </a>
+            <a class="student-mobile-tile" data-cat="study" href="{% url 'studentApp:student_exam_details' %}">
+                <div class="student-mobile-icon-wrap"><i class="clipboard outline icon"></i></div>
+                <div class="student-mobile-tile-label">Exam Time Table</div>
+            </a>
+            <a class="student-mobile-tile" data-cat="study" href="{% url 'studentApp:student_progress_report_cards' %}">
+                <div class="student-mobile-icon-wrap"><i class="chart bar outline icon"></i></div>
+                <div class="student-mobile-tile-label">Report Card</div>
+            </a>
+            <a class="student-mobile-tile" data-cat="study" href="{% url 'studentApp:student_events' %}">
+                <div class="student-mobile-icon-wrap"><i class="calendar icon"></i></div>
+                <div class="student-mobile-tile-label">Events</div>
+            </a>
+            <a class="student-mobile-tile" data-cat="study" href="{% url 'studentApp:student_leave_applications' %}">
+                <div class="student-mobile-icon-wrap"><i class="calendar check outline icon"></i></div>
+                <div class="student-mobile-tile-label small">Leave Applications</div>
+            </a>
+            <a class="student-mobile-tile" data-cat="account" href="{% url 'homeApp:profile_page' %}">
+                <div class="student-mobile-icon-wrap"><i class="user outline icon"></i></div>
+                <div class="student-mobile-tile-label">Profile</div>
+            </a>
+            <a class="student-mobile-tile" data-cat="account" href="{% url 'homeApp:user_logout' %}">
+                <div class="student-mobile-icon-wrap"><i class="undo icon"></i></div>
+                <div class="student-mobile-tile-label">Logout</div>
+            </a>
+        </div>
+
+        <div class="student-mobile-stats">
+            <div class="student-mobile-stat">
+                <span>Attendance This Month</span>
+                <strong>{{ attendance_month_percent }}%</strong>
+            </div>
+            <div class="student-mobile-stat">
+                <span>Fee Paid</span>
+                <strong>₹{{ paid_amount|floatformat:2 }}</strong>
+            </div>
+            <div class="student-mobile-stat">
+                <span>Fee Pending</span>
+                <strong>₹{{ pending_amount|floatformat:2 }}</strong>
+            </div>
+        </div>
+
+        <div class="student-mobile-kpis">
+            <div class="student-mobile-kpi">
+                <div class="student-mobile-kpi-label">Subjects</div>
+                <div class="student-mobile-kpi-value">{{ subjects_count }}</div>
+            </div>
+            <div class="student-mobile-kpi">
+                <div class="student-mobile-kpi-label">Paid Months</div>
+                <div class="student-mobile-kpi-value">{{ paid_months_count }}</div>
+            </div>
+            <div class="student-mobile-kpi">
+                <div class="student-mobile-kpi-label">Present Days</div>
+                <div class="student-mobile-kpi-value">{{ attendance_month_present_days }}</div>
+            </div>
+            <div class="student-mobile-kpi">
+                <div class="student-mobile-kpi-label">Total Days</div>
+                <div class="student-mobile-kpi-value">{{ attendance_month_total_days }}</div>
+            </div>
+        </div>
+
+        <div class="student-mobile-panels" id="studentMobilePanels">
+        <div class="student-mobile-panel">
+            <div class="student-mobile-panel-head">Attendance Trend</div>
+            <div class="student-mobile-panel-body">
+                <canvas id="attendanceTrendChartMobile"></canvas>
+            </div>
+        </div>
+
+        <div class="student-mobile-panel">
+            <div class="student-mobile-panel-head">Upcoming Exams</div>
+            <div class="student-mobile-panel-body">
+                {% for exam in upcoming_exams %}
+                    <div class="student-mobile-row">
+                        <div class="student-mobile-row-title">{{ exam.examID.name|default:'N/A' }}</div>
+                        <div class="student-mobile-row-meta">
+                            <span>Marks {{ exam.fullMarks|default:'N/A' }} / Pass {{ exam.passMarks|default:'N/A' }}</span>
+                            <span>{{ exam.startDate|date:'d M Y'|default:'N/A' }}</span>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="list-muted">No upcoming exams found.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="student-mobile-panel">
+            <div class="student-mobile-panel-head">Upcoming Events</div>
+            <div class="student-mobile-panel-body">
+                {% for event in upcoming_events %}
+                    <div class="student-mobile-row">
+                        <div class="student-mobile-row-title">{{ event.title|default:'N/A' }}</div>
+                        <div class="student-mobile-row-meta">
+                            <span>{{ event.message|default:'No description' }}</span>
+                            <span>{{ event.startDate|date:'d M Y'|default:'N/A' }}</span>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="list-muted">No upcoming events announced.</div>
+                {% endfor %}
+            </div>
+        </div>
+        </div>
+    </section>
+</div>
+
 <div class="ui left aligned basic grid student-dashboard">
     <div class="sixteen wide column">
         <div class="hero-card">
@@ -285,6 +1569,48 @@
             </div>
         </div>
 
+        <div class="student-feature-hub">
+            <div class="student-feature-hub-head">
+                <h3 class="title">Student Feature Hub</h3>
+                <span class="sub">Access every module from home</span>
+            </div>
+            <div class="student-feature-grid">
+                <a class="student-feature-item" href="{% url 'studentApp:student_school_detail' %}">
+                    <i class="school icon"></i><span>School Details</span>
+                </a>
+                <a class="student-feature-item" href="{% url 'studentApp:student_my_details' %}">
+                    <i class="id card outline icon"></i><span>My Details</span>
+                </a>
+                <a class="student-feature-item" href="{% url 'studentApp:student_id_card' %}">
+                    <i class="address card outline icon"></i><span>My ID Card</span>
+                </a>
+                <a class="student-feature-item" href="{% url 'studentApp:attendance_history' %}">
+                    <i class="calendar check outline icon"></i><span>Attendance History</span>
+                </a>
+                <a class="student-feature-item" href="{% url 'studentApp:fee_detail' %}">
+                    <i class="money bill alternate outline icon"></i><span>Fee Details</span>
+                </a>
+                <a class="student-feature-item" href="{% url 'studentApp:student_exam_details' %}">
+                    <i class="clipboard outline icon"></i><span>Exam Time Table</span>
+                </a>
+                <a class="student-feature-item" href="{% url 'studentApp:student_progress_report_cards' %}">
+                    <i class="chart bar outline icon"></i><span>Progress Report Cards</span>
+                </a>
+                <a class="student-feature-item" href="{% url 'studentApp:student_events' %}">
+                    <i class="calendar alternate outline icon"></i><span>Events</span>
+                </a>
+                <a class="student-feature-item" href="{% url 'studentApp:student_leave_applications' %}">
+                    <i class="calendar check outline icon"></i><span>Leave Applications</span>
+                </a>
+                <a class="student-feature-item" href="{% url 'homeApp:profile_page' %}">
+                    <i class="user outline icon"></i><span>My Profile</span>
+                </a>
+                <a class="student-feature-item" href="{% url 'homeApp:user_logout' %}">
+                    <i class="sign out alternate icon"></i><span>Logout</span>
+                </a>
+            </div>
+        </div>
+
         <div class="ui two stackable cards" style="margin-top: 1rem;">
             <div class="card section-card">
                 <div class="content">
@@ -347,35 +1673,131 @@
     (function () {
         const labels = {{ attendance_chart_labels|safe }};
         const values = {{ attendance_chart_values|safe }};
-        const canvas = document.getElementById('attendanceTrendChart');
-        if (!canvas) return;
+        const charts = ['attendanceTrendChart', 'attendanceTrendChartMobile'];
 
-        new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Monthly Attendance %',
-                    data: values,
-                    borderColor: '#1a73e8',
-                    backgroundColor: 'rgba(26,115,232,0.14)',
-                    borderWidth: 2,
-                    fill: true,
-                    lineTension: 0.25,
-                    pointRadius: 3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                legend: {display: false},
-                scales: {
-                    yAxes: [{
-                        ticks: {min: 0, max: 100}
+        charts.forEach(function (chartId) {
+            const canvas = document.getElementById(chartId);
+            if (!canvas) return;
+
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Monthly Attendance %',
+                        data: values,
+                        borderColor: '#1a73e8',
+                        backgroundColor: 'rgba(26,115,232,0.14)',
+                        borderWidth: 2,
+                        fill: true,
+                        lineTension: 0.25,
+                        pointRadius: 3
                     }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    legend: {display: false},
+                    scales: {
+                        yAxes: [{
+                            ticks: {min: 0, max: 100}
+                        }]
+                    }
+                }
+            });
+        });
+    })();
+
+    (function () {
+        const btn = document.getElementById('studentMobileThemeBtn');
+        if (!btn) return;
+        if (typeof window.syncThemeIcons === 'function') {
+            window.syncThemeIcons(document.documentElement.getAttribute('data-theme') || 'light');
+        }
+
+        btn.addEventListener('click', function () {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            if (typeof window.applyTheme === 'function') {
+                window.applyTheme(next);
+            } else {
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('theme', next);
+                if (typeof window.syncThemeIcons === 'function') {
+                    window.syncThemeIcons(next);
                 }
             }
         });
+
+        document.addEventListener('theme:changed', function (event) {
+            if (typeof window.syncThemeIcons === 'function') {
+                window.syncThemeIcons((event.detail && event.detail.theme) || document.documentElement.getAttribute('data-theme') || 'light');
+            }
+        });
+    })();
+
+    (function () {
+        const tabsWrap = document.getElementById('studentMobileTabs');
+        const searchInput = document.getElementById('studentMobileSearchInput');
+        const clearBtn = document.getElementById('studentMobileSearchClearBtn');
+        const grid = document.getElementById('studentMobileGrid');
+        const panels = document.getElementById('studentMobilePanels');
+        if (!tabsWrap || !grid) return;
+
+        const tabs = Array.from(tabsWrap.querySelectorAll('.student-mobile-tab'));
+        const tiles = Array.from(grid.querySelectorAll('.student-mobile-tile'));
+        let activeCat = 'all';
+
+        function syncSearchButtons() {
+            const hasText = !!(searchInput && (searchInput.value || '').trim());
+            if (clearBtn) {
+                clearBtn.classList.toggle('is-hidden', !hasText);
+            }
+        }
+
+        function applyFilters() {
+            const q = (searchInput && searchInput.value ? searchInput.value : '').trim().toLowerCase();
+            let visibleCount = 0;
+
+            tiles.forEach(function (tile) {
+                const cat = tile.getAttribute('data-cat') || 'all';
+                const label = (tile.textContent || '').toLowerCase();
+                const catMatch = activeCat === 'all' || cat === activeCat;
+                const textMatch = !q || label.indexOf(q) >= 0;
+                const show = catMatch && textMatch;
+                tile.classList.toggle('hidden', !show);
+                if (show) visibleCount += 1;
+            });
+
+            if (panels) {
+                panels.classList.toggle('hidden', activeCat !== 'all' || !!q || visibleCount < 4);
+            }
+
+            syncSearchButtons();
+        }
+
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                tabs.forEach(function (t) { t.classList.remove('active'); });
+                tab.classList.add('active');
+                activeCat = tab.getAttribute('data-cat') || 'all';
+                applyFilters();
+            });
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener('input', applyFilters);
+        }
+
+        if (clearBtn && searchInput) {
+            clearBtn.addEventListener('click', function () {
+                searchInput.value = '';
+                applyFilters();
+                searchInput.focus();
+            });
+        }
+
+        applyFilters();
     })();
 </script>
 {% endblock %}

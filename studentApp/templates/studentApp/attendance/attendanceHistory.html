@@ -220,6 +220,53 @@
             flex-wrap: wrap;
         }
 
+        .attendance-month-slider {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            border: 1px solid var(--dm-border, #d8e2f0);
+            background: var(--dm-card-bg, #ffffff);
+            border-radius: 10px;
+            padding: 0.32rem 0.45rem;
+            min-height: 2.35rem;
+        }
+
+        #subjectFormDiv .attendance-month-slider .ui.icon.button.attendance-month-nav-btn {
+            min-width: 30px;
+            min-height: 30px;
+            width: 30px;
+            height: 30px;
+            margin: 0;
+            padding: 0 !important;
+            border: 1px solid var(--dm-border, #d8e2f0) !important;
+            background: #eaf1ff !important;
+            color: #24509a !important;
+            box-shadow: none !important;
+        }
+
+        #subjectFormDiv .attendance-month-slider .ui.icon.button.attendance-month-nav-btn > i.icon {
+            color: inherit !important;
+            opacity: 1 !important;
+            margin: 0 !important;
+        }
+
+        #subjectFormDiv .attendance-month-slider .ui.icon.button.attendance-month-nav-btn:hover {
+            background: #e8f0ff !important;
+            border-color: #bfd3f4 !important;
+        }
+
+        .attendance-month-value {
+            flex: 1 1 auto;
+            text-align: center;
+            font-weight: 700;
+            color: var(--dm-text, #1f2f43);
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+            font-size: 0.85rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         .attendance-empty {
             border: 1px dashed var(--dm-border, #d8e2f0);
             border-radius: 14px;
@@ -242,6 +289,22 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32) !important;
         }
 
+        html[data-theme="dark"] .attendance-month-slider {
+            background: #111a2b !important;
+            border-color: #2a3856 !important;
+        }
+
+        html[data-theme="dark"] #subjectFormDiv .attendance-month-slider .ui.icon.button.attendance-month-nav-btn {
+            background: #1a2740 !important;
+            border-color: #344a72 !important;
+            color: #cfe2ff !important;
+        }
+
+        html[data-theme="dark"] #subjectFormDiv .attendance-month-slider .ui.icon.button.attendance-month-nav-btn:hover {
+            background: #223555 !important;
+            border-color: #476596 !important;
+        }
+
         html[data-theme="dark"] .calendar-month-head,
         html[data-theme="dark"] .calendar-weekday,
         html[data-theme="dark"] .calendar-day {
@@ -251,7 +314,8 @@
         html[data-theme="dark"] .attendance-card-title,
         html[data-theme="dark"] .attendance-card-meta b,
         html[data-theme="dark"] .calendar-month-title,
-        html[data-theme="dark"] .calendar-day-num {
+        html[data-theme="dark"] .calendar-day-num,
+        html[data-theme="dark"] .attendance-month-value {
             color: #e6eefc !important;
         }
 
@@ -260,6 +324,90 @@
         html[data-theme="dark"] .calendar-weekday,
         html[data-theme="dark"] .calendar-legend {
             color: #9fb1cd !important;
+        }
+
+        @media (max-width: 767px) {
+            body.student-mobile-route #subjectFormDiv {
+                border-radius: 14px !important;
+                padding: 0.7rem !important;
+            }
+
+            body.student-mobile-route #subjectFormDiv .four.fields {
+                column-gap: 0.55rem !important;
+                row-gap: 0.55rem !important;
+            }
+
+            body.student-mobile-route #subjectFormDiv .four.fields > .field {
+                min-width: 100% !important;
+                flex: 1 1 100% !important;
+            }
+
+            body.student-mobile-route #subjectFormDiv .field[style*="padding-top"] {
+                padding-top: 0.25rem !important;
+                display: flex !important;
+                gap: 0.45rem;
+            }
+
+            body.student-mobile-route #subjectFormDiv .field[style*="padding-top"] .ui.button {
+                flex: 1 1 0;
+            }
+
+            body.student-mobile-route #attendanceViewTabs {
+                overflow-x: auto;
+                white-space: nowrap;
+                display: flex !important;
+                gap: 0.3rem;
+                padding-bottom: 0.3rem;
+            }
+
+            body.student-mobile-route #attendanceViewTabs .item {
+                border-radius: 999px !important;
+                border: 1px solid var(--student-mobile-border, #cbdcf6) !important;
+                padding: 0.42rem 0.68rem !important;
+                min-width: max-content;
+                font-size: 0.73rem !important;
+                background: rgba(255, 255, 255, 0.58) !important;
+            }
+
+            body.student-mobile-route #attendanceViewTabs .active.item {
+                background: rgba(47, 111, 237, 0.16) !important;
+                border-color: rgba(47, 111, 237, 0.38) !important;
+                color: #1547ac !important;
+                font-weight: 700 !important;
+            }
+        }
+
+        html[data-theme="dark"] body.student-mobile-route #attendanceViewTabs .item {
+            background: rgba(28, 43, 71, 0.88) !important;
+            border-color: #38557f !important;
+            color: #c7dbff !important;
+        }
+
+        html[data-theme="dark"] body.student-mobile-route #attendanceViewTabs .active.item {
+            background: rgba(106, 156, 246, 0.22) !important;
+            border-color: rgba(130, 182, 255, 0.52) !important;
+            color: #f0f6ff !important;
+        }
+
+        html[data-theme="dark"] body.student-mobile-route .calendar-status.present,
+        html[data-theme="dark"] body.student-mobile-route .attendance-chip.present {
+            background: rgba(56, 184, 110, 0.2) !important;
+            color: #71e1a7 !important;
+            border-color: rgba(56, 184, 110, 0.45) !important;
+        }
+
+        html[data-theme="dark"] body.student-mobile-route .calendar-status.absent,
+        html[data-theme="dark"] body.student-mobile-route .attendance-chip.absent {
+            background: rgba(224, 94, 94, 0.18) !important;
+            color: #ffb3b3 !important;
+            border-color: rgba(224, 94, 94, 0.42) !important;
+        }
+
+        html[data-theme="dark"] body.student-mobile-route .calendar-status.leave,
+        html[data-theme="dark"] body.student-mobile-route .attendance-chip.leave {
+            background: rgba(245, 186, 88, 0.2) !important;
+            color: #ffd68a !important;
+            border-color: rgba(245, 186, 88, 0.45) !important;
         }
 
         @media (max-width: 767px) {
@@ -294,34 +442,19 @@
                                 </select>
                             </div>
 
-                            <div class="two wide field required">
-                                <label>Start Date</label>
-                                <div class="ui calendar" id="cStartDateByStudent">
-                                    <div class="ui input left icon">
-                                        <i class="calendar icon"></i>
-                                        <input type="text" placeholder="Start Date" id="ByStudentStartDate">
-                                    </div>
+                            <div class="three wide field required">
+                                <label>Month</label>
+                                <div class="attendance-month-slider">
+                                    <button type="button" class="ui basic mini icon button attendance-month-nav-btn" id="attendanceMonthPrev" aria-label="Previous month">
+                                        <i class="chevron left icon"></i>
+                                    </button>
+                                    <div class="attendance-month-value" id="attendanceMonthLabel"></div>
+                                    <button type="button" class="ui basic mini icon button attendance-month-nav-btn" id="attendanceMonthNext" aria-label="Next month">
+                                        <i class="chevron right icon"></i>
+                                    </button>
                                 </div>
-                            </div>
-
-                            <div class="two wide field required">
-                                <label>End Date</label>
-                                <div class="ui calendar" id="cEndDateByStudent">
-                                    <div class="ui input left icon">
-                                        <i class="calendar icon"></i>
-                                        <input type="text" placeholder="End Date" id="ByStudentEndDate">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="three wide field">
-                                <label>View Mode</label>
-                                <select class="ui dropdown" id="AttendanceViewMode">
-                                    <option value="calendar" selected>Calendar View</option>
-                                    <option value="month">Month View</option>
-                                    <option value="daily">Daily View</option>
-                                    <option value="subject">Subject Wise</option>
-                                </select>
+                                <input type="hidden" id="ByStudentStartDate">
+                                <input type="hidden" id="ByStudentEndDate">
                             </div>
 
                             <div class="four wide field" style="padding-top: 2.2em;">
@@ -388,21 +521,27 @@
             return day + '/' + month + '/' + year;
         }
 
-        function initCalendars() {
-            $('#cStartDateByStudent, #cEndDateByStudent').calendar({
-                monthFirst: false,
-                type: 'date',
-                formatter: {
-                    date: function (date) {
-                        return formatAsDdMmYyyy(date);
-                    }
-                }
-            });
+        let activeAttendanceMonth = null;
 
-            const now = new Date();
-            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        function setAttendanceMonth(dateObj) {
+            if (!dateObj) return;
+            const current = new Date();
+            const selected = new Date(dateObj.getFullYear(), dateObj.getMonth(), 1);
+            activeAttendanceMonth = selected;
+
+            const monthStart = new Date(selected.getFullYear(), selected.getMonth(), 1);
+            let monthEnd = new Date(selected.getFullYear(), selected.getMonth() + 1, 0);
+            if (selected.getFullYear() === current.getFullYear() && selected.getMonth() === current.getMonth()) {
+                monthEnd = current;
+            }
+
             $('#ByStudentStartDate').val(formatAsDdMmYyyy(monthStart));
-            $('#ByStudentEndDate').val(formatAsDdMmYyyy(now));
+            $('#ByStudentEndDate').val(formatAsDdMmYyyy(monthEnd));
+            $('#attendanceMonthLabel').text(selected.toLocaleString(undefined, {month: 'long', year: 'numeric'}));
+        }
+
+        function initCalendars() {
+            setAttendanceMonth(new Date());
         }
 
         function getFilters(validateInput) {
@@ -433,7 +572,10 @@
             } else {
                 $('#dailyViewPane').addClass('active');
             }
-            $('#AttendanceViewMode').dropdown('set selected', view);
+            const viewDropdown = $('#AttendanceViewMode');
+            if (viewDropdown.length) {
+                viewDropdown.dropdown('set selected', view);
+            }
         }
 
         function parseDmY(dateText) {
@@ -704,11 +846,14 @@
         }
 
         function initInteractions() {
-            $('#AttendanceViewMode').dropdown({
-                onChange: function (value) {
-                    if (value) setActiveView(value);
-                }
-            });
+            const viewDropdown = $('#AttendanceViewMode');
+            if (viewDropdown.length) {
+                viewDropdown.dropdown({
+                    onChange: function (value) {
+                        if (value) setActiveView(value);
+                    }
+                });
+            }
 
             $('#attendanceViewTabs .item').on('click', function () {
                 setActiveView($(this).data('view'));
@@ -718,10 +863,23 @@
 
             $('#clearAttendanceBtn').on('click', function () {
                 $('#ByStudentSubject').dropdown('set selected', 'all');
+                setAttendanceMonth(new Date());
+                searchAttendance();
+            });
+
+            $('#attendanceMonthPrev').on('click', function () {
+                const base = activeAttendanceMonth || new Date();
+                setAttendanceMonth(new Date(base.getFullYear(), base.getMonth() - 1, 1));
+                searchAttendance();
+            });
+
+            $('#attendanceMonthNext').on('click', function () {
+                const base = activeAttendanceMonth || new Date();
+                const next = new Date(base.getFullYear(), base.getMonth() + 1, 1);
                 const now = new Date();
-                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-                $('#ByStudentStartDate').val(formatAsDdMmYyyy(monthStart));
-                $('#ByStudentEndDate').val(formatAsDdMmYyyy(now));
+                const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                if (next > thisMonthStart) return;
+                setAttendanceMonth(next);
                 searchAttendance();
             });
         }

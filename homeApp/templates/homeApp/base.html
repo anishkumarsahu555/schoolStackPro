@@ -30,7 +30,6 @@
     <script src="{% static 'sw/app.js' %}"></script>
 
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/dataTables.semanticui.min.css">
-    <script src="{% static 'sw/app.js' %}"></script>
     <link rel="stylesheet" type="text/css"
           href="https://cdn.datatables.net/fixedcolumns/4.1.0/css/fixedColumns.dataTables.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
@@ -49,6 +48,11 @@
             --app-active: #e8f0fe;
             --app-brand: #1a73e8;
             --top-nav-height: 60px;
+            --app-radius-sm: 10px;
+            --app-radius-md: 14px;
+            --app-radius-lg: 18px;
+            --app-shadow-sm: 0 6px 18px rgba(15, 23, 42, 0.06);
+            --app-shadow-md: 0 12px 28px rgba(15, 23, 42, 0.09);
         }
 
         html[data-theme="dark"] {
@@ -642,6 +646,31 @@
             opacity: 1 !important;
         }
 
+        /* Keep navigation icons always visible and theme-consistent */
+        .ui.top.fixed.menu .item > i.icon,
+        #sidebar .nav-item i.icon,
+        .student-mobile-bottom-nav .student-nav-item i.icon {
+            opacity: 1 !important;
+            visibility: visible !important;
+            color: var(--app-icon) !important;
+        }
+
+        .ui.top.fixed.menu .item:hover > i.icon,
+        #sidebar .nav-item:hover i.icon,
+        .student-mobile-bottom-nav .student-nav-item:hover i.icon,
+        .ui.top.fixed.menu .item.active > i.icon,
+        #sidebar .nav-item.active i.icon,
+        .student-mobile-bottom-nav .student-nav-item.active i.icon {
+            color: var(--app-brand) !important;
+        }
+
+        #themeToggleBtn .theme-toggle-icon {
+            font-size: 1.02rem !important;
+            color: var(--app-text) !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
         .ui.button > .icon:not(.dropdown),
         .ui.icon.button > .icon {
             color: inherit !important;
@@ -658,82 +687,6 @@
         .ui.form .ui.button > .icon:not(.dropdown) {
             color: #ffffff !important;
             opacity: 1 !important;
-        }
-
-        .ui.form .field.filter-actions {
-            display: flex !important;
-            align-items: center !important;
-            gap: 0.45rem !important;
-            flex-wrap: nowrap !important;
-        }
-
-        .ui.form .field.filter-actions .ui.mini.button {
-            min-height: 32px !important;
-            padding: 0.52em 0.82em !important;
-            border-radius: 6px !important;
-            font-size: 0.78rem !important;
-            font-weight: 600 !important;
-            line-height: 1.1 !important;
-            margin: 0 !important;
-            white-space: nowrap !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            gap: 0.32rem !important;
-        }
-
-        .ui.form .field.filter-actions .ui.mini.button i.icon {
-            font-size: 0.84em !important;
-        }
-
-        .ui.form .field.filter-actions .filter-apply-btn.ui.blue.button,
-        .ui.form .field.filter-actions .filter-apply-btn.ui.blue.button i.icon {
-            color: #ffffff !important;
-        }
-
-        .ui.form .field.filter-actions .filter-clear-btn.ui.basic.button {
-            background: #ffffff !important;
-            color: #1f2937 !important;
-            border: 1px solid #cfd7e3 !important;
-            box-shadow: none !important;
-        }
-
-        .ui.form .field.filter-actions .filter-clear-btn.ui.basic.button i.icon {
-            color: #4b5563 !important;
-            opacity: 1 !important;
-        }
-
-        .ui.form .field.filter-actions .filter-clear-btn.ui.basic.button:hover {
-            background: #f5f7fb !important;
-            color: #111827 !important;
-            border-color: #9fb4d3 !important;
-        }
-
-        html[data-theme="dark"] .ui.form .field.filter-actions .filter-clear-btn.ui.basic.button {
-            background: #202a38 !important;
-            color: #e5edf8 !important;
-            border-color: #3a475d !important;
-        }
-
-        html[data-theme="dark"] .ui.form .field.filter-actions .filter-clear-btn.ui.basic.button i.icon {
-            color: #d3deee !important;
-        }
-
-        html[data-theme="dark"] .ui.form .field.filter-actions .filter-clear-btn.ui.basic.button:hover {
-            background: #2a3950 !important;
-            border-color: #6ea8ff !important;
-            color: #f0f6ff !important;
-        }
-
-        .ui.form .field.filter-actions .ui.mini.button.filter-apply-btn:not(.red):not(.green):not(.blue):not(.orange):not(.purple):not(.basic) {
-            background: var(--app-hover) !important;
-            color: var(--app-text) !important;
-            border: 1px solid var(--app-border) !important;
-        }
-
-        .ui.form .field.filter-actions .ui.mini.button.filter-apply-btn:not(.red):not(.green):not(.blue):not(.orange):not(.purple):not(.basic):hover {
-            background: var(--app-active) !important;
-            border-color: var(--app-brand) !important;
-            color: var(--app-text) !important;
         }
 
         html[data-theme="dark"] .ui.basic.button,
@@ -1453,78 +1406,6 @@
                 padding: 0.8rem !important;
             }
 
-            .main-content .ui.form {
-                margin-bottom: 0.55rem !important;
-            }
-
-            .main-content .ui.form .fields {
-                margin: 0 0 0.5rem !important;
-            }
-
-            .main-content .ui.form .field {
-                margin: 0 0 0.5rem !important;
-            }
-
-            .main-content .ui.form .two.fields,
-            .main-content .ui.form .three.fields,
-            .main-content .ui.form .four.fields,
-            .main-content .ui.form .five.fields,
-            .main-content .ui.form .six.fields {
-                display: flex !important;
-                flex-wrap: wrap !important;
-                gap: 0.5rem !important;
-                margin: 0 0 0.5rem !important;
-            }
-
-            .main-content .ui.form .two.fields > .field,
-            .main-content .ui.form .three.fields > .field,
-            .main-content .ui.form .four.fields > .field,
-            .main-content .ui.form .five.fields > .field,
-            .main-content .ui.form .six.fields > .field {
-                flex: 1 1 calc(50% - 0.25rem) !important;
-                min-width: calc(50% - 0.25rem) !important;
-                margin: 0 !important;
-            }
-
-            .main-content .ui.form .field > label {
-                font-size: 0.82rem !important;
-                margin-bottom: 0.32rem !important;
-            }
-
-            .main-content .ui.form input:not([type]),
-            .main-content .ui.form input[type="text"],
-            .main-content .ui.form input[type="password"],
-            .main-content .ui.form input[type="email"],
-            .main-content .ui.form input[type="number"],
-            .main-content .ui.form input[type="date"],
-            .main-content .ui.form input[type="datetime-local"],
-            .main-content .ui.form input[type="time"],
-            .main-content .ui.form input[type="tel"],
-            .main-content .ui.form input[type="search"],
-            .main-content .ui.form textarea,
-            .main-content .ui.form select,
-            .main-content .ui.selection.dropdown {
-                font-size: 0.9rem !important;
-                min-height: 2.35rem !important;
-                padding-top: 0.55rem !important;
-                padding-bottom: 0.55rem !important;
-            }
-
-            .main-content .ui.form textarea {
-                min-height: 4.8rem !important;
-            }
-
-            .main-content .ui.form .ui.button,
-            .main-content .ui.form button.ui.button {
-                font-size: 0.82rem !important;
-                padding: 0.62em 0.85em !important;
-            }
-
-            .main-content .ui.form .ui.mini.button {
-                font-size: 0.76rem !important;
-                padding: 0.56em 0.76em !important;
-            }
-
             .main-content {
                 margin-left: 0 !important;
             }
@@ -1764,10 +1645,455 @@
             color: var(--app-text);
             font-weight: 700;
         }
+
+        /* Modern global shell */
+        body {
+            font-family: "Inter", "Segoe UI", "Roboto", sans-serif;
+            letter-spacing: 0.01em;
+        }
+
+        .ui.top.fixed.menu {
+            border-bottom: 1px solid var(--app-border) !important;
+            box-shadow: var(--app-shadow-sm) !important;
+            backdrop-filter: saturate(140%) blur(6px);
+            -webkit-backdrop-filter: saturate(140%) blur(6px);
+        }
+
+        .material-sidenav {
+            border-right: 1px solid var(--app-border) !important;
+            box-shadow: none !important;
+        }
+
+        .material-sidenav .nav-item {
+            border-radius: 0 var(--app-radius-sm) var(--app-radius-sm) 0;
+            margin-right: 0.5rem;
+            font-weight: 500;
+        }
+
+        .material-sidenav .nav-item i.icon {
+            width: 1.25rem;
+            text-align: center;
+        }
+
+        .main-content {
+            padding: 12px 14px !important;
+        }
+
+        .main-content > .ui.grid,
+        .main-content > .ui.container,
+        .main-content > .ui.segment,
+        .main-content > .ui.basic.grid {
+            max-width: 1460px;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+
+        .ui.segment,
+        .ui.card,
+        .ui.cards > .card,
+        .ui.message,
+        .ui.table {
+            border-radius: var(--app-radius-md) !important;
+        }
+
+        .ui.segment,
+        .ui.card,
+        .ui.cards > .card,
+        .ui.message {
+            box-shadow: var(--app-shadow-sm) !important;
+        }
+
+        .ui.card:hover,
+        .ui.cards > .card:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--app-shadow-md) !important;
+            transition: transform .16s ease, box-shadow .16s ease;
+        }
+
+        /* Project-wide Fomantic-like button baseline: one consistent height/shape. */
+        body .ui.button,
+        body .ui.buttons .button {
+            height: 2.45rem !important;
+            min-height: 2.45rem !important;
+            padding: 0 1rem !important;
+            border-radius: .28571429rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center;
+            line-height: 1 !important;
+        }
+
+        body .ui.icon.button {
+            width: 2.45rem !important;
+            padding: 0 !important;
+        }
+
+        .ui.table {
+            overflow: hidden;
+        }
+
+        .ui.table thead th,
+        table.dataTable thead th,
+        table.dataTable thead td {
+            font-size: 0.78rem !important;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .ui.modal {
+            border-radius: var(--app-radius-lg) !important;
+        }
+
+        @media (max-width: 767px) {
+            .main-content {
+                padding: 8px 5px !important;
+            }
+
+            .ui.segment,
+            .ui.card,
+            .ui.cards > .card,
+            .ui.message {
+                box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08) !important;
+            }
+        }
+
+        .student-mobile-bottom-nav {
+            display: none;
+        }
+
+        body.student-mobile-route {
+            --dm-card-bg: var(--app-surface);
+            --dm-border: var(--app-border);
+            --dm-text: var(--app-text);
+            --dm-muted: var(--app-muted);
+
+            --student-mobile-accent: var(--app-brand);
+            --student-mobile-ink: var(--app-text);
+            --student-mobile-surface: var(--app-surface);
+            --student-mobile-border: var(--app-border);
+        }
+
+        html[data-theme="dark"] body.student-mobile-route {
+            --dm-card-bg: var(--app-surface);
+            --dm-border: var(--app-border);
+            --dm-text: var(--app-text);
+            --dm-muted: var(--app-muted);
+
+            --student-mobile-accent: var(--app-brand);
+            --student-mobile-ink: var(--app-text);
+            --student-mobile-surface: var(--app-surface);
+            --student-mobile-border: var(--app-border);
+        }
+
+        body.student-mobile-route,
+        body.student-mobile-route .main-content,
+        body.student-mobile-route .pusher {
+            background: var(--app-bg) !important;
+            color: var(--app-text) !important;
+        }
+
+        html[data-theme="dark"] body.student-mobile-route .student-mobile-search-main input,
+        html[data-theme="dark"] body.student-mobile-route .student-mobile-profile-sub,
+        html[data-theme="dark"] body.student-mobile-route .student-mobile-class,
+        html[data-theme="dark"] body.student-mobile-route .student-mobile-spotlight-sub {
+            color: var(--app-muted) !important;
+        }
+
+        @media (max-width: 767px) {
+            body.student-mobile-route {
+                --student-mobile-accent: var(--app-brand);
+                --student-mobile-ink: var(--app-text);
+                --student-mobile-surface: var(--app-surface);
+                --student-mobile-border: var(--app-border);
+            }
+
+            body.student-mobile-route #sidebar,
+            body.student-mobile-route #sidebar.ui.sidebar,
+            body.student-mobile-route #sidebar.ui.sidebar.material-sidenav,
+            body.student-mobile-route #sidebar.ui.sidebar.material-sidenav.sidebar-menu,
+            body.student-mobile-route #mobileSidebarBackdrop,
+            body.student-mobile-route .sidebar-menu-toggler {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                transform: translateX(-120%) !important;
+                -webkit-transform: translateX(-120%) !important;
+            }
+
+            body.student-mobile-route .main-content {
+                margin-left: 0 !important;
+                margin-top: 0 !important;
+                height: 100vh !important;
+                padding: 8px 5px calc(84px + env(safe-area-inset-bottom)) !important;
+                background: var(--app-bg) !important;
+            }
+
+            body.student-mobile-route .student-mobile-bottom-nav {
+                position: fixed;
+                left: 12px;
+                right: 12px;
+                bottom: calc(8px + env(safe-area-inset-bottom));
+                height: 62px;
+                background: var(--app-surface);
+                border-radius: 18px;
+                box-shadow: 0 14px 28px rgba(5, 16, 43, 0.36);
+                display: grid;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                align-items: center;
+                z-index: 1065;
+                border: 1px solid var(--app-border);
+                padding: 0 4px;
+            }
+
+            body.student-mobile-route .student-mobile-bottom-nav .student-nav-item {
+                text-decoration: none;
+                color: var(--app-muted);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                gap: 3px;
+                padding: 6px 3px;
+                border-radius: 12px;
+                transition: background .16s ease, color .16s ease;
+            }
+
+            body.student-mobile-route .student-mobile-bottom-nav .student-nav-item i.icon {
+                margin: 0 !important;
+                font-size: 1.08rem !important;
+                color: inherit !important;
+            }
+
+            body.student-mobile-route .student-mobile-bottom-nav .student-nav-item span {
+                font-size: 0.62rem;
+                letter-spacing: 0.03em;
+                font-weight: 700;
+                line-height: 1;
+                text-transform: uppercase;
+            }
+
+            body.student-mobile-route .student-mobile-bottom-nav .student-nav-item.active {
+                color: var(--app-brand);
+                background: var(--app-active);
+                box-shadow: 0 8px 16px color-mix(in srgb, var(--app-brand) 20%, transparent);
+            }
+
+            body.student-mobile-route .student-mobile-bottom-nav .student-nav-item:active {
+                transform: translateY(1px) scale(0.98);
+            }
+
+            body.student-mobile-route .ui.top.fixed.menu {
+                background: var(--app-surface) !important;
+                border-bottom: 1px solid var(--app-border) !important;
+                box-shadow: 0 8px 20px rgba(7, 25, 61, 0.32) !important;
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+
+            body.student-mobile-route .ui.top.fixed.menu {
+                display: none !important;
+            }
+
+            body.student-mobile-route .ui.top.fixed.menu .header.item,
+            body.student-mobile-route .ui.top.fixed.menu .item,
+            body.student-mobile-route .ui.top.fixed.menu .item > i.icon,
+            body.student-mobile-route .ui.top.fixed.menu .item > span {
+                color: var(--app-text) !important;
+            }
+
+            body.student-mobile-route .ui.top.fixed.menu .item:hover {
+                background: var(--app-hover) !important;
+            }
+
+            body.student-mobile-route .ui.top.fixed.menu .left.menu .header.item {
+                max-width: 46vw !important;
+                font-size: 0.86rem !important;
+                font-weight: 700 !important;
+            }
+
+            body.student-mobile-route .ui.top.fixed.menu .left.menu .nav-brand-logo.item {
+                padding-right: 0.25rem !important;
+            }
+
+            body.student-mobile-route .ui.top.fixed.menu .right.menu .item {
+                padding-left: 0.4rem !important;
+                padding-right: 0.4rem !important;
+            }
+
+            body.student-mobile-route .ui.top.fixed.menu .right.menu .item > span {
+                max-width: 18vw !important;
+            }
+
+            body.student-mobile-route .ui.top.fixed.menu .right.menu .item i.icon {
+                margin-right: 0 !important;
+            }
+
+            body.student-mobile-route .ui.segment,
+            body.student-mobile-route .ui.card,
+            body.student-mobile-route .ui.message,
+            body.student-mobile-route .ui.table {
+                border-radius: 14px !important;
+                border-color: var(--app-border) !important;
+                box-shadow: 0 10px 22px rgba(30, 61, 126, 0.08) !important;
+            }
+
+            body.student-mobile-route .ui.segment,
+            body.student-mobile-route .ui.card,
+            body.student-mobile-route .ui.message,
+            body.student-mobile-route .ui.table,
+            body.student-mobile-route .ui.menu:not(.inverted) {
+                background: var(--student-mobile-surface) !important;
+            }
+
+            body.student-mobile-route .main-content .ui.header,
+            body.student-mobile-route .main-content .header,
+            body.student-mobile-route .main-content .content > .header {
+                color: var(--student-mobile-ink) !important;
+            }
+
+            body.student-mobile-route .main-content .ui.grid > .column {
+                padding-top: 0.35rem !important;
+                padding-bottom: 0.35rem !important;
+            }
+
+            body.student-mobile-route .main-content .ui.table,
+            body.student-mobile-route .main-content table.dataTable {
+                border: 1px solid var(--student-mobile-border) !important;
+                overflow: hidden;
+            }
+
+            body.student-mobile-route .main-content .ui.table thead th,
+            body.student-mobile-route .main-content table.dataTable thead th {
+                background: var(--app-hover) !important;
+                color: var(--app-text) !important;
+                border-bottom: 1px solid var(--student-mobile-border) !important;
+                font-size: 0.75rem !important;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            body.student-mobile-route .main-content .ui.table td,
+            body.student-mobile-route .main-content table.dataTable td {
+                font-size: 0.82rem !important;
+                color: var(--app-text) !important;
+            }
+
+            body.student-mobile-route .main-content .ui.table tr:nth-child(even),
+            body.student-mobile-route .main-content table.dataTable tbody tr:nth-child(even) {
+                background: var(--app-hover) !important;
+            }
+
+            body.student-mobile-route .main-content .dataTables_wrapper .dataTables_filter,
+            body.student-mobile-route .main-content .dataTables_wrapper .dataTables_length {
+                width: 100% !important;
+                text-align: left !important;
+                margin-bottom: 6px !important;
+            }
+
+            body.student-mobile-route .main-content .dataTables_wrapper .dataTables_filter input,
+            body.student-mobile-route .main-content .dataTables_wrapper .dataTables_length select {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            body.student-mobile-route .main-content .dataTables_wrapper .dataTables_paginate {
+                float: none !important;
+                display: flex !important;
+                justify-content: center;
+                width: 100%;
+            }
+
+            body.teacher-mobile-route .main-content {
+                margin-left: 0 !important;
+                margin-top: 0 !important;
+                height: 100vh !important;
+                padding: 8px 4px calc(84px + env(safe-area-inset-bottom)) !important;
+                background: var(--app-bg) !important;
+            }
+
+            body.teacher-mobile-route .main-content > .ui.grid,
+            body.teacher-mobile-route .main-content > .ui.basic.grid,
+            body.teacher-mobile-route .main-content > .ui.container,
+            body.teacher-mobile-route .main-content > .ui.segment,
+            body.teacher-mobile-route .main-content > .ui.raised.segment,
+            body.teacher-mobile-route .main-content > .ui.attached.segment {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+
+            body.teacher-mobile-route .main-content .ui.grid > .column {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+
+            body.teacher-mobile-route .main-content .row {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_length,
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_filter {
+                width: 50% !important;
+                margin-bottom: 6px !important;
+                float: left !important;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_length {
+                text-align: left !important;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_filter {
+                text-align: right !important;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_filter label,
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_length label {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                white-space: nowrap;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_filter input {
+                width: 96px !important;
+                min-width: 74px !important;
+                max-width: 110px !important;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_paginate {
+                float: none !important;
+                display: flex !important;
+                justify-content: flex-end !important;
+                width: 100%;
+                text-align: right !important;
+                margin-top: 0.5rem;
+            }
+
+            body.teacher-mobile-route .main-content .dataTables_wrapper .dataTables_paginate .paginate_button {
+                min-width: 92px;
+                padding: 0.48rem 0.7rem !important;
+                border-radius: 10px !important;
+                margin: 0 0 0 0.3rem !important;
+                line-height: 1.15;
+                text-align: center;
+            }
+
+            body.student-mobile-route .main-content .ui.label,
+            body.student-mobile-route .main-content .badge {
+                border-radius: 999px !important;
+            }
+
+            html[data-theme="dark"] body.student-mobile-route .main-content {
+                background: var(--app-bg) !important;
+            }
+        }
     </style>
 </head>
 
-<body>
+<body class="{% if request.path|slice:':9' == '/student/' or request.path == '/profile/' and role_label == 'Student' %}student-mobile-route{% elif request.path|slice:':9' == '/teacher/' or request.path == '/profile/' and role_label == 'Teacher' %}teacher-mobile-route{% endif %}">
 <!-- sidebar -->
 <div class="ui sidebar material-sidenav vertical menu sidebar-menu" id="sidebar">
 
@@ -1823,7 +2149,7 @@
 
     <div class="right menu">
         <a href="#" class="item" id="themeToggleBtn" data-tooltip="Toggle theme" data-position="bottom center" data-variation="tiny">
-            <i class="moon icon" id="themeToggleIcon"></i>
+            <i class="theme-toggle-icon moon icon" id="themeToggleIcon"></i>
         </a>
 
         {% if request.path|slice:":9" == "/teacher/" or request.path|slice:":9" == "/student/" %}
@@ -1889,6 +2215,54 @@
 
 
 </div>
+{% if request.path|slice:":9" == "/student/" or request.path == "/profile/" and role_label == "Student" %}
+<nav class="student-mobile-bottom-nav">
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'student_home' or request.resolver_match.url_name == 'student_root' %}active{% endif %}" href="{% url 'studentApp:student_home' %}">
+        <i class="home icon"></i>
+        <span>Home</span>
+    </a>
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'attendance_history' %}active{% endif %}" href="{% url 'studentApp:attendance_history' %}">
+        <i class="calendar check outline icon"></i>
+        <span>Attend</span>
+    </a>
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'student_exam_details' or request.resolver_match.url_name == 'student_progress_report_cards' or request.resolver_match.url_name == 'student_events' or request.resolver_match.url_name == 'student_leave_applications' %}active{% endif %}" href="{% url 'studentApp:student_exam_details' %}">
+        <i class="graduation cap icon"></i>
+        <span>Study</span>
+    </a>
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'fee_detail' or request.resolver_match.url_name == 'student_school_detail' %}active{% endif %}" href="{% url 'studentApp:fee_detail' %}">
+        <i class="money bill alternate outline icon"></i>
+        <span>Fees</span>
+    </a>
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'student_my_details' or request.resolver_match.url_name == 'student_id_card' or request.resolver_match.url_name == 'profile_page' %}active{% endif %}" href="{% url 'studentApp:student_my_details' %}">
+        <i class="user outline icon"></i>
+        <span>Profile</span>
+    </a>
+</nav>
+{% endif %}
+{% if request.path|slice:":9" == "/teacher/" or request.path == "/profile/" and role_label == "Teacher" %}
+<nav class="student-mobile-bottom-nav">
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'teacher_home' or request.resolver_match.url_name == 'teacher_root' %}active{% endif %}" href="{% url 'teacherApp:teacher_home' %}">
+        <i class="home icon"></i>
+        <span>Home</span>
+    </a>
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'teacher_student_attendance' or request.resolver_match.url_name == 'teacher_attendance_history' %}active{% endif %}" href="{% url 'teacherApp:teacher_student_attendance' %}">
+        <i class="calendar check outline icon"></i>
+        <span>Attend</span>
+    </a>
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'teacher_assigned_subjects' or request.resolver_match.url_name == 'teacher_exam_timetable' or request.resolver_match.url_name == 'teacher_add_marks' or request.resolver_match.url_name == 'teacher_marks_details' or request.resolver_match.url_name == 'teacher_progress_report_cards' %}active{% endif %}" href="{% url 'teacherApp:teacher_assigned_subjects' %}">
+        <i class="graduation cap icon"></i>
+        <span>Study</span>
+    </a>
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'teacher_manage_event' or request.resolver_match.url_name == 'teacher_leave_applications' %}active{% endif %}" href="{% url 'teacherApp:teacher_manage_event' %}">
+        <i class="calendar alternate outline icon"></i>
+        <span>Events</span>
+    </a>
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'profile_page' %}active{% endif %}" href="{% url 'homeApp:profile_page' %}">
+        <i class="user outline icon"></i>
+        <span>Profile</span>
+    </a>
+</nav>
+{% endif %}
 <div id="pullRefreshIndicator">Pull to refresh</div>
 <div class="preloader">
     <div class="ui active dimmer">
@@ -1942,6 +2316,20 @@
             return window.matchMedia('(max-width: 767px)').matches;
         }
 
+        function syncTeacherMobileClass() {
+            if (!$body.hasClass('teacher-mobile-route')) return;
+            if (isMobile()) {
+                $body.addClass('student-mobile-route');
+            } else {
+                $body.removeClass('student-mobile-route');
+            }
+        }
+
+        function isStudentMobileRoute() {
+            syncTeacherMobileClass();
+            return $body.hasClass('student-mobile-route') && isMobile();
+        }
+
         function enforceDesktopScroll() {
             if (isMobile()) return;
             $sidebar.removeClass('mobile-open animating transition visible');
@@ -1960,6 +2348,7 @@
 
         function openMobileSidebar() {
             if (!isMobile()) return;
+            if (isStudentMobileRoute()) return;
             $sidebar.addClass('mobile-open');
             $backdrop.addClass('open');
             $('body').addClass('mobile-sidebar-open');
@@ -1974,7 +2363,8 @@
         }
 
         function syncSidebarMode() {
-            if (!isMobile()) {
+            syncTeacherMobileClass();
+            if (!isMobile() || isStudentMobileRoute()) {
                 closeMobileSidebar();
                 enforceDesktopScroll();
             }
@@ -2022,6 +2412,7 @@
         });
 
         syncSidebarMode();
+        syncTeacherMobileClass();
         enforceDesktopScroll();
     })();
 
@@ -2105,14 +2496,25 @@
         }, {passive: true});
     })();
 
+    function syncThemeIcons(theme) {
+        var activeTheme = theme || document.documentElement.getAttribute('data-theme') || 'light';
+        var icons = document.querySelectorAll('.theme-toggle-icon');
+        icons.forEach(function (icon) {
+            icon.classList.add('theme-toggle-icon', 'icon');
+            icon.classList.remove('sun', 'moon');
+            icon.classList.add(activeTheme === 'dark' ? 'sun' : 'moon');
+        });
+    }
+
     function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
-        var icon = document.getElementById('themeToggleIcon');
-        if (icon) {
-            icon.className = (theme === 'dark' ? 'sun icon' : 'moon icon');
-        }
+        syncThemeIcons(theme);
+        document.dispatchEvent(new CustomEvent('theme:changed', {detail: {theme: theme}}));
     }
+
+    window.applyTheme = applyTheme;
+    window.syncThemeIcons = syncThemeIcons;
 
     (function initThemeToggle() {
         var currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
@@ -2125,6 +2527,12 @@
                 applyTheme(activeTheme === 'dark' ? 'light' : 'dark');
             });
         }
+        window.addEventListener('storage', function (event) {
+            if (event.key !== 'theme') return;
+            var nextTheme = event.newValue || 'light';
+            document.documentElement.setAttribute('data-theme', nextTheme);
+            syncThemeIcons(nextTheme);
+        });
     })();
 
     $(window).on("load", function () {

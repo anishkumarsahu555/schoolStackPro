@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}
-    <title>Exam Details</title>
+    <title>Exam Time Table</title>
 {% endblock %}
 
 {% block css %}
@@ -13,6 +13,9 @@
             background: var(--app-surface);
             padding: 0.85rem;
             box-shadow: 0 10px 24px rgba(22, 32, 52, 0.08);
+            --exam-head-bg: color-mix(in srgb, var(--app-text) 86%, var(--app-surface));
+            --exam-head-border: color-mix(in srgb, var(--app-border) 78%, var(--app-text));
+            --exam-head-text: var(--clr-light-a0, #ffffff);
         }
 
         .exam-page .sheet-header {
@@ -25,12 +28,19 @@
         }
 
         .exam-page .school-head {
-            display: grid;
-            grid-template-columns: 56px auto;
-            gap: 0.65rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
             align-items: center;
             justify-content: center;
             margin-bottom: 0.65rem;
+            text-align: center;
+        }
+
+        .exam-page .school-identity {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .exam-page .school-logo {
@@ -40,6 +50,37 @@
             border: 1px solid var(--app-border);
             object-fit: cover;
             background: var(--app-surface);
+            display: none;
+        }
+
+        .exam-page .school-logo-wrap {
+            width: 56px;
+            height: 56px;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--app-border);
+            background: var(--app-surface);
+        }
+
+        .exam-page .school-logo-wrap.is-loaded .school-logo {
+            display: block;
+        }
+
+        .exam-page .school-logo-fallback {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--app-text);
+            background: linear-gradient(180deg, var(--app-hover) 0%, var(--app-surface) 100%);
+        }
+
+        .exam-page .school-logo-wrap.is-loaded .school-logo-fallback {
+            display: none;
         }
 
         .exam-page .school-name {
@@ -48,14 +89,17 @@
             font-size: 1rem;
             font-weight: 800;
             line-height: 1.25;
-            text-align: left;
+            text-align: center;
         }
 
         .exam-page .school-address {
             margin: 0.15rem 0 0;
             color: var(--app-muted);
             font-size: 0.8rem;
-            text-align: left;
+            text-align: center;
+            max-width: 680px;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
         }
 
         .exam-page .sheet-title {
@@ -75,8 +119,8 @@
         .exam-page .schedule-strip {
             display: inline-block;
             margin-top: 0.6rem;
-            background: #0f172a;
-            color: #ffffff;
+            background: var(--exam-head-bg);
+            color: var(--exam-head-text);
             padding: 0.35rem 0.9rem;
             border-radius: 6px;
             font-weight: 700;
@@ -87,9 +131,38 @@
 
         .exam-page .filter-bar {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 0.6rem;
             margin-bottom: 0.75rem;
+        }
+
+        .exam-page .exam-action-buttons {
+            padding-top: 1.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: nowrap;
+        }
+
+        .exam-page .exam-action-buttons > label {
+            visibility: hidden;
+            margin: 0 0 .28571429rem 0 !important;
+            line-height: 1;
+            display: block;
+        }
+
+        .exam-page .exam-action-buttons .ui.mini.button {
+            margin: 0 !important;
+            min-height: 32px !important;
+            padding: 0.52em 0.82em !important;
+            border-radius: 6px !important;
+            font-size: 0.78rem !important;
+            font-weight: 600 !important;
+            line-height: 1.1 !important;
+            white-space: nowrap;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.32rem !important;
         }
 
         .exam-page .summary-line {
@@ -128,15 +201,21 @@
         }
 
         .exam-page thead th {
-            background: #111827;
-            color: #ffffff;
-            border: 1px solid #293246;
+            background: var(--exam-head-bg);
+            color: var(--exam-head-text);
+            border: 1px solid var(--exam-head-border);
             padding: 0.56rem 0.5rem;
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: .03em;
             text-align: left;
             white-space: nowrap;
+        }
+
+        html[data-theme="dark"] .exam-page .sheet-shell {
+            --exam-head-bg: color-mix(in srgb, var(--app-text) 74%, var(--app-hover));
+            --exam-head-border: color-mix(in srgb, var(--app-border) 80%, var(--app-text));
+            --exam-head-text: var(--app-bg);
         }
 
         .exam-page tbody td {
@@ -288,6 +367,21 @@
                 grid-template-columns: 1fr;
             }
 
+            .exam-page .exam-action-buttons {
+                width: 100%;
+                display: flex;
+                padding-top: 0;
+            }
+
+            .exam-page .exam-action-buttons > label {
+                display: none;
+            }
+
+            .exam-page .exam-action-buttons .ui.mini.button {
+                flex: 1 1 0;
+                justify-content: center;
+            }
+
             .exam-page .sheet-title {
                 font-size: 1.05rem;
             }
@@ -310,16 +404,12 @@
     <div class="exam-page ui left aligned basic grid">
         <div class="sixteen wide column">
             <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active">Exam Details</div>
+                <div style="cursor: pointer;" class="item active">Exam Time Table</div>
             </div>
 
             <div class="sheet-shell">
                 {% if timetable_rows %}
                     <div class="ui tiny form filter-bar">
-                        <div class="field">
-                            <label>Class</label>
-                            <input type="text" value="{{ class_label }}" readonly>
-                        </div>
                         <div class="field">
                             <label>Exam</label>
                             <select class="ui search dropdown" id="examFilter" data-default="{{ default_exam_id }}">
@@ -329,29 +419,37 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="field" style="padding-top: 1.95rem;">
-                            <button class="ui mini red button" type="button" id="clearFilterBtn">
+                        <div class="field exam-action-buttons">
+                            <label>&nbsp;</label>
+                            <button class="ui mini red button filter-clear-btn" type="button" id="clearFilterBtn">
                                 <i class="times icon"></i>
                                 Clear
                             </button>
-                            <button class="ui mini blue button print-hide" type="button" id="printBtn">
-                                <i class="print icon"></i>
-                                Print
+                            <button class="ui mini blue button filter-apply-btn" type="button" id="downloadBtn">
+                                <i class="file pdf outline icon"></i>
+                                Download PDF
                             </button>
                         </div>
                     </div>
 
                     <div class="sheet-header">
                         <div class="school-head">
-                            <img class="school-logo"
-                                 src="{% if school_detail and school_detail.logo %}{{ school_detail.logo.url }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}"
-                                 alt="School Logo">
-                            <div>
+                            <div class="school-logo-wrap" id="examSchoolLogoWrap">
+                                <img class="school-logo"
+                                     id="examSchoolLogo"
+                                     src="{% if school_detail and school_detail.logo %}{{ school_detail.logo.url }}{% elif school_detail and school_detail.schoolName %}{% static 'images/default_avatar.svg' %}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}"
+                                     alt="School Logo">
+                                <div class="school-logo-fallback">
+                                    {{ school_detail.schoolName|default:'S'|slice:':1'|upper }}
+                                </div>
+                            </div>
+                            <div class="school-identity">
                                 <h3 class="school-name">{% if school_detail and school_detail.schoolName %}{{ school_detail.schoolName }}{% else %}School Name{% endif %}</h3>
                                 <p class="school-address">
-                                    {% if school_detail and school_detail.address %}{{ school_detail.address }}{% else %}School Address{% endif %}
-                                    {% if school_detail and school_detail.city %}, {{ school_detail.city }}{% endif %}
-                                    {% if school_detail and school_detail.state %}, {{ school_detail.state }}{% endif %}
+                                    {% if school_detail and school_detail.address %}{{ school_detail.address }}{% endif %}
+                                    {% if school_detail and school_detail.city %}{% if school_detail.address %}, {% endif %}{{ school_detail.city }}{% endif %}
+                                    {% if school_detail and school_detail.state %}{% if school_detail.address or school_detail.city %}, {% endif %}{{ school_detail.state }}{% endif %}
+                                    {% if not school_detail.address and not school_detail.city and not school_detail.state %}School Address{% endif %}
                                 </p>
                             </div>
                         </div>
@@ -411,19 +509,37 @@
 {% endblock %}
 
 {% block js %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script>
         (function () {
             const examFilter = document.getElementById('examFilter');
             const clearBtn = document.getElementById('clearFilterBtn');
-            const printBtn = document.getElementById('printBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
             const emptyNote = document.getElementById('emptyNote');
             const rowCounter = document.getElementById('rowCounter');
             const titleEl = document.getElementById('dynamicScheduleTitle');
             const subtitleEl = document.getElementById('dynamicScheduleSubtitle');
             const stripEl = document.getElementById('dynamicScheduleStrip');
             const rows = Array.from(document.querySelectorAll('#examTableBody tr'));
+            const schoolNameEl = document.querySelector('.exam-page .school-name');
+            const schoolAddressEl = document.querySelector('.exam-page .school-address');
+            const schoolLogo = document.getElementById('examSchoolLogo');
+            const schoolLogoWrap = document.getElementById('examSchoolLogoWrap');
 
             if (!examFilter || !rows.length) return;
+
+            if (schoolLogo && schoolLogoWrap) {
+                schoolLogo.addEventListener('load', function () {
+                    schoolLogoWrap.classList.add('is-loaded');
+                });
+                schoolLogo.addEventListener('error', function () {
+                    schoolLogoWrap.classList.remove('is-loaded');
+                });
+                if (schoolLogo.complete && schoolLogo.naturalWidth > 0) {
+                    schoolLogoWrap.classList.add('is-loaded');
+                }
+            }
 
             const defaultExam = (examFilter.getAttribute('data-default') || '').trim();
             const classLabel = '{{ class_label|default:"N/A"|escapejs }}';
@@ -464,10 +580,226 @@
                 }
                 applyFilter();
             });
-            if (printBtn) {
-                printBtn.addEventListener('click', function () {
-                    window.print();
+
+            function getFileName() {
+                const selected = (examFilter.value || '').trim();
+                const selectedLabel = selected
+                    ? ((examFilter.options[examFilter.selectedIndex] || {}).text || 'all-exams')
+                    : 'all-exams';
+                const safeExam = String(selectedLabel).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'all-exams';
+                const safeClass = String(classLabel || 'class').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'class';
+                return safeClass + '-' + safeExam + '-timetable.pdf';
+            }
+
+            function getVisibleRowsData() {
+                return rows
+                    .filter(function (row) { return row.style.display !== 'none'; })
+                    .map(function (row) {
+                        const cells = Array.from(row.querySelectorAll('td')).map(function (cell) {
+                            return (cell.textContent || '').trim().replace(/\s+/g, ' ');
+                        });
+                        return cells;
+                    });
+            }
+
+            function loadImageDataUrl(src) {
+                return new Promise(function (resolve) {
+                    if (!src) {
+                        resolve(null);
+                        return;
+                    }
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = function () {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            const size = 120;
+                            canvas.width = size;
+                            canvas.height = size;
+                            const ctx = canvas.getContext('2d');
+                            ctx.clearRect(0, 0, size, size);
+                            // Draw rounded square style logo for consistent PDF look.
+                            const radius = 18;
+                            ctx.beginPath();
+                            ctx.moveTo(radius, 0);
+                            ctx.lineTo(size - radius, 0);
+                            ctx.quadraticCurveTo(size, 0, size, radius);
+                            ctx.lineTo(size, size - radius);
+                            ctx.quadraticCurveTo(size, size, size - radius, size);
+                            ctx.lineTo(radius, size);
+                            ctx.quadraticCurveTo(0, size, 0, size - radius);
+                            ctx.lineTo(0, radius);
+                            ctx.quadraticCurveTo(0, 0, radius, 0);
+                            ctx.closePath();
+                            ctx.clip();
+                            ctx.drawImage(img, 0, 0, size, size);
+                            resolve(canvas.toDataURL('image/png'));
+                        } catch (e) {
+                            resolve(null);
+                        }
+                    };
+                    img.onerror = function () {
+                        resolve(null);
+                    };
+                    img.src = src;
                 });
+            }
+
+            async function downloadStyledPdf() {
+                const jsPdfRef = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
+                if (!jsPdfRef) throw new Error('jsPDF not available');
+                if (typeof window.jspdf !== 'object' || typeof window.jspdf.jsPDF !== 'function') {
+                    throw new Error('jsPDF unavailable');
+                }
+
+                const tableRows = getVisibleRowsData();
+                if (!tableRows.length) {
+                    addErrorNotification('No timetable rows available to download.');
+                    return;
+                }
+
+                const pdf = new jsPdfRef({
+                    orientation: 'landscape',
+                    unit: 'pt',
+                    format: 'a4'
+                });
+
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const marginX = 36;
+                const selectedExam = (examFilter.value || '').trim();
+                const selectedExamLabel = selectedExam
+                    ? ((examFilter.options[examFilter.selectedIndex] || {}).text || 'All Exams')
+                    : 'All Exams';
+                const schoolName = schoolNameEl ? (schoolNameEl.textContent || '').trim() : 'School';
+                const schoolAddress = schoolAddressEl
+                    ? ((schoolAddressEl.textContent || '').replace(/\s+/g, ' ').replace(/\s+,/g, ',').trim())
+                    : '';
+                const generatedOn = new Date().toLocaleString();
+                const defaultLogoUrl = "{% static 'images/default_avatar.svg' %}";
+                const schoolLogoEl = document.getElementById('examSchoolLogo');
+                const logoSrc = schoolLogoEl && schoolLogoEl.src ? schoolLogoEl.src : defaultLogoUrl;
+                const logoData = await loadImageDataUrl(logoSrc);
+
+                pdf.setFillColor(33, 73, 138);
+                pdf.rect(0, 0, pageWidth, 76, 'F');
+                pdf.setTextColor(255, 255, 255);
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(16);
+                pdf.text('EXAM TIME TABLE', marginX, 32);
+                pdf.setFontSize(10);
+                pdf.setFont('helvetica', 'normal');
+                pdf.text('Class: ' + classLabel + '   |   Exam: ' + selectedExamLabel + '   |   Year: ' + examYear, marginX, 52);
+
+                pdf.setFillColor(245, 249, 255);
+                pdf.roundedRect(marginX, 84, pageWidth - (marginX * 2), 54, 8, 8, 'F');
+                if (logoData) {
+                    pdf.addImage(logoData, 'PNG', marginX + 8, 90, 42, 42);
+                }
+
+                pdf.setTextColor(40, 50, 65);
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(11);
+                pdf.text(schoolName || 'School', marginX + 58, 104);
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(9);
+                const infoLeftX = marginX + 58;
+                const infoRightX = pageWidth - marginX - 8;
+                const maxAddressWidth = Math.max(180, infoRightX - infoLeftX - 180);
+                if (schoolAddress) {
+                    const addressLines = pdf.splitTextToSize(schoolAddress, maxAddressWidth);
+                    pdf.text(addressLines, infoLeftX, 118);
+                }
+                pdf.text('Generated on: ' + generatedOn, infoRightX, 104, {align: 'right'});
+
+                if (typeof pdf.autoTable === 'function') {
+                    pdf.autoTable({
+                        head: [['Day', 'Date', 'Time', 'Subject', 'Room', 'Note']],
+                        body: tableRows,
+                        startY: 150,
+                        margin: {left: marginX, right: marginX},
+                        styles: {
+                            font: 'helvetica',
+                            fontSize: 9,
+                            cellPadding: 6,
+                            textColor: [35, 44, 56],
+                            lineColor: [206, 219, 235],
+                            lineWidth: 0.6
+                        },
+                        headStyles: {
+                            fillColor: [33, 73, 138],
+                            textColor: [255, 255, 255],
+                            fontStyle: 'bold',
+                            halign: 'left'
+                        },
+                        alternateRowStyles: {
+                            fillColor: [246, 250, 255]
+                        },
+                        columnStyles: {
+                            0: {cellWidth: 85},
+                            1: {cellWidth: 92},
+                            2: {cellWidth: 130},
+                            3: {cellWidth: 170},
+                            4: {cellWidth: 72},
+                            5: {cellWidth: 'auto'}
+                        },
+                        didDrawPage: function () {
+                            const pageSize = pdf.internal.pageSize;
+                            const pWidth = pageSize.getWidth();
+                            const pHeight = pageSize.getHeight();
+                            pdf.setFontSize(8);
+                            pdf.setTextColor(120, 130, 145);
+                            pdf.text(
+                                'Page ' + pdf.internal.getNumberOfPages(),
+                                pWidth - marginX,
+                                pHeight - 14,
+                                {align: 'right'}
+                            );
+                        }
+                    });
+                } else {
+                    // Fallback when autotable plugin is unavailable.
+                    let y = 126;
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFontSize(9);
+                    pdf.text('Day | Date | Time | Subject | Room | Note', marginX, y);
+                    pdf.setFont('helvetica', 'normal');
+                    y += 14;
+                    tableRows.forEach(function (r) {
+                        const line = r.join(' | ');
+                        const chunks = pdf.splitTextToSize(line, pageWidth - (marginX * 2));
+                        if (y > pdf.internal.pageSize.getHeight() - 28) {
+                            pdf.addPage();
+                            y = 24;
+                        }
+                        pdf.text(chunks, marginX, y);
+                        y += (chunks.length * 11) + 2;
+                    });
+                }
+
+                pdf.save(getFileName());
+            }
+
+            function downloadVisibleSchedulePdf() {
+                const originalText = downloadBtn ? downloadBtn.innerHTML : '';
+                if (downloadBtn) {
+                    downloadBtn.classList.add('loading', 'disabled');
+                }
+
+                Promise.resolve().then(async function () {
+                    await downloadStyledPdf();
+                    addSuccessNotification('Timetable PDF downloaded successfully.', 'green');
+                }).catch(function () {
+                    addErrorNotification('Unable to download timetable PDF.');
+                }).finally(function () {
+                    if (downloadBtn) {
+                        downloadBtn.classList.remove('loading', 'disabled');
+                        downloadBtn.innerHTML = originalText;
+                    }
+                });
+            }
+
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', downloadVisibleSchedulePdf);
             }
 
             applyFilter();

@@ -7,22 +7,171 @@
 
 {% block css %}
     <style>
-        #TeacherStudentTable_length {
-            left: 20px;
-            position: absolute;
+        #TeacherStudentTable_wrapper .dt-control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+            margin-bottom: 0.45rem;
+            width: 100%;
+            clear: both;
+            overflow: visible;
         }
 
-        #TeacherStudentTable_filter {
-            float: right;
+        #TeacherStudentTable_wrapper .dt-buttons {
+            margin: 0 0 0.45rem 0;
         }
 
-        .dt-buttons {
-            position: absolute;
-            left: 174px;
+        #TeacherStudentTable_wrapper .dataTables_length,
+        #TeacherStudentTable_wrapper .dataTables_filter {
+            float: none !important;
+            width: auto;
+            margin: 0 !important;
         }
 
-        input[type=search] {
-            width: 100px !important;
+        #TeacherStudentTable_wrapper .dataTables_filter {
+            margin-left: auto !important;
+            text-align: right;
+        }
+
+        #TeacherStudentTable_wrapper .dataTables_filter label,
+        #TeacherStudentTable_wrapper .dataTables_length label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            white-space: nowrap;
+        }
+
+        #TeacherStudentTable_wrapper .dataTables_filter input[type=search] {
+            width: 130px !important;
+            max-width: 100%;
+        }
+
+        @media (max-width: 767px) {
+            body.teacher-mobile-route .ui.tiny.form .three.fields {
+                display: grid !important;
+                grid-template-columns: 1fr;
+                gap: 0.55rem;
+            }
+
+            body.teacher-mobile-route .ui.tiny.form .three.fields > .field {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding-top: 0 !important;
+            }
+
+            body.teacher-mobile-route .ui.tiny.form .ui.mini.buttons {
+                width: 100%;
+                display: flex;
+            }
+
+            body.teacher-mobile-route .ui.tiny.form .ui.mini.buttons .button {
+                flex: 1 1 50%;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dt-buttons,
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_length,
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_filter {
+                position: static !important;
+                margin: 0 !important;
+                text-align: left !important;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dt-buttons {
+                width: 100%;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dt-control-row {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                align-items: center;
+                gap: 0.4rem;
+                overflow: visible;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_length {
+                flex: 0 0 auto;
+                min-width: fit-content;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_filter {
+                flex: 1 1 0;
+                min-width: 0;
+                text-align: right !important;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_length label {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.3rem;
+                white-space: nowrap;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_filter label {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                white-space: nowrap;
+                margin: 0;
+                font-size: 0;
+                gap: 0;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_length select {
+                width: auto !important;
+                min-width: 64px;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_filter input[type=search] {
+                flex: 1 1 auto;
+                width: auto !important;
+                min-width: 74px;
+                max-width: 110px;
+                margin-left: 0 !important;
+                font-size: 0.85rem !important;
+                padding: 0.42rem 0.5rem !important;
+                height: 34px !important;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_info {
+                float: none !important;
+                text-align: center;
+                margin-top: 0.45rem;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_paginate {
+                float: none !important;
+                display: flex !important;
+                justify-content: flex-end;
+                align-items: center;
+                gap: 0.35rem;
+                margin-top: 0.55rem;
+                width: 100%;
+                text-align: right !important;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_paginate .paginate_button {
+                min-width: 92px;
+                padding: 0.48rem 0.7rem !important;
+                border-radius: 10px !important;
+                margin: 0 !important;
+                line-height: 1.15;
+                text-align: center;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_paginate .paginate_button.current,
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_paginate .paginate_button:hover {
+                border-color: var(--app-brand) !important;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable_wrapper .dataTables_scrollBody {
+                max-height: none !important;
+            }
+
+            body.teacher-mobile-route #TeacherStudentTable {
+                font-size: 0.78rem !important;
+            }
         }
     </style>
 {% endblock %}
@@ -121,16 +270,17 @@
         }
 
         function initTable() {
+            const isMobile = window.matchMedia('(max-width: 767px)').matches;
             teacherStudentTab = $('#TeacherStudentTable').DataTable({
-                dom: 'Blfrtip',
-                scrollY: '350px',
+                dom: isMobile ? 'lfrtip' : 'Blfrtip',
+                scrollY: isMobile ? '' : '350px',
                 scrollX: true,
                 stateSave: true,
-                fixedColumns: {
+                fixedColumns: isMobile ? false : {
                     left: 1,
                     right: 1
                 },
-                buttons: [{
+                buttons: isMobile ? [] : [{
                     extend: 'excel',
                     exportOptions: {
                         columns: [0, 1, 2, 3, 4, 5]
@@ -150,6 +300,13 @@
                 pageLength: 10,
                 processing: true,
                 serverSide: true,
+                initComplete: function () {
+                    placeControlRow();
+                    applySearchInputSize();
+                },
+                drawCallback: function () {
+                    applySearchInputSize();
+                },
                 ajax: {
                     url: "{% url 'teacherAppAPI:TeacherStudentsListJson' %}",
                     data: function (d) {
@@ -167,5 +324,51 @@
                 teacherStudentTab.ajax.reload(null, false);
             });
         }
+
+        function placeControlRow() {
+            const wrapper = $('#TeacherStudentTable_wrapper');
+            if (!wrapper.length) return;
+
+            let row = wrapper.children('.dt-control-row');
+            if (!row.length) {
+                row = $('<div class="dt-control-row"></div>');
+                const firstControl = wrapper.children('.dataTables_length').first();
+                if (firstControl.length) {
+                    firstControl.before(row);
+                } else {
+                    wrapper.prepend(row);
+                }
+            }
+
+            const length = wrapper.children('.dataTables_length');
+            const filter = wrapper.children('.dataTables_filter');
+            row.append(length).append(filter);
+        }
+
+        function applySearchInputSize() {
+            const input = $('#TeacherStudentTable_wrapper .dataTables_filter input[type="search"]');
+            if (!input.length) return;
+            const isMobile = window.matchMedia('(max-width: 767px)').matches;
+            if (isMobile) {
+                input.css({
+                    width: '92px',
+                    minWidth: '74px',
+                    maxWidth: '110px'
+                });
+                input.attr('placeholder', 'Search');
+            } else {
+                input.css({
+                    width: '130px',
+                    minWidth: '',
+                    maxWidth: ''
+                });
+                input.attr('placeholder', '');
+            }
+        }
+
+        $(window).on('resize', function () {
+            placeControlRow();
+            applySearchInputSize();
+        });
     </script>
 {% endblock %}
