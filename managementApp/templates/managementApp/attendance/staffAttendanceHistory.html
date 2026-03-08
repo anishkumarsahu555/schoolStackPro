@@ -370,6 +370,21 @@
             "ajax": "{% url 'managementAppAPI:StaffAttendanceHistoryByDateRangeAndStaffJson' %}"
         });
 
+        function clearAndReset() {
+            $('#dateRangeStartDate').val('');
+            $('#dateRangeEndDate').val('');
+            $('#ByStudentStartDate').val('');
+            $('#ByStudentEndDate').val('');
+            $('#ByStaffStaff').dropdown('clear');
+            $('.ui.form .field').removeClass('error');
+            if (subjectTab) {
+                subjectTab.clear().draw();
+            }
+            if (byStudentTab) {
+                byStudentTab.clear().draw();
+            }
+        }
+
 
     </script>
 

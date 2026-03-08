@@ -11,6 +11,7 @@ urlpatterns = [
     path('manage_subjects/', manage_subjects, name='manage_subjects'),
     path('assign_subjects_to_class/', assign_subjects_to_class, name='assign_subjects_to_class'),
     path('assign_subjects_to_teacher/', assign_subjects_to_teacher, name='assign_subjects_to_teacher'),
+    path('subject-notes/', manage_subject_notes, name='manage_subject_notes'),
 
     # Teacher
     path('add_teacher/', add_teacher, name='add_teacher'),

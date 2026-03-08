@@ -8,6 +8,7 @@ from django.db.models import Q, Prefetch
 from django.http import JsonResponse as DjangoJsonResponse
 from django.utils.crypto import get_random_string
 from django.utils.html import escape
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
@@ -15,6 +16,7 @@ from homeApp.models import SchoolDetail
 from managementApp.models import *
 from managementApp.signals import pre_save_with_user
 from managementApp.leave_utils import approved_leave_for_date, approved_leave_map_for_date
+from teacherApp.models import SubjectNote, SubjectNoteVersion
 from utils.conts import MONTHS_LIST
 from utils.get_school_detail import get_school_id
 
@@ -90,6 +92,169 @@ def _safe_image_url(image_field, fallback_path='images/default_avatar.svg'):
 
 def _avatar_image_html(image_field):
     return avatar_image_html(image_field)
+
+
+def _management_serialize_subject_note(row):
+    class_name = ''
+    if row.standardID:
+        class_name = row.standardID.name or ''
+        if row.standardID.section:
+            class_name = f'{class_name} - {row.standardID.section}'
+    return {
+        'id': row.id,
+        'title': row.title or '',
+        'status': row.status or 'draft',
+        'subjectID': row.subjectID_id,
+        'subjectName': row.subjectID.name if row.subjectID else '',
+        'className': class_name,
+        'teacherName': row.teacherID.name if row.teacherID else 'N/A',
+        'publishedAt': row.publishedAt.strftime('%d-%m-%Y %I:%M %p') if row.publishedAt else '',
+        'lastUpdatedOn': row.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if row.lastUpdatedOn else '',
+        'contentHtml': row.contentHtml or '',
+    }
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def get_management_subject_note_filter_meta_api(request):
+    current_session_id = request.session.get('current_session', {}).get('Id')
+    current_school_id = request.session.get('current_session', {}).get('SchoolID')
+
+    note_qs = SubjectNote.objects.select_related('teacherID', 'subjectID', 'standardID').filter(isDeleted=False)
+    if current_session_id:
+        note_qs = note_qs.filter(sessionID_id=current_session_id)
+    if current_school_id:
+        note_qs = note_qs.filter(schoolID_id=current_school_id)
+
+    teacher_map = {}
+    subject_map = {}
+    class_map = {}
+    for row in note_qs:
+        if row.teacherID_id and row.teacherID and row.teacherID.name:
+            teacher_map[row.teacherID_id] = row.teacherID.name
+        if row.subjectID_id and row.subjectID and row.subjectID.name:
+            subject_map[row.subjectID_id] = row.subjectID.name
+        if row.standardID_id and row.standardID:
+            c_name = row.standardID.name or ''
+            if row.standardID.section:
+                c_name = f'{c_name} - {row.standardID.section}'
+            class_map[row.standardID_id] = c_name
+
+    return SuccessResponse('Subject notes filter metadata loaded.', data={
+        'teachers': [{'id': key, 'name': val} for key, val in sorted(teacher_map.items(), key=lambda x: x[1].lower())],
+        'subjects': [{'id': key, 'name': val} for key, val in sorted(subject_map.items(), key=lambda x: x[1].lower())],
+        'classes': [{'id': key, 'name': val} for key, val in sorted(class_map.items(), key=lambda x: x[1].lower())],
+    }).to_json_response()
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def get_management_subject_note_list_api(request):
+    current_session_id = request.session.get('current_session', {}).get('Id')
+    current_school_id = request.session.get('current_session', {}).get('SchoolID')
+
+    search = (request.GET.get('search') or '').strip()
+    status_value = (request.GET.get('status') or '').strip().lower()
+    teacher_id = (request.GET.get('teacherID') or '').strip()
+    subject_id = (request.GET.get('subjectID') or '').strip()
+    standard_id = (request.GET.get('standardID') or '').strip()
+
+    note_qs = SubjectNote.objects.select_related(
+        'teacherID', 'subjectID', 'standardID'
+    ).filter(isDeleted=False)
+    if current_session_id:
+        note_qs = note_qs.filter(sessionID_id=current_session_id)
+    if current_school_id:
+        note_qs = note_qs.filter(schoolID_id=current_school_id)
+
+    if status_value in {'draft', 'published'}:
+        note_qs = note_qs.filter(status=status_value)
+    if teacher_id.isdigit():
+        note_qs = note_qs.filter(teacherID_id=int(teacher_id))
+    if subject_id.isdigit():
+        note_qs = note_qs.filter(subjectID_id=int(subject_id))
+    if standard_id.isdigit():
+        note_qs = note_qs.filter(standardID_id=int(standard_id))
+    if search:
+        note_qs = note_qs.filter(
+            Q(title__icontains=search)
+            | Q(contentHtml__icontains=search)
+            | Q(teacherID__name__icontains=search)
+            | Q(subjectID__name__icontains=search)
+            | Q(standardID__name__icontains=search)
+            | Q(standardID__section__icontains=search)
+        )
+
+    rows = [_management_serialize_subject_note(row) for row in note_qs.order_by('-lastUpdatedOn')[:400]]
+    return SuccessResponse('Subject notes loaded successfully.', data=rows).to_json_response()
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def get_management_subject_note_detail_api(request):
+    note_id = (request.GET.get('id') or '').strip()
+    if not note_id.isdigit():
+        return ErrorResponse('Invalid note id.', extra={'color': 'red'}).to_json_response()
+
+    row = SubjectNote.objects.select_related(
+        'teacherID', 'subjectID', 'standardID'
+    ).filter(
+        id=int(note_id),
+        isDeleted=False,
+    ).first()
+    if not row:
+        return ErrorResponse('Note not found.', extra={'color': 'red'}).to_json_response()
+    return SuccessResponse('Note details loaded.', data=_management_serialize_subject_note(row)).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+@check_groups('Admin', 'Owner')
+@validate_input(['id'])
+def toggle_management_subject_note_publish_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed.', status_code=405).to_json_response()
+
+    note_id = (request.POST.get('id') or '').strip()
+    if not note_id.isdigit():
+        return ErrorResponse('Invalid note id.', extra={'color': 'red'}).to_json_response()
+
+    note_obj = SubjectNote.objects.filter(
+        id=int(note_id),
+        isDeleted=False,
+    ).first()
+    if not note_obj:
+        return ErrorResponse('Note not found.', extra={'color': 'red'}).to_json_response()
+
+    if note_obj.status == 'published':
+        note_obj.status = 'draft'
+        note_obj.publishedAt = None
+        message = 'Note moved to draft.'
+    else:
+        note_obj.status = 'published'
+        note_obj.publishedAt = timezone.now()
+        message = 'Note published successfully.'
+
+    note_obj.currentVersionNo = (note_obj.currentVersionNo or 1) + 1
+    note_obj.lastEditedBy = _editor_name(request.user)
+    note_obj.updatedByUserID_id = request.user.id
+    note_obj.save()
+
+    SubjectNoteVersion.objects.create(
+        noteID_id=note_obj.id,
+        schoolID_id=note_obj.schoolID_id,
+        sessionID_id=note_obj.sessionID_id,
+        teacherID_id=note_obj.teacherID_id,
+        title=note_obj.title,
+        contentHtml=note_obj.contentHtml,
+        status=note_obj.status,
+        versionNo=note_obj.currentVersionNo,
+        lastEditedBy=_editor_name(request.user),
+        updatedByUserID_id=request.user.id,
+    )
+
+    return SuccessResponse(message, data=_management_serialize_subject_note(note_obj), extra={'color': 'green'}).to_json_response()
 
 
 @login_required
@@ -766,6 +931,7 @@ def get_subjects_to_class_assign_list_with_given_class_api(request):
     try:
         standard_id = int(standard)
     except (TypeError, ValueError):
+
         return _api_response({'status': 'success', 'data': [], 'color': 'success'}, safe=False)
     rows = AssignSubjectsToClass.objects.filter(
         isDeleted=False,
@@ -2545,8 +2711,13 @@ def update_exam_to_class(request):
 @login_required
 def get_exam_list_by_class_api(request):
     standard = request.GET.get('standard')
+    try:
+        standard_id = int(standard)
+    except (TypeError, ValueError):
+        return _api_response(
+            {'status': 'success', 'data': [], 'color': 'success'}, safe=False)
     objs = AssignExamToClass.objects.filter(isDeleted=False, sessionID_id=request.session['current_session']['Id'],
-                                  standardID_id=int(standard)).order_by(
+                                  standardID_id=standard_id).order_by(
         'examID__name')
     data = []
     for obj in objs:
@@ -2945,12 +3116,15 @@ class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
                 # Handle the case when the denominator is zero
                 percentage = 0
 
-            roll_value = (str(item.roll).strip() if item.roll is not None else '')
-            if roll_value:
+            roll_raw = '' if item.roll is None else str(item.roll).strip()
+            if roll_raw == '':
+                roll_value = 'N/A'
+            else:
                 try:
-                    roll_value = float(roll_value)
+                    parsed_roll = float(roll_raw)
+                    roll_value = int(parsed_roll) if parsed_roll.is_integer() else parsed_roll
                 except (TypeError, ValueError):
-                    roll_value = escape(roll_value)
+                    roll_value = escape(roll_raw)
 
             json_data.append([
                 images,
@@ -3339,10 +3513,15 @@ class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
             ByStaffStaff = self.request.GET.get("ByStaffStaff")
             ByStudentStartDate = self.request.GET.get("ByStudentStartDate")
             ByStudentEndDate = self.request.GET.get("ByStudentEndDate")
+            if not ByStaffStaff or not ByStudentStartDate or not ByStudentEndDate:
+                return TeacherAttendance.objects.none()
             ByStudentStartDate = datetime.strptime(ByStudentStartDate, '%d/%m/%Y')
             ByStudentEndDate = datetime.strptime(ByStudentEndDate, '%d/%m/%Y')
             session_id = self.request.session["current_session"]["Id"]
-            teacher_id = int(ByStaffStaff)
+            try:
+                teacher_id = int(ByStaffStaff)
+            except (TypeError, ValueError):
+                return TeacherAttendance.objects.none()
 
             approved_leaves = LeaveApplication.objects.select_related('leaveTypeID').filter(
                 isDeleted=False,
@@ -3629,12 +3808,15 @@ class StudentFeeDetailsByClassJson(BaseDatatableView):
                         December = 'Paid'
 
             images = _avatar_image_html(item.photo)
-            roll_value = (str(item.roll).strip() if item.roll is not None else '')
-            if roll_value:
+            roll_raw = '' if item.roll is None else str(item.roll).strip()
+            if roll_raw == '':
+                roll_value = 'N/A'
+            else:
                 try:
-                    roll_value = float(roll_value)
+                    parsed_roll = float(roll_raw)
+                    roll_value = int(parsed_roll) if parsed_roll.is_integer() else parsed_roll
                 except (TypeError, ValueError):
-                    roll_value = escape(roll_value)
+                    roll_value = escape(roll_raw)
             json_data.append([
                 images,
                 escape(item.name),

@@ -52,6 +52,10 @@
         <i class="linkify icon"></i>
         <span>Assign to Teacher</span>
     </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'manage_subject_notes' %}active{% endif %}" href="{% url 'managementApp:manage_subject_notes' %}">
+        <i class="sticky note outline icon"></i>
+        <span>Subject Notes</span>
+    </a>
 
     <!-- STUDENTS -->
     <div class="nav-section">Students</div>

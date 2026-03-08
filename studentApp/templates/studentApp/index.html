@@ -55,6 +55,13 @@
             <span>Progress Report Cards</span>
         </a>
 
+        <div class="nav-section">Notes</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'student_subject_notes' %}active{% endif %}"
+           href="{% url 'studentApp:student_subject_notes' %}">
+            <i class="sticky note outline icon"></i>
+            <span>Subject Notes</span>
+        </a>
+
         <div class="nav-section">Events</div>
         <a class="nav-item {% if request.resolver_match.url_name == 'student_events' %}active{% endif %}"
            href="{% url 'studentApp:student_events' %}">

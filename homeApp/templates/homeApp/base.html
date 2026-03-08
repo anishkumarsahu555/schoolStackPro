@@ -1722,6 +1722,13 @@
             justify-content: center;
             line-height: 1 !important;
         }
+        /* Respect runtime hidden states from inline style/hide() calls. */
+        body .ui.button[style*="display: none"],
+        body .ui.button[style*="display:none"],
+        body .ui.buttons .button[style*="display: none"],
+        body .ui.buttons .button[style*="display:none"] {
+            display: none !important;
+        }
 
         /* Preserve explicit hide instructions despite the global inline-flex baseline. */
         body .ui.button[style*="display: none"],
@@ -2547,6 +2554,7 @@
         $(".preloader").fadeOut(50);
     });
 
+
     function getLoadingScopeFromElement(element) {
         if (!element) return $();
         return $(element).closest('.ui.modal, .ui.segment, .ui.form, form, .column');
@@ -2655,7 +2663,66 @@
         buttons.loadBtn.hide();
         window.__loadingScope = null;
         window.__loadingMode = null;
+
     }
+
+    function getLoadingButtons($scope) {
+        const $save = $scope.find('#saveBtn, .saveBtn');
+        const $update = $scope.find('#saveBtnUpdate, .saveBtnUpdate');
+        const $load = $scope.find('#saveBtnLoad, .saveBtnLoad');
+        if ($save.length || $update.length || $load.length) {
+            return {$save, $update, $load};
+        }
+        return {
+            $save: $('#saveBtn, .saveBtn'),
+            $update: $('#saveBtnUpdate, .saveBtnUpdate'),
+            $load: $('#saveBtnLoad, .saveBtnLoad')
+        };
+    }
+
+    function showLoading(context) {
+        const $scope = resolveLoadingScope(context);
+        currentLoadingScope = $scope;
+        const {$save, $update, $load} = getLoadingButtons($scope);
+        if ($update.filter(':visible').length && !$save.filter(':visible').length) {
+            currentLoadingMode = 'update';
+        }
+        $save.css('display', 'none');
+        $update.css('display', 'none');
+        $load.css('display', 'inline-flex');
+    }
+
+    function showUpdateLoading(context) {
+        const $scope = resolveLoadingScope(context);
+        currentLoadingScope = $scope;
+        currentLoadingMode = 'update';
+        const {$save, $update, $load} = getLoadingButtons($scope);
+        $save.css('display', 'none');
+        $update.css('display', 'none');
+        $load.css('display', 'inline-flex');
+    }
+
+    function hideLoading(isupdate = false, context) {
+        const $scope = resolveLoadingScope(context);
+        const {$save, $update, $load} = getLoadingButtons($scope);
+        const shouldShowUpdate = isupdate || currentLoadingMode === 'update';
+        $load.css('display', 'none');
+        if (shouldShowUpdate) {
+            $save.css('display', 'none');
+            $update.css('display', 'inline-flex');
+        } else {
+            $save.css('display', 'inline-flex');
+            $update.css('display', 'none');
+        }
+    }
+
+    $(document).on('mousedown touchstart keydown focusin click', '#saveBtn, .saveBtn, #saveBtnUpdate, .saveBtnUpdate', function () {
+        const $scope = $(this).closest('form, .ui.segment, .ui.tab, .ui.modal');
+        if ($scope.length) {
+            currentLoadingScope = $scope.first();
+        }
+        currentLoadingMode = $(this).is('#saveBtnUpdate, .saveBtnUpdate') ? 'update' : 'save';
+    });
 
 
     function isFormFieldEmpty($input) {

@@ -228,9 +228,12 @@
 
         function clearAndReset() {
             $('#aDate').val('');
-            $('#addFormByClass .field').removeClass('error');
+            $('.ui.form .field').removeClass('error');
             $('#AttendanceTableDiv').css('display', 'none');
-            subjectTab.clear().draw();
+            if (subjectTab) {
+                subjectTab.clear().draw();
+            }
+
         }
 
 

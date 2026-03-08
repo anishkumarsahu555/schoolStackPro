@@ -214,11 +214,13 @@
                         </div>
                     </div>
                     <div class="field">
+
                         <button id="searchBtn" class="ui mini green button" type="button">
                             <i class="search icon"></i> Search
                         </button>
                         <button id="clearFiltersBtn" class="ui mini red button" type="button">
                             <i class="undo icon"></i> Clear
+
                         </button>
                         <button id="printBtn" class="ui mini teal button" type="button" onclick="window.print()" {% if not selected_student %}style="display:none;"{% endif %}>
                             <i class="print icon"></i> Print
@@ -286,6 +288,7 @@
             {% elif selected_student %}
                 <div class="ui message" id="noDataMessage">No report card data found for the selected filters.</div>
             {% else %}
+
                 <div class="empty-note" id="emptyNote">Select class and student, then click <b>Search</b>.</div>
             {% endif %}
             </div>
@@ -298,6 +301,7 @@
         const classMap = {{ class_map_json|safe }};
         const studentsByClass = {{ students_by_class_json|safe }};
         const examsByClass = {{ exams_by_class_json|safe }};
+
         let selectedClassId = "{{ selected_class_id }}";
         let selectedStudentId = "{{ selected_student_id }}";
         let selectedExamId = "{{ selected_exam_id }}";
@@ -354,6 +358,7 @@
                 const classId = $(this).val();
                 fillStudentOptions(classId);
                 fillExamOptions(classId);
+
                 clearFieldError('#standard');
                 clearFieldError('#student');
             });
@@ -483,6 +488,7 @@
         }
 
         function bindReportCardToggles() {
+
             document.querySelectorAll('#reportCardsWrap .report-card .card-head').forEach(function (head) {
                 head.addEventListener('click', function () {
                     head.parentElement.classList.toggle('expanded');

@@ -11,6 +11,11 @@ from .views_api import (
     TeacherStudentFeeDetailsByClassJson,
     TeacherStudentFeeDetailsByStudentJson,
     teacher_self_attendance_history_api,
+    get_teacher_subject_note_bootstrap_api,
+    get_teacher_subject_note_list_api,
+    get_teacher_subject_note_detail_api,
+    upsert_teacher_subject_note_api,
+    toggle_teacher_subject_note_publish_api,
 )
 from .leave_views_api import (
     TeacherLeaveApplicationListJson,
@@ -32,6 +37,11 @@ urlpatterns = [
     path('TeacherStudentFeeDetailsByStudentJson', TeacherStudentFeeDetailsByStudentJson.as_view(), name='TeacherStudentFeeDetailsByStudentJson'),
     path('TeacherEventListJson', TeacherEventListJson.as_view(), name='TeacherEventListJson'),
     path('teacher_self_attendance_history_api', teacher_self_attendance_history_api, name='teacher_self_attendance_history_api'),
+    path('get_teacher_subject_note_bootstrap_api', get_teacher_subject_note_bootstrap_api, name='get_teacher_subject_note_bootstrap_api'),
+    path('get_teacher_subject_note_list_api', get_teacher_subject_note_list_api, name='get_teacher_subject_note_list_api'),
+    path('get_teacher_subject_note_detail_api', get_teacher_subject_note_detail_api, name='get_teacher_subject_note_detail_api'),
+    path('upsert_teacher_subject_note_api', upsert_teacher_subject_note_api, name='upsert_teacher_subject_note_api'),
+    path('toggle_teacher_subject_note_publish_api', toggle_teacher_subject_note_publish_api, name='toggle_teacher_subject_note_publish_api'),
     path('TeacherLeaveApplicationListJson', TeacherLeaveApplicationListJson.as_view(), name='TeacherLeaveApplicationListJson'),
     path('get_teacher_leave_type_list_api', get_teacher_leave_type_list_api, name='get_teacher_leave_type_list_api'),
     path('teacher_apply_leave_api', teacher_apply_leave_api, name='teacher_apply_leave_api'),

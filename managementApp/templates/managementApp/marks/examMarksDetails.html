@@ -306,6 +306,8 @@
         function clearByClass() {
             $('#standard').dropdown('clear');
             $('#exam').dropdown('clear');
+            $('#exam').html('<option value="">Search By Exam</option>');
+            $('.ui.form .field').removeClass('error');
             $('#MarksTableDiv').hide();
             if (marksTable) {
                 marksTable.clear().draw();
@@ -356,6 +358,8 @@
         function clearByStudent() {
             $('#standardByStudent').dropdown('clear');
             $('#student').dropdown('clear');
+            $('#student').html('<option value="">Search By Student</option>');
+            $('.ui.form .field').removeClass('error');
             $('#MarksByStudentDiv').hide();
             marksByStudentTable.clear().draw();
         }
