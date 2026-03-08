@@ -34,7 +34,7 @@
                                 <i class="search icon"></i>
                                 Search
                             </button> {% endcomment %}
-                            <button class="ui mini red button" type="button" onclick="myOwnReset()">
+                            <button class="ui mini red button" type="button" onclick="clearEditStudentForm()">
                                 <i class="icon times circle"></i>
                                 Clear
                             </button>
@@ -552,10 +552,10 @@
                         Saving ...
                         <i class="checkmark icon"></i>
                     </button>
-                    {% comment %} <button class="ui mini red button" type="button" onclick="myOwnReset()">
+                    <button class="ui mini red button" type="button" onclick="clearEditStudentForm()">
                         <i class="icon times circle"></i>
                         Clear
-                    </button> {% endcomment %}
+                    </button>
                 </div>
             </div>
         </div>
@@ -687,7 +687,30 @@
             $('#countryP').val(country).change();
             $('#pincodeP').val(pin);
             $('#stateP').val(state).change();
-        } 
+        }
+
+        function clearEditStudentForm() {
+            const $form = $('#addForm');
+            if (!$form.length) return;
+
+            $form.find('.field').removeClass('error');
+            $form.find('input[type="text"], input[type="number"], input[type="email"], input[type="date"], textarea').val('');
+            $form.find('input[type="checkbox"], input[type="radio"]').prop('checked', false);
+            $form.find('input[type="file"]').val('');
+
+            $form.find('select').each(function () {
+                const $select = $(this);
+                if ($select.hasClass('dropdown') || $select.closest('.ui.dropdown').length) {
+                    $select.dropdown('clear');
+                } else {
+                    $select.val('').change();
+                }
+            });
+
+            $('#editID').val('{{instance.id}}');
+            $('#cImg').css('background-image', "url({% static 'images/add_photo.svg' %})");
+            hideLoading();
+        }
 
 function addStudentData() {
     showLoading();
