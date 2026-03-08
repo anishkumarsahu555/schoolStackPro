@@ -1,11 +1,14 @@
 from datetime import datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.db.models import Q, Sum
 from django.http import JsonResponse
 from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.utils.html import escape
+from django.utils.html import escape, strip_tags
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from managementApp.models import (
@@ -18,10 +21,13 @@ from managementApp.models import (
     TeacherAttendance,
     LeaveApplication,
 )
+from teacherApp.models import SubjectNote, SubjectNoteVersion
 from managementApp.signals import pre_save_with_user
 from utils.conts import MONTHS_LIST
 from utils.custom_decorators import check_groups
+from utils.custom_response import SuccessResponse, ErrorResponse
 from utils.image_utils import safe_image_url, avatar_image_html
+from utils.json_validator import validate_input
 
 
 def _safe_image_url(image_field, fallback_path='images/default_avatar.svg'):
@@ -355,6 +361,320 @@ def _get_teacher_and_assigned_class_ids(request):
         classTeacher_id=teacher.id,
     ).values_list('id', flat=True))
     return teacher, class_ids
+
+
+def _teacher_assigned_subject_rows(teacher_id, session_id):
+    return AssignSubjectsToTeacher.objects.select_related(
+        'assignedSubjectID',
+        'assignedSubjectID__standardID',
+        'assignedSubjectID__subjectID',
+    ).filter(
+        isDeleted=False,
+        teacherID_id=teacher_id,
+        sessionID_id=session_id,
+        assignedSubjectID__isDeleted=False,
+        assignedSubjectID__standardID__isDeleted=False,
+        assignedSubjectID__subjectID__isDeleted=False,
+    )
+
+
+def _teacher_note_context(request):
+    teacher = TeacherDetail.objects.filter(
+        userID_id=request.user.id,
+        isDeleted=False,
+    ).order_by('-datetime').first()
+    if not teacher:
+        return None, None, None
+    session_id = request.session.get('current_session', {}).get('Id') or teacher.sessionID_id
+    school_id = request.session.get('current_session', {}).get('SchoolID') or teacher.schoolID_id
+    return teacher, session_id, school_id
+
+
+def _assigned_map_by_ast_id(teacher_id, session_id):
+    rows = _teacher_assigned_subject_rows(teacher_id=teacher_id, session_id=session_id)
+    mapping = {}
+    for row in rows:
+        if not row.id or not row.assignedSubjectID:
+            continue
+        mapping[row.id] = row
+    return mapping
+
+
+def _serialize_subject_note(note_obj):
+    standard_name = ''
+    if note_obj.standardID:
+        standard_name = note_obj.standardID.name or ''
+        if note_obj.standardID.section:
+            standard_name = f'{standard_name} - {note_obj.standardID.section}'
+    return {
+        'id': note_obj.id,
+        'title': note_obj.title or '',
+        'contentHtml': note_obj.contentHtml or '',
+        'status': note_obj.status or 'draft',
+        'publishedAt': note_obj.publishedAt.strftime('%d-%m-%Y %I:%M %p') if note_obj.publishedAt else '',
+        'currentVersionNo': note_obj.currentVersionNo or 1,
+        'subjectID': note_obj.subjectID_id,
+        'subjectName': note_obj.subjectID.name if note_obj.subjectID else '',
+        'assignedSubjectTeacherID': note_obj.assignedSubjectTeacherID_id,
+        'standardID': note_obj.standardID_id,
+        'standardName': standard_name,
+        'lastUpdatedOn': note_obj.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if note_obj.lastUpdatedOn else '',
+    }
+
+
+@login_required
+@check_groups('Teaching')
+def get_teacher_subject_note_bootstrap_api(request):
+    teacher, session_id, _ = _teacher_note_context(request)
+    if not teacher or not session_id:
+        return SuccessResponse('No assignments found for teacher.', data={
+            'assignments': [],
+            'stats': {'total': 0, 'draft': 0, 'published': 0},
+        }).to_json_response()
+
+    rows = _teacher_assigned_subject_rows(teacher_id=teacher.id, session_id=session_id)
+    assignments = []
+    seen = set()
+    for row in rows:
+        if not row.id or not row.assignedSubjectID or not row.assignedSubjectID.standardID or not row.assignedSubjectID.subjectID:
+            continue
+        key = (row.id, row.assignedSubjectID.standardID_id, row.assignedSubjectID.subjectID_id)
+        if key in seen:
+            continue
+        seen.add(key)
+        standard = row.assignedSubjectID.standardID
+        subject = row.assignedSubjectID.subjectID
+        standard_name = standard.name or ''
+        if standard.section:
+            standard_name = f'{standard_name} - {standard.section}'
+        assignments.append({
+            'assignedSubjectTeacherID': row.id,
+            'standardID': standard.id,
+            'standardName': standard_name,
+            'subjectID': subject.id,
+            'subjectName': subject.name or '',
+            'subjectBranch': row.subjectBranch or '',
+        })
+
+    note_qs = SubjectNote.objects.filter(
+        isDeleted=False,
+        sessionID_id=session_id,
+        teacherID_id=teacher.id,
+    )
+    stats = {
+        'total': note_qs.count(),
+        'draft': note_qs.filter(status='draft').count(),
+        'published': note_qs.filter(status='published').count(),
+    }
+    return SuccessResponse('Teacher notes metadata loaded successfully.', data={
+        'assignments': assignments,
+        'stats': stats,
+    }).to_json_response()
+
+
+@login_required
+@check_groups('Teaching')
+def get_teacher_subject_note_list_api(request):
+    teacher, session_id, _ = _teacher_note_context(request)
+    if not teacher or not session_id:
+        return SuccessResponse('No notes found.', data=[]).to_json_response()
+
+    search = (request.GET.get('search') or '').strip()
+    status_value = (request.GET.get('status') or '').strip().lower()
+    assigned_subject_teacher_id = (request.GET.get('assignedSubjectTeacherID') or '').strip()
+
+    queryset = SubjectNote.objects.select_related(
+        'subjectID',
+        'standardID',
+        'assignedSubjectTeacherID',
+    ).filter(
+        isDeleted=False,
+        sessionID_id=session_id,
+        teacherID_id=teacher.id,
+    )
+
+    if status_value in {'draft', 'published'}:
+        queryset = queryset.filter(status=status_value)
+    if assigned_subject_teacher_id.isdigit():
+        queryset = queryset.filter(assignedSubjectTeacherID_id=int(assigned_subject_teacher_id))
+    if search:
+        queryset = queryset.filter(
+            Q(title__icontains=search)
+            | Q(subjectID__name__icontains=search)
+            | Q(standardID__name__icontains=search)
+            | Q(standardID__section__icontains=search)
+            | Q(contentHtml__icontains=search)
+        )
+
+    rows = [_serialize_subject_note(row) for row in queryset.order_by('-lastUpdatedOn')[:300]]
+    return SuccessResponse('Teacher notes loaded successfully.', data=rows).to_json_response()
+
+
+@login_required
+@check_groups('Teaching')
+def get_teacher_subject_note_detail_api(request):
+    teacher, session_id, _ = _teacher_note_context(request)
+    note_id = (request.GET.get('id') or '').strip()
+    if not teacher or not session_id or not note_id.isdigit():
+        return ErrorResponse('Invalid request.', extra={'color': 'red'}).to_json_response()
+
+    note_obj = SubjectNote.objects.select_related(
+        'subjectID',
+        'standardID',
+    ).filter(
+        id=int(note_id),
+        isDeleted=False,
+        sessionID_id=session_id,
+        teacherID_id=teacher.id,
+    ).first()
+    if not note_obj:
+        return ErrorResponse('Note not found.', extra={'color': 'red'}).to_json_response()
+    return SuccessResponse('Note details loaded successfully.', data=_serialize_subject_note(note_obj)).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+@check_groups('Teaching')
+@validate_input(['title', 'assignedSubjectTeacherID', 'contentHtml'])
+def upsert_teacher_subject_note_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed.', status_code=405).to_json_response()
+
+    teacher, session_id, school_id = _teacher_note_context(request)
+    if not teacher or not session_id:
+        return ErrorResponse('Teacher profile/session not found.', extra={'color': 'red'}).to_json_response()
+
+    note_id = (request.POST.get('id') or '').strip()
+    title = (request.POST.get('title') or '').strip()
+    content_html = (request.POST.get('contentHtml') or '').strip()
+    status_value = (request.POST.get('status') or 'draft').strip().lower()
+    assigned_subject_teacher_id = (request.POST.get('assignedSubjectTeacherID') or '').strip()
+
+    if status_value not in {'draft', 'published'}:
+        status_value = 'draft'
+    if len(title) < 3:
+        return ErrorResponse('Title should contain at least 3 characters.', extra={'color': 'orange'}).to_json_response()
+    if len(title) > 500:
+        return ErrorResponse('Title cannot exceed 500 characters.', extra={'color': 'orange'}).to_json_response()
+    plain_text_content = strip_tags(content_html).strip()
+    if not plain_text_content:
+        return ErrorResponse('Note content is required.', extra={'color': 'orange'}).to_json_response()
+    if not assigned_subject_teacher_id.isdigit():
+        return ErrorResponse('Assigned subject is invalid.', extra={'color': 'orange'}).to_json_response()
+
+    assigned_map = _assigned_map_by_ast_id(teacher.id, session_id)
+    selected_assignment = assigned_map.get(int(assigned_subject_teacher_id))
+    if not selected_assignment:
+        return ErrorResponse('Selected subject assignment is invalid.', extra={'color': 'red'}).to_json_response()
+
+    current_ts = timezone.now()
+    editor_name = (teacher.name or request.user.get_full_name().strip() or request.user.username or 'N/A')
+
+    if note_id.isdigit():
+        note_obj = SubjectNote.objects.filter(
+            id=int(note_id),
+            isDeleted=False,
+            sessionID_id=session_id,
+            teacherID_id=teacher.id,
+        ).first()
+        if not note_obj:
+            return ErrorResponse('Note not found for update.', extra={'color': 'red'}).to_json_response()
+        note_obj.currentVersionNo = (note_obj.currentVersionNo or 1) + 1
+    else:
+        note_obj = SubjectNote(
+            currentVersionNo=1,
+            teacherID_id=teacher.id,
+            sessionID_id=session_id,
+            schoolID_id=school_id,
+        )
+
+    note_obj.assignedSubjectTeacherID_id = selected_assignment.id
+    note_obj.standardID_id = selected_assignment.assignedSubjectID.standardID_id
+    note_obj.subjectID_id = selected_assignment.assignedSubjectID.subjectID_id
+    note_obj.title = title
+    note_obj.contentHtml = content_html
+    note_obj.status = status_value
+    note_obj.publishedAt = current_ts if status_value == 'published' else None
+    note_obj.lastEditedBy = editor_name
+    note_obj.updatedByUserID_id = request.user.id
+    note_obj.save()
+
+    SubjectNoteVersion.objects.create(
+        noteID_id=note_obj.id,
+        schoolID_id=note_obj.schoolID_id,
+        sessionID_id=note_obj.sessionID_id,
+        teacherID_id=teacher.id,
+        title=note_obj.title,
+        contentHtml=note_obj.contentHtml,
+        status=note_obj.status,
+        versionNo=note_obj.currentVersionNo,
+        lastEditedBy=editor_name,
+        updatedByUserID_id=request.user.id,
+    )
+
+    action_word = 'updated' if note_id.isdigit() else 'created'
+    return SuccessResponse(
+        f'Note {action_word} successfully.',
+        data=_serialize_subject_note(note_obj),
+        extra={'color': 'green'},
+    ).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+@check_groups('Teaching')
+@validate_input(['id'])
+def toggle_teacher_subject_note_publish_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed.', status_code=405).to_json_response()
+    teacher, session_id, _ = _teacher_note_context(request)
+    if not teacher or not session_id:
+        return ErrorResponse('Teacher profile/session not found.', extra={'color': 'red'}).to_json_response()
+
+    note_id = (request.POST.get('id') or '').strip()
+    if not note_id.isdigit():
+        return ErrorResponse('Note id is required.', extra={'color': 'orange'}).to_json_response()
+
+    note_obj = SubjectNote.objects.filter(
+        id=int(note_id),
+        isDeleted=False,
+        sessionID_id=session_id,
+        teacherID_id=teacher.id,
+    ).first()
+    if not note_obj:
+        return ErrorResponse('Note not found.', extra={'color': 'red'}).to_json_response()
+
+    editor_name = (teacher.name or request.user.get_full_name().strip() or request.user.username or 'N/A')
+    if note_obj.status == 'published':
+        note_obj.status = 'draft'
+        note_obj.publishedAt = None
+        message = 'Note moved to draft.'
+    else:
+        note_obj.status = 'published'
+        note_obj.publishedAt = timezone.now()
+        message = 'Note published successfully.'
+
+    note_obj.currentVersionNo = (note_obj.currentVersionNo or 1) + 1
+    note_obj.lastEditedBy = editor_name
+    note_obj.updatedByUserID_id = request.user.id
+    note_obj.save()
+
+    SubjectNoteVersion.objects.create(
+        noteID_id=note_obj.id,
+        schoolID_id=note_obj.schoolID_id,
+        sessionID_id=note_obj.sessionID_id,
+        teacherID_id=teacher.id,
+        title=note_obj.title,
+        contentHtml=note_obj.contentHtml,
+        status=note_obj.status,
+        versionNo=note_obj.currentVersionNo,
+        lastEditedBy=editor_name,
+        updatedByUserID_id=request.user.id,
+    )
+
+    return SuccessResponse(message, data=_serialize_subject_note(note_obj), extra={'color': 'green'}).to_json_response()
 
 
 @method_decorator(login_required, name='dispatch')

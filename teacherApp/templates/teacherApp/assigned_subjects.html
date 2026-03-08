@@ -313,7 +313,6 @@
                                      data-section="{{ section_name|lower|escape }}"
                                      data-class-key="{{ class_name|lower|escape }}|{{ section_name|lower|escape }}"
                                      data-class-label="{% if section_name %}{{ class_name|escape }} - {{ section_name|escape }}{% else %}{{ class_name|escape }}{% endif %}"
-                                     data-branch="{{ row.subjectBranch|default:'Main'|lower|escape }}"
                                      data-month="{{ row.datetime|date:'Y-m' }}">
                                     <div class="subject-date">
                                         <div class="subject-name">{{ row.assignedSubjectID.subjectID.name|default:'N/A' }}</div>
@@ -352,10 +351,9 @@
                 const subject = card.getAttribute('data-subject') || '';
                 const className = card.getAttribute('data-class') || '';
                 const section = card.getAttribute('data-section') || '';
-                const branchValue = card.getAttribute('data-branch') || '';
                 const cardClassKey = card.getAttribute('data-class-key') || '';
 
-                const source = subject + ' ' + className + ' ' + section + ' ' + branchValue;
+                const source = subject + ' ' + className + ' ' + section;
                 const matchesSearch = !q || source.indexOf(q) !== -1;
 
                 const show = matchesSearch;

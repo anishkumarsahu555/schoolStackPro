@@ -692,3 +692,4 @@ class LeaveActionLog(models.Model):
         indexes = [
             models.Index(fields=['sessionID', 'leaveID', 'isDeleted', 'datetime'], name='lal_sess_leave_dt_idx'),
         ]
+

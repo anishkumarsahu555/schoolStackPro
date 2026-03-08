@@ -8,6 +8,7 @@ from django.shortcuts import render
 from homeApp.models import SchoolSession, SchoolDetail
 from homeApp.utils import login_required
 from managementApp.models import *
+from teacherApp.models import SubjectNote
 from utils.custom_decorators import check_groups
 
 
@@ -307,6 +308,79 @@ def student_events(request):
     ).order_by('-startDate', '-datetime') if current_session_id else Event.objects.none()
     return render(request, 'studentApp/events/eventsList.html', {
         'events': events,
+    })
+
+
+@login_required
+@check_groups('Student')
+def student_subject_notes(request):
+    student, current_session_id = _bootstrap_student_context(request)
+    notes = []
+    subjects = []
+
+    if student and student.standardID_id:
+        base_qs = SubjectNote.objects.select_related(
+            'subjectID',
+            'standardID',
+            'teacherID',
+        ).filter(
+            isDeleted=False,
+            status='published',
+            schoolID_id=student.schoolID_id,
+        )
+
+        notes_qs = base_qs.none()
+        session_candidates = [sid for sid in {current_session_id, student.sessionID_id} if sid]
+
+        if session_candidates:
+            notes_qs = base_qs.filter(
+                sessionID_id__in=session_candidates,
+                standardID_id=student.standardID_id,
+            )
+
+        # Fallback 1: allow legacy notes with missing session for the same class id.
+        if not notes_qs.exists():
+            notes_qs = base_qs.filter(
+                standardID_id=student.standardID_id,
+                sessionID__isnull=True,
+            )
+
+        # Fallback 2: if class ids differ across sessions, match by class name + section.
+        if not notes_qs.exists() and student.standardID:
+            class_name = (student.standardID.name or '').strip()
+            class_section = (student.standardID.section or '').strip()
+            class_match = Q(standardID__name__iexact=class_name)
+            if class_section:
+                class_match &= Q(standardID__section__iexact=class_section)
+            else:
+                class_match &= (Q(standardID__section__isnull=True) | Q(standardID__section=''))
+
+            session_match = Q(sessionID__isnull=True)
+            if session_candidates:
+                session_match = session_match | Q(sessionID_id__in=session_candidates)
+
+            notes_qs = base_qs.filter(class_match).filter(session_match)
+
+        notes_qs = notes_qs.order_by('-publishedAt', '-lastUpdatedOn')
+        notes = list(notes_qs)
+
+        subject_map = {}
+        for row in notes:
+            if row.subjectID_id and row.subjectID and row.subjectID.name:
+                subject_map[row.subjectID_id] = row.subjectID.name
+        subjects = [{'id': key, 'name': value} for key, value in sorted(subject_map.items(), key=lambda item: item[1].lower())]
+
+    class_label = 'N/A'
+    if student and student.standardID:
+        class_label = student.standardID.name or 'N/A'
+        if student.standardID.section:
+            class_label = f'{class_label} - {student.standardID.section}'
+
+    return render(request, 'studentApp/subject_notes.html', {
+        'notes': notes,
+        'class_label': class_label,
+        'subject_filters': subjects,
+        'student_not_found': not bool(student and current_session_id),
     })
 
 

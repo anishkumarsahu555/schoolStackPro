@@ -15,6 +15,7 @@ from .views import (
     teacher_progress_report_cards,
     teacher_assigned_class,
     teacher_leave_applications,
+    teacher_subject_notes,
 )
 
 urlpatterns = [
@@ -24,6 +25,7 @@ urlpatterns = [
     path('students/', teacher_students_list, name='teacher_students_list'),
     path('assigned-class/', teacher_assigned_class, name='teacher_assigned_class'),
     path('assigned-subjects/', teacher_assigned_subjects, name='teacher_assigned_subjects'),
+    path('subject-notes/', teacher_subject_notes, name='teacher_subject_notes'),
     path('student-attendance/', teacher_student_attendance, name='teacher_student_attendance'),
     path('attendance-history/', teacher_attendance_history, name='teacher_attendance_history'),
     path('manage-event/', teacher_manage_event, name='teacher_manage_event'),

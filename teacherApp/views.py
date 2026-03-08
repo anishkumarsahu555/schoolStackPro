@@ -18,6 +18,7 @@ from managementApp.models import (
     AssignSubjectsToClass,
     MarkOfStudentsByExam,
 )
+from teacherApp.models import SubjectNote
 from utils.custom_decorators import check_groups
 
 # Create your views here.
@@ -711,3 +712,28 @@ def teacher_student_detail(request, id=None):
         'is_class_teacher': is_class_teacher,
     }
     return render(request, 'managementApp/student/student_detail.html', context)
+
+
+@login_required
+@check_groups('Teaching')
+def teacher_subject_notes(request):
+    teacher, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
+    notes_count = {'total': 0, 'draft': 0, 'published': 0}
+    if teacher and current_session_id:
+        notes_qs = SubjectNote.objects.filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            teacherID_id=teacher.id,
+        )
+        notes_count = {
+            'total': notes_qs.count(),
+            'draft': notes_qs.filter(status='draft').count(),
+            'published': notes_qs.filter(status='published').count(),
+        }
+
+    return render(request, 'teacherApp/subject_notes.html', {
+        'is_class_teacher': is_class_teacher,
+        'notes_total': notes_count['total'],
+        'notes_draft': notes_count['draft'],
+        'notes_published': notes_count['published'],
+    })

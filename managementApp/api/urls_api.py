@@ -46,6 +46,10 @@ urlpatterns = [
     path('update_subject_to_teacher', update_subject_to_teacher, name='update_subject_to_teacher'),
     path('AssignSubjectToTeacherListJson', AssignSubjectToTeacherListJson.as_view(),
          name='AssignSubjectToTeacherListJson'),
+    path('get_management_subject_note_filter_meta_api', get_management_subject_note_filter_meta_api, name='get_management_subject_note_filter_meta_api'),
+    path('get_management_subject_note_list_api', get_management_subject_note_list_api, name='get_management_subject_note_list_api'),
+    path('get_management_subject_note_detail_api', get_management_subject_note_detail_api, name='get_management_subject_note_detail_api'),
+    path('toggle_management_subject_note_publish_api', toggle_management_subject_note_publish_api, name='toggle_management_subject_note_publish_api'),
     # Teacher Staff
     path('add_teacher_api', add_teacher_api, name='add_teacher_api'),
     path('delete_teacher', delete_teacher, name='delete_teacher'),

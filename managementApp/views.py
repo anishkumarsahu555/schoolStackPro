@@ -8,6 +8,7 @@ from homeApp.utils import login_required
 from homeApp.models import SchoolDetail
 from managementApp.models import *
 from managementApp.signals import pre_save_with_user
+from teacherApp.models import SubjectNote
 from utils.custom_decorators import check_groups
 
 
@@ -109,6 +110,28 @@ def assign_subjects_to_teacher(request):
     context = {
     }
     return render(request, 'managementApp/subjects/assignSubjectsToTeacher.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_subject_notes(request):
+    current_session_id = request.session.get('current_session', {}).get('Id')
+    current_school_id = request.session.get('current_session', {}).get('SchoolID')
+
+    note_qs = SubjectNote.objects.filter(
+        isDeleted=False,
+    )
+    if current_session_id:
+        note_qs = note_qs.filter(sessionID_id=current_session_id)
+    if current_school_id:
+        note_qs = note_qs.filter(schoolID_id=current_school_id)
+
+    context = {
+        'notes_total': note_qs.count(),
+        'notes_draft': note_qs.filter(status='draft').count(),
+        'notes_published': note_qs.filter(status='published').count(),
+    }
+    return render(request, 'managementApp/subjects/manage_subject_notes.html', context)
 
 
 # Teacher --------------------

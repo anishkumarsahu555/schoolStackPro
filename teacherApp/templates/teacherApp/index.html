@@ -38,6 +38,11 @@
             <i class="book icon"></i>
             <span>Assigned Subjects</span>
         </a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_subject_notes' %}active{% endif %}"
+           href="{% url 'teacherApp:teacher_subject_notes' %}">
+            <i class="sticky note outline icon"></i>
+            <span>Subject Notes</span>
+        </a>
 
         <div class="nav-section">Attendance</div>
         <a class="nav-item {% if request.resolver_match.url_name == 'teacher_student_attendance' %}active{% endif %}"
