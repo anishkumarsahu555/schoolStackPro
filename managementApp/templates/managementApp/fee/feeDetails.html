@@ -64,6 +64,11 @@
                                             <i class="icon search"></i>
                                             Search
                                         </button>
+                                        <button type="button" class="ui mini red button"
+                                                onclick="clearAndReset()">
+                                            <i class="icon times circle"></i>
+                                            Clear
+                                        </button>
 
                                     </div>
                                 </div>
@@ -130,6 +135,11 @@
                                                 onclick="searchData('ByStudent')">
                                             <i class="icon search"></i>
                                             Search
+                                        </button>
+                                        <button type="button" class="ui mini red button"
+                                                onclick="clearAndReset()">
+                                            <i class="icon times circle"></i>
+                                            Clear
                                         </button>
 
                                     </div>
@@ -382,11 +392,17 @@
 
 
         function clearAndReset() {
-            {#$('#addForm').trigger('reset');#}
-            myOwnReset();
-            $('#saveBtn').css('display', '');
-            $('#saveBtnUpdate').css('display', 'none');
-
+            $('#standard').dropdown('clear');
+            $('#standardByStudent').dropdown('clear');
+            $('#student').dropdown('clear');
+            $('#student').html('<option value="">Search By Student Name-Roll</option>');
+            $('.ui.form .field').removeClass('error');
+            if (subjectTab) {
+                subjectTab.clear().draw();
+            }
+            if (byStudentTab) {
+                byStudentTab.clear().draw();
+            }
         }
 
         function pushAttendance(id) {

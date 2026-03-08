@@ -928,9 +928,14 @@ def get_subjects_to_class_assign_list_api(request):
 @login_required
 def get_subjects_to_class_assign_list_with_given_class_api(request):
     standard = request.GET.get('standard')
+    try:
+        standard_id = int(standard)
+    except (TypeError, ValueError):
+        return _api_response(
+            {'status': 'success', 'data': [], 'color': 'success'}, safe=False)
     rows = AssignSubjectsToClass.objects.filter(
         isDeleted=False,
-        standardID_id=int(standard),
+        standardID_id=standard_id,
         sessionID_id=_current_session_id(request)
     ).values('id', 'subjectID__name').order_by('subjectID__name')
     data = [{'ID': row['id'], 'Name': row['subjectID__name'] or 'N/A'} for row in rows]
@@ -1601,10 +1606,15 @@ def add_student_api(request):
 @login_required
 def get_student_list_by_class_api(request):
     standard = request.GET.get('standard')
+    try:
+        standard_id = int(standard)
+    except (TypeError, ValueError):
+        return _api_response(
+            {'status': 'success', 'data': [], 'color': 'success'}, safe=False)
     rows = Student.objects.filter(
         isDeleted=False,
         sessionID_id=_current_session_id(request),
-        standardID_id=int(standard)
+        standardID_id=standard_id
     ).values('id', 'name', 'roll').order_by('roll')
     data = []
     for row in rows:
@@ -2702,8 +2712,13 @@ def update_exam_to_class(request):
 @login_required
 def get_exam_list_by_class_api(request):
     standard = request.GET.get('standard')
+    try:
+        standard_id = int(standard)
+    except (TypeError, ValueError):
+        return _api_response(
+            {'status': 'success', 'data': [], 'color': 'success'}, safe=False)
     objs = AssignExamToClass.objects.filter(isDeleted=False, sessionID_id=request.session['current_session']['Id'],
-                                  standardID_id=int(standard)).order_by(
+                                  standardID_id=standard_id).order_by(
         'examID__name')
     data = []
     for obj in objs:
@@ -3102,10 +3117,20 @@ class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
                 # Handle the case when the denominator is zero
                 percentage = 0
 
+            roll_raw = '' if item.roll is None else str(item.roll).strip()
+            if roll_raw == '':
+                roll_value = 'N/A'
+            else:
+                try:
+                    parsed_roll = float(roll_raw)
+                    roll_value = int(parsed_roll) if parsed_roll.is_integer() else parsed_roll
+                except (TypeError, ValueError):
+                    roll_value = escape(roll_raw)
+
             json_data.append([
                 images,
                 escape(item.name),
-                float(escape(item.roll)),
+                roll_value,
                 present_count,
                 absent_count,
                 present_count + absent_count,
@@ -3489,10 +3514,15 @@ class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
             ByStaffStaff = self.request.GET.get("ByStaffStaff")
             ByStudentStartDate = self.request.GET.get("ByStudentStartDate")
             ByStudentEndDate = self.request.GET.get("ByStudentEndDate")
+            if not ByStaffStaff or not ByStudentStartDate or not ByStudentEndDate:
+                return TeacherAttendance.objects.none()
             ByStudentStartDate = datetime.strptime(ByStudentStartDate, '%d/%m/%Y')
             ByStudentEndDate = datetime.strptime(ByStudentEndDate, '%d/%m/%Y')
             session_id = self.request.session["current_session"]["Id"]
-            teacher_id = int(ByStaffStaff)
+            try:
+                teacher_id = int(ByStaffStaff)
+            except (TypeError, ValueError):
+                return TeacherAttendance.objects.none()
 
             approved_leaves = LeaveApplication.objects.select_related('leaveTypeID').filter(
                 isDeleted=False,
@@ -3779,10 +3809,19 @@ class StudentFeeDetailsByClassJson(BaseDatatableView):
                         December = 'Paid'
 
             images = _avatar_image_html(item.photo)
+            roll_raw = '' if item.roll is None else str(item.roll).strip()
+            if roll_raw == '':
+                roll_value = 'N/A'
+            else:
+                try:
+                    parsed_roll = float(roll_raw)
+                    roll_value = int(parsed_roll) if parsed_roll.is_integer() else parsed_roll
+                except (TypeError, ValueError):
+                    roll_value = escape(roll_raw)
             json_data.append([
                 images,
                 escape(item.name),
-                float(escape(item.roll)),
+                roll_value,
                 January,
                 February,
                 March,

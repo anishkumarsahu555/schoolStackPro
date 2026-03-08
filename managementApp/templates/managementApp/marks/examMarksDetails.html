@@ -58,17 +58,14 @@
                                 </select>
                             </div>
                             <div class="field" style="padding-top: 2.2em;">
-                                <div class="ui mini buttons">
-                                    <button type="button" class="ui green button" onclick="searchByClass()">
-                                        <i class="icon search"></i>
-                                        Search
-                                    </button>
-                                    <div class="or"></div>
-                                    <button type="button" class="ui red button" onclick="clearByClass()">
-                                        <i class="icon times circle"></i>
-                                        Clear
-                                    </button>
-                                </div>
+                                <button type="button" class="ui mini green button" onclick="searchByClass()">
+                                    <i class="icon search"></i>
+                                    Search
+                                </button>
+                                <button type="button" class="ui mini red button" onclick="clearByClass()">
+                                    <i class="icon times circle"></i>
+                                    Clear
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -103,17 +100,14 @@
                                 </select>
                             </div>
                             <div class="field" style="padding-top: 2.2em;">
-                                <div class="ui mini buttons">
-                                    <button type="button" class="ui green button" onclick="searchByStudent()">
-                                        <i class="icon search"></i>
-                                        Search
-                                    </button>
-                                    <div class="or"></div>
-                                    <button type="button" class="ui red button" onclick="clearByStudent()">
-                                        <i class="icon times circle"></i>
-                                        Clear
-                                    </button>
-                                </div>
+                                <button type="button" class="ui mini green button" onclick="searchByStudent()">
+                                    <i class="icon search"></i>
+                                    Search
+                                </button>
+                                <button type="button" class="ui mini red button" onclick="clearByStudent()">
+                                    <i class="icon times circle"></i>
+                                    Clear
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -312,6 +306,8 @@
         function clearByClass() {
             $('#standard').dropdown('clear');
             $('#exam').dropdown('clear');
+            $('#exam').html('<option value="">Search By Exam</option>');
+            $('.ui.form .field').removeClass('error');
             $('#MarksTableDiv').hide();
             if (marksTable) {
                 marksTable.clear().draw();
@@ -362,6 +358,8 @@
         function clearByStudent() {
             $('#standardByStudent').dropdown('clear');
             $('#student').dropdown('clear');
+            $('#student').html('<option value="">Search By Student</option>');
+            $('.ui.form .field').removeClass('error');
             $('#MarksByStudentDiv').hide();
             marksByStudentTable.clear().draw();
         }

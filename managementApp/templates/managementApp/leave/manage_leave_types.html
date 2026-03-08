@@ -79,7 +79,7 @@
                             <div class="leave-action-group">
                                 <button type="button" class="ui mini green button" id="addBtn" onclick="submitLeaveType()"><i class="plus icon"></i>Add</button>
                                 <button type="button" class="ui mini orange button" id="updateBtn" onclick="updateLeaveType()" style="display:none;"><i class="redo icon"></i>Update</button>
-                                <button type="button" class="ui mini red basic button" id="clearBtn" onclick="resetForm()"><i class="undo icon"></i>Clear</button>
+                                <button type="button" class="ui mini red button" id="clearBtn" onclick="clearAndReset()"><i class="icon times circle"></i>Clear</button>
                             </div>
                         </div>
                     </div>
@@ -208,7 +208,7 @@
                 success: function (res) {
                     if (res.success) {
                         addSuccessNotification(res.message, res.color || 'green');
-                        resetForm();
+                        clearAndReset();
                         leaveTypeTable.ajax.reload(null, false);
                     } else addErrorNotification(res.message, res.color || 'red');
                     toggleSubmitState(true);
@@ -253,7 +253,7 @@
                 success: function (res) {
                     if (res.success) {
                         addSuccessNotification(res.message, res.color || 'green');
-                        resetForm();
+                        clearAndReset();
                         leaveTypeTable.ajax.reload(null, false);
                     } else addErrorNotification(res.message, res.color || 'red');
                     toggleSubmitState(true);
@@ -294,7 +294,7 @@
             });
         }
 
-        function resetForm() {
+        function clearAndReset() {
             $('#leaveTypeForm')[0].reset();
             $('#leaveTypeForm .field').removeClass('error');
             $('#applicableFor').dropdown('set selected', 'both');
@@ -304,6 +304,10 @@
             $('#addBtn').show();
             $('#updateBtn').hide();
             toggleSubmitState(true);
+        }
+
+        function resetForm() {
+            clearAndReset();
         }
     </script>
 {% endblock %}

@@ -69,6 +69,11 @@
                                         <i class="icon search"></i>
                                         Search
                                     </button>
+                                    <button type="button" class="ui mini red button"
+                                            onclick="clearAndReset()">
+                                        <i class="icon times circle"></i>
+                                        Clear
+                                    </button>
 
                                 </div>
                             </div>
@@ -158,7 +163,7 @@
 
                     $('#student').dropdown('clear');
                     $('#student').html('');
-                    $('#ByStudentStudent').append(' <option value="">Search By Student Name-Roll</option>');
+                    $('#student').append(' <option value="">Search By Student Name-Roll</option>');
                     var j;
                     for (j = 0; j < response.data.length; j++) {
 
@@ -217,6 +222,17 @@
 
                 subjectTab.ajax.url('{% url 'managementAppAPI:FeeByStudentJson' %}?standard=' + standard+ '&student=' + student).load();
 
+            }
+        }
+
+        function clearAndReset() {
+            $('#standard').dropdown('clear');
+            $('#student').dropdown('clear');
+            $('#student').html('<option value="">Search By Student Name-Roll</option>');
+            $('.ui.form .field').removeClass('error');
+            $('#AttendanceTableDiv').css('display', 'none');
+            if (subjectTab) {
+                subjectTab.clear().draw();
             }
         }
 
