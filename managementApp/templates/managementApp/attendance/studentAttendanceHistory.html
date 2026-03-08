@@ -496,22 +496,29 @@
 
 
         function clearAndReset() {
+
+            $('#dateRangeStandard').val('');
             $('#dateRangeStandard').dropdown('clear');
+            $('#dateRangeStandard').change();
+            $('#dateRangeSubject').html('<option value="">Search By Subject Name</option>');
             $('#dateRangeSubject').dropdown('clear');
             $('#dateRangeStartDate').val('');
             $('#dateRangeEndDate').val('');
+
+            $('#ByStudentStandard').val('');
             $('#ByStudentStandard').dropdown('clear');
+            $('#ByStudentStandard').change();
+            $('#ByStudentSubject').html('<option value="">Search By Subject Name</option>');
             $('#ByStudentSubject').dropdown('clear');
-            $('#ByStudentStudent').dropdown('clear');
             $('#ByStudentStartDate').val('');
             $('#ByStudentEndDate').val('');
-            $('.ui.form .field').removeClass('error');
-            if (subjectTab) {
-                subjectTab.clear().draw();
-            }
-            if (byStudentTab) {
-                byStudentTab.clear().draw();
-            }
+            $('#ByStudentStudent').html('');
+            $('#ByStudentStudent').dropdown('clear');
+
+            subjectTab.clear().draw();
+            byStudentTab.clear().draw();
+            $('#addFormByClass .field, #addForm .field').removeClass('error');
+
         }
 
         function pushAttendance(id) {

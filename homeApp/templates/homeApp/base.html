@@ -1730,6 +1730,14 @@
             display: none !important;
         }
 
+        /* Preserve explicit hide instructions despite the global inline-flex baseline. */
+        body .ui.button[style*="display: none"],
+        body .ui.button[style*="display:none"],
+        body .ui.buttons .button[style*="display: none"],
+        body .ui.buttons .button[style*="display:none"] {
+            display: none !important;
+        }
+
         body .ui.icon.button {
             width: 2.45rem !important;
             padding: 0 !important;
@@ -2546,23 +2554,116 @@
         $(".preloader").fadeOut(50);
     });
 
-    let currentLoadingScope = null;
-    let currentLoadingMode = 'save';
 
-    function resolveLoadingScope(context) {
-        let $context = context ? $(context) : $();
-        if ($context.length) {
-            const $scoped = $context.closest('form, .ui.segment, .ui.tab, .ui.modal');
-            if ($scoped.length) return $scoped.first();
+    function getLoadingScopeFromElement(element) {
+        if (!element) return $();
+        return $(element).closest('.ui.modal, .ui.segment, .ui.form, form, .column');
+    }
+
+    function normalizeLoadingScope($scope) {
+        if (!$scope || !$scope.length) return $();
+        if ($scope.is('.saveBtn, .saveBtnUpdate, .saveBtnLoad')) {
+            return getLoadingScopeFromElement($scope[0]);
         }
-        if (currentLoadingScope && currentLoadingScope.length && currentLoadingScope.closest('html').length) {
-            return currentLoadingScope;
+        return $scope;
+    }
+
+    function resolveLoadingScope(scopeHint) {
+        let $scope = normalizeLoadingScope(scopeHint ? $(scopeHint) : $());
+        if (!$scope.length && window.__loadingScope && window.__loadingScope.length) {
+            $scope = window.__loadingScope;
         }
-        if (document.activeElement) {
-            const $activeScope = $(document.activeElement).closest('form, .ui.segment, .ui.tab, .ui.modal');
-            if ($activeScope.length) return $activeScope.first();
+        if (!$scope.length) {
+            $scope = getLoadingScopeFromElement(document.activeElement);
         }
-        return $(document);
+        if (!$scope.length) {
+            $scope = $(document);
+        }
+        return $scope;
+    }
+
+    function resolveLoadingButtons(scopeHint) {
+        let $scope = resolveLoadingScope(scopeHint);
+        let $saveBtn = $scope.find('.saveBtn, #saveBtn');
+        let $updateBtn = $scope.find('.saveBtnUpdate, #saveBtnUpdate');
+        let $loadBtn = $scope.find('.saveBtnLoad, #saveBtnLoad');
+
+        if (!$saveBtn.length && !$updateBtn.length && !$loadBtn.length) {
+            $scope = $(document);
+            $saveBtn = $scope.find('.saveBtn, #saveBtn');
+            $updateBtn = $scope.find('.saveBtnUpdate, #saveBtnUpdate');
+            $loadBtn = $scope.find('.saveBtnLoad, #saveBtnLoad');
+        }
+
+        return {
+            scope: $scope,
+            saveBtn: $saveBtn,
+            updateBtn: $updateBtn,
+            loadBtn: $loadBtn
+        };
+    }
+
+    function setLoadingMode(buttons, mode) {
+        if (!buttons || !buttons.scope || !buttons.scope.length) return;
+        buttons.scope.data('loadingMode', mode);
+        window.__loadingMode = mode;
+    }
+
+    function getLoadingMode(buttons) {
+        if (buttons && buttons.scope && buttons.scope.length) {
+            const mode = buttons.scope.data('loadingMode');
+            if (mode) return mode;
+        }
+        return window.__loadingMode || 'save';
+    }
+
+    function rememberLoadingScope(target) {
+        const $target = $(target);
+        if (!$target.length) return;
+        const $trigger = $target.closest('.saveBtn, .saveBtnUpdate, #saveBtn, #saveBtnUpdate');
+        if (!$trigger.length) return;
+        window.__loadingScope = getLoadingScopeFromElement($trigger[0]);
+    }
+
+    $(document).on('mousedown touchstart keydown focusin click', '.saveBtn, .saveBtnUpdate, #saveBtn, #saveBtnUpdate', function (event) {
+        rememberLoadingScope(event.currentTarget);
+    });
+
+    function showLoading(scopeHint) {
+        const buttons = resolveLoadingButtons(scopeHint);
+        setLoadingMode(buttons, 'save');
+        buttons.saveBtn.hide();
+        buttons.updateBtn.hide();
+        buttons.loadBtn.show();
+    }
+
+    function showUpdateLoading(scopeHint) {
+        const buttons = resolveLoadingButtons(scopeHint);
+        setLoadingMode(buttons, 'update');
+        buttons.saveBtn.hide();
+        buttons.updateBtn.hide();
+        buttons.loadBtn.show();
+    }
+
+    function hideLoading(isupdate=null, scopeHint) {
+        const buttons = resolveLoadingButtons(scopeHint);
+        const mode = (typeof isupdate === 'boolean')
+            ? (isupdate ? 'update' : 'save')
+            : getLoadingMode(buttons);
+        if (isupdate) {
+            buttons.updateBtn.show();
+            buttons.saveBtn.hide();
+        } else if (mode === 'update') {
+            buttons.updateBtn.show();
+            buttons.saveBtn.hide();
+        } else {
+            buttons.saveBtn.show();
+            buttons.updateBtn.hide();
+        }
+        buttons.loadBtn.hide();
+        window.__loadingScope = null;
+        window.__loadingMode = null;
+
     }
 
     function getLoadingButtons($scope) {

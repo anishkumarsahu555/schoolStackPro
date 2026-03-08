@@ -348,7 +348,7 @@
             "pageLength": 100,
             "processing": true,
             "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:TakeStudentAttendanceByClassJson' %}"
+            "ajax": "{% url 'managementAppAPI:StudentFeeDetailsByClassJson' %}"
         });
 
         byStudentTab = $('#byStudentTable').DataTable({
@@ -392,17 +392,16 @@
 
 
         function clearAndReset() {
+
+            $('#standard').val('');
             $('#standard').dropdown('clear');
+            $('#standardByStudent').val('');
             $('#standardByStudent').dropdown('clear');
+            $('#student').html('');
             $('#student').dropdown('clear');
-            $('#student').html('<option value="">Search By Student Name-Roll</option>');
-            $('.ui.form .field').removeClass('error');
-            if (subjectTab) {
-                subjectTab.clear().draw();
-            }
-            if (byStudentTab) {
-                byStudentTab.clear().draw();
-            }
+            $('#addFormByClass .field, #addForm .field').removeClass('error');
+            subjectTab.clear().draw();
+            byStudentTab.clear().draw();
         }
 
         function pushAttendance(id) {

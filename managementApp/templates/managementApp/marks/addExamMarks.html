@@ -273,16 +273,17 @@
         }
 
         function clearAndReset() {
+
+            $('#standard').val('');
             $('#standard').dropdown('clear');
-            $('#exam').dropdown('clear');
-            $('#subject').dropdown('clear');
             $('#exam').html('<option value="">Search By Exam</option>');
+            $('#exam').dropdown('clear');
             $('#subject').html('<option value="">Search By Subject</option>');
-            $('.ui.form .field').removeClass('error');
+            $('#subject').dropdown('clear');
+            $('#addFormByClass .field').removeClass('error');
             $('#AttendanceTableDiv').css('display', 'none');
-            if (subjectTab) {
-                subjectTab.clear().draw();
-            }
+            subjectTab.clear().draw();
+
         }
 
         // user Details

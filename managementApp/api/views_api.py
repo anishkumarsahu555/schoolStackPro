@@ -931,8 +931,8 @@ def get_subjects_to_class_assign_list_with_given_class_api(request):
     try:
         standard_id = int(standard)
     except (TypeError, ValueError):
-        return _api_response(
-            {'status': 'success', 'data': [], 'color': 'success'}, safe=False)
+
+        return _api_response({'status': 'success', 'data': [], 'color': 'success'}, safe=False)
     rows = AssignSubjectsToClass.objects.filter(
         isDeleted=False,
         standardID_id=standard_id,
@@ -1609,8 +1609,7 @@ def get_student_list_by_class_api(request):
     try:
         standard_id = int(standard)
     except (TypeError, ValueError):
-        return _api_response(
-            {'status': 'success', 'data': [], 'color': 'success'}, safe=False)
+        return _api_response({'status': 'success', 'data': [], 'color': 'success'}, safe=False)
     rows = Student.objects.filter(
         isDeleted=False,
         sessionID_id=_current_session_id(request),

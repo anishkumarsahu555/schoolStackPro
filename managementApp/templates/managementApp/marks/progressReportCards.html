@@ -214,11 +214,13 @@
                         </div>
                     </div>
                     <div class="field">
-                        <button id="searchBtn" class="ui mini green button" type="submit">
+
+                        <button id="searchBtn" class="ui mini green button" type="button">
                             <i class="search icon"></i> Search
                         </button>
-                        <button id="clearBtn" class="ui mini red button" type="button">
-                            <i class="icon times circle"></i> Clear
+                        <button id="clearFiltersBtn" class="ui mini red button" type="button">
+                            <i class="undo icon"></i> Clear
+
                         </button>
                         <button id="printBtn" class="ui mini teal button" type="button" onclick="window.print()" {% if not selected_student %}style="display:none;"{% endif %}>
                             <i class="print icon"></i> Print
@@ -229,7 +231,7 @@
 
             <div id="reportContent">
             {% if selected_student %}
-                <div class="student-banner">
+                <div class="student-banner" id="studentBanner">
                     <h3>{{ selected_student.name|default:'N/A' }}</h3>
                     <div class="meta">
                         Roll: {{ selected_student.roll|default:'N/A' }}
@@ -284,9 +286,10 @@
                     {% endfor %}
                 </div>
             {% elif selected_student %}
-                <div class="ui message">No report card data found for the selected filters.</div>
+                <div class="ui message" id="noDataMessage">No report card data found for the selected filters.</div>
             {% else %}
-                <div class="empty-note">Select class and student, then click <b>Search</b>.</div>
+
+                <div class="empty-note" id="emptyNote">Select class and student, then click <b>Search</b>.</div>
             {% endif %}
             </div>
         </div>
@@ -298,10 +301,10 @@
         const classMap = {{ class_map_json|safe }};
         const studentsByClass = {{ students_by_class_json|safe }};
         const examsByClass = {{ exams_by_class_json|safe }};
-        const selectedClassId = "{{ selected_class_id }}";
-        const selectedStudentId = "{{ selected_student_id }}";
-        const selectedExamId = "{{ selected_exam_id }}";
-        const hasSelectedStudent = "{{ selected_student_id|default:'' }}" !== "";
+
+        let selectedClassId = "{{ selected_class_id }}";
+        let selectedStudentId = "{{ selected_student_id }}";
+        let selectedExamId = "{{ selected_exam_id }}";
 
         function fillClassOptions() {
             const $class = $('#standard');
@@ -311,6 +314,9 @@
             });
             if (selectedClassId) {
                 $class.dropdown('set selected', String(selectedClassId));
+            } else {
+                $class.val('');
+                $class.dropdown('clear');
             }
         }
 
@@ -324,6 +330,7 @@
             if (selectedStudentId && String(classId) === String(selectedClassId)) {
                 $student.dropdown('set selected', String(selectedStudentId));
             } else {
+                $student.val('');
                 $student.dropdown('clear');
             }
         }
@@ -351,47 +358,142 @@
                 const classId = $(this).val();
                 fillStudentOptions(classId);
                 fillExamOptions(classId);
-                $('#standard').closest('.field').removeClass('error');
-                $('#student').closest('.field').removeClass('error');
+
+                clearFieldError('#standard');
+                clearFieldError('#student');
             });
 
             $('#student').on('change', function () {
-                $('#student').closest('.field').removeClass('error');
+                clearFieldError('#student');
             });
 
-            $('#filterForm').on('submit', function (e) {
-                const classId = ($('#standard').val() || '').trim();
-                const studentId = ($('#student').val() || '').trim();
-                $('#standard').closest('.field').toggleClass('error', !classId);
-                $('#student').closest('.field').toggleClass('error', !studentId);
-                if (!classId || !studentId) {
-                    e.preventDefault();
-                    requiredFieldError();
+            bindReportCardToggles();
+
+            $('#searchBtn').on('click', function () {
+                runReportSearch();
+            });
+
+            $('#filterForm').on('submit', function (event) {
+                event.preventDefault();
+                runReportSearch();
+            });
+
+            function runReportSearch() {
+                const classId = getDropdownValue('#standard');
+                const studentId = getDropdownValue('#student');
+                const examId = (getDropdownValue('#exam') || 'all');
+
+                if (!validateReportFilters(classId, studentId)) {
+                    return;
                 }
-            });
 
-            $('#clearBtn').on('click', function () {
+                selectedClassId = classId;
+                selectedStudentId = studentId;
+                selectedExamId = examId;
+
+                const query = $.param({
+                    standard: classId,
+                    student: studentId,
+                    exam: examId
+                });
+                const pageUrl = "{% url 'managementApp:progress_report_cards' %}";
+
+                $.ajax({
+                    type: 'get',
+                    url: pageUrl + '?' + query,
+                    success: function (html) {
+                        const $parsed = $('<div>').html(html);
+                        const $nextContent = $parsed.find('#reportContent');
+                        if (!$nextContent.length) {
+                            addErrorNotification('Unable to load report cards.');
+                            return;
+                        }
+                        $('#reportContent').replaceWith($nextContent);
+                        bindReportCardToggles();
+                        $('#printBtn').show();
+                        if (window.history && window.history.replaceState) {
+                            window.history.replaceState({}, '', pageUrl + '?' + query);
+                        }
+                    },
+                    error: function () {
+                        addErrorNotification('Unable to load report cards.');
+                    }
+                });
+            }
+
+            $('#clearFiltersBtn').on('click', function () {
                 $('#standard').dropdown('clear');
+                fillStudentOptions('');
+                fillExamOptions('');
                 $('#student').dropdown('clear');
                 $('#exam').dropdown('set selected', 'all');
-                $('#standard').closest('.field').removeClass('error');
-                $('#student').closest('.field').removeClass('error');
-                $('#reportContent').html('<div class="empty-note">Select class and student, then click <b>Search</b>.</div>');
+                $('#filterForm .field').removeClass('error');
+                $('#filterForm .ui.dropdown').removeClass('error');
+
+                $('#studentBanner').hide();
+                $('#reportCardsWrap').hide();
+                $('#noDataMessage').hide();
+
+                if (!$('#emptyNote').length) {
+                    $('<div id="emptyNote" class="empty-note">Select class and student, then click <b>Search</b>.</div>')
+                        .appendTo($('.report-page .sixteen.wide.column').first());
+                } else {
+                    $('#emptyNote').show();
+                }
+
                 $('#printBtn').hide();
                 if (window.history && window.history.replaceState) {
-                    window.history.replaceState({}, document.title, "{% url 'managementApp:progress_report_cards' %}");
+                    window.history.replaceState({}, '', "{% url 'managementApp:progress_report_cards' %}");
                 }
             });
+        });
 
-            if (!hasSelectedStudent) {
-                $('#printBtn').hide();
+        function getDropdownValue(selector) {
+            const $el = $(selector);
+            const dropdownVal = $el.dropdown('get value');
+            return String(dropdownVal || $el.val() || '').trim();
+        }
+
+        function setFieldError(selector) {
+            const $el = $(selector);
+            $el.closest('.field').addClass('error');
+            $el.closest('.field').find('.ui.dropdown').addClass('error');
+        }
+
+        function clearFieldError(selector) {
+            const $el = $(selector);
+            $el.closest('.field').removeClass('error');
+            $el.closest('.field').find('.ui.dropdown').removeClass('error');
+        }
+
+        function validateReportFilters(classId, studentId) {
+            $('#filterForm .field').removeClass('error');
+            $('#filterForm .ui.dropdown').removeClass('error');
+            let hasError = false;
+
+            if (!classId) {
+                setFieldError('#standard');
+                hasError = true;
             }
+            if (!studentId) {
+                setFieldError('#student');
+                hasError = true;
+            }
+
+            if (hasError) {
+                requiredFieldError();
+                return false;
+            }
+            return true;
+        }
+
+        function bindReportCardToggles() {
 
             document.querySelectorAll('#reportCardsWrap .report-card .card-head').forEach(function (head) {
                 head.addEventListener('click', function () {
                     head.parentElement.classList.toggle('expanded');
                 });
             });
-        });
+        }
     </script>
 {% endblock %}
