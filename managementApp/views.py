@@ -123,19 +123,7 @@ def add_teacher(request):
 @check_groups('Admin', 'Owner')
 def edit_teacher(request,id=None):
     instance = get_object_or_404(TeacherDetail, pk=id)
-    
-    # Convert image to base64 if it exists
-    photo_base64 = None
-    if instance.photo:
-        import base64
-        
-        # Read the image file and encode to base64
-        with instance.photo.open('rb') as image_file:
-            photo_base64 = base64.b64encode(image_file.read()).decode('utf-8')
-    
-    # Add base64 data to instance
-    instance.photo_base64 = photo_base64
-    
+
     context = {
         'instance': instance,
     }

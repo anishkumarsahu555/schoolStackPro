@@ -107,6 +107,11 @@
                                     <i class="icon search"></i>
                                     Search
                                 </button>
+                                <button type="button" class="ui mini red button"
+                                        onclick="clearAndReset()">
+                                    <i class="icon times circle"></i>
+                                    Clear
+                                </button>
 
                             </div>
                         </div>
@@ -219,6 +224,13 @@
 
 
 
+        }
+
+        function clearAndReset() {
+            $('#aDate').val('');
+            $('#addFormByClass .field').removeClass('error');
+            $('#AttendanceTableDiv').css('display', 'none');
+            subjectTab.clear().draw();
         }
 
 

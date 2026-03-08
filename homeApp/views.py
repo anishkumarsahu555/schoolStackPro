@@ -88,6 +88,7 @@ def profile_page(request):
     profile_email = user.email or 'N/A'
     profile_phone = 'N/A'
     profile_photo_url = None
+    profile_photo_small_url = None
     extra_rows = []
 
     if 'Student' in groups:
@@ -99,6 +100,7 @@ def profile_page(request):
             profile_phone = student.phoneNumber or 'N/A'
             if student.photo:
                 profile_photo_url = student.photo.medium.url
+                profile_photo_small_url = student.photo.thumbnail.url
             extra_rows = [
                 ('Class', str(student.standardID) if student.standardID else 'N/A'),
                 ('Roll', student.roll or 'N/A'),
@@ -114,6 +116,7 @@ def profile_page(request):
             profile_phone = teacher.phoneNumber or 'N/A'
             if teacher.photo:
                 profile_photo_url = teacher.photo.medium.url
+                profile_photo_small_url = teacher.photo.thumbnail.url
             extra_rows = [
                 ('Employee Code', teacher.employeeCode or 'N/A'),
                 ('Staff Type', teacher.staffType or 'N/A'),
@@ -140,6 +143,7 @@ def profile_page(request):
         'profile_email': profile_email,
         'profile_phone': profile_phone,
         'profile_photo_url': profile_photo_url,
+        'profile_photo_small_url': profile_photo_small_url or profile_photo_url,
         'profile_username': user.username or 'N/A',
         'extra_rows': extra_rows,
     }

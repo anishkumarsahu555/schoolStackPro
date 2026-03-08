@@ -215,7 +215,7 @@
                 <div class="detail-hero-inner">
                     <div class="teacher-meta">
                         {% if instance.photo %}
-                            <img class="teacher-avatar" src="{{ instance.photo.url }}" alt="{{ instance.name|default:'Teacher' }}">
+                            <img class="teacher-avatar" src="{{ instance.photo.thumbnail.url }}" alt="{{ instance.name|default:'Teacher' }}">
                         {% else %}
                             <div class="teacher-avatar-fallback">{{ instance.name|default:'T'|slice:":1"|upper }}</div>
                         {% endif %}

@@ -91,6 +91,11 @@
                                             <i class="icon search"></i>
                                             Search
                                         </button>
+                                        <button type="button" class="ui mini red button"
+                                                onclick="clearAndReset()">
+                                            <i class="icon times circle"></i>
+                                            Clear
+                                        </button>
 
                                     </div>
                                 </div>
@@ -175,6 +180,11 @@
                                                 onclick="searchData('ByStudent')">
                                             <i class="icon search"></i>
                                             Search
+                                        </button>
+                                        <button type="button" class="ui mini red button"
+                                                onclick="clearAndReset()">
+                                            <i class="icon times circle"></i>
+                                            Clear
                                         </button>
 
                                     </div>
@@ -486,11 +496,27 @@
 
 
         function clearAndReset() {
-            {#$('#addForm').trigger('reset');#}
-            myOwnReset();
-            $('#saveBtn').css('display', '');
-            $('#saveBtnUpdate').css('display', 'none');
+            $('#dateRangeStandard').val('');
+            $('#dateRangeStandard').dropdown('clear');
+            $('#dateRangeStandard').change();
+            $('#dateRangeSubject').html('<option value="">Search By Subject Name</option>');
+            $('#dateRangeSubject').dropdown('clear');
+            $('#dateRangeStartDate').val('');
+            $('#dateRangeEndDate').val('');
 
+            $('#ByStudentStandard').val('');
+            $('#ByStudentStandard').dropdown('clear');
+            $('#ByStudentStandard').change();
+            $('#ByStudentSubject').html('<option value="">Search By Subject Name</option>');
+            $('#ByStudentSubject').dropdown('clear');
+            $('#ByStudentStartDate').val('');
+            $('#ByStudentEndDate').val('');
+            $('#ByStudentStudent').html('');
+            $('#ByStudentStudent').dropdown('clear');
+
+            subjectTab.clear().draw();
+            byStudentTab.clear().draw();
+            $('#addFormByClass .field, #addForm .field').removeClass('error');
         }
 
         function pushAttendance(id) {
