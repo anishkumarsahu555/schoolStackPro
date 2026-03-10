@@ -15,6 +15,22 @@
             document.documentElement.setAttribute('data-theme', theme);
         })();
     </script>
+    <script>
+        window.__deferredInstallPromptEvent = null;
+        window.addEventListener('beforeinstallprompt', function (event) {
+            event.preventDefault();
+            window.__deferredInstallPromptEvent = event;
+            window.dispatchEvent(new CustomEvent('pwa:install-ready'));
+        });
+        window.addEventListener('appinstalled', function () {
+            window.__deferredInstallPromptEvent = null;
+            try {
+                sessionStorage.removeItem('pwaInstallPromptAfterLogin');
+            } catch (err) {
+                // Ignore storage failures in private browsing contexts.
+            }
+        });
+    </script>
     {% block title %}
         <title>SCHOOLS-STACK</title>
     {% endblock %}
@@ -132,6 +148,13 @@
             align-items: center;
             justify-content: center;
             font-size: 0.8rem;
+            overflow: hidden;
+        }
+
+        .app-notice .icon-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .app-notice.success .icon-wrap {
@@ -163,6 +186,34 @@
             display: flex;
             align-items: center;
             min-height: 1.8rem;
+        }
+
+        .app-notice .actions {
+            display: inline-flex;
+            gap: 0.4rem;
+            margin-left: 0.3rem;
+            flex-shrink: 0;
+        }
+
+        .app-notice .action-btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.38rem 0.72rem;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            transition: transform 0.16s ease, opacity 0.16s ease;
+        }
+
+        .app-notice .action-btn.primary {
+            background: #1d4ed8;
+            color: #ffffff;
+        }
+
+        .app-notice .action-btn.primary:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
         }
 
         .app-notice .dismiss {
@@ -2985,6 +3036,28 @@
     window.syncThemeIcons = syncThemeIcons;
     window.toggleNotificationSubscription = null;
     window.__pushInitFailureReason = '';
+    window.__pwaInstallBannerVisible = false;
+    window.__postLoginInstallFallbackShown = false;
+    window.__postLoginInstallWatcherStarted = false;
+    window.__installPromptAppName = '{{ app_school_name|default:"SchoolsStack"|escapejs }}';
+    window.__installPromptIconUrl = '{{ app_install_icon_url|default:""|escapejs }}';
+
+    function clearPostLoginInstallFlag() {
+        try {
+            sessionStorage.removeItem('pwaInstallPromptAfterLogin');
+        } catch (err) {
+            // Ignore storage failures in private browsing contexts.
+        }
+    }
+
+    function shouldShowPostLoginInstallPrompt() {
+        if (isStandaloneDisplay()) return false;
+        try {
+            return sessionStorage.getItem('pwaInstallPromptAfterLogin') === '1';
+        } catch (err) {
+            return false;
+        }
+    }
 
     function isIosDevice() {
         const ua = navigator.userAgent || '';
@@ -3524,6 +3597,164 @@
         setTimeout(dismiss, 4200);
     }
 
+    function showInstallPromptBanner() {
+        if (!shouldShowPostLoginInstallPrompt() || window.__pwaInstallBannerVisible) return;
+
+        const installEvent = window.__deferredInstallPromptEvent;
+        if (!installEvent) return;
+
+        window.__pwaInstallBannerVisible = true;
+        const stack = ensureNoticeStack();
+        const notice = document.createElement('div');
+        notice.className = 'app-notice info';
+
+        const iconWrap = document.createElement('span');
+        iconWrap.className = 'icon-wrap';
+        if (window.__installPromptIconUrl) {
+            const appIcon = document.createElement('img');
+            appIcon.src = window.__installPromptIconUrl;
+            appIcon.alt = 'App icon';
+            iconWrap.appendChild(appIcon);
+        } else {
+            const icon = document.createElement('i');
+            icon.className = 'download icon';
+            iconWrap.appendChild(icon);
+        }
+
+        const content = document.createElement('div');
+        content.className = 'content';
+        const appName = window.__installPromptAppName || 'this app';
+        content.textContent = 'Install ' + appName + ' for quicker access and full-screen experience.';
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+        const installBtn = document.createElement('button');
+        installBtn.type = 'button';
+        installBtn.className = 'action-btn primary';
+        installBtn.textContent = 'Install';
+        actions.appendChild(installBtn);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'dismiss';
+        closeBtn.type = 'button';
+        closeBtn.setAttribute('aria-label', 'Close install prompt');
+        const closeIcon = document.createElement('i');
+        closeIcon.className = 'close icon';
+        closeBtn.appendChild(closeIcon);
+
+        const dismiss = () => {
+            notice.style.opacity = '0';
+            notice.style.transform = 'translateY(-6px)';
+            window.__pwaInstallBannerVisible = false;
+            setTimeout(() => notice.remove(), 180);
+        };
+
+        closeBtn.addEventListener('click', () => {
+            clearPostLoginInstallFlag();
+            dismiss();
+        });
+
+        installBtn.addEventListener('click', async () => {
+            const deferredEvent = window.__deferredInstallPromptEvent;
+            if (!deferredEvent) {
+                clearPostLoginInstallFlag();
+                showNotificationBanner('Install prompt is not available on this browser right now.', 'warning');
+                dismiss();
+                return;
+            }
+
+            installBtn.disabled = true;
+            try {
+                await deferredEvent.prompt();
+                const decision = await deferredEvent.userChoice;
+                if (decision && decision.outcome === 'accepted') {
+                    showNotificationBanner('Install request accepted.', 'success');
+                } else {
+                    showNotificationBanner('Install was dismissed. You can install later from browser menu.', 'info');
+                }
+            } catch (error) {
+                showNotificationBanner('Unable to show install prompt right now.', 'error');
+            } finally {
+                window.__deferredInstallPromptEvent = null;
+                clearPostLoginInstallFlag();
+                dismiss();
+            }
+        });
+
+        notice.appendChild(iconWrap);
+        notice.appendChild(content);
+        notice.appendChild(actions);
+        notice.appendChild(closeBtn);
+        stack.prepend(notice);
+    }
+
+    function maybeShowPostLoginInstallFallback() {
+        if (!shouldShowPostLoginInstallPrompt()) return;
+        if (window.__deferredInstallPromptEvent) return;
+        if (window.__postLoginInstallFallbackShown) return;
+
+        const appName = window.__installPromptAppName || 'this app';
+        if (isIosDevice()) {
+            showNotificationBanner('To install ' + appName + ' on iPhone: Share > Add to Home Screen.', 'info');
+            window.__postLoginInstallFallbackShown = true;
+            clearPostLoginInstallFlag();
+            return;
+        }
+
+        if (window.isSecureContext !== true) {
+            showNotificationBanner('Install requires HTTPS. Open this app on a secure URL.', 'warning');
+            window.__postLoginInstallFallbackShown = true;
+            return;
+        }
+
+        showNotificationBanner('If install prompt does not appear, use browser menu > Add to Home screen.', 'info');
+        window.__postLoginInstallFallbackShown = true;
+    }
+
+    function startPostLoginInstallWatcher() {
+        if (!shouldShowPostLoginInstallPrompt()) return;
+        if (window.__postLoginInstallWatcherStarted) return;
+        window.__postLoginInstallWatcherStarted = true;
+
+        if ('serviceWorker' in navigator && !navigator.serviceWorker.controller) {
+            const reloadKey = 'pwaInstallPostLoginReloadDone';
+            const alreadyReloaded = sessionStorage.getItem(reloadKey) === '1';
+            navigator.serviceWorker.ready.then(function () {
+                if (navigator.serviceWorker.controller) return;
+                if (alreadyReloaded) return;
+                sessionStorage.setItem(reloadKey, '1');
+                window.location.reload();
+            }).catch(function () {
+                // Keep watcher running even if ready promise fails.
+            });
+        }
+
+        const startedAt = Date.now();
+        const maxWaitMs = 15000;
+        const fallbackDelayMs = isIosDevice() ? 1400 : 5000;
+
+        const timer = setInterval(function () {
+            if (!shouldShowPostLoginInstallPrompt()) {
+                clearInterval(timer);
+                return;
+            }
+
+            if (window.__deferredInstallPromptEvent) {
+                showInstallPromptBanner();
+                clearInterval(timer);
+                return;
+            }
+
+            const elapsed = Date.now() - startedAt;
+            if (elapsed >= fallbackDelayMs && !window.__postLoginInstallFallbackShown) {
+                maybeShowPostLoginInstallFallback();
+            }
+            if (elapsed >= maxWaitMs) {
+                clearInterval(timer);
+            }
+        }, 800);
+    }
+
     function normalizeBannerType(typeOrColor) {
         const value = String(typeOrColor || '').toLowerCase();
         if (value.includes('error') || value.includes('red') || value.includes('danger') || value.includes('fail')) {
@@ -3756,6 +3987,13 @@
 
 
     $(function () {
+        if (shouldShowPostLoginInstallPrompt()) {
+            startPostLoginInstallWatcher();
+        }
+        window.addEventListener('pwa:install-ready', function () {
+            showInstallPromptBanner();
+        });
+
         if (window.Notification && Notification.permission === 'granted') {
             initWebPushSubscription();
         } else {

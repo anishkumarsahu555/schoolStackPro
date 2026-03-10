@@ -243,6 +243,7 @@
                             class: 'success',
                             message: 'Login Successful.'
                         });
+                        sessionStorage.setItem('pwaInstallPromptAfterLogin', '1');
                         document.location.href = response.data;
                     } else {
                         $('body').toast({
