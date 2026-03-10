@@ -27,7 +27,7 @@
     <link rel="stylesheet" type="text/css"
           href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.0/semantic.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.0/semantic.min.js"></script>
-    <script src="{% static 'sw/app.js' %}"></script>
+    <script src="{% static 'sw/app.js' %}?v=20260309"></script>
 
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/dataTables.semanticui.min.css">
     <link rel="stylesheet" type="text/css"
@@ -70,6 +70,298 @@
         body {
             background: var(--app-bg);
             color: var(--app-text);
+        }
+
+        .app-notice-stack {
+            position: fixed;
+            top: calc(var(--top-nav-height) + 14px);
+            right: 14px;
+            z-index: 1200;
+            width: min(360px, calc(100vw - 24px));
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            pointer-events: none;
+        }
+
+        .app-notice {
+            pointer-events: auto;
+            border-radius: 14px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+            color: #1f2937;
+            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.16);
+            padding: 0.85rem 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            animation: noticeIn 0.24s ease;
+        }
+
+        .app-notice.success {
+            border-left: 5px solid #10b981;
+            border-color: rgba(16, 185, 129, 0.32);
+            background: linear-gradient(135deg, rgba(236, 253, 245, 0.98), rgba(220, 252, 231, 0.95));
+        }
+
+        .app-notice.error {
+            border-left: 5px solid #ef4444;
+            border-color: rgba(239, 68, 68, 0.34);
+            background: linear-gradient(135deg, rgba(254, 235, 235, 0.99), rgba(254, 215, 215, 0.96));
+            color: #7f1d1d;
+        }
+
+        .app-notice.info {
+            border-left: 5px solid #2563eb;
+            border-color: rgba(37, 99, 235, 0.34);
+            background: linear-gradient(135deg, rgba(239, 246, 255, 0.98), rgba(219, 234, 254, 0.95));
+        }
+
+        .app-notice.warning {
+            border-left: 5px solid #f59e0b;
+            border-color: rgba(245, 158, 11, 0.36);
+            background: linear-gradient(135deg, rgba(255, 251, 235, 0.99), rgba(254, 243, 199, 0.96));
+            color: #7c2d12;
+        }
+
+        .app-notice .icon-wrap {
+            width: 1.8rem;
+            height: 1.8rem;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .app-notice.success .icon-wrap {
+            background: rgba(16, 185, 129, 0.18);
+            color: #047857;
+        }
+
+        .app-notice.error .icon-wrap {
+            background: rgba(239, 68, 68, 0.24);
+            color: #991b1b;
+        }
+
+        .app-notice.info .icon-wrap {
+            background: rgba(37, 99, 235, 0.16);
+            color: #1d4ed8;
+        }
+
+        .app-notice.warning .icon-wrap {
+            background: rgba(245, 158, 11, 0.22);
+            color: #92400e;
+        }
+
+        .app-notice .content {
+            flex: 1;
+            min-width: 0;
+            line-height: 1.35;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            min-height: 1.8rem;
+        }
+
+        .app-notice .dismiss {
+            border: 0;
+            background: transparent;
+            color: inherit;
+            cursor: pointer;
+            opacity: 0.65;
+            margin-top: -2px;
+            padding: 0;
+        }
+
+        .app-notice .dismiss:hover {
+            opacity: 1;
+        }
+
+        html[data-theme="dark"] .app-notice {
+            background: linear-gradient(135deg, rgba(22, 28, 36, 0.98), rgba(26, 33, 44, 0.95));
+            color: #e5e7eb;
+            border-color: rgba(148, 163, 184, 0.28);
+        }
+
+        html[data-theme="dark"] .app-notice.success {
+            border-color: rgba(16, 185, 129, 0.46);
+            background: linear-gradient(135deg, rgba(15, 57, 45, 0.96), rgba(16, 74, 53, 0.92));
+        }
+
+        html[data-theme="dark"] .app-notice.info {
+            border-color: rgba(37, 99, 235, 0.46);
+            background: linear-gradient(135deg, rgba(20, 46, 88, 0.96), rgba(23, 61, 121, 0.92));
+        }
+
+        html[data-theme="dark"] .app-notice.warning {
+            border-color: rgba(245, 158, 11, 0.5);
+            background: linear-gradient(135deg, rgba(120, 66, 18, 0.95), rgba(146, 64, 14, 0.92));
+            color: #ffedd5;
+        }
+
+        html[data-theme="dark"] .app-notice.error {
+            border-color: rgba(239, 68, 68, 0.48);
+            background: linear-gradient(135deg, rgba(110, 34, 34, 0.96), rgba(132, 36, 36, 0.92));
+            color: #fee2e2;
+        }
+
+        .notification-tour-modal.ui.modal {
+            border-radius: 18px !important;
+            overflow: hidden;
+            border: 1px solid rgba(59, 130, 246, 0.2) !important;
+            box-shadow: 0 24px 58px rgba(15, 23, 42, 0.24) !important;
+        }
+
+        .notification-tour-modal .content {
+            padding: 0 !important;
+            background: #f8fbff;
+        }
+
+        .notification-tour-top {
+            padding: 1.2rem 1.25rem 1rem;
+            background: linear-gradient(135deg, #dbeafe 0%, #eaf3ff 52%, #f8fbff 100%);
+            border-bottom: 1px solid rgba(147, 197, 253, 0.35);
+        }
+
+        .notification-tour-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.34rem 0.68rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #1e40af;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(59, 130, 246, 0.24);
+            margin-bottom: 0.58rem;
+            letter-spacing: 0.01em;
+        }
+
+        .notification-tour-title {
+            margin: 0;
+            font-size: 1.16rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.25;
+        }
+
+        .notification-tour-subtitle {
+            margin: 0.42rem 0 0;
+            color: #334155;
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+
+        .notification-tour-body {
+            padding: 0.96rem 1.25rem 0.2rem;
+        }
+
+        .notification-tour-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 0.64rem;
+        }
+
+        .notification-tour-list li {
+            display: grid;
+            grid-template-columns: 26px 1fr;
+            gap: 0.58rem;
+            align-items: center;
+            font-size: 0.89rem;
+            color: #334155;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            background: #ffffff;
+            border-radius: 11px;
+            padding: 0.56rem 0.62rem;
+        }
+
+        .notification-tour-list .num {
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            background: linear-gradient(145deg, #2563eb, #1d4ed8);
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+
+        .notification-tour-tip {
+            margin: 0.82rem 0 1rem;
+            padding: 0.62rem 0.72rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            color: #9a3412;
+            background: #fff7ed;
+            border: 1px solid rgba(249, 115, 22, 0.28);
+        }
+
+        .notification-tour-modal .actions {
+            border-top: 1px solid rgba(148, 163, 184, 0.24) !important;
+            background: #f8fafc !important;
+            padding: 0.9rem 1rem !important;
+        }
+
+        html[data-theme="dark"] .notification-tour-modal.ui.modal {
+            border-color: rgba(96, 165, 250, 0.3) !important;
+            box-shadow: 0 26px 62px rgba(2, 6, 23, 0.72) !important;
+        }
+
+        html[data-theme="dark"] .notification-tour-modal .content {
+            background: #121b2a !important;
+        }
+
+        html[data-theme="dark"] .notification-tour-top {
+            background: linear-gradient(140deg, #182a40 0%, #1f3d63 62%, #244e7f 100%);
+            border-bottom-color: rgba(147, 197, 253, 0.24);
+        }
+
+        html[data-theme="dark"] .notification-tour-chip {
+            color: #dbeafe;
+            background: rgba(15, 23, 42, 0.58);
+            border-color: rgba(191, 219, 254, 0.3);
+        }
+
+        html[data-theme="dark"] .notification-tour-title {
+            color: #f8fbff;
+        }
+
+        html[data-theme="dark"] .notification-tour-subtitle {
+            color: #d7e5f5;
+        }
+
+        html[data-theme="dark"] .notification-tour-list li {
+            color: #d5e1f0;
+            border-color: rgba(148, 163, 184, 0.28);
+            background: #1a2638;
+        }
+
+        html[data-theme="dark"] .notification-tour-tip {
+            color: #fdba74;
+            background: rgba(124, 45, 18, 0.34);
+            border-color: rgba(251, 146, 60, 0.3);
+        }
+
+        html[data-theme="dark"] .notification-tour-modal .actions {
+            background: #101928 !important;
+            border-top-color: rgba(148, 163, 184, 0.2) !important;
+        }
+
+        @keyframes noticeIn {
+            from {
+                transform: translateY(-8px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         html {
@@ -796,13 +1088,13 @@
         .ui.form .fields.error .field input,
         .ui.form .fields.error .field textarea,
         .ui.form .fields.error .field select {
-            background: var(--app-surface) !important;
+            background: rgba(254, 242, 242, 0.96) !important;
             color: var(--app-text) !important;
             border-color: #db2828 !important;
         }
 
         .ui.form .field.error .ui.selection.dropdown {
-            background: var(--app-surface) !important;
+            background: rgba(254, 242, 242, 0.96) !important;
             border-color: #db2828 !important;
             color: var(--app-text) !important;
         }
@@ -875,9 +1167,22 @@
 
         .ui.form .error.message,
         .ui.form .prompt.label {
-            background: var(--app-surface) !important;
+            background: rgba(254, 242, 242, 0.96) !important;
             color: var(--app-text) !important;
             border-color: #db2828 !important;
+        }
+
+        html[data-theme="dark"] .ui.form .field.error input,
+        html[data-theme="dark"] .ui.form .field.error textarea,
+        html[data-theme="dark"] .ui.form .field.error select,
+        html[data-theme="dark"] .ui.form .fields.error .field input,
+        html[data-theme="dark"] .ui.form .fields.error .field textarea,
+        html[data-theme="dark"] .ui.form .fields.error .field select,
+        html[data-theme="dark"] .ui.form .field.error .ui.selection.dropdown,
+        html[data-theme="dark"] .ui.form .error.message,
+        html[data-theme="dark"] .ui.form .prompt.label {
+            background: rgba(89, 28, 28, 0.48) !important;
+            border-color: #ef4444 !important;
         }
 
         .ui.table thead th,
@@ -1144,27 +1449,84 @@
             color: #8fc1ff !important;
         }
 
-        #themeToggleBtn i {
+        #themeToggleBtn i,
+        #notificationToggleBtn i {
             margin-right: 0;
         }
 
         #themeToggleBtn,
+        #notificationToggleBtn,
         #themeToggleBtn:hover,
+        #notificationToggleBtn:hover,
         #themeToggleBtn:focus,
-        #themeToggleBtn:active {
+        #notificationToggleBtn:focus,
+        #themeToggleBtn:active,
+        #notificationToggleBtn:active {
             text-decoration: none !important;
             outline: none !important;
             box-shadow: none !important;
             border: 0 !important;
         }
 
-        #themeToggleBtn:hover {
+        #themeToggleBtn:hover,
+        #notificationToggleBtn:hover {
             background: var(--app-hover) !important;
             border-radius: 6px !important;
         }
 
-        #themeToggleBtn:before {
+        #themeToggleBtn:before,
+        #notificationToggleBtn:before {
             display: none !important;
+        }
+
+        .ui.button.saveBtnLoad {
+            background: linear-gradient(135deg, #334155, #1f2937) !important;
+            border: 1px solid #1f2937 !important;
+            color: #ffffff !important;
+            border-radius: 12px !important;
+            min-height: 40px;
+            min-width: 124px;
+            padding: 0.62rem 1.02rem !important;
+            font-size: 0.93rem !important;
+            font-weight: 700 !important;
+            line-height: 1 !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.5rem;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14) !important;
+            cursor: progress !important;
+        }
+
+        .ui.right.labeled.icon.button.saveBtnLoad > .icon,
+        .ui.labeled.icon.button.saveBtnLoad > .icon {
+            display: none !important;
+        }
+
+        .ui.button.saveBtnLoad::after {
+            content: '';
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            border-top-color: #ffffff;
+            animation: saveBtnSpin .72s linear infinite;
+            flex-shrink: 0;
+        }
+
+        html[data-theme="dark"] .ui.button.saveBtnLoad {
+            background: linear-gradient(135deg, #4b5563, #374151) !important;
+            border-color: #1f2937 !important;
+        }
+
+        @keyframes saveBtnSpin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .preloader {
@@ -2166,6 +2528,9 @@
         <a href="#" class="item" id="themeToggleBtn" data-tooltip="Toggle theme" data-position="bottom center" data-variation="tiny">
             <i class="theme-toggle-icon moon icon" id="themeToggleIcon"></i>
         </a>
+        <a href="#" class="item" id="notificationToggleBtn" data-tooltip="Enable notifications" data-position="bottom center" data-variation="tiny">
+            <i class="notification-toggle-icon bell outline icon" id="notificationToggleIcon"></i>
+        </a>
 
         {% if request.path|slice:":9" == "/teacher/" or request.path|slice:":9" == "/student/" %}
             <div class="item">
@@ -2310,6 +2675,44 @@
         </div>
     </div>
 {% endif %}
+
+<div class="ui small modal notification-tour-modal" id="notificationTourModal">
+    <div class="content">
+        <div class="notification-tour-top">
+            <div class="notification-tour-chip">Smart Event Alerts</div>
+            <h3 class="notification-tour-title">Enable browser notifications</h3>
+            <p class="notification-tour-subtitle">
+                Stay updated with instant event add/update alerts from your school.
+            </p>
+        </div>
+        <div class="notification-tour-body">
+            <ul class="notification-tour-list">
+                <li>
+                    <span class="num">1</span>
+                    <span>Tap Enable Notifications below.</span>
+                </li>
+                <li>
+                    <span class="num">2</span>
+                    <span>In the browser prompt, select Allow.</span>
+                </li>
+                <li>
+                    <span class="num">3</span>
+                    <span>You will start receiving event notifications instantly.</span>
+                </li>
+            </ul>
+            <div class="notification-tour-tip">
+                If permission is blocked, enable notifications in browser site settings first.
+            </div>
+        </div>
+    </div>
+    <div class="actions">
+        <button type="button" class="ui button" id="notificationTourLaterBtn">Later</button>
+        <button type="button" class="ui primary button" id="notificationTourEnableBtn">
+            <i class="bell outline icon"></i>
+            Enable Notifications
+        </button>
+    </div>
+</div>
 
 
 <script>
@@ -2521,6 +2924,56 @@
         });
     }
 
+    async function getAnyPushSubscription() {
+        if (!('serviceWorker' in navigator)) {
+            return {registration: null, subscription: null};
+        }
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (let i = 0; i < regs.length; i += 1) {
+            const reg = regs[i];
+            if (!reg || !reg.pushManager) continue;
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) {
+                return {registration: reg, subscription: sub};
+            }
+        }
+        const rootReg = await navigator.serviceWorker.getRegistration('/');
+        if (rootReg && rootReg.pushManager) {
+            const rootSub = await rootReg.pushManager.getSubscription();
+            if (rootSub) return {registration: rootReg, subscription: rootSub};
+        }
+        return {registration: null, subscription: null};
+    }
+
+    async function syncNotificationIcons() {
+        const icons = document.querySelectorAll('.notification-toggle-icon');
+        if (!icons.length) return;
+
+        const permission = (window.Notification && typeof Notification.permission === 'string')
+            ? Notification.permission
+            : 'default';
+        const hasPermission = permission === 'granted';
+        let hasSubscription = false;
+        if ('serviceWorker' in navigator) {
+            try {
+                const state = await getAnyPushSubscription();
+                hasSubscription = !!(state && state.subscription);
+            } catch (err) {
+                hasSubscription = false;
+            }
+        }
+
+        icons.forEach(function (icon) {
+            icon.classList.add('notification-toggle-icon', 'icon');
+            icon.classList.remove('bell', 'outline', 'slash', 'red', 'green');
+            if (hasPermission && hasSubscription) {
+                icon.classList.add('bell', 'green');
+            } else {
+                icon.classList.add('bell', 'slash');
+            }
+        });
+    }
+
     function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
@@ -2530,11 +2983,116 @@
 
     window.applyTheme = applyTheme;
     window.syncThemeIcons = syncThemeIcons;
+    window.toggleNotificationSubscription = null;
+    window.__pushInitFailureReason = '';
+
+    function isIosDevice() {
+        const ua = navigator.userAgent || '';
+        return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    function isStandaloneDisplay() {
+        return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function isPushSupportedOnDevice() {
+        return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window);
+    }
+
+    function getNotificationPermissionHelpHtml() {
+        const ua = navigator.userAgent || '';
+        if (isIosDevice()) {
+            return 'iPhone/iPad: Open this app from Home Screen, then go to Settings > Notifications and allow notifications for this web app.';
+        }
+        if (/Android/i.test(ua)) {
+            return 'Android: Open site settings from browser address bar and set Notifications to Allow for this site.';
+        }
+        return 'Open your browser site settings for this URL and set Notifications to Allow, then return here and retry.';
+    }
+
+    function showNotificationPermissionBlockedModal() {
+        showNotificationBanner('Notification permission is blocked in browser settings. Enable it in site settings and retry.', 'error');
+    }
+
+    function getPushFailureMessage() {
+        const reason = window.__pushInitFailureReason || '';
+        if (reason === 'permission_prompt_already_shown') {
+            return 'Browser permission popup was already shown once. Please allow notifications from site settings.';
+        }
+        if (reason === 'subscribe_failed') {
+            return 'Push registration failed. Please retry once.';
+        }
+        return 'Unable to enable notifications. Please retry.';
+    }
+
+    async function maybeShowNotificationTour(forceOpen) {
+        const appName = resolveCurrentAppName();
+        if (!appName) return false;
+        if (!isPushSupportedOnDevice()) return false;
+        if (isIosDevice() && !isStandaloneDisplay()) return false;
+        if (window.isSecureContext !== true) return false;
+
+        const seenKey = 'notifTourSeenV1';
+        if (!forceOpen && localStorage.getItem(seenKey) === '1') return false;
+
+        if (window.Notification && Notification.permission === 'denied') {
+            if (forceOpen) {
+                showNotificationPermissionBlockedModal();
+            }
+            return false;
+        }
+
+        if (forceOpen) {
+            const $forceModal = $('#notificationTourModal');
+            if (!$forceModal.length) return false;
+            $forceModal.modal({
+                closable: true,
+                autofocus: false
+            }).modal('show');
+            return true;
+        }
+
+        if (window.Notification && Notification.permission === 'granted') {
+            try {
+                const state = await getAnyPushSubscription();
+                if (state && state.subscription) return false;
+            } catch (err) {
+                // Ignore and continue with config check.
+            }
+        }
+
+        try {
+            const configResponse = await $.ajax({
+                type: 'GET',
+                url: "{% url 'homeAppAPI:get_push_public_config_api' %}",
+                data: {app_name: appName}
+            });
+            const pushConfig = configResponse && configResponse.data ? configResponse.data : null;
+            if (!pushConfig || !pushConfig.enabled || !pushConfig.configured || !pushConfig.publicKey) {
+                return false;
+            }
+        } catch (err) {
+            return false;
+        }
+
+        const $modal = $('#notificationTourModal');
+        if (!$modal.length) return false;
+        if (!forceOpen) {
+            localStorage.setItem(seenKey, '1');
+        }
+        $modal.modal({
+            closable: true,
+            autofocus: false
+        }).modal('show');
+        return true;
+    }
 
     (function initThemeToggle() {
         var currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
         applyTheme(currentTheme);
         var toggleBtn = document.getElementById('themeToggleBtn');
+        var notifyBusy = false;
+        var lastNotifyTapAt = 0;
         if (toggleBtn) {
             toggleBtn.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -2542,12 +3100,105 @@
                 applyTheme(activeTheme === 'dark' ? 'light' : 'dark');
             });
         }
+        async function onNotifyClick(e) {
+            if (e) e.preventDefault();
+            const now = Date.now();
+            if (notifyBusy || (now - lastNotifyTapAt) < 550) return false;
+            lastNotifyTapAt = now;
+            notifyBusy = true;
+
+            const appName = resolveCurrentAppName();
+            if (!appName) {
+                showNotificationBanner('Open a student, teacher, or management page to enable notifications.', 'info');
+                notifyBusy = false;
+                return false;
+            }
+
+            if (!isPushSupportedOnDevice()) {
+                showNotificationBanner('Push notifications are not supported on this browser/device.', 'error');
+                notifyBusy = false;
+                return false;
+            }
+            if (isIosDevice() && !isStandaloneDisplay()) {
+                showNotificationBanner('On iPhone/iPad, install this app to Home Screen first, then enable notifications.', 'info');
+                notifyBusy = false;
+                return false;
+            }
+            if (window.isSecureContext !== true) {
+                showNotificationBanner('Push needs HTTPS secure context.', 'error');
+                notifyBusy = false;
+                return false;
+            }
+            if (window.Notification && Notification.permission === 'denied') {
+                showNotificationPermissionBlockedModal();
+                notifyBusy = false;
+                return false;
+            }
+            if (!(window.Notification && Notification.permission === 'granted')) {
+                const opened = await maybeShowNotificationTour(true);
+                notifyBusy = false;
+                return opened;
+            }
+
+            return getAnyPushSubscription().then(function (state) {
+                if (state && state.subscription) {
+                    showNotificationBanner('Notifications are already enabled for this app.', 'info');
+                    return true;
+                }
+                return initWebPushSubscription().then(function (ok) {
+                    if (ok) showNotificationBanner('Notifications enabled for this app.', 'success');
+                    else showNotificationBanner(getPushFailureMessage(), 'error');
+                });
+            }).catch(function () {
+                if (!(window.Notification && Notification.permission === 'granted')) {
+                    return maybeShowNotificationTour(true);
+                }
+                return initWebPushSubscription().then(function (ok) {
+                    if (ok) showNotificationBanner('Notifications enabled for this app.', 'success');
+                    else showNotificationBanner(getPushFailureMessage(), 'error');
+                });
+            }).finally(function () {
+                notifyBusy = false;
+            });
+        }
+        window.toggleNotificationSubscription = onNotifyClick;
+        $(document)
+            .off('click.notificationToggle touchend.notificationToggle')
+            .on('click.notificationToggle touchend.notificationToggle', '#notificationToggleBtn, #teacherMobileNotifyBtn, #studentMobileNotifyBtn', function (e) {
+                onNotifyClick(e);
+            });
+        $(document)
+            .off('click.notificationPermissionHelp')
+            .on('click.notificationPermissionHelp', '#notificationTourLaterBtn', function (e) {
+                e.preventDefault();
+                localStorage.setItem('notifTourSeenV1', '1');
+                $('#notificationTourModal').modal('hide');
+            })
+            .on('click.notificationPermissionHelp', '#notificationTourEnableBtn', async function (e) {
+                e.preventDefault();
+                localStorage.setItem('notifTourSeenV1', '1');
+                $('#notificationTourModal').modal('hide');
+                if (window.Notification && Notification.permission === 'denied') {
+                    showNotificationPermissionBlockedModal();
+                    return;
+                }
+                const ok = await initWebPushSubscription();
+                if (ok) {
+                    showNotificationBanner('Notifications enabled for this app.', 'success');
+                } else {
+                    showNotificationBanner(getPushFailureMessage(), 'error');
+                }
+            });
         window.addEventListener('storage', function (event) {
             if (event.key !== 'theme') return;
             var nextTheme = event.newValue || 'light';
             document.documentElement.setAttribute('data-theme', nextTheme);
             syncThemeIcons(nextTheme);
         });
+        syncNotificationIcons();
+        setTimeout(function () {
+            maybeShowNotificationTour(false);
+        }, 900);
     })();
 
     $(window).on("load", function () {
@@ -2702,17 +3353,27 @@
         $load.css('display', 'inline-flex');
     }
 
-    function hideLoading(isupdate = false, context) {
+    function hideLoading(isupdate, context) {
         const $scope = resolveLoadingScope(context);
         const {$save, $update, $load} = getLoadingButtons($scope);
-        const shouldShowUpdate = isupdate || currentLoadingMode === 'update';
+        let shouldShowUpdate;
+        if (typeof isupdate === 'boolean') {
+            shouldShowUpdate = isupdate;
+        } else if ($save.filter(':visible').length && !$update.filter(':visible').length) {
+            // Respect explicit UI resets that already switched back to Add/Save mode.
+            shouldShowUpdate = false;
+        } else {
+            shouldShowUpdate = currentLoadingMode === 'update';
+        }
         $load.css('display', 'none');
         if (shouldShowUpdate) {
             $save.css('display', 'none');
             $update.css('display', 'inline-flex');
+            currentLoadingMode = 'update';
         } else {
             $save.css('display', 'inline-flex');
             $update.css('display', 'none');
+            currentLoadingMode = 'save';
         }
     }
 
@@ -2796,34 +3457,311 @@
 
     function requiredFieldError() {
         markRequiredFields('.ui.form:visible');
-        $('body')
-            .toast({
-                class: 'orange',
-                message: 'Highlighted fields are required.'
-            });
+        showNotificationBanner('Highlighted fields are required.', 'warning');
     }
 
-    function addSuccessNotification(message, color) {
-        $('body')
-            .toast({
-                class: '' + color,
-                message: "" + message
-            });
-
+    function clearRequiredErrorIfValid($input) {
+        if (!$input || !$input.length || isFormFieldEmpty($input)) return;
+        const $field = $input.closest('.field');
+        $input.removeClass('error');
+        if ($field.length) {
+            $field.removeClass('error').popup('destroy');
+        }
     }
 
-    function addErrorNotification(message) {
-        $('body')
-            .toast({
-                class: 'error',
-                message: message
-            })
-        ;
+    function getCsrfTokenValue() {
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrftoken='));
+        return cookieValue ? decodeURIComponent(cookieValue.split('=')[1]) : '';
+    }
 
+    function ensureNoticeStack() {
+        let stack = document.getElementById('appNoticeStack');
+        if (stack) return stack;
+        stack = document.createElement('div');
+        stack.id = 'appNoticeStack';
+        stack.className = 'app-notice-stack';
+        document.body.appendChild(stack);
+        return stack;
+    }
+
+    function showNotificationBanner(message, type = 'success') {
+        if (!message) return;
+        const stack = ensureNoticeStack();
+        const notice = document.createElement('div');
+        const normalizedType = normalizeBannerType(type);
+        const iconName = normalizedType === 'error'
+            ? 'exclamation triangle'
+            : (normalizedType === 'warning' ? 'exclamation circle' : (normalizedType === 'info' ? 'info circle' : 'check'));
+        notice.className = `app-notice ${normalizedType}`;
+        const iconWrap = document.createElement('span');
+        iconWrap.className = 'icon-wrap';
+        const icon = document.createElement('i');
+        icon.className = `${iconName} icon`;
+        iconWrap.appendChild(icon);
+        const content = document.createElement('div');
+        content.className = 'content';
+        content.textContent = message;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'dismiss';
+        closeBtn.type = 'button';
+        closeBtn.setAttribute('aria-label', 'Close notification');
+        const closeIcon = document.createElement('i');
+        closeIcon.className = 'close icon';
+        closeBtn.appendChild(closeIcon);
+        notice.appendChild(iconWrap);
+        notice.appendChild(content);
+        notice.appendChild(closeBtn);
+        const dismiss = () => {
+            notice.style.opacity = '0';
+            notice.style.transform = 'translateY(-6px)';
+            setTimeout(() => notice.remove(), 180);
+        };
+        closeBtn.addEventListener('click', dismiss);
+        stack.prepend(notice);
+        setTimeout(dismiss, 4200);
+    }
+
+    function normalizeBannerType(typeOrColor) {
+        const value = String(typeOrColor || '').toLowerCase();
+        if (value.includes('error') || value.includes('red') || value.includes('danger') || value.includes('fail')) {
+            return 'error';
+        }
+        if (value.includes('warn') || value.includes('orange') || value.includes('amber')) {
+            return 'warning';
+        }
+        if (value.includes('info') || value.includes('blue') || value.includes('notice')) {
+            return 'info';
+        }
+        return 'success';
+    }
+
+    function addSuccessNotification(message, colorOrType) {
+        const type = normalizeBannerType(colorOrType || 'success');
+        showNotificationBanner(message || 'Done.', type);
+    }
+
+    function addErrorNotification(message, colorOrType) {
+        const fallbackType = colorOrType ? normalizeBannerType(colorOrType) : 'error';
+        const type = fallbackType === 'success' ? 'error' : fallbackType;
+        showNotificationBanner(message || 'Something went wrong.', type);
+    }
+
+    function addInfoNotification(message) {
+        showNotificationBanner(message || 'Please note this update.', 'info');
+    }
+
+    function notifyFromApi(response, fallbackMessage = 'Request processed.') {
+        const safeResponse = response || {};
+        const message = safeResponse.message || fallbackMessage;
+        const typeHint = safeResponse.color || safeResponse.status || (safeResponse.success ? 'success' : 'error');
+        showNotificationBanner(message, normalizeBannerType(typeHint));
+    }
+
+    function resolveCurrentAppName() {
+        const appName = '{{ request.resolver_match.app_name|default:"" }}';
+        if (['studentApp', 'teacherApp', 'managementApp'].includes(appName)) {
+            return appName.toLowerCase();
+        }
+
+        const path = (window.location.pathname || '').toLowerCase();
+        if (path.startsWith('/management/')) return 'managementapp';
+        if (path.startsWith('/teacher/')) return 'teacherapp';
+        if (path.startsWith('/student/')) return 'studentapp';
+
+        return '';
+    }
+
+    function hasPromptBeenShownForApp(appName) {
+        if (!appName) return false;
+        return localStorage.getItem('notifPromptShown:' + appName) === '1';
+    }
+
+    function markPromptShownForApp(appName) {
+        if (!appName) return;
+        localStorage.setItem('notifPromptShown:' + appName, '1');
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; i += 1) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    async function disablePushSubscription(endpoint) {
+        if (!endpoint) return;
+        try {
+            await $.ajax({
+                type: 'POST',
+                url: "{% url 'homeAppAPI:disable_push_subscription_api' %}",
+                headers: {'X-CSRFToken': getCsrfTokenValue()},
+                data: {endpoint: endpoint}
+            });
+        } catch (err) {
+            console.warn('Unable to disable push subscription:', err);
+        }
+    }
+
+    async function getRootServiceWorkerRegistration() {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        const stale = regs.filter(reg => reg.scope && reg.scope.includes('/static/sw/'));
+        await Promise.all(stale.map(reg => reg.unregister()));
+
+        const existing = await navigator.serviceWorker.getRegistration('/');
+        if (existing) return existing;
+
+        const reg = await navigator.serviceWorker.register('/serviceworker.js', {scope: '/'});
+        return reg;
+    }
+
+    async function initWebPushSubscription() {
+        const appName = resolveCurrentAppName();
+        window.__pushInitFailureReason = '';
+        if (!appName) return false;
+        if (!isPushSupportedOnDevice()) return false;
+        if (isIosDevice() && !isStandaloneDisplay()) return false;
+        if (window.isSecureContext !== true) return false;
+
+        try {
+            const configResponse = await $.ajax({
+                type: 'GET',
+                url: "{% url 'homeAppAPI:get_push_public_config_api' %}",
+                data: {app_name: appName}
+            });
+            const pushConfig = configResponse && configResponse.data ? configResponse.data : null;
+            if (pushConfig && pushConfig.configError) {
+                console.warn('Push configuration issue:', pushConfig.configError);
+            }
+            if (!pushConfig || !pushConfig.enabled || !pushConfig.configured || !pushConfig.publicKey) {
+                await syncNotificationIcons();
+                return false;
+            }
+
+            const registration = await getRootServiceWorkerRegistration();
+            await navigator.serviceWorker.ready;
+            const existingSubscription = await registration.pushManager.getSubscription();
+            if (Notification.permission === 'denied') {
+                if (existingSubscription) {
+                    await disablePushSubscription(existingSubscription.endpoint);
+                }
+                await syncNotificationIcons();
+                return false;
+            }
+
+            let activeSubscription = existingSubscription;
+            if (!activeSubscription) {
+                const anyState = await getAnyPushSubscription();
+                if (anyState && anyState.subscription) {
+                    activeSubscription = anyState.subscription;
+                }
+            }
+            if (!activeSubscription) {
+                let permission = Notification.permission === 'granted'
+                    ? 'granted'
+                    : Notification.permission;
+                if (permission !== 'granted') {
+                    if (hasPromptBeenShownForApp(appName)) {
+                        window.__pushInitFailureReason = 'permission_prompt_already_shown';
+                        await syncNotificationIcons();
+                        return false;
+                    }
+                    markPromptShownForApp(appName);
+                    permission = await Notification.requestPermission();
+                }
+                if (permission !== 'granted') {
+                    await syncNotificationIcons();
+                    return false;
+                }
+                try {
+                    activeSubscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(pushConfig.publicKey),
+                    });
+                } catch (subscribeError) {
+                    // Mobile browsers may keep stale worker state and throw AbortError.
+                    if (subscribeError && (subscribeError.name === 'AbortError' || subscribeError.name === 'InvalidStateError')) {
+                        await registration.unregister();
+                        const retryRegistration = await navigator.serviceWorker.register('/serviceworker.js', {scope: '/'});
+                        await navigator.serviceWorker.ready;
+                        activeSubscription = await retryRegistration.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: urlBase64ToUint8Array(pushConfig.publicKey),
+                        });
+                    } else {
+                        throw subscribeError;
+                    }
+                }
+            }
+
+            const subscriptionJson = activeSubscription.toJSON ? activeSubscription.toJSON() : null;
+            const keyAuth = subscriptionJson && subscriptionJson.keys ? subscriptionJson.keys.auth : '';
+            const keyP256dh = subscriptionJson && subscriptionJson.keys ? subscriptionJson.keys.p256dh : '';
+            if (!keyAuth || !keyP256dh) {
+                console.warn('Push keys missing from subscription JSON.');
+                await syncNotificationIcons();
+                return false;
+            }
+            await $.ajax({
+                type: 'POST',
+                url: "{% url 'homeAppAPI:upsert_push_subscription_api' %}",
+                headers: {'X-CSRFToken': getCsrfTokenValue()},
+                data: {
+                    app_name: appName,
+                    endpoint: activeSubscription.endpoint,
+                    auth: keyAuth,
+                    p256dh: keyP256dh,
+                }
+            });
+            await syncNotificationIcons();
+            return true;
+        } catch (error) {
+            console.warn('Push subscription init failed:', error);
+            if (!window.__pushInitFailureReason) {
+                window.__pushInitFailureReason = 'subscribe_failed';
+            }
+            await syncNotificationIcons();
+            return false;
+        }
+    }
+
+    async function disableCurrentPushSubscription() {
+        try {
+            const reg = await navigator.serviceWorker.getRegistration('/');
+            if (!reg) {
+                await syncNotificationIcons();
+                return false;
+            }
+            const sub = await reg.pushManager.getSubscription();
+            if (!sub) {
+                await syncNotificationIcons();
+                return true;
+            }
+            await disablePushSubscription(sub.endpoint);
+            await sub.unsubscribe();
+            await syncNotificationIcons();
+            return true;
+        } catch (error) {
+            console.warn('Unable to disable current push subscription:', error);
+            await syncNotificationIcons();
+            return false;
+        }
     }
 
 
     $(function () {
+        if (window.Notification && Notification.permission === 'granted') {
+            initWebPushSubscription();
+        } else {
+            syncNotificationIcons();
+        }
+
         function normalizePath(path) {
             if (!path) return '/';
             var clean = path.split('?')[0].split('#')[0];
@@ -2979,8 +3917,24 @@
 
     }
 
-    $(document).on('input change', '.ui.form input, .ui.form select, .ui.form textarea', function () {
-        $(this).closest('.field').removeClass('error').popup('destroy');
+    $(document).on('input change keyup blur', '.ui.form input, .ui.form select, .ui.form textarea', function () {
+        const $input = $(this);
+        if ($input.is('[required]') || $input.closest('.field').hasClass('required')) {
+            clearRequiredErrorIfValid($input);
+            return;
+        }
+        $input.closest('.field').removeClass('error').popup('destroy');
+        $input.removeClass('error');
+    });
+
+    // Fomantic dropdown/checkbox updates may not always trigger on visible control.
+    $(document).on('click', '.ui.form .ui.dropdown .item, .ui.form .ui.checkbox', function () {
+        const $field = $(this).closest('.field');
+        if (!$field.length) return;
+        setTimeout(function () {
+            const $input = $field.find('input[required], select[required], textarea[required], input[type="checkbox"], input[type="radio"]').first();
+            if ($input.length) clearRequiredErrorIfValid($input);
+        }, 0);
     });
 
     $(document).ready(function () {

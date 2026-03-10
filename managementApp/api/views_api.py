@@ -13,6 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from homeApp.models import SchoolDetail
+from homeApp.push_service import send_event_push_notifications
 from managementApp.models import *
 from managementApp.signals import pre_save_with_user
 from managementApp.leave_utils import approved_leave_for_date, approved_leave_map_for_date
@@ -283,6 +284,10 @@ def get_school_detail_api(request):
             'email': school.email or '',
             'website': school.website or '',
             'logo': school.logo.url if school.logo else '',
+            'webPushEnabled': bool(school.webPushEnabled),
+            'webPushStudentAppEnabled': bool(school.webPushStudentAppEnabled),
+            'webPushTeacherAppEnabled': bool(school.webPushTeacherAppEnabled),
+            'webPushManagementAppEnabled': bool(school.webPushManagementAppEnabled),
         }
         return SuccessResponse('School details fetched successfully.', data=data).to_json_response()
     except Exception as e:
@@ -317,6 +322,10 @@ def update_school_detail_api(request):
         school.phoneNumber = (request.POST.get('phoneNumber') or '').strip()
         school.email = (request.POST.get('email') or '').strip()
         school.website = (request.POST.get('website') or '').strip()
+        school.webPushEnabled = (request.POST.get('webPushEnabled') or 'false').lower() == 'true'
+        school.webPushStudentAppEnabled = (request.POST.get('webPushStudentAppEnabled') or 'false').lower() == 'true'
+        school.webPushTeacherAppEnabled = (request.POST.get('webPushTeacherAppEnabled') or 'false').lower() == 'true'
+        school.webPushManagementAppEnabled = (request.POST.get('webPushManagementAppEnabled') or 'false').lower() == 'true'
         logo = request.FILES.get('logo')
         if logo:
             school.logo = optimize_uploaded_image(logo, max_width=1024, max_height=1024, jpeg_quality=85)
@@ -4371,6 +4380,7 @@ def add_event_api(request):
             pre_save_with_user.send(sender=Event, instance=obj, user=request.user.pk)
 
             
+            send_event_push_notifications(obj, action='added')
             logger.info("Event added successfully")
             return SuccessResponse('Event added successfully.', extra={'color': 'success'}).to_json_response()
         except Exception as e:
@@ -4485,24 +4495,29 @@ def update_event_api(request):
         try:
             post_data = request.POST.dict()
             event_type_id = post_data.get("event_type")
-            if not event_type_id:
-                return ErrorResponse('Event type is required.', extra={'color': 'red'}).to_json_response()
-            event_type_obj = EventType.objects.filter(
-                id=event_type_id,
-                isDeleted=False,
-                sessionID_id=request.session['current_session']['Id']
-            ).first()
-            if not event_type_obj:
-                return ErrorResponse('Invalid event type for current session.', extra={'color': 'red'}).to_json_response()
             obj = Event.objects.get(pk=int(post_data.get("editID")), isDeleted=False,
                                    sessionID_id=request.session['current_session']['Id'])
-            obj.eventID_id = event_type_obj.id
+
+            # Keep existing type on edit if dropdown value is temporarily empty on UI.
+            if event_type_id:
+                event_type_obj = EventType.objects.filter(
+                    id=event_type_id,
+                    isDeleted=False,
+                    sessionID_id=request.session['current_session']['Id']
+                ).first()
+                if not event_type_obj:
+                    return ErrorResponse('Invalid event type for current session.', extra={'color': 'red'}).to_json_response()
+                obj.eventID_id = event_type_obj.id
+            elif not obj.eventID_id:
+                return ErrorResponse('Event type is required.', extra={'color': 'red'}).to_json_response()
+
             obj.title = post_data.get("title")
             obj.startDate = datetime.strptime(post_data["start_date"], "%d/%m/%Y")
             obj.endDate = datetime.strptime(post_data["end_date"], "%d/%m/%Y")
             obj.message = post_data.get("description")
             obj.save()
             pre_save_with_user.send(sender=Event, instance=obj, user=request.user.pk)
+            send_event_push_notifications(obj, action='updated')
 
             logger.info("Event detail updated successfully")
             return SuccessResponse('Event detail updated successfully.', extra={'color': 'success'}).to_json_response()

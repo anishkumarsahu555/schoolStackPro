@@ -1,9 +1,10 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import update_session_auth_hash
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
 from django.templatetags.static import static
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 import os
 
 from homeApp.branding import get_school_branding
@@ -238,4 +239,15 @@ def dynamic_manifest(request):
     response = JsonResponse(data)
     response["Content-Type"] = "application/manifest+json"
     response["Cache-Control"] = "private, max-age=60"
+    return response
+
+
+def service_worker(request):
+    sw_path = os.path.join(settings.BASE_DIR, 'static', 'sw', 'serviceworker.js')
+    with open(sw_path, 'r', encoding='utf-8') as file_handle:
+        content = file_handle.read()
+
+    response = HttpResponse(content, content_type='application/javascript')
+    response['Service-Worker-Allowed'] = '/'
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     return response

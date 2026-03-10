@@ -1,5 +1,5 @@
 // ================== CONFIGURATION ================== //
-const APP_VERSION = 'v1.0.45'; // Increment this to force update
+const APP_VERSION = 'v1.0.47'; // Increment this to force update
 const MAX_CACHE_ITEMS = 50;   // Keep only 50 most recent files
 const CACHE_KEYS = {
     PRECACHE: `precache-${APP_VERSION}`,
@@ -71,6 +71,73 @@ self.addEventListener('activate', (event) => {
             );
         })()
     );
+});
+
+self.addEventListener('push', (event) => {
+    let data = {};
+    try {
+        data = event.data ? event.data.json() : {};
+    } catch (err) {
+        data = { title: 'School Update', body: event.data ? event.data.text() : 'You have a new notification.' };
+    }
+
+    const schoolName = data.schoolName || (data.data && data.data.schoolName) || '';
+    const eventTitle = data.eventTitle || (data.data && data.data.eventTitle) || '';
+    const title = data.title || schoolName || 'School Update';
+    const notificationActions = Array.isArray(data.actions) && data.actions.length
+        ? data.actions
+        : [
+            {action: 'open_event', title: 'Open'},
+            {action: 'dismiss', title: 'Dismiss'}
+        ];
+    const options = {
+        body: data.body || (eventTitle ? `${eventTitle}\nTap to view details.` : 'You have a new update.'),
+        icon: data.icon || '/static/sw/images/icon-192.png',
+        badge: data.badge || '/static/sw/images/icon-192-maskable.png',
+        image: data.image || '',
+        tag: data.tag || 'schoolstack-notification',
+        renotify: true,
+        requireInteraction: false,
+        timestamp: Date.now(),
+        vibrate: [120, 40, 120],
+        actions: notificationActions,
+        data: {
+            url: data.url || '/',
+            actionType: (data.data && data.data.action) || '',
+            ...(data.data || {})
+        }
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    if (event.action === 'dismiss') {
+        return;
+    }
+    const rawTargetUrl = (event.notification && event.notification.data && event.notification.data.url) || '/';
+    const destinationUrl = new URL(rawTargetUrl, self.location.origin).href;
+    event.waitUntil((async () => {
+        const clientList = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const client of clientList) {
+            if (!('focus' in client)) continue;
+            try {
+                const clientUrl = new URL(client.url);
+                if (clientUrl.origin !== self.location.origin) continue;
+                if ('navigate' in client && client.url !== destinationUrl) {
+                    await client.navigate(destinationUrl);
+                }
+                await client.focus();
+                return;
+            } catch (err) {
+                // Fallback to openWindow below if URL parsing/navigation fails.
+            }
+        }
+        if (clients.openWindow) {
+            await clients.openWindow(destinationUrl);
+        }
+    })());
 });
 
 // ================== FETCH ENGINE ================== //

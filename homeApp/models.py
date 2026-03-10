@@ -45,6 +45,10 @@ class SchoolDetail(models.Model):
     phoneNumber = models.CharField(max_length=15, blank=True, null=True)
     email = models.CharField(max_length=500, blank=True, null=True)
     website = models.CharField(max_length=500, blank=True, null=True)
+    webPushEnabled = models.BooleanField(default=False)
+    webPushStudentAppEnabled = models.BooleanField(default=True)
+    webPushTeacherAppEnabled = models.BooleanField(default=True)
+    webPushManagementAppEnabled = models.BooleanField(default=True)
     datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
@@ -92,3 +96,29 @@ class SchoolSession(models.Model):
 
     class Meta:
         verbose_name_plural = 'd) School Session.'
+
+
+class WebPushSubscription(models.Model):
+    APP_NAME_CHOICES = (
+        ('studentapp', 'Student App'),
+        ('teacherapp', 'Teacher App'),
+        ('managementapp', 'Management App'),
+    )
+
+    schoolID = models.ForeignKey(SchoolDetail, on_delete=models.CASCADE)
+    userID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL)
+    appName = models.CharField(max_length=30, choices=APP_NAME_CHOICES)
+    endpoint = models.TextField()
+    endpointHash = models.CharField(max_length=64, db_index=True)
+    authKey = models.TextField()
+    p256dhKey = models.TextField()
+    isActive = models.BooleanField(default=True)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'e) Web Push Subscriptions.'
+        indexes = [
+            models.Index(fields=['schoolID', 'appName', 'isActive'], name='wps_school_app_active_idx'),
+            models.Index(fields=['userID', 'isActive'], name='wps_user_active_idx'),
+        ]

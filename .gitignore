@@ -3,6 +3,13 @@ creds
 __pycache__
 .venv
 migrations/
+!homeApp/migrations/
+homeApp/migrations/*.py
+!homeApp/migrations/0003_schooldetail_push_settings_webpushsubscription.py
+!homeApp/migrations/0004_webpushsubscription_endpoint_hash_backfill.py
+!managementApp/migrations/
+managementApp/migrations/*.py
+!managementApp/migrations/0011_remove_ledgerentry_accountid_and_more.py
 .vscode/
 logs/
 db.sqlite3

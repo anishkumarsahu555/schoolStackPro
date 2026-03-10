@@ -722,14 +722,15 @@
                     addSuccessNotification(response.message, response.color || 'green');
                     examTimeTable.ajax.reload(null, false);
                     clearAndReset();
+                    hideLoading(false);
                 } else {
                     showResponseNotification(response, 'Error occurred');
+                    hideLoading(true);
                 }
-                hideLoading();
             },
             error: function (xhr) {
                 showResponseNotification(xhr.responseJSON, 'Request failed. Please check your inputs.');
-                hideLoading();
+                hideLoading(true);
             }
         });
     }
@@ -889,6 +890,9 @@
         $('#exam').dropdown('clear');
         $('#subject').dropdown('clear');
         clearValidationErrors();
+        if (typeof currentLoadingMode !== 'undefined') {
+            currentLoadingMode = 'save';
+        }
     }
 
 </script>
