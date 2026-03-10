@@ -14,3 +14,5 @@ managementApp/migrations/*.py
 logs/
 db.sqlite3
 .vscode
+private_key.pem
+public_key.pem
