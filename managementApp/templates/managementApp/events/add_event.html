@@ -177,6 +177,8 @@
         let eventTab;
 
         $(function () {
+            const params = new URLSearchParams(window.location.search || '');
+            const eventIdFromNotification = (params.get('event_id') || '').trim();
             getEventTypeList();
 
             $('#start_dateCal').calendar({
@@ -232,6 +234,17 @@
                 serverSide: true,
                 ajax: "{% url 'managementAppAPI:EventListJson' %}"
             });
+
+            if (eventIdFromNotification) {
+                setTimeout(function () {
+                    GetDataDetails(eventIdFromNotification);
+                    const formEl = document.getElementById('addForm');
+                    if (formEl) {
+                        formEl.scrollIntoView({behavior: 'smooth', block: 'start'});
+                    }
+                    showNotificationBanner('Event opened from notification.', 'info');
+                }, 420);
+            }
 
         });
 
@@ -301,14 +314,15 @@
                         addSuccessNotification(response.message, response.color || 'green');
                         clearAndReset();
                         eventTab.ajax.reload(null, false);
+                        hideLoading(false);
                     } else {
                         addErrorNotification(response.message, response.color || 'red');
+                        hideLoading(true);
                     }
-                    hideLoading();
                 },
                 error: function () {
                     addErrorNotification('An error occurred !');
-                    hideLoading();
+                    hideLoading(true);
                 }
             });
         }
@@ -333,14 +347,15 @@
                         addSuccessNotification(response.message, response.color || 'green');
                         clearAndReset();
                         eventTab.ajax.reload(null, false);
+                        hideLoading(false);
                     } else {
                         addErrorNotification(response.message, response.color || 'red');
+                        hideLoading(true);
                     }
-                    hideLoading();
                 },
                 error: function () {
                     addErrorNotification('An error occurred !');
-                    hideLoading();
+                    hideLoading(true);
                 }
             });
         }
@@ -350,6 +365,9 @@
             $('#saveBtn').css('display', '');
             $('#saveBtnUpdate').css('display', 'none');
             $('#event_type').dropdown('clear');
+            if (typeof currentLoadingMode !== 'undefined') {
+                currentLoadingMode = 'save';
+            }
         }
 
         function GetDataDetails(id) {

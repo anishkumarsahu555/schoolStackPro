@@ -1,10 +1,13 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import update_session_auth_hash
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
 from django.templatetags.static import static
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 import os
+from io import BytesIO
 
 from homeApp.branding import get_school_branding
 from homeApp.models import SchoolOwner, SchoolDetail
@@ -202,40 +205,95 @@ def change_password(request):
 
 def dynamic_manifest(request):
     branding = get_school_branding(request)
+    school_id = branding.get('school_id') or 0
     school_name = branding.get('school_name') or 'SCHOOLS-STACK'
-
-    icon_url = branding.get('icon_url')
-    icon_type = "image/png"
-    if icon_url:
-        icon_192 = request.build_absolute_uri(icon_url)
-        icon_512 = request.build_absolute_uri(icon_url)
-        ext = os.path.splitext(icon_url.lower())[1]
-        if ext in {".jpg", ".jpeg"}:
-            icon_type = "image/jpeg"
-        elif ext == ".webp":
-            icon_type = "image/webp"
-        elif ext == ".svg":
-            icon_type = "image/svg+xml"
-    else:
-        icon_192 = request.build_absolute_uri(static('sw/images/icon-192.png'))
-        icon_512 = request.build_absolute_uri(static('sw/images/icon-512.png'))
+    icon_192 = request.build_absolute_uri(
+        f"{reverse('homeApp:dynamic_app_icon', kwargs={'size': 192})}?sid={school_id}"
+    )
+    icon_512 = request.build_absolute_uri(
+        f"{reverse('homeApp:dynamic_app_icon', kwargs={'size': 512})}?sid={school_id}"
+    )
 
     data = {
         "name": school_name,
         "short_name": school_name[:12] if school_name else "SchoolStack",
         "start_url": "/",
+        "scope": "/",
         "display": "standalone",
         "orientation": "portrait",
         "background_color": "#1a73e8",
         "theme_color": "#1a73e8",
         "icons": [
-            {"src": icon_192, "sizes": "192x192", "type": icon_type},
-            {"src": icon_512, "sizes": "512x512", "type": icon_type},
-            {"src": icon_192, "sizes": "192x192", "type": icon_type, "purpose": "maskable"},
-            {"src": icon_512, "sizes": "512x512", "type": icon_type, "purpose": "maskable"},
+            {"src": icon_192, "sizes": "192x192", "type": "image/png"},
+            {"src": icon_512, "sizes": "512x512", "type": "image/png"},
+            {"src": icon_192, "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+            {"src": icon_512, "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
         ],
     }
     response = JsonResponse(data)
     response["Content-Type"] = "application/manifest+json"
     response["Cache-Control"] = "private, max-age=60"
+    return response
+
+
+def dynamic_app_icon(request, size):
+    target_size = int(size)
+    if target_size not in (192, 512):
+        return HttpResponse(status=404)
+
+    branding = get_school_branding(request)
+    school_id = branding.get('school_id')
+    school = None
+    if school_id:
+        school = SchoolDetail.objects.only("id", "logo").filter(pk=school_id, isDeleted=False).first()
+
+    try:
+        from PIL import Image, ImageOps
+    except Exception:
+        fallback_path = os.path.join(settings.BASE_DIR, 'static', 'sw', 'images', f'icon-{target_size}.png')
+        with open(fallback_path, 'rb') as file_handle:
+            content = file_handle.read()
+        response = HttpResponse(content, content_type='image/png')
+        response["Cache-Control"] = "private, max-age=300"
+        return response
+
+    if school and school.logo:
+        try:
+            school.logo.open('rb')
+            image = Image.open(school.logo.file).convert('RGBA')
+            resampling = getattr(getattr(Image, 'Resampling', Image), 'LANCZOS', Image.LANCZOS)
+            fitted = ImageOps.contain(image, (target_size, target_size), resampling)
+            canvas = Image.new('RGBA', (target_size, target_size), (255, 255, 255, 0))
+            offset_x = (target_size - fitted.width) // 2
+            offset_y = (target_size - fitted.height) // 2
+            canvas.paste(fitted, (offset_x, offset_y), fitted)
+            output = BytesIO()
+            canvas.save(output, format='PNG', optimize=True)
+            response = HttpResponse(output.getvalue(), content_type='image/png')
+            response["Cache-Control"] = "private, max-age=300"
+            return response
+        except Exception:
+            pass
+        finally:
+            try:
+                school.logo.close()
+            except Exception:
+                pass
+
+    fallback_path = os.path.join(settings.BASE_DIR, 'static', 'sw', 'images', f'icon-{target_size}.png')
+    with open(fallback_path, 'rb') as file_handle:
+        content = file_handle.read()
+    response = HttpResponse(content, content_type='image/png')
+    response["Cache-Control"] = "private, max-age=300"
+    return response
+
+
+def service_worker(request):
+    sw_path = os.path.join(settings.BASE_DIR, 'static', 'sw', 'serviceworker.js')
+    with open(sw_path, 'r', encoding='utf-8') as file_handle:
+        content = file_handle.read()
+
+    response = HttpResponse(content, content_type='application/javascript')
+    response['Service-Worker-Allowed'] = '/'
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     return response

@@ -162,11 +162,11 @@
                         if (response.success) {
                             addSuccessNotification(response.message, response.color);
                             subjectTab.ajax.reload(null, false);
-                            $('#addForm').trigger('reset');
-                            hideLoading();
+                            clearAndReset();
+                            hideLoading(false);
                         } else {
                             addErrorNotification();
-                            hideLoading();
+                            hideLoading(true);
 
                         }
 
@@ -174,7 +174,7 @@
                     },
                     error: function () {
                         addErrorNotification();
-                        hideLoading();
+                        hideLoading(true);
                     }
                 });
 
@@ -292,7 +292,7 @@
             let editID = $('#editID').val();
             if (exam.trim() === '') {
                 requiredFieldError();
-                hideLoading();
+                hideLoading(true);
             } else {
 
                 let data = new FormData();
@@ -311,11 +311,11 @@
                         if (response.success) {
                             addSuccessNotification(response.message, response.color);
                             subjectTab.ajax.reload(null, false);
-                            $('#addForm').trigger('reset');
-                            hideLoading();
+                            clearAndReset();
+                            hideLoading(false);
                         } else {
                             addErrorNotification();
-                            hideLoading();
+                            hideLoading(true);
 
                         }
 
@@ -323,7 +323,7 @@
                     },
                     error: function () {
                         addErrorNotification();
-                        hideLoading();
+                        hideLoading(true);
                     }
                 });
 
@@ -336,6 +336,9 @@
              myOwnReset();
             $('#saveBtn').css('display', '');
             $('#saveBtnUpdate').css('display', 'none');
+            if (typeof currentLoadingMode !== 'undefined') {
+                currentLoadingMode = 'save';
+            }
 
         }
 

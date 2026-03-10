@@ -4,6 +4,8 @@ from .views import *
 urlpatterns = [
     path('', login_page, name='login_page'),
     path('manifest.webmanifest', dynamic_manifest, name='dynamic_manifest'),
+    path('pwa/icon-<int:size>.png', dynamic_app_icon, name='dynamic_app_icon'),
+    path('serviceworker.js', service_worker, name='service_worker'),
     path('logout/', user_logout, name='user_logout'),
     path('post_login/', post_login, name='post_login'),
     path('home/', homepage, name='homepage'),

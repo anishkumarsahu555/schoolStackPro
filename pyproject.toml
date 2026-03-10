@@ -12,6 +12,7 @@ dependencies = [
     "django-redis>=6.0.0",
     "django-stdimage==6.0.2",
     "gunicorn>=23.0.0",
+    "pywebpush>=2.0.3",
     "mysqlclient>=2.2.7",
     "python-dotenv>=1.2.1",
     "uvicorn>=0.40.0",

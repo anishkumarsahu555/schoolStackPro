@@ -12,7 +12,19 @@ admin.site.register(SchoolOwner, SchoolOwnerAdmin)
 
 
 class SchoolDetailAdmin(admin.ModelAdmin):
-    list_display = ['name', 'address', 'city', 'phoneNumber', 'email', 'datetime', 'lastUpdatedOn', ]
+    list_display = [
+        'name',
+        'address',
+        'city',
+        'phoneNumber',
+        'email',
+        'webPushEnabled',
+        'webPushStudentAppEnabled',
+        'webPushTeacherAppEnabled',
+        'webPushManagementAppEnabled',
+        'datetime',
+        'lastUpdatedOn',
+    ]
 
 
 admin.site.register(SchoolDetail, SchoolDetailAdmin)
@@ -30,3 +42,12 @@ class SchoolSessionAdmin(admin.ModelAdmin):
 
 
 admin.site.register(SchoolSession, SchoolSessionAdmin)
+
+
+class WebPushSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ['schoolID', 'userID', 'appName', 'isActive', 'datetime', 'lastUpdatedOn']
+    search_fields = ['endpointHash', 'endpoint', 'userID__username', 'schoolID__schoolName']
+    list_filter = ['appName', 'isActive']
+
+
+admin.site.register(WebPushSubscription, WebPushSubscriptionAdmin)

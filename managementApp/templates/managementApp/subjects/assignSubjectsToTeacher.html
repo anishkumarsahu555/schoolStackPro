@@ -285,7 +285,7 @@
                             addSuccessNotification(response.message, response.color);
                             subjectTab.ajax.reload(null, false);
                             clearAndReset();
-                            hideLoading();
+                            hideLoading(false);
                         } else {
                             addErrorNotification();
                             hideLoading();
@@ -443,7 +443,7 @@
                             addSuccessNotification(response.message, response.color);
                             subjectTab.ajax.reload(null, false);
                             clearAndReset();
-                            hideLoading();
+                            hideLoading(false);
                         } else {
                             addErrorNotification();
                             hideLoading();
@@ -467,6 +467,9 @@
             myOwnReset();
             $('#saveBtn').css('display', '');
             $('#saveBtnUpdate').css('display', 'none');
+            if (typeof currentLoadingMode !== 'undefined') {
+                currentLoadingMode = 'save';
+            }
 
         }
 

@@ -188,6 +188,23 @@
             color: #2a6fd8;
         }
 
+        .push-settings {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px dashed var(--app-border);
+        }
+
+        .push-settings .ui.checkbox {
+            display: block;
+            margin-bottom: 0.55rem;
+        }
+
+        .push-help {
+            margin-top: 0.45rem;
+            font-size: 0.82rem;
+            color: var(--app-muted);
+        }
+
         @media (max-width: 767px) {
             .detail-shell {
                 padding: 0 0.25rem;
@@ -331,6 +348,31 @@
                                         <label>Pincode</label>
                                         <input type="text" id="pinCode" placeholder="Pincode" value="{{ school.pinCode|default:'' }}">
                                     </div>
+                                </div>
+                                <div class="push-settings">
+                                    <div class="header" style="margin-bottom:0.5rem;">
+                                        <h4 class="ui header"><i class="bell icon"></i>Event Web Push Notification</h4>
+                                        <span class="chip">School Control</span>
+                                    </div>
+                                    <div class="ui toggle checkbox">
+                                        <input type="checkbox" id="webPushEnabled" {% if school.webPushEnabled %}checked{% endif %}>
+                                        <label>Enable event push notifications</label>
+                                    </div>
+                                    <div style="margin-top:0.75rem;">
+                                        <div class="ui checkbox">
+                                            <input type="checkbox" id="webPushStudentAppEnabled" {% if school.webPushStudentAppEnabled %}checked{% endif %}>
+                                            <label>Student app</label>
+                                        </div>
+                                        <div class="ui checkbox">
+                                            <input type="checkbox" id="webPushTeacherAppEnabled" {% if school.webPushTeacherAppEnabled %}checked{% endif %}>
+                                            <label>Teacher app</label>
+                                        </div>
+                                        <div class="ui checkbox">
+                                            <input type="checkbox" id="webPushManagementAppEnabled" {% if school.webPushManagementAppEnabled %}checked{% endif %}>
+                                            <label>Management app</label>
+                                        </div>
+                                    </div>
+                                    <div class="push-help">Event audience controls target app, and these switches control if school-wide push is allowed for each app.</div>
                                 </div>
                             </div>
                         </div>
@@ -556,6 +598,10 @@
             data.append('state', ($('#state').val() || '').trim());
             data.append('country', ($('#country').val() || '').trim());
             data.append('pinCode', ($('#pinCode').val() || '').trim());
+            data.append('webPushEnabled', $('#webPushEnabled').is(':checked'));
+            data.append('webPushStudentAppEnabled', $('#webPushStudentAppEnabled').is(':checked'));
+            data.append('webPushTeacherAppEnabled', $('#webPushTeacherAppEnabled').is(':checked'));
+            data.append('webPushManagementAppEnabled', $('#webPushManagementAppEnabled').is(':checked'));
 
             const logoFile = croppedLogoFile || $('#logo')[0].files[0];
             if (logoFile) data.append('logo', logoFile);

@@ -362,6 +362,7 @@
                     <div class="events-wrap" id="eventsWrap">
                         {% for row in events %}
                             <div class="event-card"
+                                 data-event-id="{{ row.id }}"
                                  data-title="{{ row.title|default:'Untitled Event'|lower }}"
                                  data-message="{{ row.message|default:''|lower }}"
                                  data-type="{{ row.eventID.name|default:'General'|lower }}"
@@ -522,6 +523,27 @@
             applyEventFilters();
         }
 
+        function focusEventFromNotification() {
+            const params = new URLSearchParams(window.location.search || '');
+            const eventId = (params.get('event_id') || '').trim();
+            if (!eventId) return;
+
+            const selector = '#eventsWrap .event-card[data-event-id="' + eventId + '"]';
+            const card = document.querySelector(selector);
+            if (!card) return;
+
+            card.style.display = '';
+            card.scrollIntoView({behavior: 'smooth', block: 'center'});
+            card.style.transition = 'box-shadow .2s ease, transform .2s ease';
+            card.style.boxShadow = '0 0 0 3px rgba(26,115,232,0.32)';
+            card.style.transform = 'translateY(-1px)';
+            setTimeout(function () {
+                card.style.boxShadow = '';
+                card.style.transform = '';
+            }, 2200);
+        }
+
         $(initEventFilters);
+        $(focusEventFromNotification);
     </script>
 {% endblock %}
