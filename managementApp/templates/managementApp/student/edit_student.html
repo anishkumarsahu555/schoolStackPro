@@ -43,6 +43,12 @@
             color: #6b7280;
             font-size: 0.85rem;
         }
+
+        .avatar-upload.photo-error .avatar-preview {
+            border: 2px solid #db2828;
+            border-radius: 8px;
+            box-shadow: 0 0 0 2px rgba(219, 40, 40, 0.15);
+        }
     </style>
 {% endblock %}
 {% block body %}
@@ -64,7 +70,7 @@
                 <form class="ui form segment tiny" id="addForm" enctype="multipart/form-data"> {% csrf_token %}
                     <h4 class="ui dividing header">Import Student</h4>
                     <div class="three fields">
-                        <div class="field required">
+                        <div class="field">
                             <label>Registration ID</label> <span class="ui medium text green">Use registration code to import student from past session.</span>
                             <input type="text" name="registration" id="registration" placeholder="Registration Code">
                         </div>
@@ -151,7 +157,7 @@
                                 <input type="text" name="email" id="email" placeholder="Email" value="{{instance.email}}">
                             </div>
                         </div>
-                        <div class="field required">
+                        <div class="field">
                             <label>Phone Number</label>
                             <div class="ui input">
                                 <input type="number" name="phone" id="phone" placeholder="Phone Number" value="{{instance.phoneNumber}}">
@@ -159,7 +165,7 @@
                         </div>
                     </div>
                     <div class="three fields">
-                        <div class="field required">
+                        <div class="field">
                             <label>Blood Group</label>
                             <select class="ui dropdown" id="bloodGroup">
                                 <option value="">Select Blood Group</option>
@@ -195,7 +201,7 @@
                         </div>
                     </div>
                     <div class="three fields">
-                        <div class="field required">
+                        <div class="field">
                             <label>Aadhar Number</label>
                             <div class="ui input">
                                 <input type="number" name="aadhar" id="aadhar" placeholder="Aadhar Number" value="{{instance.aadhar}}">
@@ -219,7 +225,7 @@
 
                    <h4 class="ui dividing header">Social Details</h4>
                         <div class="three fields">
-                            <div class="field required">
+                            <div class="field">
                             <label>Caste</label>
                                <select class="ui dropdown" id="caste">
                                 <option value="">Select Caste</option>
@@ -251,7 +257,7 @@
 
                     <h4 class="ui dividing header">Family Details</h4>
                     <div class="three fields">
-                        <div class="field required">
+                        <div class="field">
                                <label>Family Type</label>
                                <select class="ui dropdown" id="familyType">
                                 <option value="">Select Family Type</option>
@@ -281,7 +287,7 @@
                                 <input type="text" name="fname" id="fname" placeholder="Father Name" value="{{instance.parentID.fatherName}}">
                             </div>
                         </div>
-                        <div class="field required">
+                        <div class="field">
                             <label>Father Occupation</label>
                             <div class="ui input">
                                 <input type="text" name="FatherOccupation" id="FatherOccupation" placeholder="Father Occupation" value="{{instance.parentID.fatherOccupation}}">
@@ -322,7 +328,7 @@
                                 <input type="text" name="MotherOccupation" id="MotherOccupation" placeholder="Mother Occupation" value="{{instance.parentID.motherOccupation}}">
                             </div>
                         </div>
-                        <div class="field required">
+                        <div class="field">
                             <label>Mother Contact Number</label>
                             <div class="ui input">
                                 <input type="number" name="MotherContactNumber" id="MotherContactNumber" placeholder="Mother Contact Number" value="{{instance.parentID.motherPhone}}">
@@ -545,11 +551,11 @@
                             <label>Registration Code</label>
                             <input type="text" name="registrationCode" id="registrationCode" placeholder="Registration Code" value="{{instance.registrationCode}}">
                         </div>
-                        <div class="field required">
+                        <div class="field">
                             <label>Family Code</label>
                             <input type="text" name="familyCode" id="familyCode" placeholder="Family Code" value="{{instance.familyCode}}">
                         </div>
-                        <div class="field required">
+                        <div class="field">
                             <label>No. of siblings Attended</label>
                             <input type="number" name="siblings" id="siblings" placeholder="No. of siblings Attended" value="{{instance.siblingsCount}}">
                         </div>
@@ -561,7 +567,7 @@
 
                         </div>
                         
-                        <div class="field required">
+                        <div class="field">
                             <label>Date Of Joining</label>
                             <div class="ui calendar" id="dojCal">
                                 <div class="ui input left icon">
@@ -762,6 +768,16 @@
             $('#cImg').fadeIn(300);
         }
 
+        function setPhotoFieldError() {
+            $('#imageUpload').closest('.field').addClass('error');
+            $('#imageUpload').closest('.avatar-upload').addClass('photo-error');
+        }
+
+        function clearPhotoFieldError() {
+            $('#imageUpload').closest('.field').removeClass('error');
+            $('#imageUpload').closest('.avatar-upload').removeClass('photo-error');
+        }
+
         function clampCropPosition() {
             const scaledWidth = cropState.image.width * cropState.baseScale * cropState.zoom;
             const scaledHeight = cropState.image.height * cropState.baseScale * cropState.zoom;
@@ -870,6 +886,7 @@
         });
 
         $("#imageUpload").change(async function () {
+            clearPhotoFieldError();
             const selectedFile = this.files && this.files[0];
             if (!selectedFile) return;
             try {
@@ -904,6 +921,7 @@
                 croppedImageFile = await canvasToFile(croppedName);
                 const previewURL = URL.createObjectURL(croppedImageFile);
                 setPhotoPreview(previewURL);
+                clearPhotoFieldError();
                 cropModal.modal('hide');
             } catch (error) {
                 addErrorNotification('Unable to crop selected image.');
@@ -945,6 +963,7 @@
 
             $('#editID').val('{{instance.id}}');
             $('#cImg').css('background-image', "url({% static 'images/add_photo.svg' %})");
+            clearPhotoFieldError();
             hideLoading();
         }
 
@@ -1002,19 +1021,24 @@ function addStudentData() {
 
     // ---------- BASIC REQUIRED CHECK ----------
     const requiredIds = [
-        'name', 'gender',
-        'dob', 'registrationCode',
-        'standard', 'idMark','caste',
-        'religion', 'familyType','fname','FatherOccupation','fatherContactNumber','FatherAddress',
-        'mname','MotherOccupation','MotherContactNumber','MotherAddress',
-        'standard','doj','admissionFee','tuitionFee','miscFee','totalFee'
+        'name',
+        'gender',
+        'dob',
+        'registrationCode',
+        'standard',
+        'fname',
+        'fatherContactNumber'
     ];
 
     let hasError = false;
     requiredIds.forEach(id => {
         if (!data.get(id)) {
             console.log(id);
-             $(`#${id}`).closest('.field').addClass('error');
+            if (id === 'imageUpload') {
+                setPhotoFieldError();
+            } else {
+                $(`#${id}`).closest('.field').addClass('error');
+            }
             hasError = true;
         }
     });
