@@ -1,11 +1,12 @@
 import json
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 from django.db.models import Count
 from django.shortcuts import render, get_object_or_404, redirect
 
+from homeApp.models import SchoolDetail, SchoolSession
+from homeApp.session_utils import get_session_month_sequence
 from homeApp.utils import login_required
-from homeApp.models import SchoolDetail
 from managementApp.models import *
 from managementApp.signals import pre_save_with_user
 from teacherApp.models import SubjectNote
@@ -350,7 +351,14 @@ def student_fee(request):
 @login_required
 @check_groups('Admin', 'Owner')
 def student_fee_details(request):
+    current_session_id = request.session.get('current_session', {}).get('Id')
+    session_obj = SchoolSession.objects.filter(pk=current_session_id, isDeleted=False).first() if current_session_id else None
+    month_headers = [
+        datetime(year_value, month_no, 1).strftime('%b-%Y')
+        for _, year_value, month_no, _, _ in get_session_month_sequence(session_obj)
+    ]
     context = {
+        'fee_month_headers': month_headers,
     }
     return render(request, 'managementApp/fee/feeDetails.html', context)
 

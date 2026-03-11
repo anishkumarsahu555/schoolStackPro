@@ -8,6 +8,8 @@ from django.http import JsonResponse as DjangoJsonResponse
 from django.utils.html import escape
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
+from homeApp.models import SchoolSession
+from homeApp.session_utils import get_session_month_sequence
 from managementApp.models import *
 from managementApp.signals import pre_save_with_user
 from studentApp.data_utils import StudentData
@@ -63,6 +65,38 @@ def _attendance_base_queryset(request):
         studentID_id=student_id,
         sessionID_id=current_session_id,
     )
+
+
+def _compact_fee_month(month_value, year_value):
+    short_month = month_value
+    if month_value:
+        try:
+            short_month = datetime.strptime(month_value, '%B').strftime('%b')
+        except ValueError:
+            short_month = month_value
+    if short_month and year_value:
+        return f'{short_month}-{year_value}'
+    return short_month or 'N/A'
+
+
+def _session_month_rows(session_id):
+    session_obj = SchoolSession.objects.filter(pk=session_id, isDeleted=False).first() if session_id else None
+    return get_session_month_sequence(session_obj)
+
+
+def _restrict_fee_queryset_to_session_months(qs, session_id):
+    session_month_rows = _session_month_rows(session_id)
+    if not session_month_rows:
+        return qs.none()
+
+    ym_filter = Q()
+    month_name_filter = Q()
+    for month_name, year_value, month_no, _, _ in session_month_rows:
+        ym_filter |= Q(feeYear=year_value, feeMonth=month_no)
+        month_name_filter |= Q(month__iexact=month_name)
+
+    legacy_filter = (Q(feeYear__isnull=True) | Q(feeMonth__isnull=True)) & month_name_filter
+    return qs.filter(ym_filter | legacy_filter)
 
 
 def _count_approved_student_leave_days(session_id, student_id, start_date, end_date):
@@ -450,12 +484,13 @@ class StudentFeeDetailsJson(BaseDatatableView):
             if not current_session_id or not student_id or not class_id:
                 return StudentFee.objects.none()
 
-            return StudentFee.objects.filter(
+            fee_qs = StudentFee.objects.filter(
                 isDeleted__exact=False,
                 studentID_id=student_id,
                 standardID_id=class_id,
                 sessionID_id=current_session_id
             )
+            return _restrict_fee_queryset_to_session_months(fee_qs, current_session_id).order_by('feeYear', 'feeMonth', 'id')
         except Exception:
             return StudentFee.objects.none()
 
@@ -484,7 +519,7 @@ class StudentFeeDetailsJson(BaseDatatableView):
 
             json_data.append([
 
-                escape(item.month or 'N/A'),
+                escape(_compact_fee_month(item.month, item.feeYear)),
                 status,
                 payDate,
                 escape(item.amount if item.amount is not None else 0),

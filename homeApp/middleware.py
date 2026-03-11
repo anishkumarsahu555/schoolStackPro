@@ -1,4 +1,5 @@
 from homeApp.models import SchoolSession
+from homeApp.session_utils import build_current_session_payload, build_session_list_item
 from managementApp.models import Student, TeacherDetail
 
 
@@ -92,19 +93,8 @@ class RoleSessionBootstrapMiddleware:
         if not target_session:
             return
 
-        current["Id"] = target_session.pk
-        current["currentSessionYear"] = target_session.sessionYear
-        current["SchoolID"] = target_session.schoolID_id
-
-        school = school_obj or getattr(target_session, "schoolID", None)
-        if school:
-            if school.schoolName:
-                current["SchoolName"] = school.schoolName
-            if getattr(school, "logo", None):
-                try:
-                    current["SchoolLogo"] = school.logo.url
-                except Exception:
-                    pass
+        payload = build_current_session_payload(target_session)
+        current.update(payload)
 
         request.session["current_session"] = current
 
@@ -114,6 +104,6 @@ class RoleSessionBootstrapMiddleware:
                 schoolID_id=school_id,
             ).order_by("-datetime")
             request.session["session_list"] = [
-                {"currentSessionYear": s.sessionYear, "Id": s.pk}
+                build_session_list_item(s)
                 for s in session_qs
             ]

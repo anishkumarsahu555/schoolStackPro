@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, F
 from django.http import JsonResponse
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -11,6 +11,8 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
+from homeApp.models import SchoolSession
+from homeApp.session_utils import get_session_month_sequence
 from managementApp.models import (
     Student,
     TeacherDetail,
@@ -49,6 +51,38 @@ def _teacher_status_from_row(is_present, reason):
     if (reason or '').strip().lower().startswith('approved leave'):
         return 'leave'
     return 'absent'
+
+
+def _compact_fee_month(month_value, year_value):
+    short_month = month_value
+    if month_value:
+        try:
+            short_month = datetime.strptime(month_value, '%B').strftime('%b')
+        except ValueError:
+            short_month = month_value
+    if short_month and year_value:
+        return f'{short_month}-{year_value}'
+    return short_month or 'N/A'
+
+
+def _session_month_rows(session_id):
+    session_obj = SchoolSession.objects.filter(pk=session_id, isDeleted=False).first() if session_id else None
+    return get_session_month_sequence(session_obj)
+
+
+def _restrict_fee_queryset_to_session_months(qs, session_id):
+    session_month_rows = _session_month_rows(session_id)
+    if not session_month_rows:
+        return qs.none()
+
+    ym_filter = Q()
+    month_name_filter = Q()
+    for month_name, year_value, month_no, _, _ in session_month_rows:
+        ym_filter |= Q(feeYear=year_value, feeMonth=month_no)
+        month_name_filter |= Q(month__iexact=month_name)
+
+    legacy_filter = (Q(feeYear__isnull=True) | Q(feeMonth__isnull=True)) & month_name_filter
+    return qs.filter(ym_filter | legacy_filter)
 
 
 @method_decorator(login_required, name='dispatch')
@@ -835,7 +869,7 @@ class TeacherStudentFeeDetailsByClassJson(BaseDatatableView):
 @method_decorator(login_required, name='dispatch')
 @method_decorator(check_groups('Teaching'), name='dispatch')
 class TeacherStudentFeeDetailsByStudentJson(BaseDatatableView):
-    order_columns = ['month', 'isPaid', 'payDate', 'amount', 'note']
+    order_columns = ['periodStartDate', 'isPaid', 'payDate', 'amount', 'note']
 
     def get_initial_queryset(self):
         standard = self.request.GET.get("standardByStudent")
@@ -857,12 +891,18 @@ class TeacherStudentFeeDetailsByStudentJson(BaseDatatableView):
         if not student_exists:
             return StudentFee.objects.none()
 
-        return StudentFee.objects.filter(
+        fee_qs = StudentFee.objects.filter(
             isDeleted=False,
             studentID_id=int(student),
             standardID_id=int(standard),
             sessionID_id=current_session_id
-        ).order_by('id')
+        )
+        return _restrict_fee_queryset_to_session_months(fee_qs, current_session_id).order_by(
+            F('periodStartDate').asc(nulls_last=True),
+            'feeYear',
+            'feeMonth',
+            'id',
+        )
 
     def filter_queryset(self, qs):
         search = self.request.GET.get('search[value]', None)
@@ -884,7 +924,7 @@ class TeacherStudentFeeDetailsByStudentJson(BaseDatatableView):
                 pay_date = 'N/A'
 
             json_data.append([
-                escape(item.month or 'N/A'),
+                escape(_compact_fee_month(item.month, item.feeYear)),
                 status,
                 pay_date,
                 escape(item.amount),

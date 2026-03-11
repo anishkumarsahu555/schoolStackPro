@@ -6,6 +6,7 @@ from django.db.models.functions import TruncMonth
 from django.shortcuts import render
 
 from homeApp.models import SchoolSession, SchoolDetail
+from homeApp.session_utils import build_current_session_payload, build_session_list_item
 from homeApp.utils import login_required
 from managementApp.models import *
 from teacherApp.models import SubjectNote
@@ -21,16 +22,13 @@ def _bootstrap_student_context(request):
     ).order_by('-datetime').first()
 
     if student and student.sessionID and 'current_session' not in request.session:
-        request.session['current_session'] = {
-            'currentSessionYear': student.sessionID.sessionYear,
-            'Id': student.sessionID_id,
-        }
+        request.session['current_session'] = build_current_session_payload(student.sessionID)
         session_qs = SchoolSession.objects.filter(
             isDeleted=False,
             schoolID_id=student.schoolID_id,
         ).order_by('-datetime')
         request.session['session_list'] = [
-            {'currentSessionYear': s.sessionYear, 'Id': s.pk}
+            build_session_list_item(s)
             for s in session_qs
         ]
 

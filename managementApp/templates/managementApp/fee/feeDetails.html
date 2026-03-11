@@ -87,18 +87,9 @@
                                         <th>Photo</th>
                                         <th>Name</th>
                                         <th>RollNo.</th>
-                                        <th>Jan</th>
-                                        <th>Feb</th>
-                                        <th>Mar</th>
-                                        <th>Apr</th>
-                                        <th>May</th>
-                                        <th>Jun</th>
-                                        <th>Jul</th>
-                                        <th>Aug</th>
-                                        <th>Sep</th>
-                                        <th>Oct</th>
-                                        <th>Nov</th>
-                                        <th>Dec</th>
+                                        {% for month_label in fee_month_headers %}
+                                            <th>{{ month_label }}</th>
+                                        {% endfor %}
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -188,6 +179,9 @@
 
 
         $(getStandardList());
+        const feeMonthCount = {{ fee_month_headers|length }};
+        const classMonthTargets = Array.from({length: feeMonthCount}, (_, idx) => idx + 3);
+        const classExportColumns = Array.from({length: feeMonthCount + 2}, (_, idx) => idx + 1);
         let today = new Date();
         var commonFormatter = function (date, settings) {
             if (!date) return '';
@@ -321,7 +315,7 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [1, 2, 3, 4,5,6,7,8,9,10,11,12,13,14]
+                    columns: classExportColumns
                 }
             }
             ],
@@ -329,18 +323,7 @@
                 {"name": "photo", "targets": 0, "orderable": true},
                 {"name": "name", "targets": 1, "orderable": true},
                 {"name": "roll", "targets": 2, "orderable": true},
-                {"name": "January", "targets": 3, "orderable": false},
-                {"name": "February", "targets": 4, "orderable": false},
-                {"name": "March", "targets": 5, "orderable": false},
-                {"name": "April", "targets": 6, "orderable": false},
-                {"name": "May", "targets": 7, "orderable": false},
-                {"name": "June", "targets": 8, "orderable": false},
-                {"name": "July", "targets": 9, "orderable": false},
-                {"name": "August", "targets": 10, "orderable": false},
-                {"name": "September", "targets": 11, "orderable": false},
-                {"name": "October", "targets": 12, "orderable": false},
-                {"name": "November", "targets": 13, "orderable": false},
-                {"name": "December", "targets": 14, "orderable": false}
+                {"targets": classMonthTargets, "orderable": false}
 
             ],
             aaSorting: [[2, 'asc']],

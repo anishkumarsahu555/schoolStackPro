@@ -1,5 +1,6 @@
 from django.shortcuts import redirect
 from homeApp.models import SchoolSession
+from homeApp.session_utils import build_current_session_payload, build_session_list_item
 from managementApp.models import *
 from utils.logger import logger
 # change to normal function
@@ -20,13 +21,7 @@ def init_session(request):
             logger.error("User is not authenticated")
             return False
         current = SchoolSession.objects.get(isCurrent__exact=True, isDeleted=False, schoolID__ownerID__userID_id=request.user.id)
-        session_data = {
-            'currentSessionYear': current.sessionYear,
-            'Id': current.pk,
-            'SchoolID': current.schoolID_id,
-            'SchoolName': current.schoolID.schoolName,
-            'SchoolLogo': current.schoolID.logo.url if current.schoolID.logo else None,
-        }
+        session_data = build_current_session_payload(current)
         request.session['current_session'] = session_data
         return True   
     except Exception as e:
@@ -92,10 +87,7 @@ def get_all_session_list(request):
     sessions_years = SchoolSession.objects.filter(isDeleted=False, schoolID__ownerID__userID_id=request.user.id).order_by('-datetime')
     session_list = []
     for session in sessions_years:
-        session_data = {
-            'currentSessionYear': session.sessionYear,
-            'Id': session.pk
-        }
+        session_data = build_session_list_item(session)
         session_list.append(session_data)
     request.session['session_list'] = session_list
 

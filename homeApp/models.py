@@ -82,9 +82,26 @@ class SchoolSocialLink(models.Model):
 
 
 class SchoolSession(models.Model):
+    FEE_RESYNC_STATUS_CHOICES = (
+        ('idle', 'Idle'),
+        ('pending', 'Pending'),
+        ('running', 'Running'),
+        ('done', 'Done'),
+        ('failed', 'Failed'),
+    )
+
     schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
     sessionYear = models.CharField(max_length=500, blank=True, null=True)
+    startDate = models.DateField(blank=True, null=True)
+    endDate = models.DateField(blank=True, null=True)
     isCurrent = models.BooleanField(default=False)
+    feeResyncStatus = models.CharField(max_length=20, choices=FEE_RESYNC_STATUS_CHOICES, default='idle')
+    feeResyncRequestedAt = models.DateTimeField(blank=True, null=True)
+    feeResyncStartedAt = models.DateTimeField(blank=True, null=True)
+    feeResyncFinishedAt = models.DateTimeField(blank=True, null=True)
+    feeResyncUpdatedCount = models.PositiveIntegerField(default=0)
+    feeResyncCreatedCount = models.PositiveIntegerField(default=0)
+    feeResyncError = models.TextField(blank=True, null=True)
     datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
@@ -92,10 +109,20 @@ class SchoolSession(models.Model):
     isDeleted = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.sessionYear
+        return self.sessionYear or f"Session #{self.pk}"
 
     class Meta:
         verbose_name_plural = 'd) School Session.'
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(startDate__isnull=True) | models.Q(endDate__isnull=True) | models.Q(startDate__lte=models.F('endDate')),
+                name='school_session_start_before_end',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['schoolID', 'isDeleted', 'isCurrent'], name='ss_school_cur_del_idx'),
+            models.Index(fields=['schoolID', 'startDate', 'endDate'], name='ss_school_date_rng_idx'),
+        ]
 
 
 class WebPushSubscription(models.Model):
