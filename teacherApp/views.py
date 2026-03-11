@@ -5,6 +5,7 @@ from django.db.models import Q, Count
 from django.shortcuts import render, get_object_or_404
 
 from homeApp.models import SchoolSession, SchoolDetail
+from homeApp.session_utils import build_current_session_payload, build_session_list_item
 from homeApp.utils import login_required
 from managementApp.models import (
     Student,
@@ -31,16 +32,13 @@ def _bootstrap_teacher_context(request):
     ).order_by('-datetime').first()
 
     if teacher and teacher.sessionID and 'current_session' not in request.session:
-        request.session['current_session'] = {
-            'currentSessionYear': teacher.sessionID.sessionYear,
-            'Id': teacher.sessionID_id,
-        }
+        request.session['current_session'] = build_current_session_payload(teacher.sessionID)
         session_qs = SchoolSession.objects.filter(
             isDeleted=False,
             schoolID_id=teacher.schoolID_id,
         ).order_by('-datetime')
         request.session['session_list'] = [
-            {'currentSessionYear': s.sessionYear, 'Id': s.pk}
+            build_session_list_item(s)
             for s in session_qs
         ]
 
@@ -237,16 +235,13 @@ def teacher_students_list(request):
             isDeleted=False,
         ).order_by('-datetime').first()
         if teacher and teacher.sessionID:
-            request.session['current_session'] = {
-                'currentSessionYear': teacher.sessionID.sessionYear,
-                'Id': teacher.sessionID_id,
-            }
+            request.session['current_session'] = build_current_session_payload(teacher.sessionID)
             session_qs = SchoolSession.objects.filter(
                 isDeleted=False,
                 schoolID_id=teacher.schoolID_id,
             ).order_by('-datetime')
             request.session['session_list'] = [
-                {'currentSessionYear': s.sessionYear, 'Id': s.pk}
+                build_session_list_item(s)
                 for s in session_qs
             ]
 
@@ -293,16 +288,13 @@ def teacher_student_attendance(request):
             isDeleted=False,
         ).order_by('-datetime').first()
         if teacher and teacher.sessionID:
-            request.session['current_session'] = {
-                'currentSessionYear': teacher.sessionID.sessionYear,
-                'Id': teacher.sessionID_id,
-            }
+            request.session['current_session'] = build_current_session_payload(teacher.sessionID)
             session_qs = SchoolSession.objects.filter(
                 isDeleted=False,
                 schoolID_id=teacher.schoolID_id,
             ).order_by('-datetime')
             request.session['session_list'] = [
-                {'currentSessionYear': s.sessionYear, 'Id': s.pk}
+                build_session_list_item(s)
                 for s in session_qs
             ]
 
@@ -331,16 +323,13 @@ def teacher_manage_event(request):
             isDeleted=False,
         ).order_by('-datetime').first()
         if teacher and teacher.sessionID:
-            request.session['current_session'] = {
-                'currentSessionYear': teacher.sessionID.sessionYear,
-                'Id': teacher.sessionID_id,
-            }
+            request.session['current_session'] = build_current_session_payload(teacher.sessionID)
             session_qs = SchoolSession.objects.filter(
                 isDeleted=False,
                 schoolID_id=teacher.schoolID_id,
             ).order_by('-datetime')
             request.session['session_list'] = [
-                {'currentSessionYear': s.sessionYear, 'Id': s.pk}
+                build_session_list_item(s)
                 for s in session_qs
             ]
 
@@ -444,16 +433,13 @@ def teacher_add_marks(request):
             isDeleted=False,
         ).order_by('-datetime').first()
         if teacher and teacher.sessionID:
-            request.session['current_session'] = {
-                'currentSessionYear': teacher.sessionID.sessionYear,
-                'Id': teacher.sessionID_id,
-            }
+            request.session['current_session'] = build_current_session_payload(teacher.sessionID)
             session_qs = SchoolSession.objects.filter(
                 isDeleted=False,
                 schoolID_id=teacher.schoolID_id,
             ).order_by('-datetime')
             request.session['session_list'] = [
-                {'currentSessionYear': s.sessionYear, 'Id': s.pk}
+                build_session_list_item(s)
                 for s in session_qs
             ]
 
@@ -473,16 +459,13 @@ def teacher_marks_details(request):
             isDeleted=False,
         ).order_by('-datetime').first()
         if teacher and teacher.sessionID:
-            request.session['current_session'] = {
-                'currentSessionYear': teacher.sessionID.sessionYear,
-                'Id': teacher.sessionID_id,
-            }
+            request.session['current_session'] = build_current_session_payload(teacher.sessionID)
             session_qs = SchoolSession.objects.filter(
                 isDeleted=False,
                 schoolID_id=teacher.schoolID_id,
             ).order_by('-datetime')
             request.session['session_list'] = [
-                {'currentSessionYear': s.sessionYear, 'Id': s.pk}
+                build_session_list_item(s)
                 for s in session_qs
             ]
 

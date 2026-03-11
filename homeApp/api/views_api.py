@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from homeApp.models import SchoolDetail, WebPushSubscription
+from homeApp.session_utils import build_current_session_payload
 from managementApp.models import *
 from managementApp.signals import pre_save_with_user
 from homeApp.push_service import (
@@ -57,7 +58,7 @@ def change_session(request):
         try:
             sessionID = request.POST.get("sessionID")
             instance = SchoolSession.objects.get(pk=int(sessionID),isDeleted=False)
-            request.session['current_session'] = {'currentSessionYear': instance.sessionYear, 'Id': instance.pk}
+            request.session['current_session'] = build_current_session_payload(instance)
             return _api_response(
                 {'status': 'success', 'message': 'Session changed successfully.', 'color': 'success'},
                 safe=False)

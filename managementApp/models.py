@@ -472,6 +472,11 @@ class StudentFee(models.Model):
     studentID = models.ForeignKey(Student, blank=True, null=True, on_delete=models.CASCADE)
     standardID = models.ForeignKey(Standard, blank=True, null=True, on_delete=models.CASCADE)
     month = models.CharField(max_length=100, blank=True, null=True)
+    feeMonth = models.PositiveSmallIntegerField(blank=True, null=True)
+    feeYear = models.PositiveIntegerField(blank=True, null=True)
+    periodStartDate = models.DateField(blank=True, null=True)
+    periodEndDate = models.DateField(blank=True, null=True)
+    dueDate = models.DateField(blank=True, null=True)
     note = models.TextField(blank=True, null=True, default='')
     amount = models.FloatField(default=0.0)
     payDate = models.DateField(blank=True, null=True)
@@ -487,6 +492,7 @@ class StudentFee(models.Model):
         indexes = [
             models.Index(fields=['sessionID', 'studentID', 'standardID', 'isDeleted'], name='sf_sess_stu_std_del_idx'),
             models.Index(fields=['sessionID', 'studentID', 'isPaid', 'isDeleted'], name='sf_sess_stu_paid_idx'),
+            models.Index(fields=['sessionID', 'studentID', 'feeYear', 'feeMonth'], name='sf_sess_stu_ym_idx'),
         ]
 
 
@@ -692,4 +698,3 @@ class LeaveActionLog(models.Model):
         indexes = [
             models.Index(fields=['sessionID', 'leaveID', 'isDeleted', 'datetime'], name='lal_sess_leave_dt_idx'),
         ]
-

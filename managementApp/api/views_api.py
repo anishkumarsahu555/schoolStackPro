@@ -12,7 +12,8 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
-from homeApp.models import SchoolDetail
+from homeApp.models import SchoolDetail, SchoolSession
+from homeApp.session_utils import get_session_month_sequence
 from homeApp.push_service import send_event_push_notifications
 from managementApp.models import *
 from managementApp.signals import pre_save_with_user
@@ -56,6 +57,38 @@ def _api_response(payload, safe=False, status=200):
 
 def _current_session_id(request):
     return request.session.get("current_session", {}).get("Id")
+
+
+def _session_month_rows(session_id):
+    session_obj = SchoolSession.objects.filter(pk=session_id, isDeleted=False).first() if session_id else None
+    return get_session_month_sequence(session_obj)
+
+
+def _restrict_fee_queryset_to_session_months(qs, session_id):
+    session_month_rows = _session_month_rows(session_id)
+    if not session_month_rows:
+        return qs.none()
+
+    ym_filter = Q()
+    month_name_filter = Q()
+    for month_name, year_value, month_no, _, _ in session_month_rows:
+        ym_filter |= Q(feeYear=year_value, feeMonth=month_no)
+        month_name_filter |= Q(month__iexact=month_name)
+
+    legacy_filter = (Q(feeYear__isnull=True) | Q(feeMonth__isnull=True)) & month_name_filter
+    return qs.filter(ym_filter | legacy_filter)
+
+
+def _fee_month_label(fee_obj):
+    short_month = fee_obj.month
+    if fee_obj.month:
+        try:
+            short_month = datetime.strptime(fee_obj.month, '%B').strftime('%b')
+        except ValueError:
+            short_month = fee_obj.month
+    if fee_obj.month and fee_obj.feeYear:
+        return f'{short_month}-{fee_obj.feeYear}'
+    return short_month or 'N/A'
 
 
 def _editor_name(user):
@@ -3628,22 +3661,55 @@ class FeeByStudentJson(BaseDatatableView):
         try:
             student = self.request.GET.get("student")
             standard = self.request.GET.get("standard")
-            for month in MONTHS_LIST:
-                try:
-                    StudentFee.objects.get(studentID_id=int(student), month__iexact=month,
-                                           standardID_id=int(standard), isDeleted=False,
-                                           sessionID_id=self.request.session["current_session"]["Id"])
+            session_id = self.request.session["current_session"]["Id"]
+            for month_name, year_value, month_no, period_start, period_end in _session_month_rows(session_id):
+                fee_obj = StudentFee.objects.filter(
+                    studentID_id=int(student),
+                    month__iexact=month_name,
+                    standardID_id=int(standard),
+                    isDeleted=False,
+                    sessionID_id=session_id,
+                ).order_by('id').first()
 
-                except:
-                    instance = StudentFee.objects.create(studentID_id=int(student), month=month,
-                                                         standardID_id=int(standard),
-                                                         )
-                    pre_save_with_user.send(sender=StudentFee, instance=instance, user=self.request.user.pk)
+                if not fee_obj:
+                    fee_obj = StudentFee.objects.create(
+                        studentID_id=int(student),
+                        month=month_name,
+                        standardID_id=int(standard),
+                        feeMonth=month_no,
+                        feeYear=year_value,
+                        periodStartDate=period_start,
+                        periodEndDate=period_end,
+                        dueDate=period_start,
+                    )
+                    pre_save_with_user.send(sender=StudentFee, instance=fee_obj, user=self.request.user.pk)
+                else:
+                    update_fields = []
+                    if not fee_obj.feeMonth:
+                        fee_obj.feeMonth = month_no
+                        update_fields.append('feeMonth')
+                    if not fee_obj.feeYear:
+                        fee_obj.feeYear = year_value
+                        update_fields.append('feeYear')
+                    if not fee_obj.periodStartDate:
+                        fee_obj.periodStartDate = period_start
+                        update_fields.append('periodStartDate')
+                    if not fee_obj.periodEndDate:
+                        fee_obj.periodEndDate = period_end
+                        update_fields.append('periodEndDate')
+                    if not fee_obj.dueDate:
+                        fee_obj.dueDate = period_start
+                        update_fields.append('dueDate')
+                    if update_fields:
+                        fee_obj.save(update_fields=update_fields + ['lastUpdatedOn'])
 
-            return StudentFee.objects.select_related().filter(studentID_id=int(student),
-                                                              standardID_id=int(standard), isDeleted=False,
-                                                              sessionID_id=self.request.session["current_session"][
-                                                                  "Id"]).order_by('id')
+            fee_qs = StudentFee.objects.select_related().filter(
+                studentID_id=int(student),
+                standardID_id=int(standard),
+                isDeleted=False,
+                sessionID_id=session_id,
+            )
+            return _restrict_fee_queryset_to_session_months(fee_qs, session_id).order_by('feeYear', 'feeMonth', 'id')
 
         except:
             return StudentFee.objects.none()
@@ -3699,7 +3765,7 @@ class FeeByStudentJson(BaseDatatableView):
                 payDate = 'N/A'
 
             json_data.append([
-                escape(item.month),
+                escape(_fee_month_label(item)),
                 is_present,
                 payDate,
                 amount,
@@ -3769,52 +3835,35 @@ class StudentFeeDetailsByClassJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
-
+        session_id = self.request.session["current_session"]["Id"]
+        session_month_rows = _session_month_rows(session_id)
         json_data = []
         for item in qs:
-            January: str = 'Due'
-            February: str = 'Due'
-            March: str = 'Due'
-            April: str = 'Due'
-            May: str = 'Due'
-            June: str = 'Due'
-            July: str = 'Due'
-            August: str = 'Due'
-            September: str = 'Due'
-            October: str = 'Due'
-            November: str = 'Due'
-            December: str = 'Due'
+            paid_fee_qs = StudentFee.objects.filter(
+                studentID_id=item.id,
+                isDeleted=False,
+                isPaid=True,
+                sessionID_id=session_id,
+            )
+            paid_fee_rows = list(_restrict_fee_queryset_to_session_months(paid_fee_qs, session_id).values('feeYear', 'feeMonth', 'month'))
+            paid_year_month = {
+                (row.get('feeYear'), row.get('feeMonth'))
+                for row in paid_fee_rows
+                if row.get('feeYear') and row.get('feeMonth')
+            }
+            paid_month_names = {
+                (row.get('month') or '').strip().lower()
+                for row in paid_fee_rows
+                if row.get('month') and (not row.get('feeYear') or not row.get('feeMonth'))
+            }
 
-            for month in MONTHS_LIST:
-                obj = StudentFee.objects.filter(studentID_id=item.id, month__iexact=month, isDeleted=False, isPaid=True,
-                                                sessionID_id=self.request.session["current_session"][
-                                                    "Id"]).first()
-
-                if obj:
-                    if month == 'January':
-                        January = 'Paid'
-                    elif month == 'February':
-                        February = 'Paid'
-                    elif month == 'March':
-                        March = 'Paid'
-                    elif month == 'April':
-                        April = 'Paid'
-                    elif month == 'May':
-                        May = 'Paid'
-                    elif month == 'June':
-                        June = 'Paid'
-                    elif month == 'July':
-                        July = 'Paid'
-                    elif month == 'August':
-                        August = 'Paid'
-                    elif month == 'September':
-                        September = 'Paid'
-                    elif month == 'October':
-                        October = 'Paid'
-                    elif month == 'November':
-                        November = 'Paid'
-                    elif month == 'December':
-                        December = 'Paid'
+            month_status = []
+            for month_name, year_value, month_no, _, _ in session_month_rows:
+                is_paid = (
+                    (year_value, month_no) in paid_year_month
+                    or month_name.lower() in paid_month_names
+                )
+                month_status.append('Paid' if is_paid else 'Due')
 
             images = _avatar_image_html(item.photo)
             roll_raw = '' if item.roll is None else str(item.roll).strip()
@@ -3830,18 +3879,7 @@ class StudentFeeDetailsByClassJson(BaseDatatableView):
                 images,
                 escape(item.name),
                 roll_value,
-                January,
-                February,
-                March,
-                April,
-                May,
-                June,
-                July,
-                August,
-                September,
-                October,
-                November,
-                December,
+                *month_status,
 
             ])
 
@@ -3857,10 +3895,14 @@ class StudentFeeDetailsByStudentJson(BaseDatatableView):
             standardByStudent = self.request.GET.get("standardByStudent")
             student = self.request.GET.get("student")
 
-            return StudentFee.objects.select_related().filter(isDeleted__exact=False, studentID_id=int(student),
-                                                              standardID_id=int(standardByStudent),
-                                                              sessionID_id=self.request.session["current_session"][
-                                                                  "Id"])
+            session_id = self.request.session["current_session"]["Id"]
+            fee_qs = StudentFee.objects.select_related().filter(
+                isDeleted__exact=False,
+                studentID_id=int(student),
+                standardID_id=int(standardByStudent),
+                sessionID_id=session_id,
+            )
+            return _restrict_fee_queryset_to_session_months(fee_qs, session_id).order_by('feeYear', 'feeMonth', 'id')
         except:
             return StudentFee.objects.none()
 
@@ -3889,7 +3931,7 @@ class StudentFeeDetailsByStudentJson(BaseDatatableView):
 
             json_data.append([
 
-                escape(item.month),
+                escape(_fee_month_label(item)),
                 status,
                 payDate,
                 escape(item.amount),
