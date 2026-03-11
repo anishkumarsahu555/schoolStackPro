@@ -13,6 +13,10 @@
             var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
             var theme = storedTheme || (prefersDark ? 'dark' : 'light');
             document.documentElement.setAttribute('data-theme', theme);
+            var isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+            if (isStandalone || window.navigator.standalone === true) {
+                document.documentElement.classList.add('pwa-standalone');
+            }
         })();
     </script>
     <script>
@@ -37,6 +41,22 @@
 
     <link rel="icon" href="{% if app_icon_url %}{{ app_icon_url }}{% else %}{% static 'sw/images/favicon.ico' %}{% endif %}" sizes="any">
     <link rel="apple-touch-icon" href="{% if app_install_icon_url %}{{ app_install_icon_url }}{% else %}{% static 'sw/images/apple-touch-icon.png' %}{% endif %}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="{{ app_school_name|default:'SchoolsStack' }}">
+    {% with sid=request.session.current_session.SchoolID|default:0 %}
+    <link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{% url 'homeApp:dynamic_ios_startup_image' width=640 height=1136 %}?sid={{ sid }}">
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{% url 'homeApp:dynamic_ios_startup_image' width=750 height=1334 %}?sid={{ sid }}">
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{% url 'homeApp:dynamic_ios_startup_image' width=1242 height=2208 %}?sid={{ sid }}">
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{% url 'homeApp:dynamic_ios_startup_image' width=828 height=1792 %}?sid={{ sid }}">
+    <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{% url 'homeApp:dynamic_ios_startup_image' width=1170 height=2532 %}?sid={{ sid }}">
+    <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{% url 'homeApp:dynamic_ios_startup_image' width=1179 height=2556 %}?sid={{ sid }}">
+    <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{% url 'homeApp:dynamic_ios_startup_image' width=1284 height=2778 %}?sid={{ sid }}">
+    <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{% url 'homeApp:dynamic_ios_startup_image' width=1290 height=2796 %}?sid={{ sid }}">
+    <link rel="apple-touch-startup-image" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{% url 'homeApp:dynamic_ios_startup_image' width=1536 height=2048 %}?sid={{ sid }}">
+    <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{% url 'homeApp:dynamic_ios_startup_image' width=1668 height=2388 %}?sid={{ sid }}">
+    <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{% url 'homeApp:dynamic_ios_startup_image' width=2048 height=2732 %}?sid={{ sid }}">
+    {% endwith %}
     <link rel="manifest" href="{% url 'homeApp:dynamic_manifest' %}">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
@@ -1581,17 +1601,65 @@
         }
 
         .preloader {
+            display: none;
             align-items: center;
-            background: rgb(23, 22, 22);
-            display: flex;
-            height: 100vh;
             justify-content: center;
-            left: 0;
             position: fixed;
-            top: 0;
-            transition: opacity 0.3s linear;
-            width: 100%;
+            inset: 0;
             z-index: 9999;
+            background: radial-gradient(circle at 22% 20%, #2b7cff 0%, #1a73e8 38%, #0f4fb4 100%);
+            transition: opacity 0.25s ease;
+        }
+
+        .pwa-standalone .preloader {
+            display: flex;
+        }
+
+        .preloader .splash-content {
+            width: min(86vw, 320px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            color: #ffffff;
+            gap: 0.8rem;
+        }
+
+        .preloader .splash-logo {
+            width: 92px;
+            height: 92px;
+            border-radius: 22px;
+            object-fit: cover;
+            background: rgba(255, 255, 255, 0.96);
+            padding: 8px;
+            box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+        }
+
+        .preloader .splash-title {
+            font-size: 1.12rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            line-height: 1.25;
+            max-width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .preloader .splash-subtitle {
+            font-size: 0.86rem;
+            color: rgba(255, 255, 255, 0.92);
+            margin-top: -0.12rem;
+        }
+
+        .preloader .splash-spinner {
+            width: 26px;
+            height: 26px;
+            margin-top: 0.45rem;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.38);
+            border-top-color: #ffffff;
+            animation: saveBtnSpin .72s linear infinite;
         }
 
         body ::-webkit-scrollbar {
@@ -2696,8 +2764,11 @@
 {% endif %}
 <div id="pullRefreshIndicator">Pull to refresh</div>
 <div class="preloader">
-    <div class="ui active dimmer">
-        <div class="ui medium text loader">Loading</div>
+    <div class="splash-content">
+        <img class="splash-logo" src="{% if app_install_icon_url %}{{ app_install_icon_url }}{% else %}{% static 'sw/images/icon-192.png' %}{% endif %}" alt="App logo">
+        <div class="splash-title">{{ app_school_name|default:"SCHOOLS-STACK" }}</div>
+        <div class="splash-subtitle">Preparing your dashboard</div>
+        <div class="splash-spinner" aria-hidden="true"></div>
     </div>
 </div>
 

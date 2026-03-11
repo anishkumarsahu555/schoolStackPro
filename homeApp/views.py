@@ -207,16 +207,20 @@ def dynamic_manifest(request):
     branding = get_school_branding(request)
     school_id = branding.get('school_id') or 0
     school_name = branding.get('school_name') or 'SCHOOLS-STACK'
+
     icon_192 = request.build_absolute_uri(
         f"{reverse('homeApp:dynamic_app_icon', kwargs={'size': 192})}?sid={school_id}"
     )
+
     icon_512 = request.build_absolute_uri(
         f"{reverse('homeApp:dynamic_app_icon', kwargs={'size': 512})}?sid={school_id}"
     )
 
+
+
     data = {
         "name": school_name,
-        "short_name": school_name[:12] if school_name else "SchoolStack",
+        "short_name": school_name[:12] if school_name else "SchoolsStack",
         "start_url": "/",
         "scope": "/",
         "display": "standalone",
@@ -230,9 +234,10 @@ def dynamic_manifest(request):
             {"src": icon_512, "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
         ],
     }
+
     response = JsonResponse(data)
     response["Content-Type"] = "application/manifest+json"
-    response["Cache-Control"] = "private, max-age=60"
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return response
 
 
@@ -285,6 +290,78 @@ def dynamic_app_icon(request, size):
         content = file_handle.read()
     response = HttpResponse(content, content_type='image/png')
     response["Cache-Control"] = "private, max-age=300"
+    return response
+
+
+def dynamic_ios_startup_image(request, width, height):
+    target_width = int(width)
+    target_height = int(height)
+    allowed_sizes = {
+        (640, 1136),
+        (750, 1334),
+        (828, 1792),
+        (1170, 2532),
+        (1179, 2556),
+        (1242, 2208),
+        (1284, 2778),
+        (1290, 2796),
+        (1536, 2048),
+        (1668, 2388),
+        (2048, 2732),
+    }
+    if (target_width, target_height) not in allowed_sizes:
+        return HttpResponse(status=404)
+
+    school_id = request.GET.get('sid')
+    try:
+        school_id = int(school_id) if school_id else None
+    except Exception:
+        school_id = None
+
+    if not school_id:
+        branding = get_school_branding(request)
+        school_id = branding.get('school_id')
+
+    school = None
+    if school_id:
+        school = SchoolDetail.objects.only("id", "logo").filter(pk=school_id, isDeleted=False).first()
+
+    try:
+        from PIL import Image, ImageOps
+    except Exception:
+        fallback_path = os.path.join(settings.BASE_DIR, 'static', 'sw', 'images', 'apple-touch-icon.png')
+        with open(fallback_path, 'rb') as file_handle:
+            content = file_handle.read()
+        response = HttpResponse(content, content_type='image/png')
+        response["Cache-Control"] = "private, max-age=300"
+        return response
+
+    canvas = Image.new('RGB', (target_width, target_height), '#1a73e8')
+    logo_size = max(128, min(target_width, target_height) // 4)
+
+    if school and school.logo:
+        try:
+            school.logo.open('rb')
+            image = Image.open(school.logo.file).convert('RGBA')
+            resampling = getattr(getattr(Image, 'Resampling', Image), 'LANCZOS', Image.LANCZOS)
+            fitted = ImageOps.contain(image, (logo_size, logo_size), resampling)
+            offset_x = (target_width - fitted.width) // 2
+            offset_y = int(target_height * 0.36) - (fitted.height // 2)
+            if offset_y < 0:
+                offset_y = (target_height - fitted.height) // 2
+            canvas.paste(fitted, (offset_x, offset_y), fitted)
+        except Exception:
+            pass
+        finally:
+            try:
+                school.logo.close()
+            except Exception:
+                pass
+
+    output = BytesIO()
+    canvas.save(output, format='PNG', optimize=True)
+    response = HttpResponse(output.getvalue(), content_type='image/png')
+    response["Cache-Control"] = "private, max-age=3600"
     return response
 
 

@@ -5,6 +5,7 @@ urlpatterns = [
     path('', login_page, name='login_page'),
     path('manifest.webmanifest', dynamic_manifest, name='dynamic_manifest'),
     path('pwa/icon-<int:size>.png', dynamic_app_icon, name='dynamic_app_icon'),
+    path('pwa/startup-<int:width>x<int:height>.png', dynamic_ios_startup_image, name='dynamic_ios_startup_image'),
     path('serviceworker.js', service_worker, name='service_worker'),
     path('logout/', user_logout, name='user_logout'),
     path('post_login/', post_login, name='post_login'),
