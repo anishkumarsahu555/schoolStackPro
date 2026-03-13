@@ -113,10 +113,17 @@ urlpatterns = [
     path('StudentFeeDetailsByStudentJson', StudentFeeDetailsByStudentJson.as_view(), name='StudentFeeDetailsByStudentJson'),
 
     # marks
+    path('get_exam_component_type_list_api', get_exam_component_type_list_api, name='get_exam_component_type_list_api'),
+    path('add_exam_component_type_api', add_exam_component_type_api, name='add_exam_component_type_api'),
+    path('get_exam_subject_component_rules_api', get_exam_subject_component_rules_api, name='get_exam_subject_component_rules_api'),
+    path('save_exam_subject_component_rules_api', save_exam_subject_component_rules_api, name='save_exam_subject_component_rules_api'),
     path('MarksOfSubjectsByStudentJson', MarksOfSubjectsByStudentJson.as_view(), name='MarksOfSubjectsByStudentJson'),
     path('add_subject_mark_api', add_subject_mark_api, name='add_subject_mark_api'),
     path('StudentMarksDetailsByClassAndExamJson', StudentMarksDetailsByClassAndExamJson.as_view(), name='StudentMarksDetailsByClassAndExamJson'),
     path('StudentMarksDetailsByStudentJson', StudentMarksDetailsByStudentJson.as_view(), name='StudentMarksDetailsByStudentJson'),
+    path('publish_progress_report_api', publish_progress_report_api, name='publish_progress_report_api'),
+    path('set_progress_report_ready_state_api', set_progress_report_ready_state_api, name='set_progress_report_ready_state_api'),
+    path('management_upsert_term_remark_api', management_upsert_term_remark_api, name='management_upsert_term_remark_api'),
 
     # events
     path('get_event_type_list_api', get_event_type_list_api, name='get_event_type_list_api'),

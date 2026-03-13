@@ -19,6 +19,7 @@ from managementApp.models import (
     AssignSubjectsToClass,
     MarkOfStudentsByExam,
 )
+from managementApp.reporting import build_report_cards_for_student
 from teacherApp.models import SubjectNote
 from utils.custom_decorators import check_groups
 
@@ -361,13 +362,11 @@ def teacher_exam_timetable(request):
             'school_detail': None,
         })
 
-    assigned_class_ids = list(AssignSubjectsToTeacher.objects.filter(
+    assigned_class_ids = list(Standard.objects.filter(
         isDeleted=False,
-        teacherID_id=teacher.id,
         sessionID_id=current_session_id,
-        assignedSubjectID__isDeleted=False,
-    ).values_list('assignedSubjectID__standardID_id', flat=True).distinct())
-    assigned_class_ids = [cid for cid in assigned_class_ids if cid]
+        classTeacher_id=teacher.id,
+    ).values_list('id', flat=True))
 
     timetable_rows = list(ExamTimeTable.objects.select_related(
         'standardID', 'examID', 'subjectID'
@@ -446,6 +445,7 @@ def teacher_add_marks(request):
     return render(request, 'managementApp/marks/addExamMarks.html', {
         'base_template': 'teacherApp/index.html',
         'is_class_teacher': is_class_teacher,
+        'is_teacher_context': True,
     })
 
 
@@ -532,13 +532,18 @@ def teacher_progress_report_cards(request):
             'report_cards': [],
         })
 
-    assigned_class_ids = list(AssignSubjectsToTeacher.objects.filter(
+    subject_assigned_class_ids = list(AssignSubjectsToTeacher.objects.filter(
         isDeleted=False,
         teacherID_id=teacher.id,
         sessionID_id=current_session_id,
         assignedSubjectID__isDeleted=False,
     ).values_list('assignedSubjectID__standardID_id', flat=True).distinct())
-    assigned_class_ids = [cid for cid in assigned_class_ids if cid]
+    class_teacher_ids = list(Standard.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        classTeacher_id=teacher.id,
+    ).values_list('id', flat=True))
+    assigned_class_ids = sorted({cid for cid in (subject_assigned_class_ids + class_teacher_ids) if cid})
 
     classes = list(Standard.objects.filter(
         isDeleted=False,
@@ -603,65 +608,13 @@ def teacher_progress_report_cards(request):
                 exam_qs = exam_qs.filter(id=selected_exam_id)
             exam_qs = exam_qs.order_by('startDate', 'examID__name')
 
-            class_subjects = list(AssignSubjectsToClass.objects.select_related('subjectID').filter(
-                isDeleted=False,
-                sessionID_id=current_session_id,
-                standardID_id=selected_class_int,
-            ).order_by('subjectID__name'))
-
-            for exam_obj in exam_qs:
-                marks_qs = MarkOfStudentsByExam.objects.select_related('subjectID', 'subjectID__subjectID').filter(
-                    isDeleted=False,
-                    sessionID_id=current_session_id,
-                    studentID_id=selected_student.id,
-                    standardID_id=selected_class_int,
-                    examID_id=exam_obj.id,
-                )
-                mark_map = {m.subjectID_id: m for m in marks_qs}
-
-                subject_rows = []
-                total_obtained = 0.0
-                entered_marks_count = 0
-                for ass_sub in class_subjects:
-                    mark_obj = mark_map.get(ass_sub.id)
-                    if mark_obj is not None:
-                        mark_value = float(mark_obj.mark or 0)
-                        total_obtained += mark_value
-                        entered_marks_count += 1
-                    else:
-                        mark_value = None
-
-                    subject_rows.append({
-                        'subject_name': ass_sub.subjectID.name if ass_sub.subjectID else 'N/A',
-                        'mark': mark_value,
-                        'note': mark_obj.note if mark_obj and mark_obj.note else '',
-                    })
-
-                full_marks = float(exam_obj.fullMarks or 0)
-                pass_marks = float(exam_obj.passMarks or 0)
-                percentage = round((total_obtained * 100.0 / full_marks), 2) if full_marks > 0 else None
-                grade = _grade_from_percentage(percentage)
-                is_complete = entered_marks_count == len(class_subjects) and len(class_subjects) > 0
-                if not is_complete:
-                    result = 'Pending'
-                elif total_obtained >= pass_marks:
-                    result = 'Pass'
-                else:
-                    result = 'Fail'
-
-                report_cards.append({
-                    'exam_name': exam_obj.examID.name if exam_obj.examID else 'N/A',
-                    'exam_date': exam_obj.startDate,
-                    'full_marks': full_marks,
-                    'pass_marks': pass_marks,
-                    'total_obtained': round(total_obtained, 2),
-                    'percentage': percentage,
-                    'grade': grade,
-                    'result': result,
-                    'subject_rows': subject_rows,
-                    'entered_marks_count': entered_marks_count,
-                    'subject_count': len(class_subjects),
-                })
+            report_cards = build_report_cards_for_student(
+                current_session_id=current_session_id,
+                student_obj=selected_student,
+                standard_id=selected_class_int,
+                exam_queryset=exam_qs,
+                prefer_published_snapshot=False,
+            )
 
     return render(request, 'teacherApp/progress_report_cards.html', {
         'is_class_teacher': is_class_teacher,

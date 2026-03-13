@@ -8,6 +8,7 @@ from homeApp.models import SchoolDetail, SchoolSession
 from homeApp.session_utils import get_session_month_sequence
 from homeApp.utils import login_required
 from managementApp.models import *
+from managementApp.reporting import build_report_cards_for_student
 from managementApp.signals import pre_save_with_user
 from teacherApp.models import SubjectNote
 from utils.custom_decorators import check_groups
@@ -402,6 +403,10 @@ def exam_marks_details(request):
 @check_groups('Admin', 'Owner')
 def progress_report_cards(request):
     current_session_id = request.session['current_session']['Id']
+    current_school_id = request.session.get('current_session', {}).get('SchoolID')
+    school_detail = None
+    if current_school_id:
+        school_detail = SchoolDetail.objects.filter(pk=current_school_id, isDeleted=False).first()
 
     class_qs = Standard.objects.filter(
         isDeleted=False,
@@ -470,66 +475,13 @@ def progress_report_cards(request):
                 exam_queryset = exam_queryset.filter(id=selected_exam_id)
             exam_queryset = exam_queryset.order_by('startDate', 'examID__name')
 
-            class_subjects = list(AssignSubjectsToClass.objects.select_related('subjectID').filter(
-                isDeleted=False,
-                sessionID_id=current_session_id,
-                standardID_id=selected_class_id,
-            ).order_by('subjectID__name'))
-
-            for exam_obj in exam_queryset:
-                marks_qs = MarkOfStudentsByExam.objects.select_related('subjectID', 'subjectID__subjectID').filter(
-                    isDeleted=False,
-                    sessionID_id=current_session_id,
-                    studentID_id=student_obj.id,
-                    standardID_id=selected_class_id,
-                    examID_id=exam_obj.id,
-                )
-                mark_map = {m.subjectID_id: m for m in marks_qs}
-
-                subject_rows = []
-                total_obtained = 0.0
-                entered_marks_count = 0
-                for ass_sub in class_subjects:
-                    mark_obj = mark_map.get(ass_sub.id)
-                    if mark_obj is not None:
-                        mark_value = float(mark_obj.mark or 0)
-                        total_obtained += mark_value
-                        entered_marks_count += 1
-                    else:
-                        mark_value = None
-
-                    subject_rows.append({
-                        'subject_name': ass_sub.subjectID.name if ass_sub.subjectID else 'N/A',
-                        'mark': mark_value,
-                        'note': mark_obj.note if mark_obj and mark_obj.note else '',
-                    })
-
-                full_marks = float(exam_obj.fullMarks or 0)
-                pass_marks = float(exam_obj.passMarks or 0)
-                percentage = round((total_obtained * 100.0 / full_marks), 2) if full_marks > 0 else None
-                grade = _grade_from_percentage(percentage)
-                is_complete = entered_marks_count == len(class_subjects) and len(class_subjects) > 0
-                if not is_complete:
-                    result = 'Pending'
-                elif total_obtained >= pass_marks:
-                    result = 'Pass'
-                else:
-                    result = 'Fail'
-
-                report_cards.append({
-                    'exam_name': exam_obj.examID.name if exam_obj.examID else 'N/A',
-                    'exam_date': exam_obj.startDate,
-                    'full_marks': full_marks,
-                    'pass_marks': pass_marks,
-                    'total_obtained': round(total_obtained, 2),
-                    'percentage': percentage,
-                    'grade': grade,
-                    'result': result,
-                    'is_complete': is_complete,
-                    'entered_marks_count': entered_marks_count,
-                    'subject_count': len(class_subjects),
-                    'subject_rows': subject_rows,
-                })
+            report_cards = build_report_cards_for_student(
+                current_session_id=current_session_id,
+                student_obj=student_obj,
+                standard_id=selected_class_id,
+                exam_queryset=exam_queryset,
+                prefer_published_snapshot=False,
+            )
 
     context = {
         'class_map_json': json.dumps(class_map),
@@ -539,6 +491,8 @@ def progress_report_cards(request):
         'selected_student_id': int(selected_student_id) if selected_student_id and selected_student_id.isdigit() else '',
         'selected_exam_id': selected_exam_id if selected_exam_id else 'all',
         'selected_student': selected_student,
+        'school_detail': school_detail,
+        'session_year': request.session.get('current_session', {}).get('currentSessionYear', ''),
         'report_cards': report_cards,
     }
     return render(request, 'managementApp/marks/progressReportCards.html', context)
