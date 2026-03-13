@@ -95,6 +95,53 @@
             border-color: rgba(242, 153, 74, .35);
         }
 
+        .report-page .override-badge {
+            border-radius: 999px;
+            padding: .2rem .48rem;
+            font-size: .64rem;
+            font-weight: 700;
+            border: 1px solid var(--app-border);
+            background: var(--app-hover);
+            color: var(--app-muted);
+            letter-spacing: .01em;
+            white-space: nowrap;
+        }
+
+        .report-page .override-badge.pass {
+            background: rgba(33, 186, 69, .14);
+            color: #1f9f41;
+            border-color: rgba(33, 186, 69, .3);
+        }
+
+        .report-page .override-badge.fail {
+            background: rgba(219, 40, 40, .14);
+            color: #d52f2f;
+            border-color: rgba(219, 40, 40, .3);
+        }
+
+        .report-page .publish-state-badge {
+            border-radius: 999px;
+            padding: .18rem .46rem;
+            font-size: .64rem;
+            font-weight: 700;
+            border: 1px solid var(--app-border);
+            background: var(--app-hover);
+            color: var(--app-muted);
+            letter-spacing: .01em;
+        }
+
+        .report-page .publish-state-badge.published {
+            background: rgba(33, 186, 69, .14);
+            color: #21ba45;
+            border-color: rgba(33, 186, 69, .3);
+        }
+
+        .report-page .publish-state-badge.draft {
+            background: rgba(242, 153, 74, .14);
+            color: #d9822b;
+            border-color: rgba(242, 153, 74, .3);
+        }
+
         .report-page .card-body {
             display: none;
             padding: .85rem 1rem;
@@ -133,6 +180,14 @@
         .report-page .subject-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .report-page .subject-table-wrap {
+            border: 1px solid var(--app-border);
+            border-radius: 10px;
+            overflow: visible;
+            background: var(--app-surface);
         }
 
         .report-page .subject-table th,
@@ -150,6 +205,279 @@
             text-transform: uppercase;
         }
 
+        .report-page .subject-table th:nth-child(1),
+        .report-page .subject-table td:nth-child(1) { width: 20%; }
+        .report-page .subject-table th:nth-child(2),
+        .report-page .subject-table td:nth-child(2) { width: 10%; }
+        .report-page .subject-table th:nth-child(3),
+        .report-page .subject-table td:nth-child(3) { width: 45%; }
+        .report-page .subject-table th:nth-child(4),
+        .report-page .subject-table td:nth-child(4) { width: 12%; }
+        .report-page .subject-table th:nth-child(5),
+        .report-page .subject-table td:nth-child(5) { width: 13%; }
+
+        .report-page .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: .14rem .42rem;
+            border-radius: 999px;
+            font-size: .66rem;
+            font-weight: 700;
+            border: 1px solid var(--app-border);
+            background: var(--app-hover);
+            color: var(--app-text);
+        }
+
+        .report-page .status-pill.pass {
+            background: rgba(33, 186, 69, .14);
+            border-color: rgba(33, 186, 69, .35);
+            color: #21ba45;
+        }
+
+        .report-page .status-pill.fail {
+            background: rgba(219, 40, 40, .14);
+            border-color: rgba(219, 40, 40, .35);
+            color: #db2828;
+        }
+
+        .report-page .status-pill.pending {
+            background: rgba(242, 153, 74, .2);
+            border-color: rgba(242, 153, 74, .4);
+            color: #d9822b;
+        }
+
+        .report-page .status-pill.exempt {
+            background: rgba(33, 133, 208, .14);
+            border-color: rgba(33, 133, 208, .35);
+            color: #2185d0;
+        }
+
+        .report-page .component-table-wrap {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .report-page .component-table-mini {
+            width: 100%;
+            min-width: 0;
+            border-collapse: collapse;
+            border: 1px solid var(--app-border);
+            border-radius: 6px;
+            overflow: hidden;
+            font-size: .68rem;
+            background: var(--app-hover);
+            table-layout: fixed;
+        }
+
+        .report-page .component-table-mini th,
+        .report-page .component-table-mini td {
+            border-bottom: 1px solid var(--app-border);
+            padding: .18rem .28rem;
+            text-align: left;
+            color: var(--app-text);
+            vertical-align: middle;
+            font-size: .68rem;
+        }
+
+        .report-page .component-table-mini thead th {
+            font-size: .62rem;
+            text-transform: uppercase;
+            letter-spacing: .02em;
+            color: var(--app-muted);
+            background: var(--app-surface);
+            font-weight: 700;
+        }
+
+        .report-page .component-table-mini tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .report-page .component-col-name {
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .report-page .component-col-score {
+            color: var(--app-muted);
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .report-page .component-table-mini td:last-child,
+        .report-page .component-table-mini th:last-child {
+            text-align: center;
+        }
+
+        .report-page .component-table-mini th:nth-child(1),
+        .report-page .component-table-mini td:nth-child(1) { width: 36%; }
+        .report-page .component-table-mini th:nth-child(2),
+        .report-page .component-table-mini td:nth-child(2) { width: 14%; }
+        .report-page .component-table-mini th:nth-child(3),
+        .report-page .component-table-mini td:nth-child(3) { width: 14%; }
+        .report-page .component-table-mini th:nth-child(4),
+        .report-page .component-table-mini td:nth-child(4) { width: 18%; }
+        .report-page .component-table-mini th:nth-child(5),
+        .report-page .component-table-mini td:nth-child(5) { width: 18%; }
+
+        .report-page .card-meta-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .3rem;
+            margin: .1rem 0 .5rem 0;
+        }
+
+        .report-page .meta-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .28rem;
+            border: 1px solid var(--app-border);
+            border-radius: 999px;
+            padding: .14rem .45rem;
+            background: var(--app-hover);
+            font-size: .66rem;
+            color: var(--app-muted);
+        }
+
+        .report-page .meta-chip strong {
+            color: var(--app-text);
+            font-weight: 700;
+        }
+
+        .report-page .meta-chip.good {
+            background: rgba(33, 186, 69, .12);
+            border-color: rgba(33, 186, 69, .35);
+            color: #1e9e3d;
+        }
+
+        .report-page .meta-chip.warn {
+            background: rgba(242, 153, 74, .2);
+            border-color: rgba(242, 153, 74, .4);
+            color: #b86b1f;
+        }
+
+        .report-page .card-footer-actions {
+            margin-top: .5rem;
+            padding-top: .42rem;
+            border-top: 1px solid var(--app-border);
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: .35rem;
+            flex-wrap: wrap;
+        }
+
+        .report-page .ready-publish-toggle {
+            margin-right: auto;
+            font-size: .75rem;
+            color: var(--app-muted);
+        }
+
+        .report-page .remark-summary {
+            margin-top: .55rem;
+            border: 1px solid var(--app-border);
+            border-radius: 10px;
+            padding: .48rem .55rem;
+            background: var(--app-hover);
+        }
+
+        .report-page .remark-summary-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .4rem;
+            margin-bottom: .28rem;
+        }
+
+        .report-page .remark-summary .title {
+            font-size: .72rem;
+            color: var(--app-muted);
+            text-transform: uppercase;
+            letter-spacing: .02em;
+            font-weight: 700;
+        }
+
+        .report-page .remark-edit-btn.ui.button {
+            min-height: auto;
+            padding: .22rem .52rem !important;
+            border-radius: 6px !important;
+            font-size: .68rem !important;
+            line-height: 1.1;
+            background: #2185d0 !important;
+            border-color: #1b6fb6 !important;
+            color: #fff !important;
+            box-shadow: none !important;
+        }
+
+        .report-page .remark-edit-btn.ui.button:hover,
+        .report-page .remark-edit-btn.ui.button:focus {
+            background: #1678c2 !important;
+            border-color: #1769aa !important;
+            color: #fff !important;
+        }
+
+        .report-page .remark-summary-body {
+            border: 1px solid var(--app-border);
+            border-radius: 8px;
+            padding: .45rem .55rem;
+            background: var(--app-surface);
+            color: var(--app-text);
+            font-size: .8rem;
+            line-height: 1.35;
+            min-height: 38px;
+        }
+
+        .report-page .remark-modal .ui.dropdown {
+            width: 100%;
+            min-height: 36px;
+            border-radius: 8px !important;
+            border-color: var(--app-border) !important;
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            font-size: .82rem !important;
+        }
+
+        .report-page .remark-modal .ui.dropdown > .text {
+            color: var(--app-text) !important;
+        }
+
+        .report-page .remark-modal .ui.dropdown .menu {
+            background: var(--app-surface);
+            border-color: var(--app-border);
+        }
+
+        .report-page .remark-meta {
+            margin-top: .35rem;
+            color: var(--app-muted);
+            font-size: .72rem;
+            line-height: 1.35;
+            text-align: left;
+        }
+
+        .report-page .remark-modal textarea {
+            width: 100%;
+            min-height: 92px;
+            resize: vertical;
+            border: 1px solid var(--app-border);
+            border-radius: 8px;
+            padding: .55rem .62rem;
+            background: var(--app-surface);
+            color: var(--app-text);
+            font-size: .84rem;
+        }
+
+        .report-page .filter-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .45rem;
+        }
+
+        .report-page .filter-actions .ui.button {
+            margin: 0 !important;
+        }
+
         .report-page .subject-table tr:last-child td {
             border-bottom: none;
         }
@@ -161,11 +489,29 @@
         }
 
         @media print {
+            @page {
+                size: A4 portrait;
+                margin: 8mm;
+            }
+
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
             .material-sidenav,
             .ui.top.fixed.menu,
             .report-page .filter-segment,
             .report-page .ui.pointing.secondary.menu,
-            #printBtn {
+            #printBtn,
+            .report-page .remark-edit-btn,
+            .report-page .remark-summary-head .ui.button,
+            .report-page .remark-summary-head button,
+            .report-page .card-footer-actions,
+            .app-notice-stack,
+            .app-notice,
+            #publishVisibleBtn,
+            #unpublishVisibleBtn {
                 display: none !important;
             }
 
@@ -176,6 +522,119 @@
             .report-page .card-body {
                 display: block !important;
             }
+
+            .report-page .cards-wrap {
+                display: block !important;
+                width: 100% !important;
+            }
+
+            .report-page .report-card {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: visible !important;
+                margin-bottom: 6px !important;
+                border-radius: 6px !important;
+            }
+
+            body.print-single .report-page .cards-wrap .report-card {
+                display: none !important;
+            }
+
+            body.print-single .report-page .cards-wrap .report-card.print-target {
+                display: block !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .report-page .subject-table-wrap,
+            .report-page .component-table-wrap {
+                overflow: visible !important;
+                width: 100% !important;
+            }
+
+            .report-page .subject-table,
+            .report-page .component-table-mini {
+                width: 100% !important;
+                min-width: 0 !important;
+                table-layout: auto !important;
+                white-space: normal !important;
+            }
+
+            .report-page .subject-table th:nth-child(1),
+            .report-page .subject-table td:nth-child(1) { width: 16% !important; }
+            .report-page .subject-table th:nth-child(2),
+            .report-page .subject-table td:nth-child(2) { width: 10% !important; }
+            .report-page .subject-table th:nth-child(3),
+            .report-page .subject-table td:nth-child(3) { width: 52% !important; }
+            .report-page .subject-table th:nth-child(4),
+            .report-page .subject-table td:nth-child(4) { width: 12% !important; }
+            .report-page .subject-table th:nth-child(5),
+            .report-page .subject-table td:nth-child(5) { width: 10% !important; }
+
+            .report-page .card-head {
+                padding: 5px 8px !important;
+            }
+
+            .report-page .card-body {
+                padding: 5px 8px !important;
+            }
+
+            .report-page .kpi-grid {
+                gap: 4px !important;
+                margin-bottom: 4px !important;
+            }
+
+            .report-page .kpi {
+                padding: 3px 5px !important;
+            }
+
+            .report-page .kpi .label {
+                font-size: 9px !important;
+            }
+
+            .report-page .kpi .value {
+                font-size: 13px !important;
+            }
+
+            .report-page .card-meta-strip {
+                margin-top: 4px !important;
+                margin-bottom: 4px !important;
+                gap: 3px !important;
+            }
+
+            .report-page .meta-chip {
+                font-size: 9px !important;
+                padding: 1px 6px !important;
+            }
+
+            .report-page .subject-table th,
+            .report-page .subject-table td {
+                padding: 3px 3px !important;
+                font-size: 10px !important;
+            }
+
+            .report-page .component-table-mini th,
+            .report-page .component-table-mini td {
+                font-size: 8.5px !important;
+                padding: 2px 3px !important;
+                white-space: nowrap !important;
+                letter-spacing: 0 !important;
+            }
+
+            .report-page .component-col-name,
+            .report-page .component-col-score {
+                white-space: nowrap !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .report-page .remark-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 900px) {
@@ -185,6 +644,48 @@
 
             .report-page .kpi-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .report-page .subject-table {
+                table-layout: fixed;
+                min-width: 760px;
+            }
+
+            .report-page .subject-table-wrap {
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-x;
+            }
+
+            .report-page .component-table-wrap {
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-x;
+            }
+
+            .report-page .component-table-mini {
+                width: max-content;
+                min-width: 460px;
+                table-layout: auto;
+                white-space: nowrap;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .report-page .filter-actions {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: .45rem;
+            }
+
+            .report-page .filter-actions .ui.button {
+                width: 100%;
+                min-width: 0;
+                font-size: .82rem;
+                padding-left: .55rem !important;
+                padding-right: .55rem !important;
             }
         }
     </style>
@@ -213,20 +714,24 @@
                             <select class="ui search dropdown" id="exam" name="exam"></select>
                         </div>
                     </div>
-                    <div class="field">
-                        <button class="ui mini primary button" type="submit">
-                            <i class="search icon"></i> Load Report Cards
+                    <div class="field filter-actions">
+                        <button id="searchBtn" class="ui mini green button" type="submit">
+                            <i class="search icon"></i> Search
                         </button>
-                        <a class="ui mini button" href="{% url 'teacherApp:teacher_progress_report_cards' %}">
-                            <i class="undo icon"></i> Reset
+                        <a id="clearFiltersBtn" class="ui mini red button" href="{% url 'teacherApp:teacher_progress_report_cards' %}">
+                            <i class="undo icon"></i> Clear
                         </a>
-                        <button id="printBtn" class="ui mini teal button" type="button" onclick="window.print()">
-                            <i class="print icon"></i> Print
+                        <button id="publishVisibleBtn" class="ui mini blue button" type="button" onclick="publishVisibleReports()" {% if not selected_student %}style="display:none;"{% endif %}>
+                            <i class="upload icon"></i> Publish Visible
+                        </button>
+                        <button id="unpublishVisibleBtn" class="ui mini orange button" type="button" onclick="unpublishVisibleReports()" {% if not selected_student %}style="display:none;"{% endif %}>
+                            <i class="undo icon"></i> Unpublish Visible
                         </button>
                     </div>
                 </form>
             </div>
 
+            <div id="reportContent">
             {% if selected_student %}
                 <div class="student-banner">
                     <h3>{{ selected_student.name|default:'N/A' }}</h3>
@@ -242,14 +747,29 @@
             {% if report_cards %}
                 <div class="cards-wrap" id="reportCardsWrap">
                     {% for card in report_cards %}
-                        <div class="report-card {% if forloop.first %}expanded{% endif %}">
+                        <div
+                            class="report-card {% if forloop.first %}expanded{% endif %}"
+                            data-exam-id="{{ card.exam_assignment_id }}"
+                            data-result-decision="{{ card.term_remark.overall_result_decision|default:'' }}"
+                            data-result-decider="{{ card.term_remark.result_decided_by_role|default:'' }}"
+                        >
                             <div class="card-head">
                                 <div>
                                     <h4 class="card-title">{{ card.exam_name }}</h4>
                                     <div class="card-sub">{{ card.exam_date|date:'d M Y'|default:'N/A' }} | Entries: {{ card.entered_marks_count }}/{{ card.subject_count }}</div>
                                 </div>
-                                <div class="badge {% if card.result == 'Pass' %}pass{% elif card.result == 'Fail' %}fail{% else %}pending{% endif %}">
-                                    {{ card.result }}
+                                <div style="display:flex;gap:.45rem;align-items:center;">
+                                    {% if card.term_remark.overall_result_decision %}
+                                        <div class="override-badge {% if card.term_remark.overall_result_decision == 'pass' %}pass{% elif card.term_remark.overall_result_decision == 'fail' %}fail{% endif %}">
+                                            Manual {{ card.term_remark.overall_result_decision|title }}{% if card.term_remark.result_decided_by_role %} · {{ card.term_remark.result_decided_by_role|title }}{% endif %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="badge {% if card.result == 'Pass' %}pass{% elif card.result == 'Fail' %}fail{% else %}pending{% endif %}">
+                                        {{ card.result }}
+                                    </div>
+                                    <div class="publish-state-badge {% if card.is_published %}published{% else %}draft{% endif %}">
+                                        {% if card.is_published %}Published{% else %}Draft{% endif %}
+                                    </div>
                                 </div>
                             </div>
                             <div class="card-body">
@@ -260,24 +780,132 @@
                                     <div class="kpi"><div class="label">Grade</div><div class="value">{{ card.grade }}</div></div>
                                 </div>
 
-                                <table class="subject-table">
-                                    <thead>
-                                    <tr>
-                                        <th>Subject</th>
-                                        <th>Marks</th>
-                                        <th>Note</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for row in card.subject_rows %}
+                                <div class="card-meta-strip">
+                                    <span class="meta-chip"><span>Pass Marks</span><strong>{{ card.pass_marks }}</strong></span>
+                                    <span class="meta-chip {% if card.is_complete %}good{% else %}warn{% endif %}">
+                                        <span>Completion</span><strong>{{ card.entered_marks_count }}/{{ card.subject_count }}</strong>
+                                    </span>
+                                    <span class="meta-chip"><span>Scheme</span><strong>{% if card.uses_component_scheme %}Component{% else %}Single Mark{% endif %}</strong></span>
+                                </div>
+
+                                <div class="subject-table-wrap">
+                                    <table class="subject-table">
+                                        <thead>
                                         <tr>
-                                            <td>{{ row.subject_name }}</td>
-                                            <td>{% if row.mark != None %}{{ row.mark }}{% else %}Pending{% endif %}</td>
-                                            <td>{{ row.note|default:'-' }}</td>
+                                            <th>Subject</th>
+                                            <th>Marks</th>
+                                            <th>Components</th>
+                                            <th>Status</th>
+                                            <th>Note</th>
                                         </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                        {% for row in card.subject_rows %}
+                                            <tr>
+                                                <td>{{ row.subject_name }}</td>
+                                                <td>
+                                                    {% if row.mark != None %}
+                                                        {{ row.mark }}
+                                                    {% else %}
+                                                        <span class="status-pill pending">Pending</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if row.components %}
+                                                        <div class="component-table-wrap">
+                                                            <table class="component-table-mini">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Component</th>
+                                                                        <th>FM</th>
+                                                                        <th>PM</th>
+                                                                        <th>SM</th>
+                                                                        <th>Status</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {% for comp in row.components %}
+                                                                        <tr>
+                                                                            <td class="component-col-name" title="{{ comp.name }}">{{ comp.name }}</td>
+                                                                            <td class="component-col-score">{{ comp.max_marks|default:'-' }}</td>
+                                                                            <td class="component-col-score">{{ comp.pass_marks|default:'-' }}</td>
+                                                                            <td class="component-col-score">{% if comp.obtained != None %}{{ comp.obtained }}{% else %}-{% endif %}</td>
+                                                                            <td>
+                                                                                <span class="status-pill {% if comp.status == 'Entered' %}pass{% elif comp.status == 'Absent' %}fail{% elif comp.status == 'Exempt' %}exempt{% else %}pending{% endif %}">
+                                                                                    {% if comp.status == 'Entered' %}P{% elif comp.status == 'Absent' %}A{% elif comp.status == 'Exempt' %}X{% else %}-{% endif %}
+                                                                                </span>
+                                                                            </td>
+                                                                        </tr>
+                                                                    {% endfor %}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="status-pill {% if row.subject_result == 'Pass' or row.subject_result == 'Entered' %}pass{% elif row.subject_result == 'Fail' %}fail{% else %}pending{% endif %}">
+                                                        {% if row.subject_result == 'Entered' %}Pass{% else %}{{ row.subject_result|default:'-' }}{% endif %}
+                                                    </span>
+                                                </td>
+                                                <td>{{ row.note|default:'-' }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="remark-summary">
+                                    <div class="remark-summary-head">
+                                        <div class="title">Teacher Remark</div>
+                                        <button class="mini ui basic button remark-edit-btn" type="button" onclick="openTermRemarkModal({{ card.exam_assignment_id }}, event)">Edit</button>
+                                    </div>
+                                    <div class="remark-summary-body" id="remarkPreview{{ card.exam_assignment_id }}">
+                                        {{ card.term_remark.overall_remark|default:'No remark added yet.' }}
+                                    </div>
+                                    <div class="remark-meta" id="remarkMeta{{ card.exam_assignment_id }}">
+                                        {% if card.term_remark.overall_result_decision %}
+                                            Manual result: {{ card.term_remark.overall_result_decision|title }} by {{ card.term_remark.result_decided_by_role|default:'Teacher'|title }}
+                                        {% else %}
+                                            Result mode: Auto
+                                        {% endif %}
+                                    </div>
+                                    <textarea id="termRemark{{ card.exam_assignment_id }}" style="display:none;">{{ card.term_remark.overall_remark|default:'' }}</textarea>
+                                    <input type="hidden" id="termResultDecision{{ card.exam_assignment_id }}" value="{{ card.term_remark.overall_result_decision|default:'auto' }}">
+                                </div>
+
+                                <div class="card-footer-actions">
+                                    <div class="ui tiny checkbox ready-publish-toggle">
+                                        <input
+                                            type="checkbox"
+                                            id="readyToPublish{{ card.exam_assignment_id }}"
+                                            {% if card.ready_to_publish %}checked{% endif %}
+                                            onchange="toggleReadyToPublish({{ card.exam_assignment_id }}, this)"
+                                        >
+                                        <label>Ready to Publish</label>
+                                    </div>
+                                    <button class="mini ui blue button" type="button" onclick="downloadCardPdf(this, event)">
+                                        <i class="file pdf outline icon"></i> Download PDF
+                                    </button>
+                                    <button class="mini ui blue button" type="button" onclick="printReportCard(this, event)">
+                                        <i class="print icon"></i> Print
+                                    </button>
+                                    {% if card.is_published %}
+                                        <button class="mini ui red button" type="button" onclick="unpublishProgressReport({{ card.exam_assignment_id }}, event, this)">
+                                            Unpublish
+                                        </button>
+                                    {% else %}
+                                        <button
+                                            class="mini ui green button"
+                                            type="button"
+                                            {% if not card.ready_to_publish %}disabled title="Mark Ready to Publish first"{% endif %}
+                                            onclick="publishProgressReport({{ card.exam_assignment_id }}, event, this)"
+                                        >
+                                            Publish
+                                        </button>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
@@ -285,13 +913,61 @@
             {% elif selected_student %}
                 <div class="ui message">No report card data found for the selected filters.</div>
             {% else %}
-                <div class="empty-note">Select class and student, then click <b>Load Report Cards</b>.</div>
+                <div class="empty-note">Select class and student, then click <b>Search</b>.</div>
             {% endif %}
+            </div>
+
+            <div class="ui tiny modal" id="bulkStatusConfirmModal">
+                <div class="header" id="bulkStatusConfirmTitle">Confirm Action</div>
+                <div class="content">
+                    <p id="bulkStatusConfirmMessage"></p>
+                </div>
+                <div class="actions">
+                    <div class="ui cancel button">Cancel</div>
+                    <div class="ui approve button" id="bulkStatusConfirmApproveBtn">Confirm</div>
+                </div>
+            </div>
+
+            <div class="ui tiny modal" id="cardStatusConfirmModal">
+                <div class="header" id="cardStatusConfirmTitle">Confirm Action</div>
+                <div class="content">
+                    <p id="cardStatusConfirmMessage"></p>
+                </div>
+                <div class="actions">
+                    <div class="ui cancel button">Cancel</div>
+                    <div class="ui approve button" id="cardStatusConfirmApproveBtn">Confirm</div>
+                </div>
+            </div>
+            <div class="ui tiny modal remark-modal" id="termRemarkEditModal">
+                <div class="header">Edit Teacher Remark</div>
+                <div class="content">
+                    <div class="ui tiny form">
+                        <div class="field">
+                            <label>Teacher Remark</label>
+                            <textarea id="termRemarkModalText" placeholder="Add overall teacher remark..."></textarea>
+                        </div>
+                        <div class="field">
+                            <label>Overall Result</label>
+                            <select id="termRemarkModalResult" class="ui fluid tiny selection dropdown">
+                                <option value="auto">Auto</option>
+                                <option value="pass">Pass</option>
+                                <option value="fail">Fail</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="actions">
+                    <div class="ui cancel button">Cancel</div>
+                    <button class="ui teal button" type="button" id="saveTermRemarkModalBtn" onclick="saveTermRemarkFromModal()">Save</button>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
 
 {% block js %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script>
         const classMap = {{ class_map_json|safe }};
         const studentsByClass = {{ students_by_class_json|safe }};
@@ -299,6 +975,905 @@
         const selectedClassId = "{{ selected_class_id }}";
         const selectedStudentId = "{{ selected_student_id }}";
         const selectedExamId = "{{ selected_exam_id }}";
+
+        function getDropdownValue(selector) {
+            const $el = $(selector);
+            const dropdownVal = $el.dropdown('get value');
+            return String(dropdownVal || $el.val() || '').trim();
+        }
+
+        function parseAjaxError(xhr, fallbackMessage) {
+            if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                return xhr.responseJSON.message;
+            }
+            return fallbackMessage;
+        }
+
+        function setButtonLoading($btn, loadingText) {
+            if (!$btn || !$btn.length || $btn.data('loading')) {
+                return false;
+            }
+            $btn.data('loading', true);
+            $btn.data('originalText', $btn.text());
+            $btn.prop('disabled', true).addClass('loading disabled');
+            if (loadingText) {
+                $btn.text(loadingText);
+            }
+            return true;
+        }
+
+        function clearButtonLoading($btn) {
+            if (!$btn || !$btn.length) {
+                return;
+            }
+            const originalText = $btn.data('originalText');
+            if (originalText) {
+                $btn.text(originalText);
+            }
+            $btn.prop('disabled', false).removeClass('loading disabled');
+            $btn.removeData('loading');
+            $btn.removeData('originalText');
+        }
+
+        function showBulkStatusConfirmModal(statusValue, visibleCount, onConfirm) {
+            const isPublish = statusValue === 'published';
+            const actionWord = isPublish ? 'Publish' : 'Unpublish';
+            const $modal = $('#bulkStatusConfirmModal');
+            const $approveBtn = $('#bulkStatusConfirmApproveBtn');
+
+            $('#bulkStatusConfirmTitle').text(actionWord + ' Visible Reports');
+            $('#bulkStatusConfirmMessage').text('You are about to ' + actionWord.toLowerCase() + ' ' + visibleCount + ' visible report(s).');
+            $approveBtn
+                .removeClass('blue orange')
+                .addClass(isPublish ? 'blue' : 'orange')
+                .text(actionWord);
+
+            $modal
+                .modal({
+                    closable: true,
+                    onApprove: function () {
+                        if (typeof onConfirm === 'function') {
+                            onConfirm();
+                        }
+                    }
+                })
+                .modal('show');
+        }
+
+        function showCardStatusConfirmModal(statusValue, examLabel, onConfirm) {
+            const isPublish = statusValue === 'published';
+            const actionWord = isPublish ? 'Publish' : 'Unpublish';
+            const $modal = $('#cardStatusConfirmModal');
+            const $approveBtn = $('#cardStatusConfirmApproveBtn');
+
+            $('#cardStatusConfirmTitle').text(actionWord + ' Report');
+            $('#cardStatusConfirmMessage').text(
+                'You are about to ' + actionWord.toLowerCase() + ' "' + (examLabel || 'this exam') + '".'
+            );
+            $approveBtn
+                .removeClass('blue orange')
+                .addClass(isPublish ? 'blue' : 'orange')
+                .text(actionWord);
+
+            $modal
+                .modal({
+                    closable: true,
+                    onApprove: function () {
+                        if (typeof onConfirm === 'function') {
+                            onConfirm();
+                        }
+                    }
+                })
+                .modal('show');
+        }
+
+        function printReportCard(btnEl, event) {
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
+            const cardEl = $(btnEl).closest('.report-card');
+            if (!cardEl.length) {
+                addErrorNotification('Unable to print this report card.');
+                return;
+            }
+
+            $('.report-page .report-card').removeClass('print-target');
+            cardEl.addClass('print-target');
+            document.body.classList.add('print-single');
+            window.print();
+        }
+
+        function safeFileName(value) {
+            return String(value || '')
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '') || 'report-card';
+        }
+
+        function collectSubjectRows(cardBody) {
+            return Array.from(cardBody.querySelectorAll('table.subject-table > tbody > tr')).map(function (tr) {
+                const cells = Array.from(tr.children).filter(function (node) {
+                    return node.tagName && node.tagName.toLowerCase() === 'td';
+                });
+                const componentRows = tr.querySelectorAll('.component-table-mini tbody tr');
+                const componentItems = [];
+                componentRows.forEach(function (compTr) {
+                    const compCells = Array.from(compTr.children).filter(function (node) {
+                        return node.tagName && node.tagName.toLowerCase() === 'td';
+                    });
+                    const name = (compCells[0] && compCells[0].textContent || '').trim() || '-';
+                    const fm = (compCells[1] && compCells[1].textContent || '').trim() || '-';
+                    const pm = (compCells[2] && compCells[2].textContent || '').trim() || '-';
+                    const sm = (compCells[3] && compCells[3].textContent || '').trim() || '-';
+                    const st = (compCells[4] && compCells[4].textContent || '').trim() || '-';
+                    componentItems.push({name: name, fm: fm, pm: pm, sm: sm, st: st});
+                });
+                return {
+                    subject: (cells[0] && cells[0].textContent || '').trim() || 'N/A',
+                    marks: (cells[1] && cells[1].textContent || '').trim() || 'N/A',
+                    componentsText: componentItems.length ? ' ' : '-',
+                    componentItems: componentItems,
+                    status: (cells[3] && cells[3].textContent || '').trim() || '-',
+                    note: (cells[4] && cells[4].textContent || '').trim() || '-',
+                };
+            });
+        }
+
+        function loadImageDataUrl(src) {
+            return new Promise(function (resolve) {
+                if (!src) {
+                    resolve(null);
+                    return;
+                }
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = function () {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        const size = 120;
+                        canvas.width = size;
+                        canvas.height = size;
+                        const ctx = canvas.getContext('2d');
+                        const radius = 18;
+                        ctx.beginPath();
+                        ctx.moveTo(radius, 0);
+                        ctx.lineTo(size - radius, 0);
+                        ctx.quadraticCurveTo(size, 0, size, radius);
+                        ctx.lineTo(size, size - radius);
+                        ctx.quadraticCurveTo(size, size, size - radius, size);
+                        ctx.lineTo(radius, size);
+                        ctx.quadraticCurveTo(0, size, 0, size - radius);
+                        ctx.lineTo(0, radius);
+                        ctx.quadraticCurveTo(0, 0, radius, 0);
+                        ctx.closePath();
+                        ctx.clip();
+                        ctx.drawImage(img, 0, 0, size, size);
+                        resolve(canvas.toDataURL('image/png'));
+                    } catch (e) {
+                        resolve(null);
+                    }
+                };
+                img.onerror = function () {
+                    resolve(null);
+                };
+                img.src = src;
+            });
+        }
+
+        function collectExamPayload(card) {
+            const title = (card.querySelector('.card-title') && card.querySelector('.card-title').textContent || 'Exam').trim();
+            const sub = (card.querySelector('.card-sub') && card.querySelector('.card-sub').textContent || '').trim();
+            const result = (card.querySelector('.badge') && card.querySelector('.badge').textContent || 'Pending').trim();
+            const decision = (card.getAttribute('data-result-decision') || '').trim();
+            const decider = (card.getAttribute('data-result-decider') || '').trim();
+            const examId = String(card.getAttribute('data-exam-id') || '').trim();
+            const kpiMap = {};
+            Array.from(card.querySelectorAll('.kpi')).forEach(function (kpi) {
+                const label = (kpi.querySelector('.label') && kpi.querySelector('.label').textContent || '').trim().toLowerCase();
+                const value = (kpi.querySelector('.value') && kpi.querySelector('.value').textContent || '').trim();
+                if (label) {
+                    kpiMap[label] = value || 'N/A';
+                }
+            });
+            const chips = Array.from(card.querySelectorAll('.card-meta-strip .meta-chip strong')).map(function (el) {
+                return (el.textContent || '').trim();
+            });
+            const teacherRemark = ($('#remarkPreview' + examId).text() || '').trim();
+
+            return {
+                examTitle: title || 'Exam',
+                examSub: sub || 'N/A',
+                result: result || 'Pending',
+                obtained: kpiMap.obtained || 'N/A',
+                fullMarks: kpiMap['full marks'] || 'N/A',
+                percentage: kpiMap.percentage || 'N/A',
+                grade: kpiMap.grade || 'N/A',
+                passMarks: chips[0] || 'N/A',
+                completion: chips[1] || 'N/A',
+                scheme: chips[2] || 'N/A',
+                teacherRemark: teacherRemark || '-',
+                overallDecision: decision || '',
+                resultDecider: decider || '',
+                subjectRows: collectSubjectRows(card.querySelector('.card-body')),
+            };
+        }
+
+        async function generateProgressPdf(cards, fileNameSuffix, triggerBtnEl) {
+            const jsPdfRef = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
+            if (!jsPdfRef) {
+                addErrorNotification('PDF library unavailable.');
+                return;
+            }
+
+            if (!cards.length) {
+                addErrorNotification('No report data found to download.');
+                return;
+            }
+
+            const $btn = triggerBtnEl ? $(triggerBtnEl) : $();
+            if ($btn.length && !setButtonLoading($btn, 'Downloading...')) {
+                return;
+            }
+
+            try {
+                const pdf = new jsPdfRef({
+                    orientation: 'portrait',
+                    unit: 'pt',
+                    format: 'a4'
+                });
+
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const marginX = 34;
+                const contentWidth = pageWidth - (marginX * 2);
+                const studentName = "{{ selected_student.name|default:'Student'|escapejs }}";
+                const roll = "{{ selected_student.roll|default:'N/A'|escapejs }}";
+                const classText = "{% if selected_student.standardID %}{{ selected_student.standardID.name|default:'N/A'|escapejs }}{% if selected_student.standardID.section %} - {{ selected_student.standardID.section|escapejs }}{% endif %}{% else %}N/A{% endif %}";
+                const sessionText = "{{ request.session.current_session.currentSessionYear|default:'N/A'|escapejs }}";
+                const schoolName = "{% if selected_student.schoolID and selected_student.schoolID.schoolName %}{{ selected_student.schoolID.schoolName|escapejs }}{% elif selected_student.schoolID and selected_student.schoolID.name %}{{ selected_student.schoolID.name|escapejs }}{% else %}School Name{% endif %}";
+                const schoolAddressParts = [
+                    "{{ selected_student.schoolID.address|default_if_none:''|escapejs }}",
+                    "{{ selected_student.schoolID.city|default_if_none:''|escapejs }}",
+                    "{{ selected_student.schoolID.state|default_if_none:''|escapejs }}"
+                ].filter(Boolean);
+                const schoolAddress = schoolAddressParts.join(', ');
+                const schoolPhone = "{{ selected_student.schoolID.phoneNumber|default_if_none:''|escapejs }}";
+                const schoolEmail = "{{ selected_student.schoolID.email|default_if_none:''|escapejs }}";
+                const schoolLogoSrc = "{% if selected_student.schoolID and selected_student.schoolID.logo %}{{ selected_student.schoolID.logo.url|escapejs }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}";
+                const generatedOn = new Date().toLocaleString();
+                const schoolLogoData = await loadImageDataUrl(schoolLogoSrc);
+                const examPayloads = cards.map(collectExamPayload);
+
+                function asPercentNumber(value) {
+                    const clean = String(value || '').replace('%', '').trim();
+                    const num = parseFloat(clean);
+                    return Number.isFinite(num) ? num : null;
+                }
+
+                function statusColorTriplet(statusValue) {
+                    const status = String(statusValue || '').trim().toLowerCase();
+                    if (status === 'pass' || status === 'p' || status === 'entered') return [33, 186, 69];
+                    if (status === 'fail' || status === 'a' || status === 'absent') return [219, 40, 40];
+                    if (status === 'x' || status === 'exempt') return [33, 133, 208];
+                    return [208, 132, 32];
+                }
+
+                function drawPageChrome(title, subtitle) {
+                    pdf.setFillColor(16, 51, 112);
+                    pdf.rect(0, 0, pageWidth, 76, 'F');
+
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFontSize(16);
+                    pdf.text(title || 'Progress Report', marginX, 30);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(9.5);
+                    pdf.text(subtitle || 'Academic Report', marginX, 47);
+                    pdf.text('Generated: ' + generatedOn, pageWidth - marginX, 47, {align: 'right'});
+
+                    pdf.setFillColor(245, 249, 255);
+                    pdf.roundedRect(marginX, 86, contentWidth, 76, 8, 8, 'F');
+                    pdf.setDrawColor(219, 229, 243);
+                    pdf.roundedRect(marginX, 86, contentWidth, 76, 8, 8, 'S');
+
+                    if (schoolLogoData) {
+                        pdf.addImage(schoolLogoData, 'PNG', marginX + 10, 96, 46, 46);
+                    }
+                    pdf.setTextColor(36, 49, 70);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFontSize(11);
+                    pdf.text(schoolName || 'School Name', marginX + 64, 108);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(9);
+                    if (schoolAddress) {
+                        pdf.text(pdf.splitTextToSize(schoolAddress, contentWidth - 180), marginX + 64, 121);
+                    }
+                    const schoolMetaLine = [schoolPhone ? 'Phone: ' + schoolPhone : '', schoolEmail ? 'Email: ' + schoolEmail : '']
+                        .filter(Boolean).join(' | ');
+                    if (schoolMetaLine) {
+                        pdf.text(schoolMetaLine, marginX + 64, 141);
+                    }
+                    return 176;
+                }
+
+                function drawStudentMeta(yStart) {
+                    pdf.setFillColor(255, 255, 255);
+                    pdf.roundedRect(marginX, yStart, contentWidth, 42, 6, 6, 'F');
+                    pdf.setDrawColor(219, 229, 243);
+                    pdf.roundedRect(marginX, yStart, contentWidth, 42, 6, 6, 'S');
+
+                    pdf.setTextColor(42, 55, 76);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFontSize(9.5);
+                    pdf.text('Student', marginX + 10, yStart + 15);
+                    pdf.text('Roll', marginX + contentWidth * 0.33, yStart + 15);
+                    pdf.text('Class', marginX + contentWidth * 0.52, yStart + 15);
+                    pdf.text('Session', marginX + contentWidth * 0.72, yStart + 15);
+
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(10);
+                    pdf.text(studentName || 'N/A', marginX + 10, yStart + 31);
+                    pdf.text(roll || 'N/A', marginX + contentWidth * 0.33, yStart + 31);
+                    pdf.text(classText || 'N/A', marginX + contentWidth * 0.52, yStart + 31);
+                    pdf.text(sessionText || 'N/A', marginX + contentWidth * 0.72, yStart + 31);
+                }
+
+                function drawExamPage(examData, examIndex, isFirstPage) {
+                    if (!isFirstPage) {
+                        pdf.addPage();
+                    }
+                    const yBase = drawPageChrome(examData.examTitle, 'Exam Report (' + examIndex + '/' + examPayloads.length + ')');
+                    drawStudentMeta(yBase);
+
+                    const ySummary = yBase + 56;
+                    pdf.setFillColor(250, 252, 255);
+                    pdf.roundedRect(marginX, ySummary, contentWidth, 56, 8, 8, 'F');
+                    pdf.setDrawColor(219, 229, 243);
+                    pdf.roundedRect(marginX, ySummary, contentWidth, 56, 8, 8, 'S');
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFontSize(11);
+                    pdf.setTextColor(37, 50, 73);
+                    pdf.text(examData.examSub || 'N/A', marginX + 10, ySummary + 18);
+                    pdf.text('Result: ' + (examData.result || 'Pending'), pageWidth - marginX - 10, ySummary + 18, {align: 'right'});
+
+                    const chipY = ySummary + 34;
+                    const chips = [
+                        'Obtained: ' + examData.obtained,
+                        'Full: ' + examData.fullMarks,
+                        'Pass: ' + examData.passMarks,
+                        'Percentage: ' + examData.percentage,
+                        'Grade: ' + examData.grade,
+                        'Completion: ' + examData.completion,
+                        'Scheme: ' + examData.scheme
+                    ];
+                    if (examData.overallDecision) {
+                        const decisionLabel = examData.overallDecision.charAt(0).toUpperCase() + examData.overallDecision.slice(1);
+                        const deciderLabel = examData.resultDecider ? (examData.resultDecider.charAt(0).toUpperCase() + examData.resultDecider.slice(1)) : '';
+                        const byText = deciderLabel ? (' by ' + deciderLabel) : '';
+                        chips.push('Decision: ' + decisionLabel + byText);
+                    }
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(8.6);
+                    pdf.text(pdf.splitTextToSize(chips.join('   |   '), contentWidth - 20), marginX + 10, chipY);
+
+                    const subjectStartY = ySummary + 68;
+                    if (typeof pdf.autoTable === 'function') {
+                        pdf.autoTable({
+                            head: [['Subject', 'Marks', 'Components', 'Status', 'Note']],
+                            body: examData.subjectRows.length
+                                ? examData.subjectRows.map(function (row) {
+                                    return [row.subject, row.marks, row.componentsText, row.status, row.note];
+                                })
+                                : [['N/A', 'N/A', '-', '-', 'No subject rows']],
+                            startY: subjectStartY,
+                            margin: {left: marginX, right: marginX},
+                            styles: {
+                                font: 'helvetica',
+                                fontSize: 8.7,
+                                cellPadding: 5.2,
+                                textColor: [36, 49, 70],
+                                lineColor: [216, 226, 241],
+                                lineWidth: 0.55,
+                            },
+                            headStyles: {
+                                fillColor: [26, 71, 148],
+                                textColor: [255, 255, 255],
+                                fontStyle: 'bold',
+                            },
+                            alternateRowStyles: {fillColor: [248, 251, 255]},
+                            columnStyles: {
+                                0: {cellWidth: contentWidth * 0.19, overflow: 'linebreak'},
+                                1: {cellWidth: contentWidth * 0.12, overflow: 'linebreak'},
+                                2: {cellWidth: contentWidth * 0.45, overflow: 'linebreak'},
+                                3: {cellWidth: contentWidth * 0.11, overflow: 'linebreak'},
+                                4: {cellWidth: contentWidth * 0.13, overflow: 'linebreak'},
+                            },
+                            didParseCell: function (data) {
+                                if (data.section === 'body' && data.column.index === 3) {
+                                    const rgb = statusColorTriplet(data.cell.text && data.cell.text[0] ? data.cell.text[0] : '');
+                                    data.cell.styles.textColor = rgb;
+                                    data.cell.styles.fontStyle = 'bold';
+                                }
+                                if (data.section === 'body' && data.column.index === 2 && data.row.index >= 0) {
+                                    const rowData = examData.subjectRows[data.row.index] || {};
+                                    const itemCount = (rowData.componentItems || []).length;
+                                    data.cell.styles.fontSize = 8.1;
+                                    if (itemCount > 0) {
+                                        data.cell.styles.minCellHeight = 18 + (itemCount * 12);
+                                    } else {
+                                        data.cell.styles.minCellHeight = 32;
+                                    }
+                                    data.cell.styles.valign = 'top';
+                                }
+                            },
+                            didDrawCell: function (data) {
+                                if (!(data.section === 'body' && data.column.index === 2)) {
+                                    return;
+                                }
+                                const rowData = examData.subjectRows[data.row.index] || {};
+                                const items = rowData.componentItems || [];
+                                if (!items.length) {
+                                    return;
+                                }
+
+                                const x = data.cell.x + 2;
+                                const y = data.cell.y + 2;
+                                const w = data.cell.width - 4;
+                                const headerH = 10;
+                                const rowH = 10;
+                                const totalH = headerH + (items.length * rowH);
+
+                                pdf.setDrawColor(198, 210, 229);
+                                pdf.setFillColor(245, 249, 255);
+                                pdf.rect(x, y, w, totalH, 'FD');
+
+                                const c1 = x + (w * 0.46);
+                                const c2 = x + (w * 0.60);
+                                const c3 = x + (w * 0.72);
+                                const c4 = x + (w * 0.84);
+                                const colLines = [c1, c2, c3, c4];
+                                colLines.forEach(function (cx) {
+                                    pdf.line(cx, y, cx, y + totalH);
+                                });
+
+                                pdf.setDrawColor(198, 210, 229);
+                                pdf.line(x, y + headerH, x + w, y + headerH);
+                                for (let i = 1; i <= items.length; i++) {
+                                    pdf.line(x, y + headerH + (i * rowH), x + w, y + headerH + (i * rowH));
+                                }
+
+                                pdf.setTextColor(74, 90, 116);
+                                pdf.setFont('helvetica', 'bold');
+                                pdf.setFontSize(7.3);
+                                pdf.text('COMPONENT', x + 2, y + 7.2);
+                                pdf.text('FM', c1 + 2, y + 7.2);
+                                pdf.text('PM', c2 + 2, y + 7.2);
+                                pdf.text('SM', c3 + 2, y + 7.2);
+                                pdf.text('ST', c4 + 2, y + 7.2);
+
+                                pdf.setFont('helvetica', 'normal');
+                                pdf.setTextColor(37, 50, 73);
+                                items.forEach(function (item, idx) {
+                                    const lineY = y + headerH + (idx * rowH) + 7.2;
+                                    const shortName = String(item.name || '-');
+                                    pdf.text(shortName.length > 22 ? (shortName.slice(0, 22) + '..') : shortName, x + 2, lineY);
+                                    pdf.text(String(item.fm || '-'), c1 + 2, lineY);
+                                    pdf.text(String(item.pm || '-'), c2 + 2, lineY);
+                                    pdf.text(String(item.sm || '-'), c3 + 2, lineY);
+                                    pdf.setTextColor.apply(pdf, statusColorTriplet(item.st));
+                                    pdf.setFont('helvetica', 'bold');
+                                    pdf.text(String(item.st || '-'), c4 + 2, lineY);
+                                    pdf.setTextColor(37, 50, 73);
+                                    pdf.setFont('helvetica', 'normal');
+                                });
+                            }
+                        });
+                    }
+
+                    const finalTableY = (pdf.lastAutoTable && pdf.lastAutoTable.finalY) ? pdf.lastAutoTable.finalY : (subjectStartY + 10);
+                    const remarkY = Math.min(pageHeight - 62, finalTableY + 16);
+                    pdf.setDrawColor(219, 229, 243);
+                    pdf.line(marginX, remarkY, pageWidth - marginX, remarkY);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFontSize(9.5);
+                    pdf.setTextColor(37, 50, 73);
+                    pdf.text('Teacher Remark:', marginX, remarkY + 14);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(9);
+                    pdf.text(pdf.splitTextToSize(examData.teacherRemark || '-', contentWidth - 94), marginX + 94, remarkY + 14);
+                }
+
+                cards.map(collectExamPayload).forEach(function (examData, idx) {
+                    drawExamPage(examData, idx + 1, idx === 0);
+                });
+
+                const pageCount = pdf.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    pdf.setPage(i);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(8.5);
+                    pdf.setTextColor(120, 130, 145);
+                    pdf.text('Page ' + i + ' of ' + pageCount, pageWidth - marginX, pageHeight - 14, {align: 'right'});
+                }
+
+                const examTitle = (cards[0].querySelector('.card-title') && cards[0].querySelector('.card-title').textContent || 'exam').trim();
+                const fileName = safeFileName(studentName + '-' + examTitle + (fileNameSuffix ? ('-' + fileNameSuffix) : '')) + '-progress-report.pdf';
+                pdf.save(fileName);
+            } catch (err) {
+                addErrorNotification('Unable to generate PDF right now.');
+            } finally {
+                if ($btn.length) {
+                    clearButtonLoading($btn);
+                }
+            }
+        }
+
+        async function downloadCardPdf(btnEl, event) {
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
+            const cardEl = btnEl ? btnEl.closest('.report-card') : null;
+            if (!cardEl) {
+                addErrorNotification('Unable to download this exam report.');
+                return;
+            }
+            const examTitleEl = cardEl.querySelector('.card-title');
+            const examTitle = (examTitleEl && examTitleEl.textContent ? examTitleEl.textContent : 'exam').trim();
+            await generateProgressPdf([cardEl], examTitle, btnEl);
+        }
+
+        function bindReportCardToggles() {
+            $('#reportCardsWrap .report-card .card-head').off('click').on('click', function () {
+                $(this).closest('.report-card').toggleClass('expanded');
+            });
+        }
+
+        function initTermResultDropdowns(scope) {
+            const $scope = scope ? $(scope) : $(document);
+            $scope.find('select.term-result-dropdown').each(function () {
+                const $select = $(this);
+                $select.dropdown({
+                    clearable: false,
+                    fullTextSearch: false,
+                    forceSelection: false
+                });
+                const selected = String($select.attr('data-original') || $select.val() || '').trim();
+                $select.dropdown('set selected', selected || 'auto');
+                if ($select.is(':disabled')) {
+                    $select.closest('.ui.dropdown').addClass('disabled');
+                }
+            });
+        }
+
+        function initReadyPublishCheckboxes(scope) {
+            const $scope = scope ? $(scope) : $(document);
+            $scope.find('.ready-publish-toggle').checkbox();
+        }
+
+        function getTermResultValue(examId) {
+            const $select = $('#termResultDecision' + examId);
+            const dropdownValue = $select.hasClass('term-result-dropdown') ? $select.dropdown('get value') : '';
+            return String(dropdownValue || $select.val() || '').trim();
+        }
+
+        function validateReportFilters(classId, studentId) {
+            if (!classId || !studentId) {
+                addErrorNotification('Select class and student first.');
+                return false;
+            }
+            return true;
+        }
+
+        function refreshReportContent(classId, studentId, examId, options) {
+            const opts = options || {};
+            const pushHistory = opts.pushHistory !== false;
+            const showValidation = opts.showValidation !== false;
+            const pageUrl = "{% url 'teacherApp:teacher_progress_report_cards' %}";
+
+            if (showValidation && !validateReportFilters(classId, studentId)) {
+                return;
+            }
+
+            const queryObj = {
+                standard: classId,
+                student: studentId,
+                exam: examId || 'all'
+            };
+
+            $.ajax({
+                type: 'get',
+                url: pageUrl + '?' + $.param(queryObj),
+                success: function (html) {
+                    const $parsed = $('<div>').html(html);
+                    const $nextContent = $parsed.find('#reportContent');
+                    if (!$nextContent.length) {
+                        addErrorNotification('Unable to load report cards.');
+                        return;
+                    }
+                    $('#reportContent').replaceWith($nextContent);
+                    initTermResultDropdowns($('#reportContent'));
+                    initReadyPublishCheckboxes($('#reportContent'));
+                    bindReportCardToggles();
+                    $('#publishVisibleBtn').show();
+                    $('#unpublishVisibleBtn').show();
+                    if (pushHistory && window.history && window.history.replaceState) {
+                        window.history.replaceState({}, '', pageUrl + '?' + $.param(queryObj));
+                    }
+                },
+                error: function (xhr) {
+                    addErrorNotification(parseAjaxError(xhr, 'Unable to load report cards.'));
+                }
+            });
+        }
+
+        function updateProgressReportStatus(examId, statusValue, event, btnEl) {
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
+
+            const classId = getDropdownValue('#standard') || String(selectedClassId || '').trim();
+            const studentId = getDropdownValue('#student') || String(selectedStudentId || '').trim();
+            const currentExamId = getDropdownValue('#exam') || String(selectedExamId || 'all').trim() || 'all';
+            if (!classId || !studentId || !examId) {
+                addErrorNotification('Select class and student first.');
+                return;
+            }
+
+            const $btn = $(btnEl);
+            if (!setButtonLoading($btn, statusValue === 'published' ? 'Publishing...' : 'Unpublishing...')) {
+                return;
+            }
+
+            const data = new FormData();
+            data.append('standard', classId);
+            data.append('student', studentId);
+            data.append('exam', examId);
+            data.append('status', statusValue);
+            $.ajax({
+                type: 'post',
+                url: "{% url 'teacherAppAPI:teacher_publish_progress_report_api' %}",
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message || 'Updated successfully.', response.color || 'green');
+                        refreshReportContent(classId, studentId, currentExamId, {pushHistory: false, showValidation: false});
+                    } else {
+                        addErrorNotification(response.message || 'Unable to update report.');
+                    }
+                    clearButtonLoading($btn);
+                },
+                error: function (xhr) {
+                    addErrorNotification(parseAjaxError(xhr, 'Unable to update report.'));
+                    clearButtonLoading($btn);
+                }
+            });
+        }
+
+        function publishProgressReport(examId, event, btnEl) {
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
+            const readyEl = document.getElementById('readyToPublish' + examId);
+            if (readyEl && !readyEl.checked) {
+                addErrorNotification('Mark this report as Ready to Publish first.');
+                return;
+            }
+            const examLabel = $(btnEl).closest('.report-card').find('.card-title').first().text().trim();
+            showCardStatusConfirmModal('published', examLabel, function () {
+                updateProgressReportStatus(examId, 'published', null, btnEl);
+            });
+        }
+
+        function unpublishProgressReport(examId, event, btnEl) {
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
+            const examLabel = $(btnEl).closest('.report-card').find('.card-title').first().text().trim();
+            showCardStatusConfirmModal('draft', examLabel, function () {
+                updateProgressReportStatus(examId, 'draft', null, btnEl);
+            });
+        }
+
+        function updateVisibleReportsStatus(statusValue) {
+            const classId = getDropdownValue('#standard') || String(selectedClassId || '').trim();
+            const studentId = getDropdownValue('#student') || String(selectedStudentId || '').trim();
+            const examId = getDropdownValue('#exam') || String(selectedExamId || 'all').trim() || 'all';
+            if (!classId || !studentId) {
+                addErrorNotification('Select class and student first.');
+                return;
+            }
+
+            const visibleExamIds = [];
+            $('#reportCardsWrap .report-card').each(function () {
+                const examCardId = String($(this).data('exam-id') || '').trim();
+                if (examCardId && /^\d+$/.test(examCardId)) {
+                    visibleExamIds.push(examCardId);
+                }
+            });
+            if (!visibleExamIds.length) {
+                addErrorNotification('No visible reports found to update.');
+                return;
+            }
+
+            showBulkStatusConfirmModal(statusValue, visibleExamIds.length, function () {
+                const $btn = statusValue === 'published' ? $('#publishVisibleBtn') : $('#unpublishVisibleBtn');
+                if (!setButtonLoading($btn, statusValue === 'published' ? 'Publishing...' : 'Unpublishing...')) {
+                    return;
+                }
+
+                const data = new FormData();
+                data.append('standard', classId);
+                data.append('student', studentId);
+                data.append('exam', examId);
+                data.append('exam_ids', visibleExamIds.join(','));
+                data.append('status', statusValue);
+                $.ajax({
+                    type: 'post',
+                    url: "{% url 'teacherAppAPI:teacher_publish_progress_report_api' %}",
+                    data: data,
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+                    success: function (response) {
+                        if (response.success) {
+                            const count = response.data && response.data.snapshotsSaved ? response.data.snapshotsSaved : 0;
+                            addSuccessNotification((response.message || 'Updated successfully.') + ' Snapshots: ' + count, response.color || 'green');
+                            refreshReportContent(classId, studentId, examId, {pushHistory: false, showValidation: false});
+                        } else {
+                            addErrorNotification(response.message || 'Unable to update reports.');
+                        }
+                        clearButtonLoading($btn);
+                    },
+                    error: function (xhr) {
+                        addErrorNotification(parseAjaxError(xhr, 'Unable to update reports.'));
+                        clearButtonLoading($btn);
+                    }
+                });
+            });
+        }
+
+        function publishVisibleReports() {
+            updateVisibleReportsStatus('published');
+        }
+
+        function unpublishVisibleReports() {
+            updateVisibleReportsStatus('draft');
+        }
+
+        function toggleReadyToPublish(examId, inputEl, event) {
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
+            const classId = getDropdownValue('#standard') || String(selectedClassId || '').trim();
+            const studentId = getDropdownValue('#student') || String(selectedStudentId || '').trim();
+            const examFilter = getDropdownValue('#exam') || String(selectedExamId || 'all').trim() || 'all';
+            if (!classId || !studentId || !examId) {
+                addErrorNotification('Select class and student first.');
+                inputEl.checked = !inputEl.checked;
+                return;
+            }
+
+            const readyValue = inputEl.checked ? '1' : '0';
+            const data = new FormData();
+            data.append('standard', classId);
+            data.append('student', studentId);
+            data.append('exam', examId);
+            data.append('ready', readyValue);
+
+            inputEl.disabled = true;
+            $.ajax({
+                type: 'post',
+                url: "{% url 'teacherAppAPI:teacher_set_progress_report_ready_state_api' %}",
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message || 'Ready state updated.', response.color || 'green');
+                        refreshReportContent(classId, studentId, examFilter, {pushHistory: false, showValidation: false});
+                    } else {
+                        inputEl.checked = !inputEl.checked;
+                        addErrorNotification(response.message || 'Unable to update ready state.');
+                    }
+                    inputEl.disabled = false;
+                },
+                error: function (xhr) {
+                    inputEl.checked = !inputEl.checked;
+                    inputEl.disabled = false;
+                    addErrorNotification(parseAjaxError(xhr, 'Unable to update ready state.'));
+                }
+            });
+        }
+
+        let activeTermRemarkExamId = null;
+
+        function saveTermRemark(examId, btnEl, event) {
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
+            const remarkText = ($('#termRemark' + examId).val() || '').trim();
+            const overallResult = getTermResultValue(examId);
+            persistTermRemark(examId, remarkText, overallResult, $(btnEl));
+        }
+
+        function persistTermRemark(examId, remarkText, overallResult, $btn) {
+            const classId = getDropdownValue('#standard') || String(selectedClassId || '').trim();
+            const studentId = getDropdownValue('#student') || String(selectedStudentId || '').trim();
+            if (!classId || !studentId || !examId) {
+                addErrorNotification('Select class and student first.');
+                return;
+            }
+
+            const normalizedResult = (!overallResult || overallResult === 'auto') ? 'auto' : overallResult;
+            if (!setButtonLoading($btn, 'Saving...')) {
+                return;
+            }
+
+            const data = new FormData();
+            data.append('standard', classId);
+            data.append('student', studentId);
+            data.append('exam', examId);
+            data.append('overall_remark', remarkText);
+            data.append('overall_result', normalizedResult);
+
+            $.ajax({
+                type: 'post',
+                url: "{% url 'teacherAppAPI:teacher_upsert_term_remark_api' %}",
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message || 'Teacher remark saved.', response.color || 'green');
+                        $('#termRemark' + examId).val(remarkText);
+                        $('#termResultDecision' + examId).val(normalizedResult);
+                        $('#remarkPreview' + examId).text(remarkText || 'No remark added yet.');
+                        if (normalizedResult !== 'auto') {
+                            $('#remarkMeta' + examId).text('Manual result: ' + normalizedResult.charAt(0).toUpperCase() + normalizedResult.slice(1) + ' by Teacher');
+                        } else {
+                            $('#remarkMeta' + examId).text('Result mode: Auto');
+                        }
+                        const examFilter = getDropdownValue('#exam') || String(selectedExamId || 'all').trim() || 'all';
+                        refreshReportContent(classId, studentId, examFilter, {pushHistory: false, showValidation: false});
+                    } else {
+                        addErrorNotification(response.message || 'Unable to save teacher remark.');
+                    }
+                    clearButtonLoading($btn);
+                },
+                error: function (xhr) {
+                    addErrorNotification(parseAjaxError(xhr, 'Unable to save teacher remark.'));
+                    clearButtonLoading($btn);
+                }
+            });
+        }
+
+        function openTermRemarkModal(examId, event) {
+            if (event && typeof event.stopPropagation === 'function') {
+                event.stopPropagation();
+            }
+            activeTermRemarkExamId = examId;
+            const remarkText = ($('#termRemark' + examId).val() || '').trim();
+            const resultValue = getTermResultValue(examId) || 'auto';
+            $('#termRemarkModalText').val(remarkText);
+            $('#termRemarkModalResult').dropdown('set selected', resultValue);
+            $('#termRemarkEditModal').modal({closable: true}).modal('show');
+        }
+
+        function saveTermRemarkFromModal() {
+            if (!activeTermRemarkExamId) {
+                return;
+            }
+            const remarkText = ($('#termRemarkModalText').val() || '').trim();
+            const resultValue = String($('#termRemarkModalResult').dropdown('get value') || 'auto').trim() || 'auto';
+            persistTermRemark(activeTermRemarkExamId, remarkText, resultValue, $('#saveTermRemarkModalBtn'));
+            $('#termRemarkEditModal').modal('hide');
+        }
 
         function fillClassOptions() {
             const $class = $('#standard');
@@ -343,6 +1918,12 @@
             fillClassOptions();
             fillStudentOptions($('#standard').val());
             fillExamOptions($('#standard').val());
+            $('#termRemarkModalResult').dropdown({
+                clearable: false,
+                fullTextSearch: false,
+                forceSelection: false
+            });
+            $('#termRemarkModalResult').dropdown('set selected', 'auto');
 
             $('#standard').on('change', function () {
                 const classId = $(this).val();
@@ -350,11 +1931,56 @@
                 fillExamOptions(classId);
             });
 
-            document.querySelectorAll('#reportCardsWrap .report-card .card-head').forEach(function (head) {
-                head.addEventListener('click', function () {
-                    head.parentElement.classList.toggle('expanded');
+            bindReportCardToggles();
+            initTermResultDropdowns($('#reportContent'));
+            initReadyPublishCheckboxes($('#reportContent'));
+
+            $('#filterForm').on('submit', function (e) {
+                e.preventDefault();
+                const classId = getDropdownValue('#standard');
+                const studentId = getDropdownValue('#student');
+                const examId = getDropdownValue('#exam') || 'all';
+                refreshReportContent(classId, studentId, examId, {pushHistory: true, showValidation: true});
+            });
+
+            $('#searchBtn').on('click', function (e) {
+                e.preventDefault();
+                $('#filterForm').trigger('submit');
+            });
+
+            $('#clearFiltersBtn').on('click', function (e) {
+                e.preventDefault();
+                $('#standard').dropdown('clear');
+                fillStudentOptions('');
+                fillExamOptions('');
+                const pageUrl = "{% url 'teacherApp:teacher_progress_report_cards' %}";
+                $.ajax({
+                    type: 'get',
+                    url: pageUrl,
+                    success: function (html) {
+                        const $parsed = $('<div>').html(html);
+                        const $nextContent = $parsed.find('#reportContent');
+                        if ($nextContent.length) {
+                            $('#reportContent').replaceWith($nextContent);
+                            initTermResultDropdowns($('#reportContent'));
+                            initReadyPublishCheckboxes($('#reportContent'));
+                        }
+                        $('#publishVisibleBtn').hide();
+                        $('#unpublishVisibleBtn').hide();
+                        if (window.history && window.history.replaceState) {
+                            window.history.replaceState({}, '', pageUrl);
+                        }
+                    },
+                    error: function (xhr) {
+                        addErrorNotification(parseAjaxError(xhr, 'Unable to clear report view.'));
+                    }
                 });
             });
+        });
+
+        window.addEventListener('afterprint', function () {
+            document.body.classList.remove('print-single');
+            $('.report-page .report-card').removeClass('print-target');
         });
     </script>
 {% endblock %}

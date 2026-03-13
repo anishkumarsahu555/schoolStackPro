@@ -278,6 +278,14 @@
             color: #fee2e2;
         }
 
+        @media print {
+            .app-notice-stack,
+            .app-notice {
+                display: none !important;
+                visibility: hidden !important;
+            }
+        }
+
         .notification-tour-modal.ui.modal {
             border-radius: 18px !important;
             overflow: hidden;
@@ -2160,6 +2168,17 @@
             padding: 12px 14px !important;
         }
 
+        body.management-route .main-content {
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+        }
+
+        body.management-route .main-content .ui.grid > .column,
+        body.management-route .main-content .ui.basic.grid > .column {
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+        }
+
         .main-content > .ui.grid,
         .main-content > .ui.container,
         .main-content > .ui.segment,
@@ -2243,6 +2262,17 @@
         @media (max-width: 767px) {
             .main-content {
                 padding: 8px 5px !important;
+            }
+
+            body.management-route .main-content {
+                padding-left: 4px !important;
+                padding-right: 4px !important;
+            }
+
+            body.management-route .main-content .ui.grid > .column,
+            body.management-route .main-content .ui.basic.grid > .column {
+                padding-left: 4px !important;
+                padding-right: 4px !important;
             }
 
             .ui.segment,
@@ -2589,7 +2619,7 @@
     </style>
 </head>
 
-<body class="{% if request.path|slice:':9' == '/student/' or request.path == '/profile/' and role_label == 'Student' %}student-mobile-route{% elif request.path|slice:':9' == '/teacher/' or request.path == '/profile/' and role_label == 'Teacher' %}teacher-mobile-route{% endif %}">
+<body class="{% if request.path|slice:':9' == '/student/' or request.path == '/profile/' and role_label == 'Student' %}student-mobile-route{% elif request.path|slice:':9' == '/teacher/' or request.path == '/profile/' and role_label == 'Teacher' %}teacher-mobile-route{% endif %}{% if request.path|slice:':12' == '/management/' %} management-route{% endif %}">
 <!-- sidebar -->
 <div class="ui sidebar material-sidenav vertical menu sidebar-menu" id="sidebar">
 

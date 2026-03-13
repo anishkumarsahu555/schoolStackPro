@@ -27,6 +27,351 @@
         input[type=search] {
             width: 100px !important;
         }
+
+        #componentConfigPanel {
+            border: 1px solid var(--app-border, #dbe4ef);
+            border-radius: 12px;
+            background: var(--app-surface, #fbfdff);
+            padding: .8rem !important;
+        }
+
+        .component-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .component-summary-item {
+            border: 1px solid var(--app-border, #dbe4ef);
+            border-radius: 7px;
+            padding: 6px 8px;
+            background: var(--app-card, #fff);
+        }
+
+        .component-summary-item .label {
+            font-size: 10px;
+            color: var(--app-muted, #6b7280);
+            text-transform: uppercase;
+        }
+
+        .component-summary-item .value {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--app-text, #111827);
+            margin-top: 2px;
+        }
+
+        .component-table-wrap {
+            overflow: visible;
+            border: 1px solid var(--app-border, #dbe4ef);
+            border-radius: 10px;
+            background: var(--app-card, #fff);
+            position: relative;
+        }
+
+        .component-table-wrap table {
+            margin: 0 !important;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .component-rule-table input,
+        .component-rule-table select {
+            width: 100%;
+        }
+
+        .component-rule-table.ui.table thead th {
+            font-size: .76rem !important;
+            padding: .58rem .55rem !important;
+        }
+
+        .component-rule-table.ui.table tbody td {
+            padding: .44rem .5rem !important;
+        }
+
+        .component-rule-table .ui.input>input {
+            min-height: 34px !important;
+            padding: .46em .66em !important;
+            font-size: .88rem !important;
+        }
+
+        .component-rule-table .ui.dropdown {
+            min-height: 34px !important;
+            font-size: .88rem !important;
+        }
+
+        .component-rule-table .ui.icon.button {
+            min-height: 30px;
+            min-width: 30px;
+            padding: .55em !important;
+        }
+
+        .component-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: .55rem 0 .25rem 0;
+        }
+
+        .policy-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            align-items: end;
+        }
+
+        .policy-checkboxes {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding-top: 4px;
+        }
+
+        .policy-checkboxes .ui.checkbox label {
+            font-size: .88rem !important;
+        }
+
+        .component-rule-table td,
+        .component-rule-table th {
+            overflow: visible !important;
+            position: relative;
+        }
+
+        .component-rule-table .component-type-native {
+            width: 100%;
+            min-height: 34px !important;
+            font-size: .88rem !important;
+            padding: .42em .52em !important;
+            border: 1px solid var(--app-border, #dbe4ef);
+            border-radius: 6px;
+            background: var(--app-card, #fff);
+            color: var(--app-text, #111827);
+        }
+
+        .rule-invalid {
+            background: #fff5f5 !important;
+        }
+
+        .component-validation-badge {
+            margin-top: 10px !important;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            width: auto;
+            max-width: 560px;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 12px;
+            line-height: 1.1;
+            border: 1px solid transparent;
+            font-weight: 600;
+        }
+
+        .component-validation-badge.active {
+            display: inline-flex !important;
+        }
+
+        .component-validation-badge .icon {
+            margin: 0 !important;
+            font-size: 12px !important;
+            opacity: .95;
+        }
+
+        .component-validation-badge.warning {
+            border-color: #f2c46d !important;
+            background: #fff8e8 !important;
+            color: #9a6700 !important;
+        }
+
+        .component-validation-badge.error {
+            border-color: #f2a6aa !important;
+            background: #fff1f2 !important;
+            color: #b42318 !important;
+        }
+
+        html[data-theme="dark"] #componentConfigPanel {
+            background: #141c28 !important;
+            border-color: #2b3a51 !important;
+        }
+
+        html[data-theme="dark"] .component-summary-item {
+            background: #1f2b3d !important;
+            border-color: #355077 !important;
+        }
+
+        html[data-theme="dark"] .component-table-wrap {
+            background: #182236 !important;
+            border-color: #355077 !important;
+        }
+
+        html[data-theme="dark"] .component-rule-table thead th {
+            background: #1e2d45 !important;
+            color: #d6e3f6 !important;
+        }
+
+        html[data-theme="dark"] .component-rule-table tbody td {
+            color: #e0e9f8 !important;
+            border-color: #335073 !important;
+            background: #162033 !important;
+        }
+
+        html[data-theme="dark"] .component-rule-table .ui.input>input,
+        html[data-theme="dark"] .component-rule-table .component-type-native {
+            background: #101a2b !important;
+            color: #f3f7ff !important;
+            border-color: #304a6d !important;
+        }
+
+        html[data-theme="dark"] .policy-checkboxes .ui.checkbox label {
+            color: #dbe7fb !important;
+        }
+
+        html[data-theme="dark"] .component-validation-badge.warning {
+            border-color: #8f6b22 !important;
+            background: #3a2d12 !important;
+            color: #ffd98b !important;
+        }
+        html[data-theme="dark"] .component-validation-badge.error {
+            border-color: #7c2d35 !important;
+            background: #3b151b !important;
+            color: #ffb3ba !important;
+        }
+
+        html[data-theme="dark"] #componentTypeModal>.header,
+        html[data-theme="dark"] #componentTypeModal>.content,
+        html[data-theme="dark"] #componentTypeModal>.actions {
+            background: #142033 !important;
+            color: #e5efff !important;
+            border-color: #314b70 !important;
+        }
+
+        html[data-theme="dark"] #componentTypeModal .ui.input>input {
+            background: #0f1a2b !important;
+            color: #f0f6ff !important;
+            border-color: #2f486a !important;
+        }
+
+        html[data-theme="dark"] .rule-invalid {
+            background: #4a2328 !important;
+        }
+
+        .component-entry-card {
+            border: 1px solid var(--app-border, #d7e0ec);
+            border-radius: 7px;
+            padding: 5px;
+            margin-bottom: 5px;
+            background: linear-gradient(180deg, var(--app-card, #ffffff), #f9fbff);
+        }
+
+        .component-entry-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 5px;
+        }
+
+        .component-entry-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--app-text, #111827);
+            line-height: 1.2;
+        }
+
+        .component-entry-title span {
+            font-weight: 500;
+            color: var(--app-muted, #6b7280);
+            font-size: 10px;
+        }
+
+        .component-entry-flags {
+            display: inline-flex;
+            gap: 5px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .component-flag {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 10px;
+            color: #50627d;
+            white-space: nowrap;
+            border: 1px solid #d3deed;
+            border-radius: 999px;
+            padding: 1px 6px;
+            background: #f3f7fd;
+        }
+
+        .component-flag input {
+            width: 11px;
+            height: 11px;
+            margin: 0;
+        }
+
+        .component-entry-fields {
+            display: grid;
+            grid-template-columns: 88px minmax(120px, 1fr);
+            gap: 5px;
+        }
+
+        .component-entry-mark .ui.input>input,
+        .component-entry-note .ui.input>input,
+        .component-entry-mark input,
+        .component-entry-note input {
+            min-height: 27px !important;
+            font-size: 11px !important;
+            padding: .34em .48em !important;
+        }
+
+        html[data-theme="dark"] .component-entry-card {
+            background: linear-gradient(180deg, #152236, #101a2b) !important;
+            border-color: #2f486a !important;
+        }
+
+        html[data-theme="dark"] .component-entry-title {
+            color: #e6efff !important;
+        }
+
+        html[data-theme="dark"] .component-entry-title span,
+        html[data-theme="dark"] .component-flag {
+            color: #a9bddb !important;
+        }
+
+        html[data-theme="dark"] .component-flag {
+            border-color: #2f486a !important;
+            background: #0d1728 !important;
+        }
+
+        html[data-theme="dark"] .component-entry-mark input,
+        html[data-theme="dark"] .component-entry-note input {
+            background: #0f1a2b !important;
+            color: #f3f8ff !important;
+            border-color: #2f486a !important;
+        }
+
+        @media (max-width: 1100px) {
+            .component-entry-fields {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .component-summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .policy-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .policy-checkboxes {
+                gap: 10px;
+            }
+        }
     </style>
 
     <div class="ui left aligned basic  grid">
@@ -76,6 +421,11 @@
                                         <i class="icon search"></i>
                                         Search
                                     </button>
+                                    <button type="button" class="ui mini blue button"
+                                            onclick="openComponentConfig()">
+                                        <i class="icon setting"></i>
+                                        Configure Components
+                                    </button>
                                     <button type="button" class="ui mini red button"
                                             onclick="clearAndReset()">
                                         <i class="icon times circle"></i>
@@ -86,6 +436,133 @@
                             </div>
 
                     </form>
+                </div>
+
+                <div class="ui raised segment" id="componentConfigPanel" style="display:none;">
+                    <div class="ui stackable middle aligned grid" style="margin-bottom:.4rem;">
+                        <div class="ten wide column">
+                            <h4 class="ui header" style="margin:0;">Component Rule Configuration</h4>
+                            <p style="font-size:12px;color:var(--app-muted,#6b7280);margin:.35rem 0 0 0;">Set mark breakup for selected exam and subject (theory/practical/internal/etc.)</p>
+                        </div>
+                        <div class="six wide right aligned column">
+                            <button class="ui mini button" type="button" onclick="$('#componentConfigPanel').hide();">Close</button>
+                        </div>
+                    </div>
+
+                    <div class="component-summary-grid">
+                        <div class="component-summary-item"><div class="label">Components</div><div class="value" id="componentCountValue">0</div></div>
+                        <div class="component-summary-item"><div class="label">Total Max</div><div class="value" id="componentTotalMaxValue">0</div></div>
+                        <div class="component-summary-item"><div class="label">Total Pass</div><div class="value" id="componentTotalPassValue">0</div></div>
+                        <div class="component-summary-item"><div class="label">Total Weightage</div><div class="value" id="componentTotalWeightValue">0</div></div>
+                    </div>
+
+                    <div class="component-table-wrap">
+                        <table class="ui very compact celled table component-rule-table">
+                            <thead>
+                            <tr>
+                                <th style="width:28%;">Component Type</th>
+                                <th style="width:16%;">Max Marks</th>
+                                <th style="width:16%;">Pass Marks</th>
+                                <th style="width:16%;">Weightage</th>
+                                <th style="width:14%;">Mandatory</th>
+                                <th style="width:10%;">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody id="componentRuleBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="component-actions">
+                        <button class="ui tiny button" type="button" onclick="addComponentRuleRow()">
+                            <i class="plus icon"></i> Add Component
+                        </button>
+                        <button class="ui tiny button" type="button" onclick="openComponentTypeModal()">
+                            <i class="plus square outline icon"></i> New Type
+                        </button>
+                        <button class="ui tiny button" type="button" onclick="prefillDefaultComponents()">
+                            <i class="clone icon"></i> Use Defaults
+                        </button>
+                        <button class="ui tiny button" type="button" onclick="applyEqualWeightage()">
+                            <i class="balance scale icon"></i> Auto Weightage
+                        </button>
+                        <button class="ui tiny button" type="button" onclick="setAllMandatory(true)">
+                            <i class="check icon"></i> All Mandatory
+                        </button>
+                        <button class="ui tiny red basic button" type="button" onclick="resetComponentRules()">
+                            <i class="undo icon"></i> Reset
+                        </button>
+                    </div>
+
+                    <div class="ui tiny form">
+                        <div class="policy-grid">
+                            <div class="field" style="margin-bottom:0;">
+                                <label>Overall Pass Marks</label>
+                                <input type="number" id="policyOverallPass" step="0.01" min="0" placeholder="Auto from exam if empty">
+                            </div>
+                            <div class="field" style="margin-bottom:0;">
+                                <label>Computation Mode</label>
+                                <select id="policyMode" class="ui dropdown">
+                                    <option value="total_marks">Total Marks</option>
+                                    <option value="weighted">Weighted</option>
+                                </select>
+                            </div>
+                            <div class="field policy-checkboxes" style="margin-bottom:0;">
+                                <div class="ui checkbox">
+                                    <input type="checkbox" id="policyRequireComponentPass" checked>
+                                    <label>Require Component Pass</label>
+                                </div>
+                                <div class="ui checkbox">
+                                    <input type="checkbox" id="policyRequireSubjectPass" checked>
+                                    <label>Require Subject Pass</label>
+                                </div>
+                                <div class="ui checkbox">
+                                    <input type="checkbox" id="policyRequireMandatory" checked>
+                                    <label>Mandatory Components</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui clearing divider"></div>
+
+                    <div class="ui right aligned container" style="padding-right:0;">
+                        <button class="ui mini green button" type="button" onclick="saveComponentRules()">
+                            <i class="save icon"></i> Save Rules
+                        </button>
+                    </div>
+                    <div class="component-validation-badge" id="componentValidation">
+                        <i class="exclamation triangle icon"></i>
+                        <span id="componentValidationText"></span>
+                    </div>
+                </div>
+
+                <div class="ui tiny modal" id="componentTypeModal">
+                    <i class="close icon"></i>
+                    <div class="header">Add Component Type</div>
+                    <div class="content">
+                        <form class="ui tiny form" id="componentTypeForm">
+                            <div class="two fields">
+                                <div class="field required">
+                                    <label>Name</label>
+                                    <input type="text" id="newComponentTypeName" placeholder="e.g. Project">
+                                </div>
+                                <div class="field required">
+                                    <label>Code</label>
+                                    <input type="text" id="newComponentTypeCode" placeholder="e.g. project">
+                                </div>
+                            </div>
+                            <div class="field">
+                                <div class="ui checkbox">
+                                    <input type="checkbox" id="newComponentTypeScholastic" checked>
+                                    <label>Scholastic</label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="actions">
+                        <button class="ui tiny button" type="button" onclick="closeComponentTypeModal()">Cancel</button>
+                        <button class="ui tiny green button" type="button" onclick="saveComponentType()">Save Type</button>
+                    </div>
                 </div>
 
                 <div class="row" style="padding-left: 5px; padding-right: 5px;display: none;" id="AttendanceTableDiv">
@@ -125,239 +602,591 @@
 
 {% block js %}
     <script>
+        let subjectTab;
+        let componentTypes = [];
+        let activeRuleRows = [];
+        const marksApiUrls = {
+            standardList: "{% if is_teacher_context %}{% url 'teacherAppAPI:get_assigned_class_list_api' %}{% else %}{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}{% endif %}",
+            examList: "{% if is_teacher_context %}{% url 'teacherAppAPI:teacher_get_exam_list_by_class_api' %}{% else %}{% url 'managementAppAPI:get_exam_list_by_class_api' %}{% endif %}",
+            subjectList: "{% if is_teacher_context %}{% url 'teacherAppAPI:teacher_get_subjects_to_class_assign_list_with_given_class_api' %}{% else %}{% url 'managementAppAPI:get_subjects_to_class_assign_list_with_given_class_api' %}{% endif %}",
+            componentTypeList: "{% if is_teacher_context %}{% url 'teacherAppAPI:teacher_get_exam_component_type_list_api' %}{% else %}{% url 'managementAppAPI:get_exam_component_type_list_api' %}{% endif %}",
+            componentTypeAdd: "{% if is_teacher_context %}{% url 'teacherAppAPI:teacher_add_exam_component_type_api' %}{% else %}{% url 'managementAppAPI:add_exam_component_type_api' %}{% endif %}",
+            componentRulesGet: "{% if is_teacher_context %}{% url 'teacherAppAPI:teacher_get_exam_subject_component_rules_api' %}{% else %}{% url 'managementAppAPI:get_exam_subject_component_rules_api' %}{% endif %}",
+            componentRulesSave: "{% if is_teacher_context %}{% url 'teacherAppAPI:teacher_save_exam_subject_component_rules_api' %}{% else %}{% url 'managementAppAPI:save_exam_subject_component_rules_api' %}{% endif %}",
+            marksTable: "{% if is_teacher_context %}{% url 'teacherAppAPI:TeacherMarksOfSubjectsByStudentJson' %}{% else %}{% url 'managementAppAPI:MarksOfSubjectsByStudentJson' %}{% endif %}",
+            markSave: "{% if is_teacher_context %}{% url 'teacherAppAPI:teacher_add_subject_mark_api' %}{% else %}{% url 'managementAppAPI:add_subject_mark_api' %}{% endif %}"
+        };
 
-        $(getStandardList());
-              function getStandardList() {
-
-            $.ajax({
-                type: 'get',
-                url: "{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}",
-
-                success: function (response) {
-
-                    $('#standard').html('');
-                    $('#standard').append(' <option value="">Search By Class Name</option>');
-                    var j;
-                    for (j = 0; j < response.data.length; j++) {
-
-                        $('#standard').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
-
-                    }
-
-                },
-
-                error: function () {
-                    $('body')
-                        .toast({
-                            class: 'error',
-                            message: 'An error occurred !'
-                        })
-                    ;
+        $(document).ready(function () {
+            getStandardList();
+            loadComponentTypes();
+            $('#policyMode').dropdown();
+            $('#componentConfigPanel .ui.checkbox').checkbox();
+            $('#componentTypeModal .ui.checkbox').checkbox();
+            $('#policyMode').on('change', function () {
+                refreshComponentSummaryAndValidation();
+            });
+            $('#policyOverallPass').on('input', function () {
+                refreshComponentSummaryAndValidation();
+            });
+            $('#componentRuleBody').on('input change', 'input, select', function () {
+                refreshComponentSummaryAndValidation();
+            });
+            $(document).on('change', 'input[id^="compabs"], input[id^="compexm"]', function () {
+                const thisId = $(this).attr('id') || '';
+                const isAbsentBox = thisId.startsWith('compabs');
+                const targetId = isAbsentBox ? thisId.replace('compabs', 'compexm') : thisId.replace('compexm', 'compabs');
+                if ($(this).is(':checked')) {
+                    $('#' + targetId).prop('checked', false);
                 }
             });
-
-
-        }
-
-                function getExamList() {
-
-            $.ajax({
-                type: 'get',
-                url: "{% url 'managementAppAPI:get_exam_list_by_class_api' %}",
-                data :{
-                    'standard' :$('#standard').val()
-                },
-
-                success: function (response) {
-
-                    $('#exam').dropdown('clear');
-                    $('#exam').html('');
-                    $('#exam').append(' <option value="">Search By Exam</option>');
-                    var j;
-                    for (j = 0; j < response.data.length; j++) {
-
-                        $('#exam').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
-
-                    }
-                    getSubjectsList();
-
-                },
-
-                error: function () {
-                    $('body')
-                        .toast({
-                            class: 'error',
-                            message: 'An error occurred !'
-                        })
-                    ;
-                }
+            subjectTab = $('#SubjectTable').DataTable({
+                dom: 'Blfrtip',
+                scrollX: true,
+                stateSave: true,
+                fixedColumns: {left: 1, right: 1},
+                buttons: [{extend: 'excel', exportOptions: {columns: [1, 2, 3, 4, 5, 6, 7, 8]}}],
+                columnDefs: [
+                    {name: 'studentID.photo', targets: 0, orderable: false},
+                    {name: 'studentID.name', targets: 1, orderable: true},
+                    {name: 'studentID.roll', targets: 2, orderable: true},
+                    {name: 'examID.fullMarks', targets: 3, orderable: true},
+                    {name: 'examID.passMarks', targets: 4, orderable: true},
+                    {name: 'mark', targets: 5, orderable: true},
+                    {name: 'note', targets: 6, orderable: true},
+                    {name: 'lastEditedBy', targets: 7, orderable: true},
+                    {name: 'lastUpdatedOn', targets: 8, orderable: true},
+                    {name: 'action', targets: 9, orderable: false}
+                ],
+                aaSorting: [[2, 'asc']],
+                lengthMenu: [[100, 125, 150, 200, -1], [100, 125, 150, 200, 'All']],
+                pageLength: 100,
+                processing: true,
+                serverSide: true,
+                ajax: marksApiUrls.marksTable
             });
-
-
-        }
-
-          function getSubjectsList() {
-
-            $.ajax({
-                type: 'get',
-                url: "{% url 'managementAppAPI:get_subjects_to_class_assign_list_with_given_class_api' %}",
-                data :{
-                    'standard' :$('#standard').val()
-                },
-
-                success: function (response) {
-
-                    $('#subject').dropdown('clear');
-                    $('#subject').html('');
-                    $('#subject').append(' <option value="">Search By Subject</option>');
-                    var j;
-                    for (j = 0; j < response.data.length; j++) {
-
-                        $('#subject').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
-
-                    }
-
-                },
-
-                error: function () {
-                    $('body')
-                        .toast({
-                            class: 'error',
-                            message: 'An error occurred !'
-                        })
-                    ;
-                }
-            });
-
-
-        }
-
-
-
-        let today = new Date();
-        $('#date')
-            .calendar({
-                    monthFirst: false,
-                    type: 'date',
-                    formatter: {
-                        date: function (date, settings) {
-
-                            if (!date) return '';
-                            var day = String(date.getDate());
-                            var month = String(date.getMonth() + 1);
-                            var year = date.getFullYear();
-                            return day + '/' + month + '/' + year;
-                        }
-                    }
-                }
-            );
-
-
-        let subjectTab
-
-
-        function searchData() {
-            let standard = $('#standard').val();
-            let exam = $('#exam').val();
-            let subject = $('#subject').val();
-
-            if (standard === '' || exam === ''|| subject === '') {
-                requiredFieldError();
-                $('#AttendanceTableDiv').css('display', 'none');
-            } else {
-                $('#AttendanceTableDiv').css('display', 'block');
-
-                subjectTab.ajax.url('{% url 'managementAppAPI:MarksOfSubjectsByStudentJson' %}?standard=' + standard+ '&exam=' + exam + '&subject=' + subject).load();
-
-            }
-        }
-
-        function clearAndReset() {
-
-            $('#standard').val('');
-            $('#standard').dropdown('clear');
-            $('#exam').html('<option value="">Search By Exam</option>');
-            $('#exam').dropdown('clear');
-            $('#subject').html('<option value="">Search By Subject</option>');
-            $('#subject').dropdown('clear');
-            $('#addFormByClass .field').removeClass('error');
-            $('#AttendanceTableDiv').css('display', 'none');
-            subjectTab.clear().draw();
-
-        }
-
-        // user Details
-
-        subjectTab = $('#SubjectTable').DataTable({
-            dom: 'Blfrtip',
-            "scrollY": "350px",
-            "scrollX": true,
-            stateSave: true,
-            fixedColumns: {
-                left: 1,
-                right: 1
-            },
-            buttons: [{
-                extend: 'excel',
-                exportOptions: {
-                    columns: [1, 2, 3, 4, 5, 6, 7, 8]
-                }
-            }
-            ],
-            "columnDefs": [
-                {"name": "studentID.photo", "targets": 0, "orderable": false},
-                {"name": "studentID.name", "targets": 1, "orderable": true},
-                {"name": "studentID.roll", "targets": 2, "orderable": true},
-                {"name": "examID.fullMarks", "targets": 3, "orderable": true},
-                {"name": "examID.passMarks", "targets": 4, "orderable": true},
-                {"name": "mark", "targets": 5, "orderable": true},
-                {"name": "note", "targets": 6, "orderable": true},
-                {"name": "lastEditedBy", "targets": 7, "orderable": true},
-                {"name": "lastUpdatedOn", "targets": 8, "orderable": true},
-                {"name": "action", "targets": 9, "orderable": false}
-            ],
-            aaSorting: [[2, 'asc']],
-            "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
-            "pageLength": 100,
-            "processing": true,
-            "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:MarksOfSubjectsByStudentJson' %}"
         });
 
-
-        function pushMark(id) {
-            let note = $('#note' + id).val();
-            let mark = $('#mark' + id).val();
-            let data = new FormData();
-            data.append('id', id);
-            data.append('note', note);
-            data.append('mark', mark);
-            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+        function getStandardList() {
             $.ajax({
-                type: 'post',
-                url: "{% url 'managementAppAPI:add_subject_mark_api' %}",
-                data: data,
-                contentType: false,
-                cache: false,
-                processData: false,
-
+                type: 'get',
+                url: marksApiUrls.standardList,
                 success: function (response) {
-                    if (response.success) {
-                        addSuccessNotification(response.message, response.color);
-                        subjectTab.ajax.reload(null, false);
-                    } else {
-                        addErrorNotification();
-
+                    $('#standard').html('<option value="">Search By Class Name</option>');
+                    for (let j = 0; j < response.data.length; j++) {
+                        $('#standard').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
                     }
-
-                    return response;
+                    $('#standard').dropdown('refresh');
                 },
                 error: function () {
                     addErrorNotification();
                 }
             });
+        }
 
+        function getExamList() {
+            $.ajax({
+                type: 'get',
+                url: marksApiUrls.examList,
+                data: {standard: $('#standard').val()},
+                success: function (response) {
+                    $('#exam').dropdown('clear');
+                    $('#exam').html('<option value="">Search By Exam</option>');
+                    for (let j = 0; j < response.data.length; j++) {
+                        $('#exam').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
+                    }
+                    $('#exam').dropdown('refresh');
+                    getSubjectsList();
+                },
+                error: function () {
+                    addErrorNotification();
+                }
+            });
+        }
 
+        function getSubjectsList() {
+            $.ajax({
+                type: 'get',
+                url: marksApiUrls.subjectList,
+                data: {standard: $('#standard').val()},
+                success: function (response) {
+                    $('#subject').dropdown('clear');
+                    $('#subject').html('<option value="">Search By Subject</option>');
+                    for (let j = 0; j < response.data.length; j++) {
+                        $('#subject').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
+                    }
+                    $('#subject').dropdown('refresh');
+                },
+                error: function () {
+                    addErrorNotification();
+                }
+            });
+        }
+
+        function loadComponentTypes(done) {
+            $.ajax({
+                type: 'get',
+                url: marksApiUrls.componentTypeList,
+                success: function (response) {
+                    componentTypes = response.data || [];
+                    refreshComponentTypeSelects();
+                    if (typeof done === 'function') done();
+                },
+                error: function () {
+                    addErrorNotification('Unable to load component types.');
+                }
+            });
+        }
+
+        function refreshComponentTypeSelects() {
+            for (let i = 0; i < activeRuleRows.length; i++) {
+                const id = activeRuleRows[i];
+                const $select = $('#ruleType' + id);
+                if (!$select.length) continue;
+                const currentValue = $select.val();
+                $select.html(componentTypeOptionsHtml(currentValue));
+                if (currentValue) {
+                    $select.val(String(currentValue));
+                }
+            }
+        }
+
+        function searchData() {
+            const standard = $('#standard').val();
+            const exam = $('#exam').val();
+            const subject = $('#subject').val();
+            if (!standard || !exam || !subject) {
+                requiredFieldError();
+                $('#AttendanceTableDiv').hide();
+                return;
+            }
+            $('#AttendanceTableDiv').show();
+            subjectTab.ajax.url(marksApiUrls.marksTable + '?standard=' + standard + '&exam=' + exam + '&subject=' + subject).load();
+        }
+
+        function clearAndReset() {
+            $('#standard').val('').dropdown('clear');
+            $('#exam').html('<option value="">Search By Exam</option>').dropdown('clear');
+            $('#subject').html('<option value="">Search By Subject</option>').dropdown('clear');
+            $('#addFormByClass .field').removeClass('error');
+            $('#AttendanceTableDiv').hide();
+            $('#componentConfigPanel').hide();
+            $('#componentRuleBody').html('');
+            activeRuleRows = [];
+            subjectTab.clear().draw();
+        }
+
+        function componentTypeOptionsHtml(selectedId) {
+            let html = '<option value="">Select</option>';
+            for (let i = 0; i < componentTypes.length; i++) {
+                const row = componentTypes[i];
+                html += '<option value="' + row.id + '" ' + (String(selectedId) === String(row.id) ? 'selected' : '') + '>' + row.name + '</option>';
+            }
+            return html;
+        }
+
+        function parseNumeric(value) {
+            const parsed = parseFloat(value);
+            return Number.isFinite(parsed) ? parsed : null;
+        }
+
+        function collectRulesForValidation(markInvalidRows = false) {
+            const rows = [];
+            const errors = [];
+            const duplicateTracker = {};
+            let totalMax = 0;
+            let totalPass = 0;
+            let totalWeight = 0;
+
+            if (markInvalidRows) {
+                $('#componentRuleBody tr').removeClass('rule-invalid');
+            }
+
+            for (let i = 0; i < activeRuleRows.length; i++) {
+                const id = activeRuleRows[i];
+                const $row = $('#ruleRow' + id);
+                const componentTypeID = $('#ruleType' + id).val();
+                const maxMarks = parseNumeric($('#ruleMax' + id).val());
+                const passMarks = parseNumeric($('#rulePass' + id).val());
+                const weightageInput = $('#ruleWeight' + id).val();
+                const weightage = weightageInput === '' ? null : parseNumeric(weightageInput);
+
+                let rowInvalid = false;
+                if (!componentTypeID) {
+                    errors.push(`Row ${i + 1}: component type is required.`);
+                    rowInvalid = true;
+                }
+                if (maxMarks === null || maxMarks <= 0) {
+                    errors.push(`Row ${i + 1}: max marks must be greater than 0.`);
+                    rowInvalid = true;
+                }
+                if (passMarks === null || passMarks < 0) {
+                    errors.push(`Row ${i + 1}: pass marks must be 0 or greater.`);
+                    rowInvalid = true;
+                }
+                if (maxMarks !== null && passMarks !== null && passMarks > maxMarks) {
+                    errors.push(`Row ${i + 1}: pass marks cannot exceed max marks.`);
+                    rowInvalid = true;
+                }
+                if (weightage !== null && (weightage < 0 || weightage > 100)) {
+                    errors.push(`Row ${i + 1}: weightage must be between 0 and 100.`);
+                    rowInvalid = true;
+                }
+                if (componentTypeID) {
+                    duplicateTracker[componentTypeID] = (duplicateTracker[componentTypeID] || 0) + 1;
+                }
+                if (rowInvalid && markInvalidRows) {
+                    $row.addClass('rule-invalid');
+                }
+
+                rows.push({
+                    id: String(id).startsWith('new_') ? null : parseInt(id, 10),
+                    componentTypeID: componentTypeID ? parseInt(componentTypeID, 10) : null,
+                    maxMarks: maxMarks,
+                    passMarks: passMarks,
+                    weightage: weightage,
+                    isMandatory: $('#ruleMandatory' + id).is(':checked'),
+                });
+
+                if (maxMarks !== null) totalMax += maxMarks;
+                if (passMarks !== null) totalPass += passMarks;
+                if (weightage !== null) totalWeight += weightage;
+            }
+
+            Object.keys(duplicateTracker).forEach(function (key) {
+                if (duplicateTracker[key] > 1) {
+                    errors.push('Each component type should be used only once.');
+                }
+            });
+
+            if (!rows.length) {
+                errors.push('Add at least one component rule.');
+            }
+
+            if ($('#policyMode').val() === 'weighted') {
+                const roundedWeight = Math.round(totalWeight * 100) / 100;
+                if (roundedWeight !== 100) {
+                    errors.push('Weighted mode requires total weightage to be exactly 100.');
+                }
+            }
+
+            return {
+                rows: rows,
+                errors: errors,
+                totals: {
+                    count: rows.length,
+                    max: Math.round(totalMax * 100) / 100,
+                    pass: Math.round(totalPass * 100) / 100,
+                    weight: Math.round(totalWeight * 100) / 100
+                }
+            };
+        }
+
+        function refreshComponentSummaryAndValidation() {
+            const result = collectRulesForValidation(false);
+            $('#componentCountValue').text(result.totals.count);
+            $('#componentTotalMaxValue').text(result.totals.max);
+            $('#componentTotalPassValue').text(result.totals.pass);
+            $('#componentTotalWeightValue').text(result.totals.weight);
+            if (result.errors.length) {
+                showComponentValidation(result.errors[0]);
+            } else {
+                hideComponentValidation();
+            }
+        }
+
+        function showComponentValidation(message) {
+            const isWarning = String(message || '').toLowerCase().includes('only once');
+            const $box = $('#componentValidation');
+            $box.removeClass('warning error').addClass('active');
+            $box.addClass(isWarning ? 'warning' : 'error');
+            $('#componentValidationText').text(message || '');
+        }
+
+        function hideComponentValidation() {
+            $('#componentValidation').removeClass('active warning error');
+            $('#componentValidationText').text('');
+        }
+
+        function addComponentRuleRow(rule = null) {
+            const tempId = 'new_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            const rowId = (rule && rule.id) ? rule.id : tempId;
+            activeRuleRows.push(rowId);
+            const tr = `
+                <tr id="ruleRow${rowId}">
+                    <td><select class="component-type-native component-type" id="ruleType${rowId}">${componentTypeOptionsHtml(rule ? rule.componentTypeID : '')}</select></td>
+                    <td><div class="ui fluid input"><input type="number" step="0.01" min="0" id="ruleMax${rowId}" value="${rule ? (rule.maxMarks || 0) : ''}" placeholder="e.g. 80"></div></td>
+                    <td><div class="ui fluid input"><input type="number" step="0.01" min="0" id="rulePass${rowId}" value="${rule ? (rule.passMarks || 0) : ''}" placeholder="e.g. 28"></div></td>
+                    <td><div class="ui fluid input"><input type="number" step="0.01" min="0" max="100" id="ruleWeight${rowId}" value="${rule && rule.weightage !== null ? rule.weightage : ''}" placeholder="optional"></div></td>
+                    <td><div class="ui fitted checkbox"><input type="checkbox" id="ruleMandatory${rowId}" ${!rule || rule.isMandatory ? 'checked' : ''}><label></label></div></td>
+                    <td><button class="ui mini red icon button" type="button" onclick="removeRuleRow('${rowId}')"><i class="trash icon"></i></button></td>
+                </tr>
+            `;
+            $('#componentRuleBody').append(tr);
+            $('#ruleRow' + rowId + ' .ui.checkbox').checkbox();
+            refreshComponentSummaryAndValidation();
+        }
+
+        function removeRuleRow(rowId) {
+            activeRuleRows = activeRuleRows.filter(function (id) { return String(id) !== String(rowId); });
+            $('#ruleRow' + rowId).remove();
+            refreshComponentSummaryAndValidation();
+        }
+
+        function resetComponentRules() {
+            activeRuleRows = [];
+            $('#componentRuleBody').html('');
+            addComponentRuleRow();
+            refreshComponentSummaryAndValidation();
+        }
+
+        function prefillDefaultComponents() {
+            if (!componentTypes.length) {
+                addErrorNotification('Component types are not loaded yet.');
+                return;
+            }
+            activeRuleRows = [];
+            $('#componentRuleBody').html('');
+            for (let i = 0; i < componentTypes.length; i++) {
+                addComponentRuleRow({
+                    componentTypeID: componentTypes[i].id,
+                    maxMarks: 0,
+                    passMarks: 0,
+                    weightage: null,
+                    isMandatory: true
+                });
+            }
+            refreshComponentSummaryAndValidation();
+        }
+
+        function applyEqualWeightage() {
+            const count = activeRuleRows.length;
+            if (!count) {
+                addErrorNotification('Add component rows first.');
+                return;
+            }
+            let running = 0;
+            for (let i = 0; i < count; i++) {
+                const id = activeRuleRows[i];
+                let weight = Math.round((100 / count) * 100) / 100;
+                if (i === count - 1) {
+                    weight = Math.round((100 - running) * 100) / 100;
+                }
+                running += weight;
+                $('#ruleWeight' + id).val(weight);
+            }
+            refreshComponentSummaryAndValidation();
+        }
+
+        function setAllMandatory(value) {
+            for (let i = 0; i < activeRuleRows.length; i++) {
+                const id = activeRuleRows[i];
+                $('#ruleMandatory' + id).prop('checked', !!value);
+            }
+            refreshComponentSummaryAndValidation();
+        }
+
+        function openComponentTypeModal() {
+            $('#componentTypeForm')[0].reset();
+            $('#newComponentTypeScholastic').prop('checked', true);
+            $('#componentTypeForm .field').removeClass('error');
+            $('#componentTypeModal').modal({
+                closable: true,
+                autofocus: false
+            }).modal('show');
+        }
+
+        function closeComponentTypeModal() {
+            $('#componentTypeModal').modal('hide');
+        }
+
+        function saveComponentType() {
+            const name = ($('#newComponentTypeName').val() || '').trim();
+            const code = ($('#newComponentTypeCode').val() || '').trim().toLowerCase();
+            const isScholastic = $('#newComponentTypeScholastic').is(':checked');
+
+            $('#componentTypeForm .field').removeClass('error');
+            let hasError = false;
+            if (!name) {
+                $('#newComponentTypeName').closest('.field').addClass('error');
+                hasError = true;
+            }
+            if (!code) {
+                $('#newComponentTypeCode').closest('.field').addClass('error');
+                hasError = true;
+            }
+            if (hasError) {
+                addErrorNotification('Name and code are required.');
+                return;
+            }
+
+            const data = new FormData();
+            data.append('name', name);
+            data.append('code', code);
+            data.append('isScholastic', isScholastic ? 'true' : 'false');
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+            $.ajax({
+                type: 'post',
+                url: marksApiUrls.componentTypeAdd,
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message || 'Component type added.', response.color || 'green');
+                        closeComponentTypeModal();
+                        loadComponentTypes();
+                    } else {
+                        addErrorNotification(response.message || 'Unable to add component type.');
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to add component type.');
+                }
+            });
+        }
+
+        function openComponentConfig() {
+            const standard = $('#standard').val();
+            const exam = $('#exam').val();
+            const subject = $('#subject').val();
+            if (!standard || !exam || !subject) {
+                requiredFieldError();
+                return;
+            }
+            $('#componentConfigPanel').show();
+            $.ajax({
+                type: 'get',
+                url: marksApiUrls.componentRulesGet,
+                data: {standard: standard, exam: exam, subject: subject},
+                success: function (response) {
+                    const payload = response.data || {};
+                    activeRuleRows = [];
+                    $('#componentRuleBody').html('');
+                    const rules = payload.rules || [];
+                    if (rules.length) {
+                        for (let i = 0; i < rules.length; i++) {
+                            addComponentRuleRow(rules[i]);
+                        }
+                    } else {
+                        addComponentRuleRow();
+                    }
+
+                    const passPolicy = payload.passPolicy || {};
+                    $('#policyOverallPass').val(passPolicy.overallPassMarks == null ? '' : passPolicy.overallPassMarks);
+                    $('#policyMode').dropdown('set selected', passPolicy.resultComputationMode || 'total_marks');
+                    $('#policyRequireComponentPass').prop('checked', passPolicy.requireComponentPass !== false);
+                    $('#policyRequireSubjectPass').prop('checked', passPolicy.requireSubjectPass !== false);
+                    $('#policyRequireMandatory').prop('checked', passPolicy.requireMandatoryComponents !== false);
+                    refreshComponentSummaryAndValidation();
+                },
+                error: function () {
+                    addErrorNotification('Unable to load rules.');
+                }
+            });
+        }
+
+        function saveComponentRules() {
+            const standard = $('#standard').val();
+            const exam = $('#exam').val();
+            const subject = $('#subject').val();
+            if (!standard || !exam || !subject) {
+                requiredFieldError();
+                return;
+            }
+
+            const validation = collectRulesForValidation(true);
+            if (validation.errors.length) {
+                showComponentValidation(validation.errors[0]);
+                addErrorNotification(validation.errors[0]);
+                return;
+            }
+            const rules = validation.rows;
+
+            const passPolicy = {
+                overallPassMarks: $('#policyOverallPass').val(),
+                resultComputationMode: $('#policyMode').val(),
+                requireComponentPass: $('#policyRequireComponentPass').is(':checked'),
+                requireSubjectPass: $('#policyRequireSubjectPass').is(':checked'),
+                requireMandatoryComponents: $('#policyRequireMandatory').is(':checked')
+            };
+
+            const data = new FormData();
+            data.append('standard', standard);
+            data.append('exam', exam);
+            data.append('subject', subject);
+            data.append('rules', JSON.stringify(rules));
+            data.append('pass_policy', JSON.stringify(passPolicy));
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+            $.ajax({
+                type: 'post',
+                url: marksApiUrls.componentRulesSave,
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message || 'Rules saved.', response.color || 'green');
+                        searchData();
+                    } else {
+                        addErrorNotification(response.message || 'Unable to save rules.');
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to save component rules.');
+                }
+            });
+        }
+
+        function collectComponentMarksPayload(id) {
+            const payload = [];
+            $('[id^="compmark' + id + '_"]').each(function () {
+                const parts = $(this).attr('id').split('_');
+                const ruleId = parts[1];
+                payload.push({
+                    rule_id: parseInt(ruleId, 10),
+                    mark: $(this).val(),
+                    is_absent: $('#compabs' + id + '_' + ruleId).is(':checked'),
+                    is_exempt: $('#compexm' + id + '_' + ruleId).is(':checked'),
+                    note: $('#compnote' + id + '_' + ruleId).val() || ''
+                });
+            });
+            return payload;
+        }
+
+        function pushMark(id, hasComponent) {
+            const data = new FormData();
+            data.append('id', id);
+            data.append('note', $('#note' + id).val());
+            data.append('mark', $('#mark' + id).val() || 0);
+            if (parseInt(hasComponent, 10) === 1) {
+                data.append('component_marks', JSON.stringify(collectComponentMarksPayload(id)));
+            }
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+            $.ajax({
+                type: 'post',
+                url: marksApiUrls.markSave,
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color);
+                        subjectTab.ajax.reload(null, false);
+                    } else {
+                        addErrorNotification(response.message || 'Unable to save marks.');
+                    }
+                },
+                error: function () {
+                    addErrorNotification();
+                }
+            });
         }
 
     </script>

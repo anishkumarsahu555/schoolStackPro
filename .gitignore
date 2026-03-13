@@ -10,6 +10,7 @@ homeApp/migrations/*.py
 !managementApp/migrations/
 managementApp/migrations/*.py
 !managementApp/migrations/0011_remove_ledgerentry_accountid_and_more.py
+!managementApp/migrations/0015_coscholasticarea_coscholasticgrade_examcomponenttype_and_more.py
 .vscode/
 logs/
 db.sqlite3

@@ -16,6 +16,7 @@ from homeApp.models import SchoolDetail, SchoolSession
 from homeApp.session_utils import get_session_month_sequence
 from homeApp.push_service import send_event_push_notifications
 from managementApp.models import *
+from managementApp.reporting import build_report_cards_for_student, upsert_progress_report_snapshot
 from managementApp.signals import pre_save_with_user
 from managementApp.leave_utils import approved_leave_for_date, approved_leave_map_for_date
 from teacherApp.models import SubjectNote, SubjectNoteVersion
@@ -3945,6 +3946,346 @@ class StudentFeeDetailsByStudentJson(BaseDatatableView):
 
 
 # Marks of Students by Subject ---------------------------------
+def _component_rules_for_exam_subject(session_id, exam_id, subject_id):
+    return list(
+        ExamSubjectComponentRule.objects.select_related('componentTypeID').filter(
+            isDeleted=False,
+            sessionID_id=session_id,
+            examID_id=exam_id,
+            subjectID_id=subject_id,
+        ).order_by('displayOrder', 'id')
+    )
+
+
+def _component_input_html(mark_row_id, student_id, rules, component_mark_map):
+    blocks = []
+    for rule in rules:
+        comp_obj = component_mark_map.get((student_id, rule.id))
+        value = ''
+        is_absent = False
+        is_exempt = False
+        note = ''
+        if comp_obj:
+            value = '' if comp_obj.marksObtained is None else comp_obj.marksObtained
+            is_absent = bool(comp_obj.isAbsent)
+            is_exempt = bool(comp_obj.isExempt)
+            note = comp_obj.note or ''
+
+        blocks.append(
+            f'''<div class="component-entry-card">
+<div class="component-entry-top">
+  <div class="component-entry-title">{escape(rule.componentTypeID.name if rule.componentTypeID else 'Component')} <span>(Max {escape(rule.maxMarks)})</span></div>
+  <div class="component-entry-flags">
+    <label class="component-flag"><input type="checkbox" id="compabs{mark_row_id}_{rule.id}" {'checked' if is_absent else ''}> Absent</label>
+    <label class="component-flag"><input type="checkbox" id="compexm{mark_row_id}_{rule.id}" {'checked' if is_exempt else ''}> Exempt</label>
+  </div>
+</div>
+<div class="component-entry-fields">
+  <div class="ui mini input fluid component-entry-mark">
+    <input type="number" min="0" step="0.01" placeholder="Marks" id="compmark{mark_row_id}_{rule.id}" value="{escape(value)}">
+  </div>
+  <div class="ui mini input fluid component-entry-note">
+    <input type="text" placeholder="Note" id="compnote{mark_row_id}_{rule.id}" value="{escape(note)}">
+  </div>
+</div>
+</div>'''
+        )
+    return ''.join(blocks)
+
+
+def _as_bool(value, default=False):
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def get_exam_component_type_list_api(request):
+    current_session_id = _current_session_id(request)
+    current_school_id = request.session.get('current_session', {}).get('SchoolID')
+    if not current_session_id:
+        return ErrorResponse('Session not found.', extra={'color': 'red'}).to_json_response()
+
+    defaults = [
+        ('theory', 'Theory', 1),
+        ('practical', 'Practical', 2),
+        ('internal', 'Internal Assessment', 3),
+    ]
+    for code, name, order in defaults:
+        if not ExamComponentType.objects.filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            schoolID_id=current_school_id,
+            code=code,
+        ).exists():
+            ExamComponentType.objects.create(
+                schoolID_id=current_school_id,
+                sessionID_id=current_session_id,
+                code=code,
+                name=name,
+                displayOrder=order,
+                lastEditedBy=_editor_name(request.user),
+                updatedByUserID=request.user,
+            )
+
+    rows = ExamComponentType.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        schoolID_id=current_school_id,
+    ).order_by('displayOrder', 'name')
+
+    data = [{
+        'id': row.id,
+        'name': row.name or 'N/A',
+        'code': row.code or '',
+        'isScholastic': row.isScholastic,
+    } for row in rows]
+    return SuccessResponse('Component types loaded.', data=data).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+@check_groups('Admin', 'Owner')
+def add_exam_component_type_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed.', status_code=405).to_json_response()
+
+    current_session_id = _current_session_id(request)
+    current_school_id = request.session.get('current_session', {}).get('SchoolID')
+    if not current_session_id or not current_school_id:
+        return ErrorResponse('Session context not found.', extra={'color': 'red'}).to_json_response()
+
+    name = (request.POST.get('name') or '').strip()
+    code = (request.POST.get('code') or '').strip().lower()
+    is_scholastic = _as_bool(request.POST.get('isScholastic', True), default=True)
+
+    if not name:
+        return ErrorResponse('Component type name is required.', extra={'color': 'red'}).to_json_response()
+    if not code:
+        return ErrorResponse('Component type code is required.', extra={'color': 'red'}).to_json_response()
+
+    safe_code = ''.join(ch for ch in code if ch.isalnum() or ch in {'_', '-'})
+    if not safe_code:
+        return ErrorResponse('Component type code can only use letters, numbers, _ or -.', extra={'color': 'red'}).to_json_response()
+
+    existing = ExamComponentType.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        schoolID_id=current_school_id,
+        code=safe_code,
+    ).first()
+    if existing:
+        return ErrorResponse('This component type code already exists in current session.', extra={'color': 'red'}).to_json_response()
+
+    next_order = (
+        ExamComponentType.objects.filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            schoolID_id=current_school_id,
+        ).aggregate(models.Max('displayOrder')).get('displayOrder__max') or 0
+    ) + 1
+
+    instance = ExamComponentType(
+        schoolID_id=current_school_id,
+        sessionID_id=current_session_id,
+        name=name,
+        code=safe_code,
+        isScholastic=is_scholastic,
+        isActive=True,
+        displayOrder=next_order,
+    )
+    pre_save_with_user.send(sender=ExamComponentType, instance=instance, user=request.user.pk)
+
+    return SuccessResponse(
+        'Component type added successfully.',
+        data={
+            'id': instance.id,
+            'name': instance.name,
+            'code': instance.code,
+            'isScholastic': instance.isScholastic,
+        },
+        extra={'color': 'green'}
+    ).to_json_response()
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def get_exam_subject_component_rules_api(request):
+    current_session_id = _current_session_id(request)
+    current_school_id = request.session.get('current_session', {}).get('SchoolID')
+
+    standard = (request.GET.get('standard') or '').strip()
+    exam = (request.GET.get('exam') or '').strip()
+    subject = (request.GET.get('subject') or '').strip()
+
+    if not (standard.isdigit() and exam.isdigit() and subject.isdigit()):
+        return ErrorResponse('Invalid class/exam/subject.', extra={'color': 'red'}).to_json_response()
+
+    rules = _component_rules_for_exam_subject(current_session_id, int(exam), int(subject))
+    pass_policy = PassPolicy.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        schoolID_id=current_school_id,
+        examID_id=int(exam),
+    ).first()
+
+    data = {
+        'rules': [{
+            'id': row.id,
+            'componentTypeID': row.componentTypeID_id,
+            'componentTypeName': row.componentTypeID.name if row.componentTypeID else 'N/A',
+            'maxMarks': row.maxMarks,
+            'passMarks': row.passMarks,
+            'weightage': row.weightage,
+            'isMandatory': row.isMandatory,
+            'displayOrder': row.displayOrder,
+        } for row in rules],
+        'passPolicy': {
+            'overallPassMarks': pass_policy.overallPassMarks if pass_policy else None,
+            'resultComputationMode': pass_policy.resultComputationMode if pass_policy else 'total_marks',
+            'requireComponentPass': pass_policy.requireComponentPass if pass_policy else True,
+            'requireSubjectPass': pass_policy.requireSubjectPass if pass_policy else True,
+            'requireMandatoryComponents': pass_policy.requireMandatoryComponents if pass_policy else True,
+        }
+    }
+    return SuccessResponse('Component rules loaded.', data=data).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+@check_groups('Admin', 'Owner')
+def save_exam_subject_component_rules_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed.', status_code=405).to_json_response()
+
+    current_session_id = _current_session_id(request)
+    current_school_id = request.session.get('current_session', {}).get('SchoolID')
+    standard = (request.POST.get('standard') or '').strip()
+    exam = (request.POST.get('exam') or '').strip()
+    subject = (request.POST.get('subject') or '').strip()
+    rules_raw = request.POST.get('rules') or '[]'
+    pass_policy_raw = request.POST.get('pass_policy') or '{}'
+
+    if not (standard.isdigit() and exam.isdigit() and subject.isdigit()):
+        return ErrorResponse('Invalid class/exam/subject.', extra={'color': 'red'}).to_json_response()
+
+    try:
+        rules_payload = json.loads(rules_raw)
+        pass_policy_payload = json.loads(pass_policy_raw)
+    except Exception:
+        return ErrorResponse('Invalid JSON payload.', extra={'color': 'red'}).to_json_response()
+
+    assign_exam = AssignExamToClass.objects.filter(
+        id=int(exam),
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=int(standard),
+    ).first()
+    assign_subject = AssignSubjectsToClass.objects.filter(
+        id=int(subject),
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=int(standard),
+    ).first()
+    if not assign_exam or not assign_subject:
+        return ErrorResponse('Class/exam/subject mapping not found.', extra={'color': 'red'}).to_json_response()
+
+    active_ids = []
+    for idx, row in enumerate(rules_payload):
+        component_type_id = str(row.get('componentTypeID') or '').strip()
+        max_marks = row.get('maxMarks')
+        pass_marks = row.get('passMarks')
+        weightage = row.get('weightage')
+        is_mandatory = _as_bool(row.get('isMandatory', True), default=True)
+
+        if not component_type_id.isdigit():
+            return ErrorResponse(f'Invalid component type at row {idx + 1}.', extra={'color': 'red'}).to_json_response()
+        try:
+            max_marks = float(max_marks)
+            pass_marks = float(pass_marks)
+            weightage_value = None if weightage in (None, '', 'null') else float(weightage)
+        except Exception:
+            return ErrorResponse(f'Invalid numeric values at row {idx + 1}.', extra={'color': 'red'}).to_json_response()
+
+        if max_marks <= 0 or pass_marks < 0 or pass_marks > max_marks:
+            return ErrorResponse(f'Invalid max/pass marks at row {idx + 1}.', extra={'color': 'red'}).to_json_response()
+        if weightage_value is not None and (weightage_value < 0 or weightage_value > 100):
+            return ErrorResponse(f'Invalid weightage at row {idx + 1}.', extra={'color': 'red'}).to_json_response()
+
+        component_type = ExamComponentType.objects.filter(
+            id=int(component_type_id),
+            isDeleted=False,
+            sessionID_id=current_session_id,
+        ).first()
+        if not component_type:
+            return ErrorResponse(f'Component type not found at row {idx + 1}.', extra={'color': 'red'}).to_json_response()
+
+        rule_id = row.get('id')
+        rule_obj = None
+        if str(rule_id).isdigit():
+            rule_obj = ExamSubjectComponentRule.objects.filter(
+                id=int(rule_id),
+                isDeleted=False,
+                sessionID_id=current_session_id,
+                examID_id=assign_exam.id,
+                subjectID_id=assign_subject.id,
+            ).first()
+
+        if not rule_obj:
+            rule_obj = ExamSubjectComponentRule(
+                schoolID_id=current_school_id,
+                sessionID_id=current_session_id,
+                examID_id=assign_exam.id,
+                subjectID_id=assign_subject.id,
+            )
+
+        rule_obj.componentTypeID = component_type
+        rule_obj.maxMarks = max_marks
+        rule_obj.passMarks = pass_marks
+        rule_obj.weightage = weightage_value
+        rule_obj.isMandatory = is_mandatory
+        rule_obj.displayOrder = idx + 1
+        pre_save_with_user.send(sender=ExamSubjectComponentRule, instance=rule_obj, user=request.user.pk)
+        active_ids.append(rule_obj.id)
+
+    ExamSubjectComponentRule.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        examID_id=assign_exam.id,
+        subjectID_id=assign_subject.id,
+    ).exclude(id__in=active_ids).update(isDeleted=True)
+
+    if isinstance(pass_policy_payload, dict):
+        pass_policy, _ = PassPolicy.objects.get_or_create(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            schoolID_id=current_school_id,
+            examID_id=assign_exam.id,
+            defaults={'overallPassMarks': assign_exam.passMarks},
+        )
+        overall_pass = pass_policy_payload.get('overallPassMarks')
+        if overall_pass in (None, '', 'null'):
+            pass_policy.overallPassMarks = assign_exam.passMarks
+        else:
+            try:
+                pass_policy.overallPassMarks = float(overall_pass)
+            except Exception:
+                return ErrorResponse('Invalid overall pass marks.', extra={'color': 'red'}).to_json_response()
+
+        pass_policy.resultComputationMode = pass_policy_payload.get('resultComputationMode') or 'total_marks'
+        pass_policy.requireComponentPass = _as_bool(pass_policy_payload.get('requireComponentPass', True), default=True)
+        pass_policy.requireSubjectPass = _as_bool(pass_policy_payload.get('requireSubjectPass', True), default=True)
+        pass_policy.requireMandatoryComponents = _as_bool(pass_policy_payload.get('requireMandatoryComponents', True), default=True)
+        pre_save_with_user.send(sender=PassPolicy, instance=pass_policy, user=request.user.pk)
+
+    return SuccessResponse('Component rules saved successfully.', extra={'color': 'green'}).to_json_response()
+
+
 class MarksOfSubjectsByStudentJson(BaseDatatableView):
     order_columns = ['studentID.photo', 'studentID.name', 'studentID.roll', 'examID.fullMarks', 'examID.passMarks', 'mark', 'note', 'lastEditedBy', 'lastUpdatedOn']
 
@@ -3990,18 +4331,45 @@ class MarksOfSubjectsByStudentJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
+        exam = self.request.GET.get("exam")
+        subject = self.request.GET.get("subject")
+        session_id = self.request.session["current_session"]["Id"]
+        rules = []
+        rule_ids = []
+        component_mark_map = {}
+        if str(exam).isdigit() and str(subject).isdigit():
+            rules = _component_rules_for_exam_subject(session_id, int(exam), int(subject))
+            rule_ids = [row.id for row in rules]
+            if rule_ids:
+                student_ids = [item.studentID_id for item in qs]
+                comp_rows = StudentExamComponentMark.objects.filter(
+                    isDeleted=False,
+                    sessionID_id=session_id,
+                    examID_id=int(exam),
+                    subjectID_id=int(subject),
+                    studentID_id__in=student_ids,
+                    componentRuleID_id__in=rule_ids,
+                )
+                component_mark_map = {(row.studentID_id, row.componentRuleID_id): row for row in comp_rows}
+
         json_data = []
         for item in qs:
 
-            action = '''<button class="ui mini primary button" onclick="pushMark({})">
+            action = '''<button class="ui mini primary button" onclick="pushMark({}, {})">
   Save
-</button>'''.format(item.pk),
-
+</button>'''.format(item.pk, 1 if rules else 0)
 
             marks_obtained = '''<div class="ui tiny input fluid">
   <input type="number" placeholder="Mark Obtained" name="mark{}" id="mark{}" value = "{}">
 </div>
             '''.format(item.pk, item.pk, item.mark)
+            full_mark = item.examID.fullMarks
+            pass_mark = item.examID.passMarks
+            if rules:
+                full_mark = round(sum(float(r.maxMarks or 0) for r in rules), 2)
+                pass_mark = round(sum(float(r.passMarks or 0) for r in rules), 2)
+                marks_obtained = _component_input_html(item.pk, item.studentID_id, rules, component_mark_map) + \
+                    f'''<div style="font-size:11px;color:#6b7280;">Total: {escape(item.mark or 0)}</div>'''
 
             note = '''<div class="ui tiny input fluid">
               <input type="text" placeholder="Note" name="note{}" id="note{}" value = "{}">
@@ -4015,8 +4383,8 @@ class MarksOfSubjectsByStudentJson(BaseDatatableView):
                 images,
                 escape(item.studentID.name),
                 escape(item.studentID.roll or 'N/A'),
-                item.examID.fullMarks,
-                item.examID.passMarks,
+                full_mark,
+                pass_mark,
                 marks_obtained,
                 note,
                 escape(item.lastEditedBy or 'N/A'),
@@ -4031,24 +4399,384 @@ class MarksOfSubjectsByStudentJson(BaseDatatableView):
 @transaction.atomic
 @csrf_exempt
 @login_required
+@check_groups('Admin', 'Owner')
 def add_subject_mark_api(request):
     if request.method == 'POST':
         id = request.POST.get("id")
         note = request.POST.get("note")
         mark = request.POST.get("mark")
+        component_marks_raw = request.POST.get("component_marks") or "[]"
         try:
             instance = MarkOfStudentsByExam.objects.get(pk=int(id))
             instance.note = note
-            instance.mark = float(mark)
-            instance.payDate = datetime.today().date()
+            rules = _component_rules_for_exam_subject(
+                session_id=instance.sessionID_id,
+                exam_id=instance.examID_id,
+                subject_id=instance.subjectID_id,
+            )
+            if rules:
+                try:
+                    component_rows = json.loads(component_marks_raw)
+                except Exception:
+                    return _api_response({'status': 'error', 'message': 'Invalid component payload.', 'color': 'red'}, safe=False)
+
+                component_rows_map = {int(row.get('rule_id')): row for row in component_rows if str(row.get('rule_id')).isdigit()}
+                total_mark = 0.0
+                for rule in rules:
+                    row = component_rows_map.get(rule.id, {})
+                    is_absent = _as_bool(row.get('is_absent', False), default=False)
+                    is_exempt = _as_bool(row.get('is_exempt', False), default=False)
+                    if is_exempt:
+                        is_absent = False
+                    note_value = (row.get('note') or '').strip()
+                    marks_value = row.get('mark')
+
+                    comp_instance, _ = StudentExamComponentMark.objects.get_or_create(
+                        isDeleted=False,
+                        sessionID_id=instance.sessionID_id,
+                        schoolID_id=instance.schoolID_id,
+                        examID_id=instance.examID_id,
+                        studentID_id=instance.studentID_id,
+                        standardID_id=instance.standardID_id,
+                        subjectID_id=instance.subjectID_id,
+                        componentRuleID_id=rule.id,
+                        defaults={
+                            'note': '',
+                        }
+                    )
+
+                    comp_instance.isAbsent = is_absent
+                    comp_instance.isExempt = is_exempt
+                    comp_instance.note = note_value
+
+                    if is_exempt:
+                        comp_instance.marksObtained = None
+                    elif is_absent:
+                        comp_instance.marksObtained = 0.0
+                    elif marks_value in (None, ''):
+                        comp_instance.marksObtained = None
+                    else:
+                        numeric_mark = float(marks_value)
+                        max_marks = float(rule.maxMarks or 0)
+                        if numeric_mark < 0 or numeric_mark > max_marks:
+                            return _api_response(
+                                {'status': 'error', 'message': f'Marks for {rule.componentTypeID.name if rule.componentTypeID else "component"} must be between 0 and {max_marks}.', 'color': 'red'},
+                                safe=False
+                            )
+                        comp_instance.marksObtained = numeric_mark
+
+                    pre_save_with_user.send(sender=StudentExamComponentMark, instance=comp_instance, user=request.user.pk)
+                    if comp_instance.marksObtained is not None and not comp_instance.isExempt:
+                        total_mark += float(comp_instance.marksObtained)
+
+                instance.mark = round(total_mark, 2)
+            else:
+                instance.mark = float(mark)
             pre_save_with_user.send(sender=MarkOfStudentsByExam, instance=instance, user=request.user.pk)
-            instance.save()
             return _api_response(
                 {'status': 'success', 'message': 'Mark added successfully.', 'color': 'success'},
                 safe=False)
         except:
 
             return _api_response({'status': 'error'}, safe=False)
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+@check_groups('Admin', 'Owner')
+def publish_progress_report_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed.', status_code=405).to_json_response()
+
+    current_session_id = _current_session_id(request)
+    current_school_id = request.session.get('current_session', {}).get('SchoolID')
+    standard = (request.POST.get('standard') or '').strip()
+    student = (request.POST.get('student') or '').strip()
+    exam = (request.POST.get('exam') or '').strip()
+    exam_ids_raw = (request.POST.get('exam_ids') or '').strip()
+    status = (request.POST.get('status') or 'published').strip().lower()
+    if status not in {'draft', 'reviewed', 'published'}:
+        status = 'published'
+
+    if not (standard.isdigit() and student.isdigit()):
+        return ErrorResponse('Invalid class/student.', extra={'color': 'red'}).to_json_response()
+    if exam and exam != 'all' and not exam.isdigit():
+        return ErrorResponse('Invalid exam.', extra={'color': 'red'}).to_json_response()
+
+    explicit_exam_ids = []
+    if exam_ids_raw:
+        for token in exam_ids_raw.split(','):
+            exam_id_value = token.strip()
+            if not exam_id_value:
+                continue
+            if not exam_id_value.isdigit():
+                return ErrorResponse('Invalid visible exam list.', extra={'color': 'red'}).to_json_response()
+            explicit_exam_ids.append(int(exam_id_value))
+        explicit_exam_ids = sorted(set(explicit_exam_ids))
+
+    student_obj = Student.objects.filter(
+        id=int(student),
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=int(standard),
+    ).first()
+    if not student_obj:
+        return ErrorResponse('Student not found.', extra={'color': 'red'}).to_json_response()
+
+    exam_queryset = AssignExamToClass.objects.select_related('examID').filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=int(standard),
+    )
+    if explicit_exam_ids:
+        exam_queryset = exam_queryset.filter(id__in=explicit_exam_ids)
+    elif exam and exam != 'all':
+        exam_queryset = exam_queryset.filter(id=int(exam))
+    if not exam_queryset.exists():
+        return ErrorResponse('No exams found for selected filters.', extra={'color': 'red'}).to_json_response()
+
+    selected_exam_ids = list(exam_queryset.values_list('id', flat=True))
+    skipped_not_ready = 0
+    if status == 'published':
+        ready_exam_ids = set(
+            ProgressReport.objects.filter(
+                isDeleted=False,
+                sessionID_id=current_session_id,
+                studentID_id=student_obj.id,
+                examID_id__in=selected_exam_ids,
+                readyToPublish=True,
+            ).values_list('examID_id', flat=True)
+        )
+        eligible_exam_ids = [exam_id for exam_id in selected_exam_ids if exam_id in ready_exam_ids]
+        skipped_not_ready = len(selected_exam_ids) - len(eligible_exam_ids)
+        if not eligible_exam_ids:
+            return ErrorResponse(
+                'No selected report is marked Ready to Publish.',
+                extra={'color': 'orange'}
+            ).to_json_response()
+        exam_queryset = exam_queryset.filter(id__in=eligible_exam_ids)
+
+    report_cards = build_report_cards_for_student(
+        current_session_id=current_session_id,
+        student_obj=student_obj,
+        standard_id=int(standard),
+        exam_queryset=exam_queryset,
+        prefer_published_snapshot=False,
+    )
+    card_map = {int(card.get('exam_assignment_id')): card for card in report_cards if str(card.get('exam_assignment_id')).isdigit()}
+    snapshot_count = 0
+    for exam_obj in exam_queryset:
+        payload = card_map.get(exam_obj.id)
+        if not payload:
+            continue
+        upsert_progress_report_snapshot(
+            current_session_id=current_session_id,
+            school_id=current_school_id or student_obj.schoolID_id,
+            student_id=student_obj.id,
+            standard_id=int(standard),
+            exam_id=exam_obj.id,
+            payload=payload,
+            status=status,
+            user_obj=request.user,
+        )
+        snapshot_count += 1
+
+    if snapshot_count == 0:
+        return ErrorResponse('No report data available to publish.', extra={'color': 'red'}).to_json_response()
+
+    message = f'Progress report {status} successfully.'
+    if skipped_not_ready > 0:
+        message += f' Skipped {skipped_not_ready} not-ready report(s).'
+    return SuccessResponse(
+        message,
+        data={'snapshotsSaved': snapshot_count},
+        extra={'color': 'green'}
+    ).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+@check_groups('Admin', 'Owner')
+def set_progress_report_ready_state_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed.', status_code=405).to_json_response()
+
+    current_session_id = _current_session_id(request)
+    current_school_id = request.session.get('current_session', {}).get('SchoolID')
+    standard = (request.POST.get('standard') or '').strip()
+    student = (request.POST.get('student') or '').strip()
+    exam = (request.POST.get('exam') or '').strip()
+    ready_raw = (request.POST.get('ready') or '').strip().lower()
+
+    if not current_session_id:
+        return ErrorResponse('No active session selected.', extra={'color': 'red'}).to_json_response()
+    if not (standard.isdigit() and student.isdigit() and exam.isdigit()):
+        return ErrorResponse('Invalid class/student/exam.', extra={'color': 'red'}).to_json_response()
+
+    ready_value = ready_raw in {'1', 'true', 'yes', 'on'}
+    standard_id = int(standard)
+    student_id = int(student)
+    exam_id = int(exam)
+
+    student_obj = Student.objects.filter(
+        id=student_id,
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=standard_id,
+    ).first()
+    if not student_obj:
+        return ErrorResponse('Student not found.', extra={'color': 'red'}).to_json_response()
+
+    exam_obj = AssignExamToClass.objects.filter(
+        id=exam_id,
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=standard_id,
+    ).first()
+    if not exam_obj:
+        return ErrorResponse('Exam not found for selected class.', extra={'color': 'red'}).to_json_response()
+
+    report_obj = ProgressReport.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        studentID_id=student_id,
+        examID_id=exam_id,
+    ).first()
+    if not report_obj:
+        report_obj = ProgressReport(
+            schoolID_id=current_school_id or student_obj.schoolID_id,
+            sessionID_id=current_session_id,
+            examID_id=exam_id,
+            studentID_id=student_id,
+            standardID_id=standard_id,
+            status='draft',
+            readyToPublish=ready_value,
+        )
+    else:
+        report_obj.standardID_id = standard_id
+        report_obj.readyToPublish = ready_value
+
+    pre_save_with_user.send(sender=ProgressReport, instance=report_obj, user=request.user.pk)
+
+    return SuccessResponse(
+        'Ready to Publish updated successfully.',
+        data={'readyToPublish': bool(report_obj.readyToPublish)},
+        extra={'color': 'green'}
+    ).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+@check_groups('Admin', 'Owner')
+def management_upsert_term_remark_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed.', status_code=405).to_json_response()
+
+    current_session_id = _current_session_id(request)
+    current_school_id = request.session.get('current_session', {}).get('SchoolID')
+    standard = (request.POST.get('standard') or '').strip()
+    student = (request.POST.get('student') or '').strip()
+    exam = (request.POST.get('exam') or '').strip()
+    overall_remark = (request.POST.get('overall_remark') or '').strip()
+    overall_result = (request.POST.get('overall_result') or '').strip().lower()
+
+    if not current_session_id:
+        return ErrorResponse('No active session selected.', extra={'color': 'red'}).to_json_response()
+    if not (standard.isdigit() and student.isdigit() and exam.isdigit()):
+        return ErrorResponse('Invalid class/student/exam.', extra={'color': 'red'}).to_json_response()
+    if overall_result not in {'', 'auto', 'pass', 'fail'}:
+        return ErrorResponse('Invalid overall result option.', extra={'color': 'red'}).to_json_response()
+
+    standard_id = int(standard)
+    student_id = int(student)
+    exam_id = int(exam)
+
+    student_obj = Student.objects.filter(
+        id=student_id,
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=standard_id,
+    ).first()
+    if not student_obj:
+        return ErrorResponse('Student not found.', extra={'color': 'red'}).to_json_response()
+
+    exam_obj = AssignExamToClass.objects.filter(
+        id=exam_id,
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=standard_id,
+    ).first()
+    if not exam_obj:
+        return ErrorResponse('Exam not found for selected class.', extra={'color': 'red'}).to_json_response()
+
+    remark_obj = TermTeacherRemark.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        studentID_id=student_id,
+        examID_id=exam_id,
+    ).first()
+    if not remark_obj:
+        remark_obj = TermTeacherRemark(
+            schoolID_id=current_school_id or student_obj.schoolID_id,
+            sessionID_id=current_session_id,
+            examID_id=exam_id,
+            studentID_id=student_id,
+            standardID_id=standard_id,
+        )
+
+    remark_obj.overallRemark = overall_remark
+    is_auto_mode = overall_result in {'', 'auto'}
+    remark_obj.overallResultDecision = '' if is_auto_mode else overall_result
+    remark_obj.resultDecidedByRole = '' if is_auto_mode else 'management'
+    pre_save_with_user.send(sender=TermTeacherRemark, instance=remark_obj, user=request.user.pk)
+
+    # Keep student-facing published cards in sync when report is already published.
+    published_exists = ProgressReport.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        studentID_id=student_id,
+        examID_id=exam_id,
+        status='published',
+    ).exists()
+    if published_exists:
+        live_exam_qs = AssignExamToClass.objects.filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            standardID_id=standard_id,
+            id=exam_id,
+        )
+        live_cards = build_report_cards_for_student(
+            current_session_id=current_session_id,
+            student_obj=student_obj,
+            standard_id=standard_id,
+            exam_queryset=live_exam_qs,
+            prefer_published_snapshot=False,
+        )
+        payload = next((row for row in live_cards if int(row.get('exam_assignment_id', 0)) == exam_id), None)
+        if payload:
+            upsert_progress_report_snapshot(
+                current_session_id=current_session_id,
+                school_id=current_school_id or student_obj.schoolID_id,
+                student_id=student_obj.id,
+                standard_id=standard_id,
+                exam_id=exam_id,
+                payload=payload,
+                status='published',
+                user_obj=request.user,
+            )
+
+    return SuccessResponse(
+        'Overall remark/result saved successfully.',
+        data={
+            'overallRemark': remark_obj.overallRemark or '',
+            'overallResultDecision': remark_obj.overallResultDecision or '',
+            'resultDecidedByRole': remark_obj.resultDecidedByRole or '',
+        },
+        extra={'color': 'green'}
+    ).to_json_response()
 
 
 class StudentMarksDetailsByClassAndExamJson(BaseDatatableView):
@@ -4117,6 +4845,7 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
         'examID__fullMarks',
         'examID__passMarks',
         'mark',
+        'mark',
         'note',
         'lastEditedBy',
         'lastUpdatedOn',
@@ -4157,6 +4886,32 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
+        row_keys = [(item.studentID_id, item.examID_id, item.subjectID_id) for item in qs]
+        exam_ids = list({k[1] for k in row_keys if k[1]})
+        subject_ids = list({k[2] for k in row_keys if k[2]})
+        session_id = self.request.session["current_session"]["Id"]
+        rule_rows = ExamSubjectComponentRule.objects.select_related('componentTypeID').filter(
+            isDeleted=False,
+            sessionID_id=session_id,
+            examID_id__in=exam_ids,
+            subjectID_id__in=subject_ids,
+        ).order_by('displayOrder', 'id')
+        rules_map = {}
+        rule_ids = []
+        for rule in rule_rows:
+            rules_map.setdefault((rule.examID_id, rule.subjectID_id), []).append(rule)
+            rule_ids.append(rule.id)
+
+        component_rows = StudentExamComponentMark.objects.filter(
+            isDeleted=False,
+            sessionID_id=session_id,
+            studentID_id__in=[k[0] for k in row_keys if k[0]],
+            examID_id__in=exam_ids,
+            subjectID_id__in=subject_ids,
+            componentRuleID_id__in=rule_ids or [0],
+        )
+        component_mark_map = {(row.studentID_id, row.examID_id, row.subjectID_id, row.componentRuleID_id): row for row in component_rows}
+
         json_data = []
         for item in qs:
             exam_name = 'N/A'
@@ -4172,12 +4927,32 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
             if item.subjectID and item.subjectID.subjectID:
                 subject_name = item.subjectID.subjectID.name or 'N/A'
 
+            rules = rules_map.get((item.examID_id, item.subjectID_id), [])
+            if rules:
+                chunks = []
+                for rule in rules:
+                    comp_row = component_mark_map.get((item.studentID_id, item.examID_id, item.subjectID_id, rule.id))
+                    if comp_row is None:
+                        chunks.append(f'{rule.componentTypeID.name if rule.componentTypeID else "Component"}: Pending')
+                    elif comp_row.isExempt:
+                        chunks.append(f'{rule.componentTypeID.name if rule.componentTypeID else "Component"}: Exempt')
+                    elif comp_row.isAbsent:
+                        chunks.append(f'{rule.componentTypeID.name if rule.componentTypeID else "Component"}: Absent(0)')
+                    elif comp_row.marksObtained is None:
+                        chunks.append(f'{rule.componentTypeID.name if rule.componentTypeID else "Component"}: Pending')
+                    else:
+                        chunks.append(f'{rule.componentTypeID.name if rule.componentTypeID else "Component"}: {comp_row.marksObtained}/{rule.maxMarks}')
+                component_summary = ' | '.join(chunks)
+            else:
+                component_summary = '-'
+
             json_data.append([
                 escape(exam_name),
                 escape(subject_name),
                 escape(full_mark),
                 escape(pass_mark),
                 escape(item.mark if item.mark is not None else 0),
+                escape(component_summary),
                 escape(item.note or ''),
                 escape(item.lastEditedBy or 'N/A'),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),

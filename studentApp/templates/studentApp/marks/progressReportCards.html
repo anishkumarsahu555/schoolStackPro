@@ -104,6 +104,30 @@
             border-color: rgba(242, 153, 74, .35);
         }
 
+        .report-page .override-badge {
+            border-radius: 999px;
+            padding: .18rem .45rem;
+            font-size: .63rem;
+            font-weight: 700;
+            border: 1px solid var(--app-border);
+            background: var(--app-hover);
+            color: var(--app-muted);
+            letter-spacing: .01em;
+            white-space: nowrap;
+        }
+
+        .report-page .override-badge.pass {
+            background: rgba(33, 186, 69, .14);
+            color: #1f9f41;
+            border-color: rgba(33, 186, 69, .3);
+        }
+
+        .report-page .override-badge.fail {
+            background: rgba(219, 40, 40, .14);
+            color: #d52f2f;
+            border-color: rgba(219, 40, 40, .3);
+        }
+
         .report-page .card-toggle-icon {
             width: 28px;
             height: 28px;
@@ -164,6 +188,14 @@
         .report-page .subject-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .report-page .subject-table-wrap {
+            border: 1px solid var(--app-border);
+            border-radius: 10px;
+            overflow: visible;
+            background: var(--app-surface);
         }
 
         .report-page .subject-table th,
@@ -181,8 +213,178 @@
             text-transform: uppercase;
         }
 
+        .report-page .subject-table th:nth-child(1),
+        .report-page .subject-table td:nth-child(1) { width: 20%; }
+        .report-page .subject-table th:nth-child(2),
+        .report-page .subject-table td:nth-child(2) { width: 10%; }
+        .report-page .subject-table th:nth-child(3),
+        .report-page .subject-table td:nth-child(3) { width: 45%; }
+        .report-page .subject-table th:nth-child(4),
+        .report-page .subject-table td:nth-child(4) { width: 12%; }
+        .report-page .subject-table th:nth-child(5),
+        .report-page .subject-table td:nth-child(5) { width: 13%; }
+
+        .report-page .mark-value {
+            font-weight: 700;
+            color: var(--app-text);
+            white-space: nowrap;
+        }
+
+        .report-page .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: .14rem .42rem;
+            border-radius: 999px;
+            font-size: .66rem;
+            font-weight: 700;
+            border: 1px solid var(--app-border);
+            background: var(--app-hover);
+            color: var(--app-text);
+        }
+
+        .report-page .status-pill.pass {
+            background: rgba(33, 186, 69, .14);
+            border-color: rgba(33, 186, 69, .35);
+            color: #21ba45;
+        }
+
+        .report-page .status-pill.fail {
+            background: rgba(219, 40, 40, .14);
+            border-color: rgba(219, 40, 40, .35);
+            color: #db2828;
+        }
+
+        .report-page .status-pill.pending {
+            background: rgba(242, 153, 74, .2);
+            border-color: rgba(242, 153, 74, .4);
+            color: #d9822b;
+        }
+
+        .report-page .status-pill.exempt {
+            background: rgba(33, 133, 208, .14);
+            border-color: rgba(33, 133, 208, .35);
+            color: #2185d0;
+        }
+
+        .report-page .component-table-wrap {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .report-page .component-table-mini {
+            width: 100%;
+            min-width: 0;
+            border-collapse: collapse;
+            border: 1px solid var(--app-border);
+            border-radius: 6px;
+            overflow: hidden;
+            font-size: .72rem;
+            background: var(--app-hover);
+            table-layout: fixed;
+        }
+
+        .report-page .component-table-mini th,
+        .report-page .component-table-mini td {
+            border-bottom: 1px solid var(--app-border);
+            padding: .18rem .28rem;
+            text-align: left;
+            color: var(--app-text);
+            vertical-align: middle;
+            font-size: .72rem;
+        }
+
+        .report-page .component-table-mini thead th {
+            font-size: .64rem;
+            text-transform: uppercase;
+            letter-spacing: .02em;
+            color: var(--app-muted);
+            background: var(--app-surface);
+            font-weight: 700;
+        }
+
+        .report-page .component-table-mini tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .report-page .component-col-name {
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .report-page .component-col-score {
+            color: var(--app-muted);
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .report-page .component-table-mini td:last-child,
+        .report-page .component-table-mini th:last-child {
+            text-align: center;
+        }
+
+        .report-page .component-table-mini th:nth-child(1),
+        .report-page .component-table-mini td:nth-child(1) { width: 36%; }
+        .report-page .component-table-mini th:nth-child(2),
+        .report-page .component-table-mini td:nth-child(2) { width: 14%; }
+        .report-page .component-table-mini th:nth-child(3),
+        .report-page .component-table-mini td:nth-child(3) { width: 14%; }
+        .report-page .component-table-mini th:nth-child(4),
+        .report-page .component-table-mini td:nth-child(4) { width: 18%; }
+        .report-page .component-table-mini th:nth-child(5),
+        .report-page .component-table-mini td:nth-child(5) { width: 18%; }
+
+        .report-page .card-meta-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .3rem;
+            margin: .1rem 0 .5rem 0;
+        }
+
+        .report-page .meta-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .28rem;
+            border: 1px solid var(--app-border);
+            border-radius: 999px;
+            padding: .14rem .45rem;
+            background: var(--app-hover);
+            font-size: .66rem;
+            color: var(--app-muted);
+        }
+
+        .report-page .meta-chip strong {
+            color: var(--app-text);
+            font-weight: 700;
+        }
+
+        .report-page .meta-chip.good {
+            background: rgba(33, 186, 69, .12);
+            border-color: rgba(33, 186, 69, .35);
+            color: #1e9e3d;
+        }
+
+        .report-page .meta-chip.warn {
+            background: rgba(242, 153, 74, .2);
+            border-color: rgba(242, 153, 74, .4);
+            color: #b86b1f;
+        }
+
         .report-page .subject-table tr:last-child td {
             border-bottom: none;
+        }
+
+        .report-page .card-footer-actions {
+            margin-top: .5rem;
+            padding-top: .42rem;
+            border-top: 1px solid var(--app-border);
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: .35rem;
+            flex-wrap: wrap;
         }
 
         .report-page .empty-note {
@@ -197,6 +399,10 @@
             .report-page .filter-segment,
             .report-page .ui.pointing.secondary.menu,
             #downloadReportPdfBtn {
+                display: none !important;
+            }
+
+            .report-page .card-footer-actions {
                 display: none !important;
             }
 
@@ -216,6 +422,32 @@
 
             .report-page .kpi-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .report-page .subject-table {
+                table-layout: fixed;
+                min-width: 760px;
+            }
+
+            .report-page .subject-table-wrap {
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-x;
+            }
+
+            .report-page .component-table-wrap {
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-x;
+            }
+
+            .report-page .component-table-mini {
+                width: max-content;
+                min-width: 460px;
+                table-layout: auto;
+                white-space: nowrap;
             }
         }
 
@@ -295,9 +527,6 @@
                                 <a class="ui mini red button" href="{% url 'studentApp:student_progress_report_cards' %}">
                                     <i class="undo icon"></i> Clear
                                 </a>
-                                <button id="downloadReportPdfBtn" class="ui mini blue button" type="button">
-                                    <i class="file pdf outline icon"></i> Download PDF
-                                </button>
                             </div>
                         </div>
                     </form>
@@ -329,13 +558,22 @@
                 {% if report_cards %}
                     <div class="cards-wrap" id="reportCardsWrap">
                         {% for card in report_cards %}
-                            <div class="report-card expanded">
+                            <div
+                                class="report-card {% if forloop.first %}expanded{% endif %}"
+                                data-result-decision="{{ card.term_remark.overall_result_decision|default:'' }}"
+                                data-result-decider="{{ card.term_remark.result_decided_by_role|default:'' }}"
+                            >
                                 <div class="card-head">
                                     <div>
                                         <h4 class="card-title">{{ card.exam_name }}</h4>
                                         <div class="card-sub">{{ card.exam_date|date:'d M Y'|default:'N/A' }} | Entries: {{ card.entered_marks_count }}/{{ card.subject_count }}</div>
                                     </div>
                                     <div class="card-head-actions">
+                                        {% if card.term_remark.overall_result_decision %}
+                                            <div class="override-badge {% if card.term_remark.overall_result_decision == 'pass' %}pass{% elif card.term_remark.overall_result_decision == 'fail' %}fail{% endif %}">
+                                                Manual {{ card.term_remark.overall_result_decision|title }}{% if card.term_remark.result_decided_by_role %} · {{ card.term_remark.result_decided_by_role|title }}{% endif %}
+                                            </div>
+                                        {% endif %}
                                         <div class="badge {% if card.result == 'Pass' %}pass{% elif card.result == 'Fail' %}fail{% else %}pending{% endif %}">
                                             {{ card.result }}
                                         </div>
@@ -352,24 +590,95 @@
                                         <div class="kpi"><div class="label">Grade</div><div class="value">{{ card.grade }}</div></div>
                                     </div>
 
-                                    <table class="subject-table">
-                                        <thead>
-                                        <tr>
-                                            <th>Subject</th>
-                                            <th>Marks</th>
-                                            <th>Note</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        {% for row in card.subject_rows %}
+                                    <div class="card-meta-strip">
+                                        <span class="meta-chip"><span>Pass Marks</span><strong>{{ card.pass_marks }}</strong></span>
+                                        <span class="meta-chip {% if card.is_complete %}good{% else %}warn{% endif %}">
+                                            <span>Completion</span><strong>{{ card.entered_marks_count }}/{{ card.subject_count }}</strong>
+                                        </span>
+                                        <span class="meta-chip"><span>Scheme</span><strong>{% if card.uses_component_scheme %}Component{% else %}Single Mark{% endif %}</strong></span>
+                                    </div>
+
+                                    <div class="subject-table-wrap">
+                                        <table class="subject-table">
+                                            <thead>
                                             <tr>
-                                                <td>{{ row.subject_name }}</td>
-                                                <td>{% if row.mark != None %}{{ row.mark }}{% else %}Pending{% endif %}</td>
-                                                <td>{{ row.note|default:'-' }}</td>
+                                                <th>Subject</th>
+                                                <th>Marks</th>
+                                                <th>Components</th>
+                                                <th>Status</th>
+                                                <th>Note</th>
                                             </tr>
-                                        {% endfor %}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                            {% for row in card.subject_rows %}
+                                                <tr data-component-summary="{{ row.component_summary|default:'-' }}">
+                                                    <td>{{ row.subject_name }}</td>
+                                                    <td>
+                                                        {% if row.mark != None %}
+                                                            <span class="mark-value">{{ row.mark }}</span>
+                                                        {% else %}
+                                                            <span class="status-pill pending">Pending</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if row.components %}
+                                                            <div class="component-table-wrap">
+                                                                <table class="component-table-mini">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>Component</th>
+                                                                            <th>FM</th>
+                                                                            <th>PM</th>
+                                                                            <th>SM</th>
+                                                                            <th>Status</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {% for comp in row.components %}
+                                                                            <tr>
+                                                                                <td class="component-col-name" title="{{ comp.name }}">{{ comp.name }}</td>
+                                                                                <td class="component-col-score">{{ comp.max_marks|default:'-' }}</td>
+                                                                                <td class="component-col-score">{{ comp.pass_marks|default:'-' }}</td>
+                                                                                <td class="component-col-score">{% if comp.obtained != None %}{{ comp.obtained }}{% else %}-{% endif %}</td>
+                                                                                <td>
+                                                                                    <span class="status-pill {% if comp.status == 'Entered' %}pass{% elif comp.status == 'Absent' %}fail{% elif comp.status == 'Exempt' %}exempt{% else %}pending{% endif %}">
+                                                                                        {% if comp.status == 'Entered' %}P{% elif comp.status == 'Absent' %}A{% elif comp.status == 'Exempt' %}X{% else %}-{% endif %}
+                                                                                    </span>
+                                                                                </td>
+                                                                            </tr>
+                                                                        {% endfor %}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <span class="status-pill {% if row.subject_result == 'Pass' or row.subject_result == 'Entered' %}pass{% elif row.subject_result == 'Fail' %}fail{% else %}pending{% endif %}">
+                                                            {% if row.subject_result == 'Entered' %}Pass{% else %}{{ row.subject_result|default:'-' }}{% endif %}
+                                                        </span>
+                                                    </td>
+                                                    <td>{{ row.note|default:'-' }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% if card.term_remark.overall_remark %}<div class="meta" style="margin-top:.35rem;"><b>Teacher Remark:</b> {{ card.term_remark.overall_remark }}</div>{% endif %}
+                                    {% if card.term_remark.overall_result_decision %}
+                                        <div class="meta" style="margin-top:.2rem;">
+                                            <b>Result Decision:</b>
+                                            {{ card.term_remark.overall_result_decision|title }}
+                                            {% if card.term_remark.result_decided_by_role %}(by {{ card.term_remark.result_decided_by_role|title }}){% endif %}
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="card-footer-actions">
+                                        <button class="mini ui blue button" type="button" onclick="downloadCardPdf(this, event)">
+                                            <i class="file pdf outline icon"></i> Download PDF
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         {% endfor %}
@@ -405,9 +714,6 @@
                 });
             });
 
-            const downloadBtn = document.getElementById('downloadReportPdfBtn');
-            if (!downloadBtn) return;
-
             function safeFileName(value) {
                 return String(value || '')
                     .trim()
@@ -421,13 +727,31 @@
             }
 
             function collectSubjectRows(cardBody) {
-                return Array.from(cardBody.querySelectorAll('table.subject-table tbody tr')).map(function (tr) {
-                    const cells = tr.querySelectorAll('td');
-                    return [
-                        (cells[0] && cells[0].textContent || '').trim() || 'N/A',
-                        (cells[1] && cells[1].textContent || '').trim() || 'N/A',
-                        (cells[2] && cells[2].textContent || '').trim() || '-'
-                    ];
+                return Array.from(cardBody.querySelectorAll('table.subject-table > tbody > tr')).map(function (tr) {
+                    const cells = Array.from(tr.children).filter(function (node) {
+                        return node.tagName && node.tagName.toLowerCase() === 'td';
+                    });
+                    const componentRows = tr.querySelectorAll('.component-table-mini tbody tr');
+                    const componentItems = [];
+                    componentRows.forEach(function (compTr) {
+                        const compCells = Array.from(compTr.children).filter(function (node) {
+                            return node.tagName && node.tagName.toLowerCase() === 'td';
+                        });
+                        const name = (compCells[0] && compCells[0].textContent || '').trim() || '-';
+                        const fm = (compCells[1] && compCells[1].textContent || '').trim() || '-';
+                        const pm = (compCells[2] && compCells[2].textContent || '').trim() || '-';
+                        const sm = (compCells[3] && compCells[3].textContent || '').trim() || '-';
+                        const st = (compCells[4] && compCells[4].textContent || '').trim() || '-';
+                        componentItems.push({name: name, fm: fm, pm: pm, sm: sm, st: st});
+                    });
+                    return {
+                        subject: (cells[0] && cells[0].textContent || '').trim() || 'N/A',
+                        marks: (cells[1] && cells[1].textContent || '').trim() || 'N/A',
+                        componentsText: componentItems.length ? ' ' : '-',
+                        componentItems: componentItems,
+                        status: (cells[3] && cells[3].textContent || '').trim() || '-',
+                        note: (cells[4] && cells[4].textContent || '').trim() || '-',
+                    };
                 });
             }
 
@@ -472,35 +796,79 @@
                 });
             }
 
-            async function downloadProgressPdf() {
+            function collectExamPayload(card) {
+                const title = (card.querySelector('.card-title') && card.querySelector('.card-title').textContent || 'Exam').trim();
+                const sub = (card.querySelector('.card-sub') && card.querySelector('.card-sub').textContent || '').trim();
+                const result = (card.querySelector('.badge') && card.querySelector('.badge').textContent || 'Pending').trim();
+                const decision = (card.getAttribute('data-result-decision') || '').trim();
+                const decider = (card.getAttribute('data-result-decider') || '').trim();
+                const kpiMap = {};
+                Array.from(card.querySelectorAll('.kpi')).forEach(function (kpi) {
+                    const label = (kpi.querySelector('.label') && kpi.querySelector('.label').textContent || '').trim().toLowerCase();
+                    const value = (kpi.querySelector('.value') && kpi.querySelector('.value').textContent || '').trim();
+                    if (label) {
+                        kpiMap[label] = value || 'N/A';
+                    }
+                });
+                const chips = Array.from(card.querySelectorAll('.card-meta-strip .meta-chip strong')).map(function (el) {
+                    return (el.textContent || '').trim();
+                });
+                const teacherRemarkNode = card.querySelector('.card-body .meta b');
+                const teacherRemark = teacherRemarkNode && teacherRemarkNode.parentElement
+                    ? (teacherRemarkNode.parentElement.textContent || '').replace('Teacher Remark:', '').trim()
+                    : '';
+
+                return {
+                    examTitle: title || 'Exam',
+                    examSub: sub || 'N/A',
+                    result: result || 'Pending',
+                    obtained: kpiMap.obtained || 'N/A',
+                    fullMarks: kpiMap['full marks'] || 'N/A',
+                    percentage: kpiMap.percentage || 'N/A',
+                    grade: kpiMap.grade || 'N/A',
+                    passMarks: chips[0] || 'N/A',
+                    completion: chips[1] || 'N/A',
+                    scheme: chips[2] || 'N/A',
+                    teacherRemark: teacherRemark || '-',
+                    overallDecision: decision || '',
+                    resultDecider: decider || '',
+                    subjectRows: collectSubjectRows(card.querySelector('.card-body')),
+                };
+            }
+
+            async function generateProgressPdf(cards, fileNameSuffix, triggerBtnEl) {
                 const jsPdfRef = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
                 if (!jsPdfRef) {
                     addErrorNotification('PDF library unavailable.');
                     return;
                 }
 
-                const cards = getCardBlocks();
                 if (!cards.length) {
                     addErrorNotification('No report data found to download.');
                     return;
                 }
 
-                const originalText = downloadBtn.innerHTML;
-                downloadBtn.classList.add('loading', 'disabled');
+                const $btn = triggerBtnEl ? $(triggerBtnEl) : $();
+                const originalText = $btn.length ? $btn.html() : '';
+                if ($btn.length) {
+                    $btn.addClass('loading disabled');
+                }
 
                 try {
                     const pdf = new jsPdfRef({
-                        orientation: 'landscape',
+                        orientation: 'portrait',
                         unit: 'pt',
                         format: 'a4'
                     });
 
                     const pageWidth = pdf.internal.pageSize.getWidth();
                     const pageHeight = pdf.internal.pageSize.getHeight();
-                    const marginX = 36;
+                    const marginX = 34;
+                    const contentWidth = pageWidth - (marginX * 2);
                     const studentName = "{{ student.name|default:'Student'|escapejs }}";
                     const roll = "{{ student.roll|default:'N/A'|escapejs }}";
                     const classText = "{% if student.standardID %}{{ student.standardID.name|default:'N/A'|escapejs }}{% if student.standardID.section %} - {{ student.standardID.section|escapejs }}{% endif %}{% else %}N/A{% endif %}";
+                    const sessionText = "{{ request.session.current_session.currentSessionYear|default:'N/A'|escapejs }}";
                     const schoolName = "{% if student.schoolID and student.schoolID.schoolName %}{{ student.schoolID.schoolName|escapejs }}{% elif student.schoolID and student.schoolID.name %}{{ student.schoolID.name|escapejs }}{% else %}School Name{% endif %}";
                     const schoolAddressParts = [
                         "{{ student.schoolID.address|default_if_none:''|escapejs }}",
@@ -508,130 +876,374 @@
                         "{{ student.schoolID.state|default_if_none:''|escapejs }}"
                     ].filter(Boolean);
                     const schoolAddress = schoolAddressParts.join(', ');
+                    const schoolPhone = "{{ student.schoolID.phoneNumber|default_if_none:''|escapejs }}";
+                    const schoolEmail = "{{ student.schoolID.email|default_if_none:''|escapejs }}";
                     const schoolLogoSrc = "{% if student.schoolID and student.schoolID.logo %}{{ student.schoolID.logo.url|escapejs }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}";
                     const generatedOn = new Date().toLocaleString();
                     const schoolLogoData = await loadImageDataUrl(schoolLogoSrc);
+                    const examPayloads = cards.map(collectExamPayload);
 
-                    function drawPageHeader() {
-                        pdf.setFillColor(33, 73, 138);
+                    function asPercentNumber(value) {
+                        const clean = String(value || '').replace('%', '').trim();
+                        const num = parseFloat(clean);
+                        return Number.isFinite(num) ? num : null;
+                    }
+
+                    function statusColorTriplet(statusValue) {
+                        const status = String(statusValue || '').trim().toLowerCase();
+                        if (status === 'pass' || status === 'p' || status === 'entered') return [33, 186, 69];
+                        if (status === 'fail' || status === 'a' || status === 'absent') return [219, 40, 40];
+                        if (status === 'x' || status === 'exempt') return [33, 133, 208];
+                        return [208, 132, 32];
+                    }
+
+                    function drawPageChrome(title, subtitle) {
+                        pdf.setFillColor(16, 51, 112);
                         pdf.rect(0, 0, pageWidth, 76, 'F');
+
                         pdf.setTextColor(255, 255, 255);
                         pdf.setFont('helvetica', 'bold');
                         pdf.setFontSize(16);
-                        pdf.text('PROGRESS REPORT CARD', marginX, 32);
+                        pdf.text(title || 'Progress Report', marginX, 30);
                         pdf.setFont('helvetica', 'normal');
-                        pdf.setFontSize(10);
-                        pdf.text('Student: ' + studentName + '   |   Roll: ' + roll + '   |   Class: ' + classText, marginX, 52);
+                        pdf.setFontSize(9.5);
+                        pdf.text(subtitle || 'Academic Report', marginX, 47);
+                        pdf.text('Generated: ' + generatedOn, pageWidth - marginX, 47, {align: 'right'});
 
                         pdf.setFillColor(245, 249, 255);
-                        pdf.roundedRect(marginX, 84, pageWidth - (marginX * 2), 54, 8, 8, 'F');
+                        pdf.roundedRect(marginX, 86, contentWidth, 76, 8, 8, 'F');
+                        pdf.setDrawColor(219, 229, 243);
+                        pdf.roundedRect(marginX, 86, contentWidth, 76, 8, 8, 'S');
+
                         if (schoolLogoData) {
-                            pdf.addImage(schoolLogoData, 'PNG', marginX + 8, 90, 42, 42);
+                            pdf.addImage(schoolLogoData, 'PNG', marginX + 10, 96, 46, 46);
                         }
-                        pdf.setTextColor(40, 50, 65);
+                        pdf.setTextColor(36, 49, 70);
                         pdf.setFont('helvetica', 'bold');
                         pdf.setFontSize(11);
-                        pdf.text(schoolName || 'School Name', marginX + 58, 104);
+                        pdf.text(schoolName || 'School Name', marginX + 64, 108);
                         pdf.setFont('helvetica', 'normal');
                         pdf.setFontSize(9);
-                        const infoLeftX = marginX + 58;
-                        const infoRightX = pageWidth - marginX - 8;
-                        const maxAddressWidth = Math.max(180, infoRightX - infoLeftX - 180);
                         if (schoolAddress) {
-                            const addressLines = pdf.splitTextToSize(schoolAddress, maxAddressWidth);
-                            pdf.text(addressLines, infoLeftX, 118);
+                            pdf.text(pdf.splitTextToSize(schoolAddress, contentWidth - 180), marginX + 64, 121);
                         }
-                        pdf.text('Generated on: ' + generatedOn, infoRightX, 104, {align: 'right'});
-                        return 154;
+                        const schoolMetaLine = [schoolPhone ? 'Phone: ' + schoolPhone : '', schoolEmail ? 'Email: ' + schoolEmail : '']
+                            .filter(Boolean).join(' | ');
+                        if (schoolMetaLine) {
+                            pdf.text(schoolMetaLine, marginX + 64, 141);
+                        }
+                        return 176;
                     }
 
-                    let currentY = drawPageHeader();
-                    cards.forEach(function (card, index) {
-                        const title = (card.querySelector('.card-title') && card.querySelector('.card-title').textContent || 'Exam').trim();
-                        const sub = (card.querySelector('.card-sub') && card.querySelector('.card-sub').textContent || '').trim();
-                        const status = (card.querySelector('.badge') && card.querySelector('.badge').textContent || 'Pending').trim();
-                        const kpis = Array.from(card.querySelectorAll('.kpi')).map(function (kpi) {
-                            const kpiLabel = (kpi.querySelector('.label') && kpi.querySelector('.label').textContent || '').trim();
-                            const kpiValue = (kpi.querySelector('.value') && kpi.querySelector('.value').textContent || '').trim();
-                            return kpiLabel + ': ' + (kpiValue || 'N/A');
-                        }).join('   |   ');
-                        const body = card.querySelector('.card-body');
-                        const subjectRows = body ? collectSubjectRows(body) : [];
+                    function drawStudentMeta(yStart) {
+                        pdf.setFillColor(255, 255, 255);
+                        pdf.roundedRect(marginX, yStart, contentWidth, 42, 6, 6, 'F');
+                        pdf.setDrawColor(219, 229, 243);
+                        pdf.roundedRect(marginX, yStart, contentWidth, 42, 6, 6, 'S');
 
-                        if (index > 0) {
-                            pdf.addPage();
-                            currentY = drawPageHeader();
-                        }
-
-                        pdf.setTextColor(40, 50, 65);
+                        pdf.setTextColor(42, 55, 76);
                         pdf.setFont('helvetica', 'bold');
-                        pdf.setFontSize(13);
-                        pdf.text(title, marginX, currentY);
+                        pdf.setFontSize(9.5);
+                        pdf.text('Student', marginX + 10, yStart + 15);
+                        pdf.text('Roll', marginX + contentWidth * 0.33, yStart + 15);
+                        pdf.text('Class', marginX + contentWidth * 0.52, yStart + 15);
+                        pdf.text('Session', marginX + contentWidth * 0.72, yStart + 15);
+
                         pdf.setFont('helvetica', 'normal');
                         pdf.setFontSize(10);
-                        pdf.text(sub, marginX, currentY + 16);
-                        pdf.text('Result: ' + status, pageWidth - marginX, currentY + 16, {align: 'right'});
-                        pdf.setFontSize(9);
-                        const kpiLines = pdf.splitTextToSize(kpis || 'No summary available', pageWidth - (marginX * 2));
-                        pdf.text(kpiLines, marginX, currentY + 32);
+                        pdf.text(studentName || 'N/A', marginX + 10, yStart + 31);
+                        pdf.text(roll || 'N/A', marginX + contentWidth * 0.33, yStart + 31);
+                        pdf.text(classText || 'N/A', marginX + contentWidth * 0.52, yStart + 31);
+                        pdf.text(sessionText || 'N/A', marginX + contentWidth * 0.72, yStart + 31);
+                    }
 
-                        const tableStartY = currentY + 48 + (kpiLines.length * 10);
+                    function drawCoverPage() {
+                        const yBase = drawPageChrome('Progress Report Card', 'Academic Session Overview');
+                        drawStudentMeta(yBase);
+
+                        const passCount = examPayloads.filter(function (e) { return String(e.result || '').toLowerCase() === 'pass'; }).length;
+                        const failCount = examPayloads.filter(function (e) { return String(e.result || '').toLowerCase() === 'fail'; }).length;
+                        const pendingCount = examPayloads.length - passCount - failCount;
+                        const avgPctValues = examPayloads.map(function (e) { return asPercentNumber(e.percentage); }).filter(function (v) { return v !== null; });
+                        const avgPct = avgPctValues.length ? (avgPctValues.reduce(function (a, b) { return a + b; }, 0) / avgPctValues.length) : null;
+
+                        const yStats = yBase + 56;
+                        const boxW = (contentWidth - 18) / 4;
+                        const statItems = [
+                            ['Exams', String(examPayloads.length)],
+                            ['Pass', String(passCount)],
+                            ['Fail', String(failCount)],
+                            ['Avg %', avgPct === null ? 'N/A' : (avgPct.toFixed(2) + '%')]
+                        ];
+                        statItems.forEach(function (item, idx) {
+                            const x = marginX + (idx * (boxW + 6));
+                            pdf.setFillColor(250, 252, 255);
+                            pdf.roundedRect(x, yStats, boxW, 52, 8, 8, 'F');
+                            pdf.setDrawColor(219, 229, 243);
+                            pdf.roundedRect(x, yStats, boxW, 52, 8, 8, 'S');
+                            pdf.setTextColor(98, 111, 133);
+                            pdf.setFont('helvetica', 'bold');
+                            pdf.setFontSize(9);
+                            pdf.text(item[0], x + 10, yStats + 17);
+                            pdf.setTextColor(31, 46, 69);
+                            pdf.setFontSize(15);
+                            pdf.text(item[1], x + 10, yStats + 38);
+                        });
+
+                        const yTable = yStats + 66;
                         if (typeof pdf.autoTable === 'function') {
                             pdf.autoTable({
-                                head: [['Subject', 'Marks', 'Note']],
-                                body: subjectRows.length ? subjectRows : [['N/A', 'N/A', 'No subject rows']],
-                                startY: tableStartY,
+                                head: [['Exam', 'Date / Entries', 'Result', 'Grade', 'Percentage']],
+                                body: examPayloads.length
+                                    ? examPayloads.map(function (row) {
+                                        const examDate = String(row.examSub || 'N/A').split('|')[0].trim() || 'N/A';
+                                        const entries = String(row.examSub || '').includes('|') ? String(row.examSub).split('|').slice(1).join('|').trim() : 'N/A';
+                                        return [row.examTitle, (examDate + ' | ' + entries).replace(/\s+/g, ' ').trim(), row.result, row.grade, row.percentage];
+                                    })
+                                    : [['N/A', 'N/A', 'N/A', 'N/A', 'N/A']],
+                                startY: yTable,
                                 margin: {left: marginX, right: marginX},
                                 styles: {
                                     font: 'helvetica',
                                     fontSize: 9,
                                     cellPadding: 6,
-                                    textColor: [35, 44, 56],
-                                    lineColor: [206, 219, 235],
-                                    lineWidth: 0.6
+                                    textColor: [38, 49, 70],
+                                    lineColor: [216, 226, 241],
+                                    lineWidth: 0.6,
                                 },
                                 headStyles: {
-                                    fillColor: [33, 73, 138],
+                                    fillColor: [26, 71, 148],
                                     textColor: [255, 255, 255],
                                     fontStyle: 'bold',
-                                    halign: 'left'
                                 },
-                                alternateRowStyles: {
-                                    fillColor: [246, 250, 255]
+                                alternateRowStyles: {fillColor: [248, 251, 255]},
+                                didParseCell: function (data) {
+                                    if (data.section === 'body' && data.column.index === 2) {
+                                        const rgb = statusColorTriplet(data.cell.text && data.cell.text[0] ? data.cell.text[0] : '');
+                                        data.cell.styles.textColor = rgb;
+                                        data.cell.styles.fontStyle = 'bold';
+                                    }
                                 }
-                            });
-                        } else {
-                            let y = tableStartY;
-                            pdf.setFont('helvetica', 'bold');
-                            pdf.text('Subject | Marks | Note', marginX, y);
-                            pdf.setFont('helvetica', 'normal');
-                            y += 12;
-                            subjectRows.forEach(function (row) {
-                                const line = row.join(' | ');
-                                const parts = pdf.splitTextToSize(line, pageWidth - (marginX * 2));
-                                if (y > pageHeight - 30) {
-                                    pdf.addPage();
-                                    y = 24;
-                                }
-                                pdf.text(parts, marginX, y);
-                                y += (parts.length * 11) + 2;
                             });
                         }
 
+                        const legendY = Math.min(pageHeight - 74, (pdf.lastAutoTable && pdf.lastAutoTable.finalY ? pdf.lastAutoTable.finalY + 20 : yTable + 120));
+                        pdf.setDrawColor(219, 229, 243);
+                        pdf.line(marginX, legendY, pageWidth - marginX, legendY);
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.setFontSize(9);
+                        pdf.setTextColor(93, 108, 132);
+                        pdf.text('Legend: P = Entered/Present   A = Absent   X = Exempt', marginX, legendY + 14);
+                    }
+
+                    function drawExamPage(examData, examIndex, isFirstPage) {
+                        if (!isFirstPage) {
+                            pdf.addPage();
+                        }
+                        const yBase = drawPageChrome(examData.examTitle, 'Exam Report (' + examIndex + '/' + examPayloads.length + ')');
+                        drawStudentMeta(yBase);
+
+                        const ySummary = yBase + 56;
+                        pdf.setFillColor(250, 252, 255);
+                        pdf.roundedRect(marginX, ySummary, contentWidth, 56, 8, 8, 'F');
+                        pdf.setDrawColor(219, 229, 243);
+                        pdf.roundedRect(marginX, ySummary, contentWidth, 56, 8, 8, 'S');
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.setFontSize(11);
+                        pdf.setTextColor(37, 50, 73);
+                        pdf.text(examData.examSub || 'N/A', marginX + 10, ySummary + 18);
+                        pdf.text('Result: ' + (examData.result || 'Pending'), pageWidth - marginX - 10, ySummary + 18, {align: 'right'});
+
+                        const chipY = ySummary + 34;
+                        const chips = [
+                            'Obtained: ' + examData.obtained,
+                            'Full: ' + examData.fullMarks,
+                            'Pass: ' + examData.passMarks,
+                            'Percentage: ' + examData.percentage,
+                            'Grade: ' + examData.grade,
+                            'Completion: ' + examData.completion,
+                            'Scheme: ' + examData.scheme
+                        ];
+                        if (examData.overallDecision) {
+                            const decisionLabel = examData.overallDecision.charAt(0).toUpperCase() + examData.overallDecision.slice(1);
+                            const deciderLabel = examData.resultDecider ? (examData.resultDecider.charAt(0).toUpperCase() + examData.resultDecider.slice(1)) : '';
+                            const byText = deciderLabel ? (' by ' + deciderLabel) : '';
+                            chips.push('Decision: ' + decisionLabel + byText);
+                        }
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.setFontSize(8.6);
+                        pdf.text(pdf.splitTextToSize(chips.join('   |   '), contentWidth - 20), marginX + 10, chipY);
+
+                        const subjectStartY = ySummary + 68;
+                        if (typeof pdf.autoTable === 'function') {
+                            pdf.autoTable({
+                                head: [['Subject', 'Marks', 'Components', 'Status', 'Note']],
+                                body: examData.subjectRows.length
+                                    ? examData.subjectRows.map(function (row) {
+                                        return [row.subject, row.marks, row.componentsText, row.status, row.note];
+                                    })
+                                    : [['N/A', 'N/A', '-', '-', 'No subject rows']],
+                                startY: subjectStartY,
+                                margin: {left: marginX, right: marginX},
+                                styles: {
+                                    font: 'helvetica',
+                                    fontSize: 8.7,
+                                    cellPadding: 5.2,
+                                    textColor: [36, 49, 70],
+                                    lineColor: [216, 226, 241],
+                                    lineWidth: 0.55,
+                                },
+                                headStyles: {
+                                    fillColor: [26, 71, 148],
+                                    textColor: [255, 255, 255],
+                                    fontStyle: 'bold',
+                                },
+                                alternateRowStyles: {fillColor: [248, 251, 255]},
+                                columnStyles: {
+                                    0: {cellWidth: contentWidth * 0.19, overflow: 'linebreak'},
+                                    1: {cellWidth: contentWidth * 0.12, overflow: 'linebreak'},
+                                    2: {cellWidth: contentWidth * 0.45, overflow: 'linebreak'},
+                                    3: {cellWidth: contentWidth * 0.11, overflow: 'linebreak'},
+                                    4: {cellWidth: contentWidth * 0.13, overflow: 'linebreak'},
+                                },
+                                didParseCell: function (data) {
+                                    if (data.section === 'body' && data.column.index === 3) {
+                                        const rgb = statusColorTriplet(data.cell.text && data.cell.text[0] ? data.cell.text[0] : '');
+                                        data.cell.styles.textColor = rgb;
+                                        data.cell.styles.fontStyle = 'bold';
+                                    }
+                                    if (data.section === 'body' && data.column.index === 2 && data.row.index >= 0) {
+                                        const rowData = examData.subjectRows[data.row.index] || {};
+                                        const itemCount = (rowData.componentItems || []).length;
+                                        data.cell.styles.fontSize = 8.1;
+                                        if (itemCount > 0) {
+                                            data.cell.styles.minCellHeight = 18 + (itemCount * 12);
+                                        } else {
+                                            data.cell.styles.minCellHeight = 32;
+                                        }
+                                        data.cell.styles.valign = 'top';
+                                    }
+                                },
+                                didDrawCell: function (data) {
+                                    if (!(data.section === 'body' && data.column.index === 2)) {
+                                        return;
+                                    }
+                                    const rowData = examData.subjectRows[data.row.index] || {};
+                                    const items = rowData.componentItems || [];
+                                    if (!items.length) {
+                                        return;
+                                    }
+
+                                    const x = data.cell.x + 2;
+                                    const y = data.cell.y + 2;
+                                    const w = data.cell.width - 4;
+                                    const headerH = 10;
+                                    const rowH = 10;
+                                    const totalH = headerH + (items.length * rowH);
+
+                                    pdf.setDrawColor(198, 210, 229);
+                                    pdf.setFillColor(245, 249, 255);
+                                    pdf.rect(x, y, w, totalH, 'FD');
+
+                                    const c1 = x + (w * 0.46);
+                                    const c2 = x + (w * 0.60);
+                                    const c3 = x + (w * 0.72);
+                                    const c4 = x + (w * 0.84);
+                                    const colLines = [c1, c2, c3, c4];
+                                    colLines.forEach(function (cx) {
+                                        pdf.line(cx, y, cx, y + totalH);
+                                    });
+
+                                    pdf.setDrawColor(198, 210, 229);
+                                    pdf.line(x, y + headerH, x + w, y + headerH);
+                                    for (let i = 1; i <= items.length; i++) {
+                                        pdf.line(x, y + headerH + (i * rowH), x + w, y + headerH + (i * rowH));
+                                    }
+
+                                    pdf.setTextColor(74, 90, 116);
+                                    pdf.setFont('helvetica', 'bold');
+                                    pdf.setFontSize(7.3);
+                                    pdf.text('COMPONENT', x + 2, y + 7.2);
+                                    pdf.text('FM', c1 + 2, y + 7.2);
+                                    pdf.text('PM', c2 + 2, y + 7.2);
+                                    pdf.text('SM', c3 + 2, y + 7.2);
+                                    pdf.text('ST', c4 + 2, y + 7.2);
+
+                                    pdf.setFont('helvetica', 'normal');
+                                    pdf.setTextColor(37, 50, 73);
+                                    items.forEach(function (item, idx) {
+                                        const lineY = y + headerH + (idx * rowH) + 7.2;
+                                        const shortName = String(item.name || '-');
+                                        pdf.text(shortName.length > 22 ? (shortName.slice(0, 22) + '..') : shortName, x + 2, lineY);
+                                        pdf.text(String(item.fm || '-'), c1 + 2, lineY);
+                                        pdf.text(String(item.pm || '-'), c2 + 2, lineY);
+                                        pdf.text(String(item.sm || '-'), c3 + 2, lineY);
+                                        pdf.setTextColor.apply(pdf, statusColorTriplet(item.st));
+                                        pdf.setFont('helvetica', 'bold');
+                                        pdf.text(String(item.st || '-'), c4 + 2, lineY);
+                                        pdf.setTextColor(37, 50, 73);
+                                        pdf.setFont('helvetica', 'normal');
+                                    });
+                                }
+                            });
+                        }
+
+                        const finalTableY = (pdf.lastAutoTable && pdf.lastAutoTable.finalY) ? pdf.lastAutoTable.finalY : (subjectStartY + 10);
+                        const remarkY = Math.min(pageHeight - 62, finalTableY + 16);
+                        pdf.setDrawColor(219, 229, 243);
+                        pdf.line(marginX, remarkY, pageWidth - marginX, remarkY);
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.setFontSize(9.5);
+                        pdf.setTextColor(37, 50, 73);
+                        pdf.text('Teacher Remark:', marginX, remarkY + 14);
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.setFontSize(9);
+                        pdf.text(pdf.splitTextToSize(examData.teacherRemark || '-', contentWidth - 94), marginX + 94, remarkY + 14);
+                    }
+
+                    examPayloads.forEach(function (examData, idx) {
+                        drawExamPage(examData, idx + 1, idx === 0);
                     });
 
-                    const fileName = safeFileName(studentName) + '-progress-report.pdf';
+                    const pageCount = pdf.internal.getNumberOfPages();
+                    for (let i = 1; i <= pageCount; i++) {
+                        pdf.setPage(i);
+                        pdf.setFont('helvetica', 'normal');
+                        pdf.setFontSize(8.5);
+                        pdf.setTextColor(120, 130, 145);
+                        pdf.text('Page ' + i + ' of ' + pageCount, pageWidth - marginX, pageHeight - 14, {align: 'right'});
+                    }
+
+                    const fileName = safeFileName(studentName + (fileNameSuffix ? ('-' + fileNameSuffix) : '')) + '-progress-report.pdf';
                     pdf.save(fileName);
                     addSuccessNotification('Progress report PDF downloaded successfully.', 'green');
                 } catch (error) {
                     addErrorNotification('Unable to download progress report PDF.');
                 } finally {
-                    downloadBtn.classList.remove('loading', 'disabled');
-                    downloadBtn.innerHTML = originalText;
+                    if ($btn.length) {
+                        $btn.removeClass('loading disabled');
+                        $btn.html(originalText);
+                    }
                 }
             }
 
-            downloadBtn.addEventListener('click', downloadProgressPdf);
+            async function downloadProgressPdf() {
+                await generateProgressPdf(getCardBlocks(), 'all-exams');
+            }
+
+            window.downloadCardPdf = async function (btnEl, event) {
+                if (event && typeof event.stopPropagation === 'function') {
+                    event.stopPropagation();
+                }
+                const cardEl = btnEl ? btnEl.closest('.report-card') : null;
+                if (!cardEl) {
+                    addErrorNotification('Unable to download this exam report.');
+                    return;
+                }
+                const examTitleEl = cardEl.querySelector('.card-title');
+                const examTitle = (examTitleEl && examTitleEl.textContent ? examTitleEl.textContent : 'exam').trim();
+                await generateProgressPdf([cardEl], examTitle, btnEl);
+            };
         });
     </script>
 {% endblock %}

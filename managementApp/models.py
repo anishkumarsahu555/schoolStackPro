@@ -517,6 +517,418 @@ class MarkOfStudentsByExam(models.Model):
             models.Index(fields=['sessionID', 'studentID', 'examID', 'isDeleted'], name='mse_sess_stu_exm_idx'),
             models.Index(fields=['sessionID', 'standardID', 'isDeleted'], name='mse_sess_std_del_idx'),
         ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(mark__gte=0),
+                name='mark_of_students_non_negative_mark'
+            ),
+            models.UniqueConstraint(
+                fields=['sessionID', 'studentID', 'examID', 'subjectID'],
+                condition=models.Q(isDeleted=False),
+                name='mark_of_students_unique_active_entry'
+            ),
+        ]
+
+
+class ExamComponentType(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200, blank=True, null=True)
+    code = models.CharField(max_length=100, blank=True, null=True)
+    description = models.TextField(blank=True, null=True, default='')
+    isScholastic = models.BooleanField(default=True)
+    isActive = models.BooleanField(default=True)
+    displayOrder = models.PositiveSmallIntegerField(default=0)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    def __str__(self):
+        return f'{self.name or "N/A"} - {self.sessionID.sessionYear if self.sessionID else "N/A"}'
+
+    class Meta:
+        verbose_name_plural = 't) Exam Component Type'
+        indexes = [
+            models.Index(fields=['sessionID', 'isDeleted', 'displayOrder'], name='ect_sess_del_order_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['sessionID', 'schoolID', 'code'],
+                condition=models.Q(isDeleted=False),
+                name='exam_component_type_unique_active_code'
+            ),
+        ]
+
+
+class GradingPolicy(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200, blank=True, null=True)
+    description = models.TextField(blank=True, null=True, default='')
+    effectiveFrom = models.DateField(blank=True, null=True)
+    effectiveTo = models.DateField(blank=True, null=True)
+    isDefault = models.BooleanField(default=False)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    def __str__(self):
+        return f'{self.name or "N/A"} - {self.sessionID.sessionYear if self.sessionID else "N/A"}'
+
+    class Meta:
+        verbose_name_plural = 'u) Grading Policy'
+        indexes = [
+            models.Index(fields=['sessionID', 'isDeleted', 'isDefault'], name='gp_sess_del_def_idx'),
+        ]
+
+
+class GradingBand(models.Model):
+    policyID = models.ForeignKey(GradingPolicy, blank=True, null=True, on_delete=models.CASCADE)
+    minPercentage = models.FloatField(default=0.0)
+    maxPercentage = models.FloatField(default=0.0)
+    gradeLabel = models.CharField(max_length=50, blank=True, null=True)
+    gradePoint = models.FloatField(blank=True, null=True)
+    displayOrder = models.PositiveSmallIntegerField(default=0)
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    class Meta:
+        verbose_name_plural = 'v) Grading Band'
+        indexes = [
+            models.Index(fields=['policyID', 'isDeleted', 'displayOrder'], name='gb_policy_del_order_idx'),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(minPercentage__gte=0) & models.Q(maxPercentage__lte=100) & models.Q(minPercentage__lte=models.F('maxPercentage')),
+                name='grading_band_valid_percentage_range'
+            ),
+            models.UniqueConstraint(
+                fields=['policyID', 'gradeLabel'],
+                condition=models.Q(isDeleted=False),
+                name='grading_band_unique_active_grade_label'
+            ),
+        ]
+
+
+class PassPolicy(models.Model):
+    RESULT_MODE_CHOICES = (
+        ('total_marks', 'Total Marks'),
+        ('weighted', 'Weighted'),
+    )
+
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    examID = models.ForeignKey(AssignExamToClass, blank=True, null=True, on_delete=models.CASCADE)
+    gradingPolicyID = models.ForeignKey(GradingPolicy, blank=True, null=True, on_delete=models.SET_NULL)
+    overallPassMarks = models.FloatField(blank=True, null=True)
+    requireComponentPass = models.BooleanField(default=True)
+    requireSubjectPass = models.BooleanField(default=True)
+    requireMandatoryComponents = models.BooleanField(default=True)
+    resultComputationMode = models.CharField(max_length=50, choices=RESULT_MODE_CHOICES, default='total_marks')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    class Meta:
+        verbose_name_plural = 'w) Pass Policy'
+        indexes = [
+            models.Index(fields=['sessionID', 'examID', 'isDeleted'], name='pp_sess_exam_del_idx'),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(overallPassMarks__isnull=True) | models.Q(overallPassMarks__gte=0),
+                name='pass_policy_non_negative_overall_marks'
+            ),
+            models.UniqueConstraint(
+                fields=['sessionID', 'examID'],
+                condition=models.Q(isDeleted=False),
+                name='pass_policy_unique_active_exam'
+            ),
+        ]
+
+
+class ExamSubjectComponentRule(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    examID = models.ForeignKey(AssignExamToClass, blank=True, null=True, on_delete=models.CASCADE)
+    subjectID = models.ForeignKey(AssignSubjectsToClass, blank=True, null=True, on_delete=models.CASCADE)
+    componentTypeID = models.ForeignKey(ExamComponentType, blank=True, null=True, on_delete=models.CASCADE)
+    maxMarks = models.FloatField(default=0.0)
+    passMarks = models.FloatField(default=0.0)
+    weightage = models.FloatField(blank=True, null=True)
+    isMandatory = models.BooleanField(default=True)
+    displayOrder = models.PositiveSmallIntegerField(default=0)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    class Meta:
+        verbose_name_plural = 'x) Exam Subject Component Rule'
+        indexes = [
+            models.Index(fields=['sessionID', 'examID', 'subjectID', 'isDeleted'], name='escr_sess_exam_sub_del_idx'),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(maxMarks__gt=0),
+                name='exam_component_rule_positive_max_marks'
+            ),
+            models.CheckConstraint(
+                check=models.Q(passMarks__gte=0) & models.Q(passMarks__lte=models.F('maxMarks')),
+                name='exam_component_rule_valid_pass_marks'
+            ),
+            models.CheckConstraint(
+                check=models.Q(weightage__isnull=True) | (models.Q(weightage__gte=0) & models.Q(weightage__lte=100)),
+                name='exam_component_rule_valid_weightage'
+            ),
+            models.UniqueConstraint(
+                fields=['sessionID', 'examID', 'subjectID', 'componentTypeID'],
+                condition=models.Q(isDeleted=False),
+                name='exam_component_rule_unique_active_entry'
+            ),
+        ]
+
+
+class StudentExamComponentMark(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    examID = models.ForeignKey(AssignExamToClass, blank=True, null=True, on_delete=models.CASCADE)
+    studentID = models.ForeignKey(Student, blank=True, null=True, on_delete=models.CASCADE)
+    standardID = models.ForeignKey(Standard, blank=True, null=True, on_delete=models.CASCADE)
+    subjectID = models.ForeignKey(AssignSubjectsToClass, blank=True, null=True, on_delete=models.CASCADE)
+    componentRuleID = models.ForeignKey(ExamSubjectComponentRule, blank=True, null=True, on_delete=models.CASCADE)
+    marksObtained = models.FloatField(blank=True, null=True)
+    isAbsent = models.BooleanField(default=False)
+    isExempt = models.BooleanField(default=False)
+    note = models.TextField(blank=True, null=True, default='')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    class Meta:
+        verbose_name_plural = 'y) Student Exam Component Mark'
+        indexes = [
+            models.Index(fields=['sessionID', 'studentID', 'examID', 'isDeleted'], name='secm_sess_stu_exam_del_idx'),
+            models.Index(fields=['sessionID', 'subjectID', 'componentRuleID', 'isDeleted'], name='secm_sess_sub_rule_del_idx'),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(marksObtained__isnull=True) | models.Q(marksObtained__gte=0),
+                name='student_component_mark_non_negative'
+            ),
+            models.UniqueConstraint(
+                fields=['sessionID', 'studentID', 'examID', 'subjectID', 'componentRuleID'],
+                condition=models.Q(isDeleted=False),
+                name='student_component_mark_unique_active_entry'
+            ),
+        ]
+
+
+class SubjectTeacherRemark(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    examID = models.ForeignKey(AssignExamToClass, blank=True, null=True, on_delete=models.CASCADE)
+    studentID = models.ForeignKey(Student, blank=True, null=True, on_delete=models.CASCADE)
+    subjectID = models.ForeignKey(AssignSubjectsToClass, blank=True, null=True, on_delete=models.CASCADE)
+    remark = models.TextField(blank=True, null=True, default='')
+    actionPlan = models.TextField(blank=True, null=True, default='')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    class Meta:
+        verbose_name_plural = 'z) Subject Teacher Remark'
+        indexes = [
+            models.Index(fields=['sessionID', 'studentID', 'examID', 'isDeleted'], name='str_sess_stu_exam_del_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['sessionID', 'studentID', 'examID', 'subjectID'],
+                condition=models.Q(isDeleted=False),
+                name='subject_teacher_remark_unique_active_entry'
+            ),
+        ]
+
+
+class TermTeacherRemark(models.Model):
+    OVERALL_RESULT_CHOICES = (
+        ('', 'Auto'),
+        ('pass', 'Pass'),
+        ('fail', 'Fail'),
+    )
+
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    examID = models.ForeignKey(AssignExamToClass, blank=True, null=True, on_delete=models.CASCADE)
+    studentID = models.ForeignKey(Student, blank=True, null=True, on_delete=models.CASCADE)
+    standardID = models.ForeignKey(Standard, blank=True, null=True, on_delete=models.CASCADE)
+    overallRemark = models.TextField(blank=True, null=True, default='')
+    strengths = models.TextField(blank=True, null=True, default='')
+    improvementAreas = models.TextField(blank=True, null=True, default='')
+    nextSteps = models.TextField(blank=True, null=True, default='')
+    conductGrade = models.CharField(max_length=100, blank=True, null=True)
+    overallResultDecision = models.CharField(max_length=20, choices=OVERALL_RESULT_CHOICES, blank=True, null=True, default='')
+    resultDecidedByRole = models.CharField(max_length=50, blank=True, null=True, default='')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    class Meta:
+        verbose_name_plural = 'za) Term Teacher Remark'
+        indexes = [
+            models.Index(fields=['sessionID', 'studentID', 'examID', 'isDeleted'], name='ttr_sess_stu_exam_del_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['sessionID', 'studentID', 'examID'],
+                condition=models.Q(isDeleted=False),
+                name='term_teacher_remark_unique_active_entry'
+            ),
+        ]
+
+
+class CoScholasticArea(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200, blank=True, null=True)
+    code = models.CharField(max_length=100, blank=True, null=True)
+    displayOrder = models.PositiveSmallIntegerField(default=0)
+    isActive = models.BooleanField(default=True)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    class Meta:
+        verbose_name_plural = 'zb) Co Scholastic Area'
+        indexes = [
+            models.Index(fields=['sessionID', 'isDeleted', 'displayOrder'], name='csa_sess_del_order_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['sessionID', 'schoolID', 'code'],
+                condition=models.Q(isDeleted=False),
+                name='co_scholastic_area_unique_active_code'
+            ),
+        ]
+
+
+class CoScholasticGrade(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    examID = models.ForeignKey(AssignExamToClass, blank=True, null=True, on_delete=models.CASCADE)
+    studentID = models.ForeignKey(Student, blank=True, null=True, on_delete=models.CASCADE)
+    areaID = models.ForeignKey(CoScholasticArea, blank=True, null=True, on_delete=models.CASCADE)
+    grade = models.CharField(max_length=100, blank=True, null=True)
+    note = models.TextField(blank=True, null=True, default='')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    class Meta:
+        verbose_name_plural = 'zc) Co Scholastic Grade'
+        indexes = [
+            models.Index(fields=['sessionID', 'studentID', 'examID', 'isDeleted'], name='csg_sess_stu_exam_del_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['sessionID', 'studentID', 'examID', 'areaID'],
+                condition=models.Q(isDeleted=False),
+                name='co_scholastic_grade_unique_active_entry'
+            ),
+        ]
+
+
+class ProgressReport(models.Model):
+    STATUS_CHOICES = (
+        ('draft', 'Draft'),
+        ('reviewed', 'Reviewed'),
+        ('published', 'Published'),
+    )
+
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    examID = models.ForeignKey(AssignExamToClass, blank=True, null=True, on_delete=models.CASCADE)
+    studentID = models.ForeignKey(Student, blank=True, null=True, on_delete=models.CASCADE)
+    standardID = models.ForeignKey(Standard, blank=True, null=True, on_delete=models.CASCADE)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='draft')
+    readyToPublish = models.BooleanField(default=False)
+    reportTemplateVersion = models.CharField(max_length=100, blank=True, null=True, default='v1')
+    gradingPolicyVersion = models.CharField(max_length=100, blank=True, null=True, default='v1')
+    calculationVersion = models.CharField(max_length=100, blank=True, null=True, default='v1')
+    publishedAt = models.DateTimeField(blank=True, null=True)
+    publishedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    class Meta:
+        verbose_name_plural = 'zd) Progress Report'
+        indexes = [
+            models.Index(fields=['sessionID', 'studentID', 'examID', 'status'], name='pr_sess_stu_exam_stat_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['sessionID', 'studentID', 'examID'],
+                condition=models.Q(isDeleted=False),
+                name='progress_report_unique_active_entry'
+            ),
+        ]
+
+
+class ProgressReportSnapshot(models.Model):
+    SNAPSHOT_TYPE_CHOICES = (
+        ('draft', 'Draft'),
+        ('published', 'Published'),
+    )
+
+    progressReportID = models.ForeignKey(ProgressReport, blank=True, null=True, on_delete=models.CASCADE)
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    snapshotType = models.CharField(max_length=50, choices=SNAPSHOT_TYPE_CHOICES, default='draft')
+    payload = models.JSONField(default=dict, blank=True)
+    isCurrent = models.BooleanField(default=True)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    class Meta:
+        verbose_name_plural = 'ze) Progress Report Snapshot'
+        indexes = [
+            models.Index(fields=['sessionID', 'progressReportID', 'snapshotType', 'isCurrent'], name='prs_sess_pr_type_curr_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['progressReportID', 'snapshotType'],
+                condition=models.Q(isDeleted=False, isCurrent=True),
+                name='progress_report_snapshot_unique_current_type'
+            ),
+        ]
 
 
 class EventType(models.Model):
