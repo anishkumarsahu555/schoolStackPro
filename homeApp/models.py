@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import date
 from stdimage import StdImageField
 from django.contrib.auth.models import User
 from utils.utils import UPLOAD_TO_PATTERNS
@@ -49,6 +50,12 @@ class SchoolDetail(models.Model):
     webPushStudentAppEnabled = models.BooleanField(default=True)
     webPushTeacherAppEnabled = models.BooleanField(default=True)
     webPushManagementAppEnabled = models.BooleanField(default=True)
+    liveClassEnabled = models.BooleanField(default=False)
+    liveClassWebhookSecret = models.CharField(max_length=255, blank=True, null=True)
+    activationEnabled = models.BooleanField(default=True)
+    activationStartDate = models.DateField(blank=True, null=True)
+    activationEndDate = models.DateField(blank=True, null=True)
+    activationMessage = models.TextField(blank=True, null=True)
     datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
@@ -57,6 +64,21 @@ class SchoolDetail(models.Model):
 
     def __str__(self):
         return self.schoolName
+
+    @property
+    def activation_status(self):
+        today = date.today()
+        if not self.activationEnabled:
+            return 'inactive'
+        if self.activationStartDate and self.activationStartDate > today:
+            return 'scheduled'
+        if self.activationEndDate and self.activationEndDate < today:
+            return 'expired'
+        return 'active'
+
+    @property
+    def activation_is_valid(self):
+        return self.activation_status == 'active'
 
     class Meta:
         verbose_name_plural = 'b) School Detail.'

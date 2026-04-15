@@ -1731,6 +1731,90 @@
             padding-right: 5px;
         }
 
+        .school-license-banner {
+            display: grid;
+            grid-template-columns: 42px minmax(0, 1fr);
+            gap: 0.85rem;
+            align-items: start;
+            margin: 0 0 1rem;
+            padding: 0.95rem 1rem;
+            border-radius: 18px;
+            border: 1px solid var(--app-border);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.96));
+            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+        }
+
+        .school-license-banner .license-banner-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .school-license-banner .license-banner-title {
+            font-weight: 800;
+            color: var(--app-text);
+        }
+
+        .school-license-banner .license-banner-title span,
+        .school-license-banner .license-banner-text {
+            color: var(--app-muted);
+            font-weight: 500;
+        }
+
+        .school-license-banner.positive {
+            border-color: rgba(16, 185, 129, 0.2);
+            background: linear-gradient(135deg, rgba(236, 253, 245, 0.95), rgba(240, 253, 250, 0.95));
+        }
+
+        .school-license-banner.positive .license-banner-icon {
+            background: rgba(16, 185, 129, 0.14);
+            color: #047857;
+        }
+
+        .school-license-banner.warning {
+            border-color: rgba(245, 158, 11, 0.24);
+            background: linear-gradient(135deg, rgba(255, 251, 235, 0.97), rgba(255, 247, 237, 0.96));
+        }
+
+        .school-license-banner.warning .license-banner-icon {
+            background: rgba(245, 158, 11, 0.16);
+            color: #b45309;
+        }
+
+        .school-license-banner.negative {
+            border-color: rgba(239, 68, 68, 0.2);
+            background: linear-gradient(135deg, rgba(254, 242, 242, 0.97), rgba(255, 241, 242, 0.96));
+        }
+
+        .school-license-banner.negative .license-banner-icon {
+            background: rgba(239, 68, 68, 0.14);
+            color: #b91c1c;
+        }
+
+        html[data-theme="dark"] .school-license-banner {
+            background: linear-gradient(135deg, rgba(19, 27, 38, 0.97), rgba(24, 34, 47, 0.94));
+            box-shadow: 0 18px 32px rgba(2, 6, 23, 0.34);
+        }
+
+        html[data-theme="dark"] .school-license-banner.positive {
+            border-color: rgba(16, 185, 129, 0.24);
+            background: linear-gradient(135deg, rgba(8, 49, 38, 0.92), rgba(11, 59, 44, 0.92));
+        }
+
+        html[data-theme="dark"] .school-license-banner.warning {
+            border-color: rgba(245, 158, 11, 0.24);
+            background: linear-gradient(135deg, rgba(74, 44, 8, 0.9), rgba(91, 50, 10, 0.9));
+        }
+
+        html[data-theme="dark"] .school-license-banner.negative {
+            border-color: rgba(239, 68, 68, 0.22);
+            background: linear-gradient(135deg, rgba(74, 20, 20, 0.92), rgba(96, 24, 24, 0.9));
+        }
+
         #pullRefreshIndicator {
             position: fixed;
             top: calc(var(--top-nav-height) + 6px);

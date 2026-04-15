@@ -1,3 +1,8 @@
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.urls import Resolver404, resolve
+
+from homeApp.license import build_license_context, resolve_school_for_request
 from homeApp.models import SchoolSession
 from homeApp.session_utils import build_current_session_payload, build_session_list_item
 from managementApp.models import Student, TeacherDetail
@@ -107,3 +112,61 @@ class RoleSessionBootstrapMiddleware:
                 build_session_list_item(s)
                 for s in session_qs
             ]
+
+
+class SchoolLicenseMiddleware:
+    protected_prefixes = ("/management/", "/teacher/", "/student/")
+    dashboard_routes = {
+        ("managementApp", "admin_home"),
+        ("teacherApp", "teacher_root"),
+        ("teacherApp", "teacher_home"),
+        ("studentApp", "student_root"),
+        ("studentApp", "student_home"),
+    }
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        request.school_license = build_license_context(resolve_school_for_request(request))
+
+        if self._should_block(request):
+            if request.path.startswith(("/management/api/", "/teacher/api/", "/student/api/")):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": request.school_license["message"] or "School activation is not valid.",
+                        "license": request.school_license,
+                    },
+                    status=403,
+                )
+            return render(
+                request,
+                "homeApp/license_blocked.html",
+                {
+                    "hide_global_license_banner": True,
+                    "school_license": request.school_license,
+                },
+                status=403,
+            )
+
+        return self.get_response(request)
+
+    def _should_block(self, request):
+        if not request.user.is_authenticated:
+            return False
+        if not request.path.startswith(self.protected_prefixes):
+            return False
+        if self._is_dashboard_route(request):
+            return False
+        return not request.school_license.get("is_available", True)
+
+    def _is_dashboard_route(self, request):
+        try:
+            match = getattr(request, "resolver_match", None) or resolve(request.path_info)
+        except Resolver404:
+            return False
+
+        namespace = match.namespace or ""
+        url_name = match.url_name or ""
+        return (namespace, url_name) in self.dashboard_routes

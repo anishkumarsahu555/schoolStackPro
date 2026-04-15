@@ -16,4 +16,5 @@ dependencies = [
     "mysqlclient>=2.2.7",
     "python-dotenv>=1.2.1",
     "uvicorn>=0.40.0",
+    "whitenoise>=6.9.0",
 ]

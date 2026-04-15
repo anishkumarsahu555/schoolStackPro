@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{{ error_status_code }} | {{ error_title }}</title>
+    <style>
+        :root {
+            --page-bg: #f8fafc;
+            --page-text: #0f172a;
+            --page-muted: #475569;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --card-border: rgba(226, 232, 240, 0.95);
+            --shadow: 0 28px 80px rgba(15, 23, 42, 0.12);
+            --accent: #2563eb;
+            --accent-soft: rgba(37, 99, 235, 0.12);
+            --accent-contrast: #dbeafe;
+        }
+
+        html[data-theme="dark"] {
+            --page-bg: #020617;
+            --page-text: #f8fafc;
+            --page-muted: #cbd5e1;
+            --card-bg: rgba(15, 23, 42, 0.78);
+            --card-border: rgba(51, 65, 85, 0.9);
+            --shadow: 0 34px 84px rgba(2, 6, 23, 0.55);
+            --accent-soft: rgba(59, 130, 246, 0.16);
+            --accent-contrast: #1e293b;
+        }
+
+        html[data-theme="light"][data-accent="rose"] {
+            --accent: #e11d48;
+            --accent-soft: rgba(225, 29, 72, 0.12);
+            --accent-contrast: #ffe4e6;
+        }
+
+        html[data-theme="dark"][data-accent="rose"] {
+            --accent: #fb7185;
+            --accent-soft: rgba(251, 113, 133, 0.18);
+            --accent-contrast: #3f0d1c;
+        }
+
+        html[data-theme="light"][data-accent="amber"] {
+            --accent: #d97706;
+            --accent-soft: rgba(217, 119, 6, 0.12);
+            --accent-contrast: #ffedd5;
+        }
+
+        html[data-theme="dark"][data-accent="amber"] {
+            --accent: #f59e0b;
+            --accent-soft: rgba(245, 158, 11, 0.18);
+            --accent-contrast: #422006;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", "SF Pro Display", "Helvetica Neue", sans-serif;
+            background:
+                radial-gradient(circle at 12% 16%, var(--accent-soft), transparent 24%),
+                radial-gradient(circle at 85% 18%, rgba(148, 163, 184, 0.12), transparent 22%),
+                linear-gradient(180deg, var(--page-bg), color-mix(in srgb, var(--page-bg) 86%, #111827 14%));
+            color: var(--page-text);
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+
+        .error-shell {
+            width: min(820px, 100%);
+            border-radius: 32px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(14px);
+            overflow: hidden;
+        }
+
+        .error-inner {
+            padding: 36px;
+            display: grid;
+            gap: 22px;
+            justify-items: center;
+            text-align: center;
+        }
+
+        .error-visual {
+            width: min(260px, 62vw);
+        }
+
+        .error-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 92px;
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: var(--accent);
+            background: var(--accent-soft);
+            border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+            text-transform: uppercase;
+        }
+
+        .error-title {
+            margin: 0;
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            line-height: 1;
+            letter-spacing: -0.05em;
+        }
+
+        .error-message {
+            margin: 0;
+            max-width: 44ch;
+            color: var(--page-muted);
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        .error-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .error-btn {
+            appearance: none;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            padding: 14px 20px;
+            font-size: 0.96rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+        }
+
+        .error-btn.primary {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 16px 30px color-mix(in srgb, var(--accent) 28%, transparent);
+        }
+
+        .error-btn.secondary {
+            background: transparent;
+            color: var(--page-text);
+            border-color: var(--card-border);
+        }
+
+        .error-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 640px) {
+            .error-inner {
+                padding: 24px 18px;
+            }
+
+            .error-actions {
+                width: 100%;
+            }
+
+            .error-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<script>
+    (function () {
+        var storedTheme = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', storedTheme || (prefersDark ? 'dark' : 'light'));
+        document.documentElement.setAttribute('data-accent', '{{ error_accent|default:"blue" }}');
+    })();
+</script>
+<main class="error-shell">
+    <section class="error-inner">
+        <svg class="error-visual" viewBox="0 0 320 220" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="74" cy="56" r="30" fill="var(--accent-soft)"/>
+            <circle cx="252" cy="52" r="20" fill="rgba(148, 163, 184, 0.18)"/>
+            <rect x="56" y="38" width="208" height="146" rx="28" fill="color-mix(in srgb, var(--card-bg) 92%, white 8%)" stroke="color-mix(in srgb, var(--accent) 24%, var(--card-border))" stroke-width="2"/>
+            <rect x="96" y="70" width="128" height="84" rx="24" fill="color-mix(in srgb, var(--accent-soft) 52%, transparent)"/>
+            <circle cx="160" cy="112" r="28" fill="var(--accent-contrast)" stroke="var(--accent)" stroke-width="8"/>
+            <path d="M160 98V116" stroke="var(--accent)" stroke-width="8" stroke-linecap="round"/>
+            <circle cx="160" cy="131" r="5" fill="var(--accent)"/>
+            <path d="M108 172H212" stroke="color-mix(in srgb, var(--card-border) 86%, transparent)" stroke-width="8" stroke-linecap="round"/>
+        </svg>
+        <span class="error-badge">{{ error_status_code }}</span>
+        <h1 class="error-title">{{ error_heading }}</h1>
+        <p class="error-message">{{ error_message }}</p>
+        <div class="error-actions">
+            <a class="error-btn primary" href="/">Go Home</a>
+            <a class="error-btn secondary" href="javascript:history.back()">Go Back</a>
+        </div>
+    </section>
+</main>
+</body>
+</html>

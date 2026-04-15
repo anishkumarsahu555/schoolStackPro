@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib import messages
 from django.contrib.admin.widgets import AdminDateWidget
 from django.conf import settings
+from django.forms import Textarea
 from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 from django.db import models
@@ -12,11 +13,20 @@ import subprocess
 import sys
 from pathlib import Path
 
+from .license import build_license_context
 from .models import SchoolDetail, SchoolOwner, SchoolSession, SchoolSocialLink, WebPushSubscription
 
 
 def _all_concrete_fields(model):
     return tuple(field.name for field in model._meta.concrete_fields)
+
+
+def _editable_concrete_fields(model):
+    return tuple(
+        field.name
+        for field in model._meta.concrete_fields
+        if getattr(field, 'editable', False) and not getattr(field, 'auto_created', False)
+    )
 
 
 class AllFieldsAdmin(admin.ModelAdmin):
@@ -34,6 +44,55 @@ class SchoolOwnerAdmin(AllFieldsAdmin):
 @admin.register(SchoolDetail)
 class SchoolDetailAdmin(AllFieldsAdmin):
     search_fields = ('=id', 'schoolName', 'name', 'email', 'phoneNumber', 'city', 'state')
+    list_filter = ('activationEnabled', 'isDeleted')
+    readonly_fields = ('id', 'datetime', 'lastUpdatedOn', 'license_status_badge', 'license_summary')
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 4, 'cols': 100})},
+        models.DateField: {'widget': AdminDateWidget(attrs={'type': 'date'})},
+    }
+
+    def get_list_display(self, request):
+        return _all_concrete_fields(self.model) + ('license_status_badge',)
+
+    def get_fieldsets(self, request, obj=None):
+        fields = list(_editable_concrete_fields(self.model))
+        activation_fields = [
+            'activationEnabled', 'activationStartDate', 'activationEndDate', 'activationMessage',
+        ]
+        general_fields = [field for field in fields if field not in activation_fields]
+        return (
+            ('School Profile', {'fields': ['id'] + general_fields + ['datetime', 'lastUpdatedOn']}),
+            ('License Control', {'fields': activation_fields + ['license_status_badge', 'license_summary']}),
+        )
+
+    @admin.display(description='License status')
+    def license_status_badge(self, obj):
+        license_info = build_license_context(obj)
+        palette = {
+            'positive': ('#ecfdf5', '#047857', '#10b981'),
+            'warning': ('#fff7ed', '#b45309', '#f59e0b'),
+            'negative': ('#fef2f2', '#b91c1c', '#ef4444'),
+            'neutral': ('#eff6ff', '#1d4ed8', '#60a5fa'),
+        }
+        background, color, border = palette.get(license_info['badge_class'], palette['neutral'])
+        return format_html(
+            '<span style="display:inline-flex;align-items:center;padding:0.32rem 0.7rem;'
+            'border-radius:999px;border:1px solid {};background:{};color:{};font-weight:700;">{}</span>',
+            border,
+            background,
+            color,
+            license_info['label'],
+        )
+
+    @admin.display(description='License summary')
+    def license_summary(self, obj):
+        license_info = build_license_context(obj)
+        parts = [license_info['detail']]
+        if license_info.get('valid_from'):
+            parts.append(f"Start: {license_info['valid_from']:%d %b %Y}")
+        if license_info.get('valid_until'):
+            parts.append(f"End: {license_info['valid_until']:%d %b %Y}")
+        return " | ".join(parts)
 
 
 @admin.register(SchoolSocialLink)
