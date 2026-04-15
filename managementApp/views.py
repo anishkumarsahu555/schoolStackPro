@@ -84,6 +84,29 @@ def school_detail(request):
 
 @login_required
 @check_groups('Admin', 'Owner')
+def manage_session_import(request):
+    current_session_id = request.session.get('current_session', {}).get('Id')
+    session_qs = list(SchoolSession.objects.filter(
+        schoolID_id=request.session.get('current_session', {}).get('SchoolID'),
+        isDeleted=False,
+    ).order_by('startDate', 'datetime', 'id'))
+    previous_session_id = None
+    if current_session_id:
+        ordered_ids = [item.id for item in session_qs]
+        if current_session_id in ordered_ids:
+            current_index = ordered_ids.index(current_session_id)
+            if current_index > 0:
+                previous_session_id = ordered_ids[current_index - 1]
+    context = {
+        'session_choices': session_qs,
+        'current_session_id': current_session_id,
+        'previous_session_id': previous_session_id,
+    }
+    return render(request, 'managementApp/school/session_import.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
 def manage_class(request):
     context = {
     }

@@ -7,6 +7,9 @@ urlpatterns = [
     # api
     path('get_school_detail_api', get_school_detail_api, name='get_school_detail_api'),
     path('update_school_detail_api', update_school_detail_api, name='update_school_detail_api'),
+    path('get_session_import_meta_api', get_session_import_meta_api, name='get_session_import_meta_api'),
+    path('preview_session_import_api', preview_session_import_api, name='preview_session_import_api'),
+    path('run_session_import_api', run_session_import_api, name='run_session_import_api'),
 
     path('add_class', add_class, name='add_class'),
     path('class_list', StandardListJson.as_view(), name='class_list'),
@@ -58,6 +61,8 @@ urlpatterns = [
     path('update_teacher_api', update_teacher_api, name='update_teacher_api'),
 
     # student
+    path('student_import_registration_suggestions_api', student_import_registration_suggestions_api, name='student_import_registration_suggestions_api'),
+    path('import_student_from_previous_session_api', import_student_from_previous_session_api, name='import_student_from_previous_session_api'),
     path('add_student_api', add_student_api, name='add_student_api'),
     path('delete_student', delete_student, name='delete_student'),
     path('get_student_list_by_class_api', get_student_list_by_class_api, name='get_student_list_by_class_api'),

@@ -5,6 +5,7 @@ urlpatterns = [
     #admin
     path('home/', admin_home, name='admin_home'),
     path('school-detail/', school_detail, name='school_detail'),
+    path('session-import/', manage_session_import, name='manage_session_import'),
     path('manage-class/', manage_class, name='manage_class'),
 
     # subjects

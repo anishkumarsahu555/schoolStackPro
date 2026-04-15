@@ -68,27 +68,6 @@
             </div>
             <div class="ui tab " data-tab="user">
                 <form class="ui form segment tiny" id="addForm" enctype="multipart/form-data"> {% csrf_token %}
-                    <h4 class="ui dividing header">Import Student</h4>
-                    <div class="three fields">
-                        <div class="field">
-                            <label>Registration ID</label> <span class="ui medium text green">Use registration code to import student from past session.</span>
-                            <input type="text" name="registration" id="registration" placeholder="Registration Code">
-                        </div>
-                        <div class="field" style="padding-top: 3.2rem">
-                            {% comment %} <button type="button" class="ui mini green button"
-                                    onclick="addData()">
-                                <i class="search icon"></i>
-                                Search
-                            </button> {% endcomment %}
-
-                            <button class="ui mini red button" type="button" onclick="resetEditStudentForm()">
-                                <i class="icon times circle"></i>
-                                Clear
-                            </button>
-                        </div>
-                    </div>
-
-
                     <h4 class="ui dividing header">Photo</h4>
                     <div class="field required">
 

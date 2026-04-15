@@ -19,6 +19,11 @@
         <i class="school icon"></i>
         <span>School Details</span>
     </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'manage_session_import' %}active{% endif %}"
+       href="{% url 'managementApp:manage_session_import' %}">
+        <i class="copy outline icon"></i>
+        <span>Session Import</span>
+    </a>
 
     <!-- CLASSES -->
     <div class="nav-section">Classes</div>
