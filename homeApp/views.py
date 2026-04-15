@@ -16,6 +16,50 @@ from managementApp.models import TeacherDetail, Student
 from utils.custom_decorators import check_groups
 
 
+def _render_error_page(request, *, status_code, title, heading, message, accent="blue"):
+    context = {
+        "error_status_code": status_code,
+        "error_title": title,
+        "error_heading": heading,
+        "error_message": message,
+        "error_accent": accent,
+    }
+    return render(request, "homeApp/errors/error_page.html", context=context, status=status_code)
+
+
+def error_403(request, exception=None):
+    return _render_error_page(
+        request,
+        status_code=403,
+        title="Forbidden",
+        heading="Access denied",
+        message="You do not have permission to view this page. Please contact your administrator if you think this is a mistake.",
+        accent="rose",
+    )
+
+
+def error_404(request, exception=None):
+    return _render_error_page(
+        request,
+        status_code=404,
+        title="Page Not Found",
+        heading="Page not found",
+        message="The page you are looking for does not exist or may have been moved.",
+        accent="blue",
+    )
+
+
+def error_500(request):
+    return _render_error_page(
+        request,
+        status_code=500,
+        title="Server Error",
+        heading="Something went wrong",
+        message="The server hit an unexpected problem. Please try again in a moment.",
+        accent="amber",
+    )
+
+
 def login_page(request):
     return render(request, 'homeApp/login.html')
 

@@ -9,3 +9,4 @@ sqlparse==0.4.4
 typing_extensions==4.9.0
 gunicorn==23.0.0
 pywebpush==2.0.3
+whitenoise==6.9.0
