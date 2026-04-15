@@ -5,6 +5,127 @@
 {% endblock %}
 {% block css %}
     <style>
+        .import-student-panel {
+            border: 1px solid rgba(37, 99, 235, 0.14);
+            border-radius: 22px;
+            padding: 1.1rem 1.1rem 1rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, rgba(239, 248, 255, 0.96) 0%, rgba(248, 252, 255, 0.98) 58%, rgba(240, 253, 244, 0.95) 100%);
+            box-shadow: 0 12px 28px rgba(37, 99, 235, 0.08);
+        }
+
+        .import-student-head {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.9rem;
+            align-items: flex-start;
+            margin-bottom: 0.95rem;
+        }
+
+        .import-student-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #2563eb 0%, #16a34a 100%);
+            color: #fff;
+            font-size: 1.15rem;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+        }
+
+        .import-student-head h4 {
+            margin: 0 0 0.25rem;
+            font-size: 1.06rem;
+            color: var(--app-text, #1f2937);
+        }
+
+        .import-student-subtitle {
+            color: var(--app-muted, #6b7280);
+            font-size: 0.9rem;
+            line-height: 1.45;
+            max-width: 680px;
+        }
+
+        .import-student-tip {
+            margin-top: 0.55rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.36rem 0.68rem;
+            border-radius: 999px;
+            background: rgba(22, 163, 74, 0.1);
+            color: #15803d;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .import-student-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.85rem;
+            align-items: end;
+        }
+
+        .import-student-label {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            align-items: baseline;
+            margin-bottom: 0.45rem;
+        }
+
+        .import-student-label .hint {
+            color: #16a34a;
+            font-size: 0.86rem;
+            font-weight: 600;
+        }
+
+        .import-student-input {
+            border-radius: 16px !important;
+            min-height: 48px;
+            font-size: 1rem !important;
+        }
+
+        .import-student-actions {
+            display: flex;
+            gap: 0.55rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .import-student-actions .ui.button {
+            min-height: 48px;
+            border-radius: 14px !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            font-weight: 700 !important;
+        }
+
+        .import-student-actions .search-btn {
+            background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+            box-shadow: 0 10px 20px rgba(34, 197, 94, 0.18) !important;
+        }
+
+        .import-student-actions .clear-btn {
+            border-color: rgba(239, 68, 68, 0.24) !important;
+            color: #dc2626 !important;
+            background: rgba(255, 255, 255, 0.92) !important;
+        }
+
+        .clear-btn-glyph {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            font-size: 18px;
+            line-height: 1;
+            font-weight: 700;
+            margin-right: 0.05rem;
+        }
+
         #photoCropModal .cropper-stage {
             width: 320px;
             height: 320px;
@@ -49,6 +170,250 @@
             border-radius: 8px;
             box-shadow: 0 0 0 2px rgba(219, 40, 40, 0.15);
         }
+
+        .promotion-preview-top {
+            padding: 1rem 1.1rem;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(23, 115, 184, 0.1) 0%, rgba(48, 164, 108, 0.12) 100%);
+            border: 1px solid rgba(23, 115, 184, 0.14);
+            margin-bottom: 1rem;
+        }
+
+        .promotion-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        .promotion-preview-profile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.9rem;
+            margin-bottom: 1rem;
+            padding: 0.9rem 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.88);
+            text-align: left;
+        }
+
+        .promotion-preview-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            object-fit: cover;
+            border: 2px solid rgba(37, 99, 235, 0.14);
+            background: #e5eef8;
+            flex-shrink: 0;
+        }
+
+        .promotion-preview-avatar.fallback {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #1d4ed8;
+        }
+
+        .promotion-preview-profile h5 {
+            margin: 0 0 0.2rem;
+            font-size: 1rem;
+            color: var(--app-text, #1f2937);
+        }
+
+        .promotion-preview-profile p {
+            margin: 0;
+            color: var(--app-muted, #6b7280);
+            font-size: 0.88rem;
+        }
+
+        .promotion-preview-item {
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 14px;
+            padding: 0.85rem 0.9rem;
+            background: rgba(255, 255, 255, 0.92);
+        }
+
+        .promotion-preview-item .label {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--app-muted, #6b7280);
+            margin-bottom: 0.22rem;
+        }
+
+        .promotion-preview-item .value {
+            font-size: 0.96rem;
+            font-weight: 700;
+            color: var(--app-text, #1f2937);
+            word-break: break-word;
+        }
+
+        .promotion-preview-note {
+            margin-top: 0.9rem;
+            padding: 0.8rem 0.9rem;
+            border-radius: 12px;
+            background: rgba(255, 247, 237, 0.9);
+            border: 1px solid rgba(249, 115, 22, 0.16);
+            color: #9a3412;
+            font-size: 0.88rem;
+        }
+
+        html[data-theme="dark"] .promotion-preview-top {
+            background: linear-gradient(135deg, rgba(116, 169, 255, 0.12) 0%, rgba(71, 193, 132, 0.14) 100%);
+            border-color: rgba(116, 169, 255, 0.2);
+        }
+
+        html[data-theme="dark"] .promotion-preview-item {
+            border-color: rgba(96, 112, 136, 0.28);
+            background: rgba(27, 33, 42, 0.92);
+        }
+
+        html[data-theme="dark"] .promotion-preview-profile {
+            border-color: rgba(96, 112, 136, 0.28);
+            background: rgba(27, 33, 42, 0.92);
+        }
+
+        html[data-theme="dark"] .promotion-preview-avatar {
+            background: rgba(15, 23, 42, 0.46);
+            border-color: rgba(116, 169, 255, 0.22);
+        }
+
+        html[data-theme="dark"] .promotion-preview-avatar.fallback {
+            color: #9bc5ff;
+        }
+
+        html[data-theme="dark"] .promotion-preview-note {
+            color: #fdba74;
+            background: rgba(124, 45, 18, 0.28);
+            border-color: rgba(251, 146, 60, 0.24);
+        }
+
+        html[data-theme="dark"] .import-student-panel {
+            border-color: rgba(96, 112, 136, 0.28);
+            background: linear-gradient(135deg, rgba(24, 34, 49, 0.98) 0%, rgba(20, 28, 40, 0.98) 58%, rgba(19, 40, 32, 0.94) 100%);
+            box-shadow: 0 16px 34px rgba(2, 6, 23, 0.36);
+        }
+
+        html[data-theme="dark"] .import-student-tip {
+            background: rgba(74, 222, 128, 0.14);
+            color: #86efac;
+        }
+
+        html[data-theme="dark"] .import-student-label .hint {
+            color: #4ade80;
+        }
+
+        html[data-theme="dark"] .import-student-input {
+            background: rgba(15, 23, 42, 0.38) !important;
+        }
+
+        html[data-theme="dark"] .import-student-actions .clear-btn,
+        html[data-theme="dark"] .import-student-actions .clear-btn i {
+            color: #fca5a5 !important;
+        }
+
+        .new-student-header {
+            margin: 1.15rem 0 0.6rem;
+            padding: 0.95rem 1rem;
+            border-radius: 18px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
+        }
+
+        .new-student-header h3 {
+            margin: 0 0 0.2rem;
+            font-size: 1.05rem;
+            color: var(--app-text, #1f2937);
+        }
+
+        .new-student-header p {
+            margin: 0;
+            color: var(--app-muted, #6b7280);
+            font-size: 0.9rem;
+        }
+
+        html[data-theme="dark"] .new-student-header {
+            border-color: rgba(96, 112, 136, 0.28);
+            background: linear-gradient(180deg, rgba(27, 33, 42, 0.98) 0%, rgba(22, 27, 35, 0.98) 100%);
+        }
+
+        .import-search-wrap {
+            position: relative;
+        }
+
+        .import-suggestion-menu {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 0.4rem);
+            z-index: 25;
+            background: var(--app-surface, #fff);
+            border: 1px solid var(--app-border, #dfe3ea);
+            border-radius: 14px;
+            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+            overflow: hidden;
+            display: none;
+        }
+
+        .import-suggestion-item {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            text-align: left;
+            padding: 0.8rem 0.9rem;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+        }
+
+        .import-suggestion-item:last-child {
+            border-bottom: 0;
+        }
+
+        .import-suggestion-item:hover {
+            background: rgba(23, 115, 184, 0.06);
+        }
+
+        .import-suggestion-title {
+            font-weight: 700;
+            color: var(--app-text, #1f2937);
+            margin-bottom: 0.15rem;
+        }
+
+        .import-suggestion-meta {
+            font-size: 0.84rem;
+            color: var(--app-muted, #6b7280);
+        }
+
+        html[data-theme="dark"] .import-suggestion-menu {
+            box-shadow: 0 18px 40px rgba(2, 6, 23, 0.46);
+        }
+
+        html[data-theme="dark"] .import-suggestion-item:hover {
+            background: rgba(116, 169, 255, 0.08);
+        }
+
+        @media (max-width: 767px) {
+            .import-student-head,
+            .promotion-preview-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .import-student-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .import-student-actions {
+                width: 100%;
+            }
+
+            .import-student-actions .ui.button {
+                flex: 1 1 auto;
+                justify-content: center;
+            }
+        }
     </style>
 {% endblock %}
 {% block body %}
@@ -68,25 +433,50 @@
             </div>
             <div class="ui tab " data-tab="user">
                 <form class="ui form segment tiny" id="addForm" enctype="multipart/form-data"> {% csrf_token %}
-                    <h4 class="ui dividing header">Import Student</h4>
-                    <div class="three fields">
-                        <div class="field">
-                            <label>Registration ID</label> <span class="ui medium text green">Use registration code to import student from past session.</span>
-                            <input type="text" name="registration" id="registration" placeholder="Registration Code">
+                    <input type="hidden" id="importedPreviousStudentID" name="importedPreviousStudentID" value="">
+                    <div class="import-student-panel">
+                        <div class="import-student-head">
+                            <div class="import-student-icon">
+                                <i class="history icon"></i>
+                            </div>
+                            <div>
+                                <h4>Import Student</h4>
+                                <div class="import-student-subtitle">Find a student from the previous session using registration code or name, preview the details, and then import the record into this form.</div>
+                                <div class="import-student-tip">
+                                    <i class="check circle icon"></i>
+                                    Reuses previous login and photo when available
+                                </div>
+                            </div>
                         </div>
-                        <div class="field" style="padding-top: 3.2rem">
-                            {% comment %} <button type="button" class="ui mini green button"
-                                    onclick="addData()">
-                                <i class="search icon"></i>
-                                Search
-                            </button> {% endcomment %}
-                            <button class="ui mini red button" type="button" onclick="myOwnReset()">
-                                <i class="icon times circle"></i>
-                                Clear
-                            </button>
+
+                        <div class="import-student-grid">
+                            <div class="field" style="margin:0;">
+                                <div class="import-student-label">
+                                    <label style="margin:0;">Registration ID</label>
+                                    <span class="hint">Previous session lookup</span>
+                                </div>
+                                <div class="import-search-wrap">
+                                    <input type="text" class="import-student-input" name="registration" id="registration" placeholder="Enter registration code or student name" autocomplete="off">
+                                    <div class="import-suggestion-menu" id="registrationSuggestions"></div>
+                                </div>
+                            </div>
+                            <div class="import-student-actions">
+                                <button type="button" class="ui green button search-btn" id="importStudentBtn" onclick="importStudentFromPreviousSession()">
+                                    <i class="search icon"></i>
+                                    Search & Import
+                                </button>
+                                <button class="ui red basic button clear-btn" type="button" onclick="myOwnReset()">
+                                    <span class="clear-btn-glyph" aria-hidden="true">&times;</span>
+                                    Clear
+                                </button>
+                            </div>
                         </div>
                     </div>
 
+                    <div class="new-student-header">
+                        <h3>New Student Details</h3>
+                        <p>Use this section to add a brand-new student manually, or review and adjust the imported student information before saving.</p>
+                    </div>
 
                     <h4 class="ui dividing header">Photo</h4>
                     <div class="field required">
@@ -136,6 +526,29 @@
                         <div class="actions">
                             <button type="button" class="ui button" id="cropCancelBtn">Cancel</button>
                             <button type="button" class="ui primary button" id="cropApplyBtn">Apply Crop</button>
+                        </div>
+                    </div>
+
+                    <div class="ui small modal" id="promotionPreviewModal">
+                        <i class="close icon"></i>
+                        <div class="header">Promotion Preview</div>
+                        <div class="content">
+                            <div class="promotion-preview-top">
+                                <strong id="promotionPreviewTitle">Student found in previous session</strong>
+                                <div style="margin-top:0.35rem; color:var(--app-muted, #6b7280);" id="promotionPreviewSubtitle">
+                                    Review the basic details before importing the student into the form.
+                                </div>
+                            </div>
+                            <div class="promotion-preview-profile" id="promotionPreviewProfile"></div>
+                            <div class="promotion-preview-grid" id="promotionPreviewGrid"></div>
+                            <div class="promotion-preview-note" id="promotionPreviewNote" style="display:none;"></div>
+                        </div>
+                        <div class="actions">
+                            <div class="ui cancel button">Cancel</div>
+                            <button type="button" class="ui primary button" onclick="confirmPromotionPreviewImport()">
+                                <i class="download icon"></i>
+                                Import Student
+                            </button>
                         </div>
                     </div>
 
@@ -633,8 +1046,200 @@
 
 {% block js %}
     <script>
+        let pendingImportedStudentPayload = null;
+        let registrationSuggestionRequest = null;
+
+        function setImportSearchLoading(isLoading) {
+            const $btn = $('#importStudentBtn');
+            if (!$btn.length) return;
+            $btn.prop('disabled', !!isLoading);
+            if (isLoading) {
+                $btn.addClass('loading disabled');
+            } else {
+                $btn.removeClass('loading disabled');
+            }
+        }
 
         $(getStandardList());
+
+        function hideRegistrationSuggestions() {
+            $('#registrationSuggestions').hide().empty();
+        }
+
+        function renderRegistrationSuggestions(rows) {
+            const $menu = $('#registrationSuggestions');
+            if (!rows || !rows.length) {
+                hideRegistrationSuggestions();
+                return;
+            }
+            $menu.html(rows.map(function (row) {
+                const title = $('<div>').text((row.registrationCode || 'N/A') + ' - ' + (row.name || 'N/A')).html();
+                const meta = $('<div>').text((row.sessionYear || 'N/A') + ' | ' + (row.classLabel || 'N/A') + (row.roll ? ' | Roll ' + row.roll : '')).html();
+                return '' +
+                    '<button type="button" class="import-suggestion-item" data-registration-code="' + $('<div>').text(row.registrationCode || '').html() + '">' +
+                        '<div class="import-suggestion-title">' + title + '</div>' +
+                        '<div class="import-suggestion-meta">' + meta + '</div>' +
+                    '</button>';
+            }).join('')).show();
+        }
+
+        function loadRegistrationSuggestions() {
+            const query = ($('#registration').val() || '').trim();
+            if (query.length < 2) {
+                hideRegistrationSuggestions();
+                return;
+            }
+            if (registrationSuggestionRequest && registrationSuggestionRequest.readyState !== 4) {
+                registrationSuggestionRequest.abort();
+            }
+            registrationSuggestionRequest = $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppAPI:student_import_registration_suggestions_api' %}",
+                data: {q: query},
+                success: function (response) {
+                    if (response.success) {
+                        renderRegistrationSuggestions(response.data || []);
+                    } else {
+                        hideRegistrationSuggestions();
+                    }
+                },
+                error: function () {
+                    hideRegistrationSuggestions();
+                }
+            });
+        }
+
+        function importStudentFromPreviousSession() {
+            const registration = ($('#registration').val() || '').trim();
+            if (!registration) {
+                addErrorNotification('Enter registration code to import student.');
+                return;
+            }
+
+            setImportSearchLoading(true);
+            $.ajax({
+                type: 'get',
+                url: "{% url 'managementAppAPI:import_student_from_previous_session_api' %}",
+                data: {registration: registration},
+                success: function (response) {
+                    if (response.success) {
+                        pendingImportedStudentPayload = response.data || {};
+                        openPromotionPreviewModal(pendingImportedStudentPayload);
+                    } else {
+                        addErrorNotification(response.message || 'Unable to import student details.');
+                    }
+                    setImportSearchLoading(false);
+                },
+                error: function (xhr) {
+                    addErrorNotification((xhr.responseJSON || {}).message || 'Unable to import student details.');
+                    setImportSearchLoading(false);
+                }
+            });
+        }
+
+        function openPromotionPreviewModal(payload) {
+            const student = payload.student || {};
+            const meta = payload.meta || {};
+            const photoMarkup = student.photoUrl
+                ? '<img class="promotion-preview-avatar" src="' + $('<div>').text(student.photoUrl).html() + '" alt="Student Photo">'
+                : '<div class="promotion-preview-avatar fallback">' + $('<div>').text((student.name || 'S').trim().charAt(0).toUpperCase() || 'S').html() + '</div>';
+            const previewItems = [
+                {label: 'Student Name', value: student.name || 'N/A'},
+                {label: 'Registration Code', value: student.registrationCode || 'N/A'},
+                {label: 'Previous Session', value: meta.previousSessionYear || 'N/A'},
+                {label: 'Previous Class', value: student.previousSessionClass || 'N/A'},
+                {label: 'Target Class', value: student.matchedCurrentClass || 'Select manually after import'},
+                {label: 'Roll Number', value: student.roll || 'N/A'},
+            ];
+
+            $('#promotionPreviewGrid').html(previewItems.map(function (item) {
+                return '' +
+                    '<div class="promotion-preview-item">' +
+                        '<div class="label">' + $('<div>').text(item.label).html() + '</div>' +
+                        '<div class="value">' + $('<div>').text(item.value).html() + '</div>' +
+                    '</div>';
+            }).join(''));
+            $('#promotionPreviewProfile').html(
+                photoMarkup +
+                '<div>' +
+                    '<h5>' + $('<div>').text(student.name || 'Student').html() + '</h5>' +
+                    '<p>' + $('<div>').text(student.registrationCode || 'Registration unavailable').html() + '</p>' +
+                '</div>'
+            );
+
+            const note = meta.currentClassMatched
+                ? 'A matching class/section was found in the current session and will be selected automatically.'
+                : 'A matching class/section was not found in the current session. You can still import the student and choose the class manually.';
+            $('#promotionPreviewNote').text(note).show();
+            $('#promotionPreviewModal').modal('show');
+        }
+
+        function confirmPromotionPreviewImport() {
+            if (!pendingImportedStudentPayload) {
+                addErrorNotification('No student data is ready to import.');
+                return;
+            }
+            applyImportedStudentData(pendingImportedStudentPayload);
+            const meta = pendingImportedStudentPayload.meta || {};
+            const classMessage = meta.currentClassMatched
+                ? ' Matching current-session class was selected automatically.'
+                : ' Please choose the current-session class manually.';
+            addSuccessNotification('Student imported into the form.' + classMessage, 'green');
+            $('#promotionPreviewModal').modal('hide');
+        }
+
+        function applyImportedStudentData(payload) {
+            const student = payload.student || {};
+            const parent = payload.parent || {};
+            const meta = payload.meta || {};
+            const combined = Object.assign({}, parent, student);
+
+            Object.keys(combined).forEach(function (key) {
+                const field = $('#' + key);
+                if (!field.length) return;
+                field.val(combined[key]);
+                if (field.is('select')) {
+                    field.dropdown('refresh');
+                    field.dropdown('set selected', combined[key]);
+                }
+            });
+
+            if (student.standard) {
+                $('#standard').dropdown('refresh');
+                $('#standard').dropdown('set selected', String(student.standard));
+            }
+
+            if (student.dob) {
+                $('#dob').val(student.dob);
+            }
+            if (student.doj) {
+                $('#doj').val(student.doj);
+            }
+
+            $('#importedPreviousStudentID').val(meta.previousStudentId || '');
+
+            if (student.photoUrl) {
+                setPhotoPreview(student.photoUrl);
+                croppedImageFile = null;
+                $('#imageUpload').val('');
+                clearPhotoFieldError();
+            }
+        }
+
+        $('#registration').on('input', loadRegistrationSuggestions);
+
+        $(document).on('click', '.import-suggestion-item', function () {
+            const registrationCode = ($(this).attr('data-registration-code') || '').trim();
+            $('#registration').val(registrationCode);
+            hideRegistrationSuggestions();
+            importStudentFromPreviousSession();
+        });
+
+        $(document).on('click', function (event) {
+            if (!$(event.target).closest('.import-search-wrap').length) {
+                hideRegistrationSuggestions();
+            }
+        });
 
 
         function getStandardList() {
@@ -982,7 +1587,11 @@ function addStudentData() {
     ];
 
     let hasError = false;
+    const hasImportedPhoto = !!($('#importedPreviousStudentID').val() || '').trim() && !croppedImageFile;
     requiredIds.forEach(id => {
+        if (id === 'imageUpload' && hasImportedPhoto) {
+            return;
+        }
         if (!data.get(id)) {
             console.log(id);
             if (id === 'imageUpload') {

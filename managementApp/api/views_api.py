@@ -17,6 +17,7 @@ from homeApp.session_utils import get_session_month_sequence
 from homeApp.push_service import send_event_push_notifications
 from managementApp.models import *
 from managementApp.reporting import build_report_cards_for_student, upsert_progress_report_snapshot
+from managementApp.services.session_rollover import preview_session_import, run_session_import
 from managementApp.signals import pre_save_with_user
 from managementApp.leave_utils import approved_leave_for_date, approved_leave_map_for_date
 from teacherApp.models import SubjectNote, SubjectNoteVersion
@@ -60,6 +61,48 @@ def _current_session_id(request):
     return request.session.get("current_session", {}).get("Id")
 
 
+def _truthy(value):
+    return str(value).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def _parse_promotion_overrides(raw_text):
+    overrides = {}
+    for raw_line in (raw_text or '').splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if '->' not in line:
+            raise ValueError('Custom promotion mapping format is invalid. Use one mapping per line like "Class 5 A -> Class 6 A".')
+        source_label, target_label = [part.strip() for part in line.split('->', 1)]
+        if not source_label or not target_label:
+            raise ValueError('Each custom promotion mapping needs both source and target class names.')
+        overrides[source_label] = target_label
+    return overrides
+
+
+def _parse_selection_overrides(raw_text):
+    if not raw_text:
+        return {}
+    try:
+        payload = json.loads(raw_text)
+    except json.JSONDecodeError:
+        raise ValueError('Selected item payload is invalid.')
+    if not isinstance(payload, dict):
+        raise ValueError('Selected item payload is invalid.')
+
+    normalized = {}
+    for key, values in payload.items():
+        if not isinstance(values, list):
+            continue
+        normalized[key] = []
+        for value in values:
+            try:
+                normalized[key].append(int(value))
+            except (TypeError, ValueError):
+                continue
+    return normalized
+
+
 def _session_month_rows(session_id):
     session_obj = SchoolSession.objects.filter(pk=session_id, isDeleted=False).first() if session_id else None
     return get_session_month_sequence(session_obj)
@@ -90,6 +133,221 @@ def _fee_month_label(fee_obj):
     if fee_obj.month and fee_obj.feeYear:
         return f'{short_month}-{fee_obj.feeYear}'
     return short_month or 'N/A'
+
+
+def _same_text_q(field_name, value):
+    normalized = (value or '').strip()
+    if not normalized:
+        return Q(**{f'{field_name}__isnull': True}) | Q(**{field_name: ''})
+    return Q(**{f'{field_name}__iexact': normalized})
+
+
+def _previous_school_session_for_current(request):
+    current_session_id = _current_session_id(request)
+    school_id = request.session.get('current_session', {}).get('SchoolID')
+    if not current_session_id or not school_id:
+        return None
+    sessions = list(
+        SchoolSession.objects.filter(
+            schoolID_id=school_id,
+            isDeleted=False,
+        ).order_by('startDate', 'datetime', 'id')
+    )
+    ordered_ids = [item.id for item in sessions]
+    if current_session_id not in ordered_ids:
+        return None
+    current_index = ordered_ids.index(current_session_id)
+    if current_index <= 0:
+        return None
+    return sessions[current_index - 1]
+
+
+def _matching_current_standard_id(previous_standard, current_session_id):
+    if not previous_standard or not current_session_id:
+        return None
+    matched = Standard.objects.filter(
+        sessionID_id=current_session_id,
+        isDeleted=False,
+    ).filter(
+        _same_text_q('name', previous_standard.name)
+    ).filter(
+        _same_text_q('section', previous_standard.section)
+    ).order_by('id').first()
+    return matched.id if matched else None
+
+
+def _current_session_parent_defaults(post_data):
+    total_family_members = post_data.get("numberOfMembers")
+    annual_income = post_data.get("familyAnnualIncome")
+    return {
+        'fatherName': post_data.get("fname"),
+        'motherName': post_data.get("mname"),
+        'fatherOccupation': post_data.get("FatherOccupation"),
+        'motherOccupation': post_data.get("MotherOccupation"),
+        'fatherPhone': post_data.get("fatherContactNumber"),
+        'motherPhone': post_data.get("MotherContactNumber"),
+        'fatherAddress': post_data.get("FatherAddress"),
+        'motherAddress': post_data.get("MotherAddress"),
+        'guardianName': post_data.get("guardianName"),
+        'guardianOccupation': post_data.get("guardianOccupation"),
+        'guardianPhone': post_data.get("guardianPhoneNumber"),
+        'familyType': post_data.get("familyType"),
+        'totalFamilyMembers': float(total_family_members) if total_family_members else 0,
+        'annualIncome': float(annual_income) if annual_income else 0,
+        'phoneNumber': post_data.get("parentsPhoneNumber"),
+        'fatherEmail': post_data.get("fatherEmail"),
+        'motherEmail': post_data.get("motherEmail"),
+        'isDeleted': False,
+    }
+
+
+def _get_or_create_current_session_parent(request, post_data):
+    current_session = request.session.get('current_session', {})
+    current_session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    parent_payload = _current_session_parent_defaults(post_data)
+
+    parent_obj, _ = Parent.objects.get_or_create(
+        sessionID_id=current_session_id,
+        schoolID_id=school_id,
+        **parent_payload,
+        defaults={},
+    )
+    pre_save_with_user.send(sender=Parent, instance=parent_obj, user=request.user.pk)
+    return parent_obj
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def get_session_import_meta_api(request):
+    school_id = request.session.get('current_session', {}).get('SchoolID')
+    current_session_id = request.session.get('current_session', {}).get('Id')
+    if not school_id:
+        return ErrorResponse('School context was not found.', extra={'color': 'red'}).to_json_response()
+
+    sessions = list(
+        SchoolSession.objects.filter(
+            schoolID_id=school_id,
+            isDeleted=False,
+        ).order_by('-startDate', '-datetime', '-id').values(
+            'id', 'sessionYear', 'startDate', 'endDate', 'isCurrent'
+        )
+    )
+    for row in sessions:
+        row['startDate'] = row['startDate'].isoformat() if row['startDate'] else None
+        row['endDate'] = row['endDate'].isoformat() if row['endDate'] else None
+
+    return SuccessResponse(
+        'Session import metadata loaded successfully.',
+        data={
+            'currentSessionId': current_session_id,
+            'sessions': sessions,
+        }
+    ).to_json_response()
+
+
+@csrf_exempt
+@login_required
+@check_groups('Admin', 'Owner')
+def preview_session_import_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed.', status_code=405, extra={'color': 'red'}).to_json_response()
+
+    school_id = request.session.get('current_session', {}).get('SchoolID')
+    source_session_id = request.POST.get('sourceSessionID')
+    target_session_id = request.POST.get('targetSessionID')
+    if not school_id:
+        return ErrorResponse('School context was not found.', extra={'color': 'red'}).to_json_response()
+    if not source_session_id or not target_session_id:
+        return ErrorResponse('Source session and target session are required.', extra={'color': 'red'}).to_json_response()
+
+    options = {
+        'copy_teachers': _truthy(request.POST.get('copyTeachers')),
+        'copy_classes': _truthy(request.POST.get('copyClasses')),
+        'copy_subjects': _truthy(request.POST.get('copySubjects')),
+        'copy_class_subjects': _truthy(request.POST.get('copyClassSubjects')),
+        'copy_teacher_subjects': _truthy(request.POST.get('copyTeacherSubjects')),
+        'copy_exam_setup': _truthy(request.POST.get('copyExamSetup')),
+        'copy_grading_setup': _truthy(request.POST.get('copyGradingSetup')),
+        'copy_leave_types': _truthy(request.POST.get('copyLeaveTypes')),
+        'copy_event_types': _truthy(request.POST.get('copyEventTypes')),
+        'copy_students': _truthy(request.POST.get('copyStudents')),
+        'promote_students': _truthy(request.POST.get('promoteStudents')),
+    }
+    try:
+        options['promotion_overrides'] = _parse_promotion_overrides(request.POST.get('promotionOverrides'))
+        options['selection_overrides'] = _parse_selection_overrides(request.POST.get('selectionOverrides'))
+    except ValueError as exc:
+        return ErrorResponse(str(exc), extra={'color': 'red'}).to_json_response()
+    try:
+        payload = preview_session_import(
+            school_id=school_id,
+            source_session_id=int(source_session_id),
+            target_session_id=int(target_session_id),
+            options=options,
+        )
+    except ValueError as exc:
+        return ErrorResponse(str(exc), extra={'color': 'red'}).to_json_response()
+    except Exception as exc:
+        logger.exception('Preview session import failed: %s', exc)
+        return ErrorResponse('Unable to preview session import right now.', extra={'color': 'red'}).to_json_response()
+
+    return SuccessResponse('Session import preview generated successfully.', data=payload).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+@check_groups('Admin', 'Owner')
+def run_session_import_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed.', status_code=405, extra={'color': 'red'}).to_json_response()
+
+    school_id = request.session.get('current_session', {}).get('SchoolID')
+    source_session_id = request.POST.get('sourceSessionID')
+    target_session_id = request.POST.get('targetSessionID')
+    if not school_id:
+        return ErrorResponse('School context was not found.', extra={'color': 'red'}).to_json_response()
+    if not source_session_id or not target_session_id:
+        return ErrorResponse('Source session and target session are required.', extra={'color': 'red'}).to_json_response()
+
+    options = {
+        'copy_teachers': _truthy(request.POST.get('copyTeachers')),
+        'copy_classes': _truthy(request.POST.get('copyClasses')),
+        'copy_subjects': _truthy(request.POST.get('copySubjects')),
+        'copy_class_subjects': _truthy(request.POST.get('copyClassSubjects')),
+        'copy_teacher_subjects': _truthy(request.POST.get('copyTeacherSubjects')),
+        'copy_exam_setup': _truthy(request.POST.get('copyExamSetup')),
+        'copy_grading_setup': _truthy(request.POST.get('copyGradingSetup')),
+        'copy_leave_types': _truthy(request.POST.get('copyLeaveTypes')),
+        'copy_event_types': _truthy(request.POST.get('copyEventTypes')),
+        'copy_students': _truthy(request.POST.get('copyStudents')),
+        'promote_students': _truthy(request.POST.get('promoteStudents')),
+    }
+    try:
+        options['promotion_overrides'] = _parse_promotion_overrides(request.POST.get('promotionOverrides'))
+        options['selection_overrides'] = _parse_selection_overrides(request.POST.get('selectionOverrides'))
+    except ValueError as exc:
+        return ErrorResponse(str(exc), extra={'color': 'red'}).to_json_response()
+    try:
+        payload = run_session_import(
+            school_id=school_id,
+            source_session_id=int(source_session_id),
+            target_session_id=int(target_session_id),
+            options=options,
+            acting_user=request.user,
+        )
+    except ValueError as exc:
+        return ErrorResponse(str(exc), extra={'color': 'red'}).to_json_response()
+    except Exception as exc:
+        logger.exception('Run session import failed: %s', exc)
+        return ErrorResponse('Unable to complete session import right now.', extra={'color': 'red'}).to_json_response()
+
+    return SuccessResponse(
+        'Session import completed successfully.',
+        data=payload,
+        extra={'color': 'green'}
+    ).to_json_response()
 
 
 def _editor_name(user):
@@ -1515,6 +1773,131 @@ def get_teacher_list_api(request):
 
 
 # student api --------------------------------------------------------------------------
+@login_required
+def import_student_from_previous_session_api(request):
+    registration_code = (request.GET.get('registration') or request.GET.get('registrationCode') or '').strip()
+    if not registration_code:
+        return ErrorResponse('Registration code is required.', extra={'color': 'red'}).to_json_response()
+
+    previous_session = _previous_school_session_for_current(request)
+    if not previous_session:
+        return ErrorResponse('Previous session was not found for the current school.', extra={'color': 'red'}).to_json_response()
+
+    student = Student.objects.select_related('parentID', 'standardID').filter(
+        sessionID_id=previous_session.id,
+        isDeleted=False,
+        registrationCode__iexact=registration_code,
+    ).order_by('-id').first()
+    if not student:
+        return ErrorResponse('Student not found in previous session for this registration code.', extra={'color': 'red'}).to_json_response()
+
+    parent = student.parentID
+    matched_standard_id = _matching_current_standard_id(student.standardID, _current_session_id(request))
+    current_standard = Standard.objects.filter(pk=matched_standard_id, isDeleted=False).first() if matched_standard_id else None
+
+    data = {
+        'student': {
+            'name': student.name or '',
+            'email': student.email or '',
+            'phone': student.phoneNumber or '',
+            'bloodGroup': student.bloodGroup or '',
+            'gender': student.gender or '',
+            'dob': student.dob.strftime('%d/%m/%Y') if student.dob else '',
+            'aadhar': student.aadhar or '',
+            'idMark': student.idMark or '',
+            'penNumber': student.penNumber or '',
+            'caste': student.caste or '',
+            'tribe': student.tribe or '',
+            'religion': student.religion or '',
+            'motherTongue': student.motherTongue or '',
+            'otherLanguages': student.otherLanguages or '',
+            'hobbies': student.hobbies or '',
+            'aimInLife': student.aimInLife or '',
+            'milOptions': student.milOption or '',
+            'familyCode': student.familyCode or '',
+            'siblings': student.siblingsCount or 0,
+            'registrationCode': student.registrationCode or '',
+            'roll': student.roll or '',
+            'doj': student.dateOfJoining.strftime('%d/%m/%Y') if student.dateOfJoining else '',
+            'previousSchoolName': student.lastSchoolName or '',
+            'previousSchoolAddress': student.lastSchoolAddress or '',
+            'previousSchoolClass': student.lastClass or '',
+            'previousSchoolResult': (student.lastResult or '').title() if student.lastResult else '',
+            'previousSchoolDivision': student.lastDivision or '',
+            'previousSchoolRollNumber': student.lastRollNo or '',
+            'admissionFee': student.admissionFee or 0,
+            'tuitionFee': student.tuitionFee or 0,
+            'miscFee': student.miscFee or 0,
+            'totalFee': student.totalFee or 0,
+            'standard': matched_standard_id or '',
+            'previousSessionClass': f'{student.standardID.name}{(" - " + student.standardID.section) if student.standardID and student.standardID.section else ""}' if student.standardID else '',
+            'matchedCurrentClass': f'{current_standard.name}{(" - " + current_standard.section) if current_standard and current_standard.section else ""}' if current_standard else '',
+            'photoUrl': student.photo.url if student.photo else '',
+        },
+        'parent': {
+            'familyType': parent.familyType if parent else '',
+            'numberOfMembers': parent.totalFamilyMembers if parent and parent.totalFamilyMembers is not None else 0,
+            'familyAnnualIncome': parent.annualIncome if parent and parent.annualIncome is not None else 0,
+            'fname': parent.fatherName if parent else '',
+            'FatherOccupation': parent.fatherOccupation if parent else '',
+            'fatherContactNumber': parent.fatherPhone if parent else '',
+            'FatherAddress': parent.fatherAddress if parent else '',
+            'FatherEmail': parent.fatherEmail if parent else '',
+            'mname': parent.motherName if parent else '',
+            'MotherOccupation': parent.motherOccupation if parent else '',
+            'MotherContactNumber': parent.motherPhone if parent else '',
+            'MotherAddress': parent.motherAddress if parent else '',
+            'MotherEmail': parent.motherEmail if parent else '',
+            'guardianName': parent.guardianName if parent else '',
+            'guardianOccupation': parent.guardianOccupation if parent else '',
+            'guardianPhoneNumber': parent.guardianPhone if parent else '',
+            'parentsPhoneNumber': parent.phoneNumber if parent else '',
+        },
+        'meta': {
+            'previousStudentId': student.id,
+            'previousSessionId': previous_session.id,
+            'previousSessionYear': previous_session.sessionYear or '',
+            'currentClassMatched': bool(matched_standard_id),
+        }
+    }
+    return SuccessResponse('Student details loaded from previous session.', data=data, extra={'color': 'green'}).to_json_response()
+
+
+@login_required
+def student_import_registration_suggestions_api(request):
+    query = (request.GET.get('q') or request.GET.get('registration') or '').strip()
+    if len(query) < 2:
+        return SuccessResponse('Suggestions loaded.', data=[]).to_json_response()
+
+    previous_session = _previous_school_session_for_current(request)
+    if not previous_session:
+        return SuccessResponse('Suggestions loaded.', data=[]).to_json_response()
+
+    rows = Student.objects.filter(
+        sessionID_id=previous_session.id,
+        isDeleted=False,
+    ).filter(
+        Q(registrationCode__icontains=query) | Q(name__icontains=query)
+    ).select_related('standardID').order_by('registrationCode', 'name')[:10]
+
+    data = []
+    for row in rows:
+        class_label = 'N/A'
+        if row.standardID:
+            class_label = row.standardID.name or 'N/A'
+            if row.standardID.section:
+                class_label = f'{class_label} - {row.standardID.section}'
+        data.append({
+            'registrationCode': row.registrationCode or '',
+            'name': row.name or 'N/A',
+            'sessionYear': previous_session.sessionYear or '',
+            'classLabel': class_label,
+            'roll': row.roll or '',
+        })
+
+    return SuccessResponse('Suggestions loaded.', data=data).to_json_response()
+
+
 @transaction.atomic
 @csrf_exempt
 @login_required
@@ -1525,45 +1908,43 @@ def add_student_api(request):
 
     post_data = request.POST.dict()
     files_data = request.FILES
+    current_session_id = request.session['current_session']['Id']
+    imported_previous_student_id = post_data.get('importedPreviousStudentID')
+    previous_session = _previous_school_session_for_current(request)
+    imported_previous_student = None
+    if imported_previous_student_id and previous_session:
+        imported_previous_student = Student.objects.select_related('userID').filter(
+            pk=imported_previous_student_id,
+            sessionID_id=previous_session.id,
+            isDeleted=False,
+        ).first()
 
 
     # ---------- PARENT ----------
-    parent_obj, _ = Parent.objects.get_or_create(
-        fatherName = post_data.get("fname"),
-        motherName = post_data.get("mname"),
-        fatherOccupation = post_data.get("FatherOccupation"),
-        motherOccupation = post_data.get("MotherOccupation"),
-        fatherPhone = post_data.get("fatherContactNumber"),
-        motherPhone = post_data.get("MotherContactNumber"),
-        fatherAddress = post_data.get("FatherAddress"),
-        motherAddress = post_data.get("MotherAddress"),
-        guardianName = post_data.get("guardianName"),
-        guardianOccupation = post_data.get("guardianOccupation"),
-        guardianPhone = post_data.get("guardianPhoneNumber"),
-        familyType = post_data.get("familyType"),
-        totalFamilyMembers = float(post_data.get("numberOfMembers")) if post_data.get("numberOfMembers") else 0,
-        annualIncome = float(post_data.get("familyAnnualIncome")) if post_data.get("familyAnnualIncome") else 0,
-        phoneNumber = post_data.get("parentsPhoneNumber"),
-        fatherEmail = post_data.get("fatherEmail"),
-        motherEmail = post_data.get("motherEmail"),
-        isDeleted = False,
-        defaults={}
-    )
-
-    pre_save_with_user.send(sender=Parent, instance=parent_obj, user=request.user.pk)
-    parent_obj.save()
+    parent_obj = _get_or_create_current_session_parent(request, post_data)
 
 
     # ---------- STUDENT EXIST CHECK ----------
     if Student.objects.filter(
         registrationCode__iexact = post_data.get("registrationCode"),
-        sessionID_id = request.session['current_session']['Id'],
+        sessionID_id = current_session_id,
         isDeleted = False
     ).exists():
         return _api_response(
             {'status': 'success', 'message': 'Student already exists.', 'color': 'info'},
             safe=False
         )
+
+    if imported_previous_student and imported_previous_student.userID_id:
+        if Student.objects.filter(
+            sessionID_id=current_session_id,
+            userID_id=imported_previous_student.userID_id,
+            isDeleted=False,
+        ).exists():
+            return _api_response(
+                {'status': 'success', 'message': 'Imported student login already exists in current session.', 'color': 'info'},
+                safe=False
+            )
 
 
 
@@ -1610,7 +1991,7 @@ def add_student_api(request):
         parentID = parent_obj,
         
         # schoolID_id = request.session['current_session']['SchoolID'],
-        sessionID_id = request.session['current_session']['Id'],
+        sessionID_id = current_session_id,
 
         isDeleted = False,
     )
@@ -1625,21 +2006,31 @@ def add_student_api(request):
     # ---------- IMAGE ----------
     if "imageUpload" in files_data:
         student_obj.photo = optimize_uploaded_image(files_data["imageUpload"])
+    elif imported_previous_student and imported_previous_student.photo:
+        student_obj.photo = imported_previous_student.photo.name
 
     # ---------- USER ----------
-    username = 'STU' + get_random_string(5, '1234567890')
-    password = get_random_string(8, '1234567890')
+    if imported_previous_student and imported_previous_student.userID_id:
+        student_obj.username = imported_previous_student.username
+        student_obj.password = imported_previous_student.password
+        student_obj.userID = imported_previous_student.userID
+        if student_obj.userID and not student_obj.userID.is_active:
+            student_obj.userID.is_active = True
+            student_obj.userID.save(update_fields=['is_active'])
+        Group.objects.get_or_create(name="Student")[0].user_set.add(student_obj.userID)
+    else:
+        username = 'STU' + get_random_string(5, '1234567890')
+        password = get_random_string(8, '1234567890')
 
-    new_user = User.objects.create_user(username=username, password=password)
-    student_obj.username = username
-    student_obj.password = password
-    student_obj.userID = new_user
+        new_user = User.objects.create_user(username=username, password=password)
+        student_obj.username = username
+        student_obj.password = password
+        student_obj.userID = new_user
+        Group.objects.get_or_create(name="Student")[0].user_set.add(new_user)
 
     # ---------- FINAL SAVE ----------
     pre_save_with_user.send(sender=Student, instance=student_obj, user=request.user.pk)
     student_obj.save()
-
-    Group.objects.get_or_create(name="Student")[0].user_set.add(new_user)
 
     return SuccessResponse(
         "New Student added successfully.",
@@ -1926,30 +2317,7 @@ def edit_student_api(request):
 
 
         # ---------- PARENT ----------
-        parent_obj, _ = Parent.objects.get_or_create(
-            fatherName = post_data.get("fname"),
-            motherName = post_data.get("mname"),
-            fatherOccupation = post_data.get("FatherOccupation"),
-            motherOccupation = post_data.get("MotherOccupation"),
-            fatherPhone = post_data.get("fatherContactNumber"),
-            motherPhone = post_data.get("MotherContactNumber"),
-            fatherAddress = post_data.get("FatherAddress"),
-            motherAddress = post_data.get("MotherAddress"),
-            guardianName = post_data.get("guardianName"),
-            guardianOccupation = post_data.get("guardianOccupation"),
-            guardianPhone = post_data.get("guardianPhoneNumber"),
-            familyType = post_data.get("familyType"),
-            totalFamilyMembers = float(post_data.get("numberOfMembers")) if post_data.get("numberOfMembers") else 0,
-            annualIncome = float(post_data.get("familyAnnualIncome")) if post_data.get("familyAnnualIncome") else 0,
-            phoneNumber = post_data.get("parentsPhoneNumber"),
-            isDeleted = False,
-            fatherEmail = post_data.get("fatherEmail"),
-            motherEmail = post_data.get("motherEmail"),
-            defaults={}
-        )
-
-        pre_save_with_user.send(sender=Parent, instance=parent_obj, user=request.user.pk)
-        parent_obj.save()
+        parent_obj = _get_or_create_current_session_parent(request, post_data)
 
 
         # ---------- STUDENT EXIST CHECK ----------

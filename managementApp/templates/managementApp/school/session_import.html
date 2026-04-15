@@ -1,0 +1,1367 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Session Import</title>
+{% endblock %}
+
+{% block css %}
+    <style>
+        .session-import-shell {
+            padding: 0 0.75rem 2rem;
+        }
+
+        .session-import-card {
+            border-radius: 22px !important;
+            border: 1px solid rgba(151, 161, 184, 0.18) !important;
+            box-shadow: 0 18px 40px rgba(21, 35, 61, 0.08) !important;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 249, 252, 0.98) 100%) !important;
+        }
+
+        .session-import-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 1rem;
+        }
+
+        .session-hero {
+            background: linear-gradient(135deg, #114a7a 0%, #1773b8 52%, #30a46c 100%);
+            border-radius: 24px;
+            padding: 1.35rem 1.45rem;
+            color: #fff;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 18px 38px rgba(17, 74, 122, 0.24);
+        }
+
+        .session-hero:before,
+        .session-hero:after {
+            content: "";
+            position: absolute;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .session-hero:before {
+            width: 260px;
+            height: 260px;
+            right: -80px;
+            top: -120px;
+        }
+
+        .session-hero:after {
+            width: 180px;
+            height: 180px;
+            left: -60px;
+            bottom: -90px;
+        }
+
+        .session-hero-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .session-hero h2 {
+            margin: 0 0 0.35rem;
+            color: #fff;
+            font-size: 1.6rem;
+        }
+
+        .session-hero p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.92);
+            max-width: 640px;
+        }
+
+        .session-hero-tags {
+            display: flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            margin-top: 0.85rem;
+        }
+
+        .session-hero-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.42rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #fff;
+            font-size: 0.88rem;
+        }
+
+        .session-hero-note {
+            min-width: 220px;
+            max-width: 280px;
+            padding: 0.85rem 0.95rem;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #fff;
+            font-size: 0.92rem;
+        }
+
+        .session-flow {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 0.9rem;
+            align-items: stretch;
+            margin-bottom: 1rem;
+        }
+
+        .session-flow-card {
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 18px;
+            padding: 1rem;
+            background: linear-gradient(180deg, rgba(243, 248, 252, 0.92) 0%, rgba(255, 255, 255, 0.98) 100%);
+        }
+
+        .session-flow-card.source {
+            box-shadow: inset 0 0 0 1px rgba(27, 106, 165, 0.06);
+        }
+
+        .session-flow-card.target {
+            box-shadow: inset 0 0 0 1px rgba(34, 139, 94, 0.06);
+        }
+
+        .session-flow-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.78rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .session-flow-card.source .session-flow-label {
+            color: #1b6aa5;
+        }
+
+        .session-flow-card.target .session-flow-label {
+            color: #228b5e;
+        }
+
+        .session-flow-arrow {
+            width: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1773b8;
+            font-size: 1.4rem;
+        }
+
+        .options-card {
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 20px;
+            padding: 1rem;
+            background: linear-gradient(180deg, rgba(255, 250, 245, 0.9) 0%, rgba(255, 255, 255, 1) 100%);
+        }
+
+        .options-card-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: flex-start;
+            margin-bottom: 0.85rem;
+        }
+
+        .options-card-header h4,
+        .sidebar-panel h4 {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .session-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(23, 115, 184, 0.1);
+            color: #1b6aa5;
+            font-size: 0.9rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .preview-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        .preview-empty-state {
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 0.7rem;
+            color: #5f6f86;
+        }
+
+        .preview-empty-state .icon-wrap {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(23, 115, 184, 0.12) 0%, rgba(48, 164, 108, 0.14) 100%);
+            color: #1773b8;
+            font-size: 1.5rem;
+        }
+
+        .preview-topline {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.8rem;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .preview-route {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+        }
+
+        .preview-route-arrow {
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(23, 115, 184, 0.1);
+            color: #1773b8;
+        }
+
+        .preview-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .preview-stat-card {
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(242, 247, 255, 0.92) 100%);
+            padding: 0.9rem 0.95rem;
+        }
+
+        .preview-stat-card .label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #68819f;
+            margin-bottom: 0.25rem;
+        }
+
+        .preview-stat-card .value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #12385a;
+        }
+
+        .preview-section-card {
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            background: rgba(255, 255, 255, 0.86);
+            overflow: hidden;
+        }
+
+        .preview-section-card .section-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: center;
+            padding: 0.9rem 1rem;
+            background: linear-gradient(90deg, rgba(23, 115, 184, 0.08) 0%, rgba(48, 164, 108, 0.08) 100%);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        }
+
+        .preview-section-card .section-head h5 {
+            margin: 0;
+            font-size: 0.96rem;
+            color: #183b5b;
+        }
+
+        .preview-section-card .section-body {
+            padding: 0.9rem 1rem 1rem;
+        }
+
+        .preview-warning-card .section-head {
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(249, 115, 22, 0.1) 100%);
+        }
+
+        .preview-warning-card .section-head h5 {
+            color: #8c4f10;
+        }
+
+        .session-check-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.9rem 1.2rem;
+        }
+
+        .preview-box,
+        .summary-box {
+            min-height: 180px;
+            border-radius: 16px;
+            border: 1px dashed rgba(122, 145, 175, 0.35);
+            padding: 1rem;
+            background: linear-gradient(180deg, rgba(245, 249, 255, 0.72) 0%, rgba(255, 255, 255, 0.95) 100%);
+        }
+
+        .meta-list,
+        .warning-list {
+            margin: 0;
+            padding-left: 1.2rem;
+        }
+
+        .estimate-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.7rem;
+        }
+
+        .estimate-item {
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 16px;
+            padding: 0.9rem 1rem;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(246, 250, 255, 0.92) 100%);
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .estimate-item-main {
+            min-width: 0;
+        }
+
+        .estimate-item-label {
+            font-weight: 700;
+            color: #183b5b;
+            margin-bottom: 0.2rem;
+        }
+
+        .estimate-item-subtext {
+            font-size: 0.84rem;
+            color: #6a809c;
+        }
+
+        .estimate-item-side {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .estimate-badge {
+            min-width: 54px;
+            text-align: center;
+            border-radius: 999px;
+            padding: 0.45rem 0.8rem;
+            background: linear-gradient(135deg, rgba(23, 115, 184, 0.12) 0%, rgba(48, 164, 108, 0.12) 100%);
+            color: #15517e;
+            font-weight: 700;
+        }
+
+        .estimate-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: #1773b8;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .estimate-link:hover {
+            color: #125b91;
+        }
+
+        .summary-stat {
+            padding: 0.75rem 0.85rem;
+            border-radius: 12px;
+            background: var(--app-surface, #fff);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            margin-bottom: 0.6rem;
+        }
+
+        .summary-stat strong {
+            display: block;
+            font-size: 1.15rem;
+        }
+
+        .mapping-help {
+            font-size: 0.86rem;
+            color: var(--app-muted, #6b7280);
+        }
+
+        .sidebar-panel {
+            border-radius: 20px;
+            padding: 1rem;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 251, 255, 0.98) 100%);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+        }
+
+        .action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+            align-items: center;
+        }
+
+        .action-bar .ui.button {
+            border-radius: 999px !important;
+            padding-left: 1.1rem !important;
+            padding-right: 1.1rem !important;
+        }
+
+        .detail-toolbar {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .detail-toolbar .actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        #previewDetailsModal {
+            border-radius: 24px !important;
+            overflow: hidden;
+        }
+
+        #previewDetailsModal > .header {
+            padding: 0 !important;
+            border-bottom: 0 !important;
+            background: transparent !important;
+        }
+
+        .detail-modal-hero {
+            background: linear-gradient(135deg, #124d7d 0%, #1b76b6 55%, #31a46d 100%);
+            color: #fff;
+            padding: 1.2rem 1.3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .detail-modal-hero:before {
+            content: "";
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            top: -90px;
+            right: -50px;
+        }
+
+        .detail-modal-hero-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .detail-modal-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        .detail-modal-subtitle {
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 0.92rem;
+            max-width: 540px;
+        }
+
+        .detail-modal-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.42rem 0.72rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #fff;
+            font-size: 0.84rem;
+        }
+
+        #previewDetailsModal > .content {
+            padding: 1rem 1.1rem 0.75rem !important;
+            background: linear-gradient(180deg, rgba(249, 251, 255, 1) 0%, rgba(244, 248, 252, 1) 100%);
+        }
+
+        .detail-list {
+            max-height: 48vh;
+            overflow-y: auto;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 18px;
+            padding: 0.45rem 0.55rem;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 255, 0.94) 100%);
+        }
+
+        .detail-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            padding: 0.85rem 0.6rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+            border-radius: 14px;
+            transition: background 0.18s ease, transform 0.18s ease;
+        }
+
+        .detail-row:last-child {
+            border-bottom: 0;
+        }
+
+        .detail-row:hover {
+            background: rgba(23, 115, 184, 0.05);
+        }
+
+        .detail-row .content {
+            min-width: 0;
+        }
+
+        .detail-row .header {
+            font-weight: 600;
+        }
+
+        .detail-row .description {
+            color: var(--app-muted, #6b7280);
+            margin-top: 0.15rem;
+            word-break: break-word;
+        }
+
+        .detail-checkbox-wrap {
+            width: 34px;
+            min-width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            background: rgba(23, 115, 184, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 0.05rem;
+        }
+
+        .detail-actions-bar {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .detail-actions-left,
+        .detail-actions-right {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .detail-actions-bar .ui.button {
+            border-radius: 999px !important;
+        }
+
+        html[data-theme="dark"] .session-import-card {
+            border-color: rgba(96, 112, 136, 0.28) !important;
+            box-shadow: 0 18px 42px rgba(2, 6, 23, 0.38) !important;
+            background: linear-gradient(180deg, rgba(27, 33, 42, 0.98) 0%, rgba(22, 27, 35, 0.98) 100%) !important;
+        }
+
+        html[data-theme="dark"] .session-hero {
+            box-shadow: 0 20px 44px rgba(2, 6, 23, 0.5);
+        }
+
+        html[data-theme="dark"] .session-flow-card {
+            border-color: rgba(96, 112, 136, 0.28);
+            background: linear-gradient(180deg, rgba(28, 35, 45, 0.96) 0%, rgba(22, 28, 37, 0.98) 100%);
+        }
+
+        html[data-theme="dark"] .session-flow-card.source .session-flow-label {
+            color: #8dc4ff;
+        }
+
+        html[data-theme="dark"] .session-flow-card.target .session-flow-label {
+            color: #7fdba9;
+        }
+
+        html[data-theme="dark"] .session-flow-arrow {
+            color: #8dc4ff;
+        }
+
+        html[data-theme="dark"] .options-card,
+        html[data-theme="dark"] .sidebar-panel {
+            border-color: rgba(96, 112, 136, 0.28);
+            background: linear-gradient(180deg, rgba(27, 33, 42, 0.98) 0%, rgba(22, 28, 37, 0.98) 100%);
+        }
+
+        html[data-theme="dark"] .session-pill {
+            background: rgba(116, 169, 255, 0.14);
+            color: #9bc5ff;
+        }
+
+        html[data-theme="dark"] .preview-box,
+        html[data-theme="dark"] .summary-box {
+            border-color: rgba(96, 112, 136, 0.34);
+            background: linear-gradient(180deg, rgba(23, 29, 38, 0.92) 0%, rgba(19, 24, 32, 0.98) 100%);
+        }
+
+        html[data-theme="dark"] .preview-empty-state {
+            color: #b5c2d3;
+        }
+
+        html[data-theme="dark"] .preview-empty-state .icon-wrap {
+            background: linear-gradient(135deg, rgba(116, 169, 255, 0.18) 0%, rgba(71, 193, 132, 0.18) 100%);
+            color: #9bc5ff;
+        }
+
+        html[data-theme="dark"] .preview-stat-card,
+        html[data-theme="dark"] .preview-section-card,
+        html[data-theme="dark"] .estimate-item,
+        html[data-theme="dark"] .summary-stat {
+            border-color: rgba(96, 112, 136, 0.28);
+            background: linear-gradient(180deg, rgba(30, 37, 47, 0.98) 0%, rgba(24, 30, 39, 0.98) 100%);
+        }
+
+        html[data-theme="dark"] .preview-stat-card .label,
+        html[data-theme="dark"] .estimate-item-subtext,
+        html[data-theme="dark"] .mapping-help {
+            color: #aab7c8;
+        }
+
+        html[data-theme="dark"] .preview-stat-card .value,
+        html[data-theme="dark"] .preview-section-card .section-head h5,
+        html[data-theme="dark"] .estimate-item-label {
+            color: #edf4ff;
+        }
+
+        html[data-theme="dark"] .preview-section-card .section-head {
+            background: linear-gradient(90deg, rgba(116, 169, 255, 0.12) 0%, rgba(71, 193, 132, 0.12) 100%);
+            border-bottom-color: rgba(96, 112, 136, 0.24);
+        }
+
+        html[data-theme="dark"] .preview-warning-card .section-head {
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.16) 0%, rgba(249, 115, 22, 0.14) 100%);
+        }
+
+        html[data-theme="dark"] .preview-warning-card .section-head h5 {
+            color: #ffd08a;
+        }
+
+        html[data-theme="dark"] .estimate-badge {
+            background: linear-gradient(135deg, rgba(116, 169, 255, 0.18) 0%, rgba(71, 193, 132, 0.18) 100%);
+            color: #d7e8ff;
+        }
+
+        html[data-theme="dark"] .estimate-link {
+            color: #9bc5ff;
+        }
+
+        html[data-theme="dark"] .estimate-link:hover {
+            color: #c6e0ff;
+        }
+
+        html[data-theme="dark"] #previewDetailsModal {
+            box-shadow: 0 28px 64px rgba(2, 6, 23, 0.72) !important;
+        }
+
+        html[data-theme="dark"] #previewDetailsModal > .content {
+            background: linear-gradient(180deg, rgba(20, 25, 33, 1) 0%, rgba(16, 20, 28, 1) 100%) !important;
+        }
+
+        html[data-theme="dark"] .detail-list {
+            border-color: rgba(96, 112, 136, 0.28);
+            background: linear-gradient(180deg, rgba(27, 33, 42, 0.98) 0%, rgba(22, 28, 37, 0.98) 100%);
+        }
+
+        html[data-theme="dark"] .detail-row {
+            border-bottom-color: rgba(96, 112, 136, 0.2);
+        }
+
+        html[data-theme="dark"] .detail-row:hover {
+            background: rgba(116, 169, 255, 0.08);
+        }
+
+        html[data-theme="dark"] .detail-row .header {
+            color: #edf4ff;
+        }
+
+        html[data-theme="dark"] .detail-row .description {
+            color: #aab7c8;
+        }
+
+        html[data-theme="dark"] .detail-checkbox-wrap {
+            background: rgba(116, 169, 255, 0.12);
+        }
+
+        @media (max-width: 900px) {
+            .session-import-grid,
+            .session-check-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-stat-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .estimate-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .estimate-item-side {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .session-flow {
+                grid-template-columns: 1fr;
+            }
+
+            .session-flow-arrow {
+                width: auto;
+                min-height: 28px;
+                transform: rotate(90deg);
+            }
+
+            .detail-actions-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .detail-actions-left,
+            .detail-actions-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui basic segment session-import-shell">
+        <div class="session-hero">
+            <div class="session-hero-content">
+                <div>
+                    <h2>Session Import Studio</h2>
+                    <p>Move selected setup data from an older academic session into a newer one with preview, selective row control, and dependency-aware safety checks.</p>
+                    <div class="session-hero-tags">
+                        <span class="session-hero-tag"><i class="history icon"></i> Old to New Only</span>
+                        <span class="session-hero-tag"><i class="sliders horizontal icon"></i> Modular Import</span>
+                        <span class="session-hero-tag"><i class="search icon"></i> Preview Before Run</span>
+                    </div>
+                </div>
+                <div class="session-hero-note">
+                    <strong>Safe by design</strong>
+                    <div style="margin-top:0.35rem;">Attendance, fees, marks, reports, and leave history stay untouched. Import only the setup data you actually need.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ui stackable grid">
+            <div class="ten wide column">
+                <div class="ui segment session-import-card">
+                    <div class="ui info small message">
+                        <div class="header">How this works</div>
+                        <p>This tool imports from the immediate previous session into the current session only. It copies setup data only and keeps attendance, marks, fees, reports, and leave history untouched.</p>
+                    </div>
+
+                    <form class="ui form" id="sessionImportForm">
+                        {% csrf_token %}
+                        <div class="session-flow">
+                            <div class="session-flow-card source">
+                                <div class="session-flow-label">
+                                    <i class="download icon"></i>
+                                    Source Session
+                                </div>
+                                <div class="field required" style="margin:0;">
+                                    <label>Previous Session</label>
+                                    <select class="ui dropdown" id="sourceSessionID" name="sourceSessionID">
+                                        <option value="">Select previous session</option>
+                                        {% for item in session_choices %}
+                                            <option
+                                                value="{{ item.id }}"
+                                                data-start-date="{{ item.startDate|date:'Y-m-d' }}"
+                                                data-end-date="{{ item.endDate|date:'Y-m-d' }}"
+                                                data-session-year="{{ item.sessionYear|default:'' }}"
+                                                {% if item.id == previous_session_id %}selected{% endif %}
+                                                {% if item.id != previous_session_id %}disabled{% endif %}>
+                                                {{ item.sessionYear|default:'Untitled Session' }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="mapping-help" style="margin-top:0.5rem;">
+                                        Only the immediate previous session can be used as the source.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="session-flow-arrow">
+                                <i class="long arrow alternate right icon"></i>
+                            </div>
+
+                            <div class="session-flow-card target">
+                                <div class="session-flow-label">
+                                    <i class="upload icon"></i>
+                                    Target Session
+                                </div>
+                                <div class="field required" style="margin:0;">
+                                    <label>Current Session</label>
+                                    <select class="ui dropdown" id="targetSessionID" name="targetSessionID">
+                                        <option value="">Current session</option>
+                                        {% for item in session_choices %}
+                                            <option
+                                                value="{{ item.id }}"
+                                                data-start-date="{{ item.startDate|date:'Y-m-d' }}"
+                                                data-end-date="{{ item.endDate|date:'Y-m-d' }}"
+                                                data-session-year="{{ item.sessionYear|default:'' }}"
+                                                {% if item.id == current_session_id %}selected{% endif %}
+                                                {% if item.id != current_session_id %}disabled{% endif %}>
+                                                {{ item.sessionYear|default:'Untitled Session' }}{% if item.isCurrent %} (Current){% endif %}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="mapping-help" id="targetSessionHint" style="margin-top:0.5rem;">
+                                        The target is always the current session.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="options-card">
+                            <div class="options-card-header">
+                                <div>
+                                    <h4>Import Options</h4>
+                                    <div class="mapping-help">Choose which setup blocks to carry forward. You can further narrow rows inside each category from the preview detail view.</div>
+                                </div>
+                                <span class="session-pill"><i class="sliders horizontal icon"></i> Selective Control</span>
+                            </div>
+
+                            <div class="field" style="margin-bottom:0;">
+                                <div class="session-check-grid">
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" checked id="copyTeachers" name="copyTeachers">
+                                        <label>Teachers</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" checked id="copyClasses" name="copyClasses">
+                                        <label>Classes</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" checked id="copySubjects" name="copySubjects">
+                                        <label>Subjects</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" checked id="copyClassSubjects" name="copyClassSubjects">
+                                        <label>Class-Subject Mapping</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" checked id="copyTeacherSubjects" name="copyTeacherSubjects">
+                                        <label>Teacher Subject Assignment</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" checked id="copyExamSetup" name="copyExamSetup">
+                                        <label>Exam Setup</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" checked id="copyGradingSetup" name="copyGradingSetup">
+                                        <label>Grading Setup</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" checked id="copyLeaveTypes" name="copyLeaveTypes">
+                                        <label>Leave Types</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" checked id="copyEventTypes" name="copyEventTypes">
+                                        <label>Event Types</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ui divider"></div>
+
+                        <div class="field" id="promotionOverrideField" style="display:none;">
+                            <label>Custom Promotion Mapping</label>
+                            <textarea id="promotionOverrides" name="promotionOverrides" rows="5" placeholder="Class 5 A -> Class 6 A&#10;Senior Blue -> Senior Green"></textarea>
+                            <div class="mapping-help" style="margin-top:0.5rem;">
+                                Use one mapping per line only when class names do not follow standard progression. Source and target labels should match the class names in the two sessions.
+                            </div>
+                        </div>
+
+                        <div class="action-bar">
+                            <button type="button" class="ui primary button" id="previewImportBtn" onclick="previewSessionImport()">
+                                <i class="search icon"></i>
+                                Preview Import
+                            </button>
+                            <button type="button" class="ui green button" id="runImportBtn" onclick="runSessionImport()">
+                                <i class="play icon"></i>
+                                Run Import
+                            </button>
+                            <span class="mapping-help">Preview first, then fine-tune category rows using the detail links before running the import.</span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="six wide column">
+                <div class="ui segment session-import-card">
+                    <div class="sidebar-panel">
+                        <h4>Preview Summary</h4>
+                        <div class="mapping-help" style="margin-top:0.2rem; margin-bottom:0.85rem;">Counts, warnings, and row-level drill-down appear here after preview.</div>
+                        <div class="preview-box" id="previewBox">
+                            <div class="preview-empty-state">
+                                <div class="icon-wrap">
+                                    <i class="chart bar outline icon"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:700; color:#1b3f61; margin-bottom:0.2rem;">Nothing previewed yet</div>
+                                    <div class="ui small grey text">Preview will show estimated copy counts, promotion mapping, and target session warnings.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui segment session-import-card">
+                    <div class="sidebar-panel">
+                        <h4>Last Import Result</h4>
+                        <div class="mapping-help" style="margin-top:0.2rem; margin-bottom:0.85rem;">Copied and skipped totals will be shown here after import.</div>
+                        <div class="summary-box" id="summaryBox">
+                            <p class="ui small grey text">Run the import to see copied and skipped counts here.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui modal" id="previewDetailsModal">
+        <i class="close icon"></i>
+        <div class="header">
+            <div class="detail-modal-hero">
+                <div class="detail-modal-hero-content">
+                    <div>
+                        <div class="detail-modal-title" id="previewDetailsTitle">Estimated Rows Details</div>
+                        <div class="detail-modal-subtitle">Review category rows, search quickly, and choose exactly what should be imported.</div>
+                    </div>
+                    <div class="detail-modal-chip" id="previewDetailsChip">
+                        <i class="check circle outline icon"></i>
+                        Selection Ready
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="scrolling content" id="previewDetailsContent">
+            <p class="ui small grey text">Run preview to see details here.</p>
+        </div>
+        <div class="actions">
+            <div class="detail-actions-bar">
+                <div class="detail-actions-left">
+                    <button type="button" class="ui button" id="detailSelectAllBtn" onclick="selectAllCategoryRows()">
+                        <i class="check square outline icon"></i>
+                        Select All
+                    </button>
+                    <button type="button" class="ui button" id="detailClearBtn" onclick="clearAllCategoryRows()">
+                        <i class="eraser icon"></i>
+                        Clear
+                    </button>
+                </div>
+                <div class="detail-actions-right">
+                    <div class="ui cancel button">Close</div>
+                    <button type="button" class="ui primary button" id="detailSaveBtn" onclick="saveCategorySelection()">
+                        <i class="save outline icon"></i>
+                        Apply Selection
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        $('.ui.dropdown').dropdown();
+        $('.ui.checkbox').checkbox();
+        let latestPreviewPayload = null;
+        let latestPreviewDetails = {};
+        let selectionOverrides = {};
+        let activeDetailCategory = null;
+
+        function inferSessionYear(sessionYearText) {
+            const match = String(sessionYearText || '').match(/(19|20)\d{2}/);
+            return match ? parseInt(match[0], 10) : null;
+        }
+
+        function sessionOrderKey(optionElement) {
+            const startDate = optionElement.data('start-date');
+            const endDate = optionElement.data('end-date');
+            const yearText = optionElement.data('session-year');
+            const anchor = startDate || endDate || '';
+            const inferredYear = inferSessionYear(yearText);
+            return {
+                anchor: anchor,
+                year: inferredYear || 0,
+                id: parseInt(optionElement.val(), 10) || 0
+            };
+        }
+
+        function isSessionNewer(sourceOption, targetOption) {
+            const sourceKey = sessionOrderKey(sourceOption);
+            const targetKey = sessionOrderKey(targetOption);
+            if (sourceKey.anchor && targetKey.anchor && sourceKey.anchor !== targetKey.anchor) {
+                return targetKey.anchor > sourceKey.anchor;
+            }
+            if (sourceKey.year && targetKey.year && sourceKey.year !== targetKey.year) {
+                return targetKey.year > sourceKey.year;
+            }
+            return targetKey.id > sourceKey.id;
+        }
+
+        function filterTargetSessions() {
+            $('#targetSessionID').dropdown('refresh');
+            $('#targetSessionHint').text('The target is always the current session.');
+        }
+
+        function formDataFromSessionImport() {
+            const form = new FormData();
+            form.append('sourceSessionID', $('#sourceSessionID').val());
+            form.append('targetSessionID', $('#targetSessionID').val());
+            form.append('promotionOverrides', $('#promotionOverrides').val());
+            form.append('selectionOverrides', JSON.stringify(selectionOverrides));
+            [
+                'copyTeachers', 'copyClasses', 'copySubjects', 'copyClassSubjects',
+                'copyTeacherSubjects', 'copyExamSetup', 'copyGradingSetup',
+                'copyLeaveTypes', 'copyEventTypes', 'copyStudents', 'promoteStudents'
+            ].forEach(function (fieldName) {
+                form.append(fieldName, $('#' + fieldName).is(':checked') ? 'true' : 'false');
+            });
+            return form;
+        }
+
+        function togglePromotionOverrideField() {
+            const shouldShow = $('#copyStudents').is(':checked') && $('#promoteStudents').is(':checked');
+            $('#promotionOverrideField').toggle(shouldShow);
+        }
+
+        $('#copyStudents, #promoteStudents').on('change', togglePromotionOverrideField);
+        $('#sourceSessionID').on('change', filterTargetSessions);
+        togglePromotionOverrideField();
+        filterTargetSessions();
+
+        function renderCountList(counts, details) {
+            const entries = Object.entries(counts || {});
+            if (!entries.length) {
+                return '<p class="ui small grey text">No matching records found for the selected options.</p>';
+            }
+            return '<div class="estimate-grid">' + entries.map(function (entry) {
+                const hasDetails = !!((details || {})[entry[0]] || []).length;
+                const action = hasDetails
+                    ? '<a class="estimate-link" href="#" onclick="showCategoryDetailsModal(\'' + entry[0] + '\'); return false;"><i class="list alternate outline icon"></i> View detail</a>'
+                    : '';
+                const selectedCount = entry[1];
+                const helperText = hasDetails
+                    ? 'Open detail view to fine-tune individual rows for this category.'
+                    : 'No row-level detail preview available for this category.';
+                return '' +
+                    '<div class="estimate-item">' +
+                        '<div class="estimate-item-main">' +
+                            '<div class="estimate-item-label">' + formatLabel(entry[0]) + '</div>' +
+                            '<div class="estimate-item-subtext">' + helperText + '</div>' +
+                        '</div>' +
+                        '<div class="estimate-item-side">' +
+                            '<span class="estimate-badge">' + selectedCount + '</span>' +
+                            action +
+                        '</div>' +
+                    '</div>';
+            }).join('') + '</div>';
+        }
+
+        function renderWarnings(warnings) {
+            if (!warnings || !warnings.length) {
+                return '<p class="ui small grey text">No warnings for this selection.</p>';
+            }
+            return '<ul class="warning-list">' + warnings.map(function (warning) {
+                return '<li>' + $('<div>').text(warning).html() + '</li>';
+            }).join('') + '</ul>';
+        }
+
+        function renderPromotionPreview(rows) {
+            if (!rows || !rows.length) {
+                return '';
+            }
+            return '<div style="margin-top:1rem;"><strong>Promotion Preview</strong><ul class="meta-list">' + rows.map(function (row) {
+                return '<li>' + $('<div>').text(row.sourceClass + ' -> ' + row.targetClass).html() + '</li>';
+            }).join('') + '</ul></div>';
+        }
+
+        function totalPreviewCount(counts) {
+            return Object.values(counts || {}).reduce(function (sum, value) {
+                return sum + (parseInt(value, 10) || 0);
+            }, 0);
+        }
+
+        function renderSummaryBlocks(title, values) {
+            const entries = Object.entries(values || {});
+            if (!entries.length) {
+                return '<p class="ui small grey text">No ' + title.toLowerCase() + ' rows in this run.</p>';
+            }
+            return entries.map(function (entry) {
+                return '<div class="summary-stat"><span>' + formatLabel(entry[0]) + '</span><strong>' + entry[1] + '</strong></div>';
+            }).join('');
+        }
+
+        function renderCategoryDetails(categoryKey) {
+            const rows = latestPreviewDetails[categoryKey] || [];
+            if (!rows.length) {
+                return '<p class="ui small grey text">No detail rows available for this category.</p>';
+            }
+            return '' +
+                '<div class="detail-toolbar">' +
+                    '<div><strong>' + formatLabel(categoryKey) + '</strong><div class="mapping-help">Choose exactly which rows should be imported for this category.</div></div>' +
+                    '<div class="actions">' +
+                        '<div class="ui icon input"><input type="text" id="detailSearchInput" placeholder="Search rows..." oninput="filterCategoryRows()"><i class="search icon"></i></div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="detail-list" id="detailList">' + rows.map(function (row) {
+                    const meta = row.meta ? '<div class="description">' + $('<div>').text(row.meta).html() + '</div>' : '';
+                    return '' +
+                        '<div class="detail-row" data-detail-text="' + $('<div>').text((row.label || '') + ' ' + (row.meta || '')).html().toLowerCase() + '">' +
+                            '<div class="detail-checkbox-wrap">' +
+                                '<div class="ui checkbox">' +
+                                    '<input type="checkbox" class="detail-row-checkbox" data-row-id="' + row.id + '" ' + (row.selected ? 'checked' : '') + '>' +
+                                    '<label></label>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="content">' +
+                                '<div class="header">' + $('<div>').text(row.label || 'N/A').html() + '</div>' +
+                                meta +
+                            '</div>' +
+                        '</div>';
+                }).join('') + '</div>';
+        }
+
+        function filterCategoryRows() {
+            const query = ($('#detailSearchInput').val() || '').trim().toLowerCase();
+            $('#detailList .detail-row').each(function () {
+                const text = ($(this).attr('data-detail-text') || '').toLowerCase();
+                $(this).toggle(!query || text.indexOf(query) !== -1);
+            });
+        }
+
+        function showCategoryDetailsModal(categoryKey) {
+            if (!latestPreviewPayload) {
+                addErrorNotification('Preview the import first to view row details.');
+                return;
+            }
+            activeDetailCategory = categoryKey;
+            $('#previewDetailsTitle').text(formatLabel(categoryKey) + ' Details');
+            $('#previewDetailsChip').html('<i class="list alternate outline icon"></i> ' + (latestPreviewDetails[categoryKey] || []).length + ' Rows');
+            $('#previewDetailsContent').html(renderCategoryDetails(categoryKey));
+            $('#previewDetailsContent .ui.checkbox').checkbox();
+            $('#previewDetailsModal').modal('show');
+        }
+
+        function collectCheckedCategoryRowIds() {
+            const selected = [];
+            $('#previewDetailsContent .detail-row-checkbox:checked').each(function () {
+                selected.push(parseInt($(this).attr('data-row-id'), 10));
+            });
+            return selected;
+        }
+
+        function selectAllCategoryRows() {
+            $('#previewDetailsContent .detail-row:visible .detail-row-checkbox').prop('checked', true);
+        }
+
+        function clearAllCategoryRows() {
+            $('#previewDetailsContent .detail-row-checkbox').prop('checked', false);
+        }
+
+        function saveCategorySelection() {
+            if (!activeDetailCategory) {
+                return;
+            }
+            selectionOverrides[activeDetailCategory] = collectCheckedCategoryRowIds();
+            const detailRows = latestPreviewDetails[activeDetailCategory] || [];
+            detailRows.forEach(function (row) {
+                row.selected = selectionOverrides[activeDetailCategory].indexOf(row.id) !== -1;
+            });
+            if (latestPreviewPayload && latestPreviewPayload.counts && latestPreviewPayload.counts[activeDetailCategory] !== undefined) {
+                latestPreviewPayload.counts[activeDetailCategory] = selectionOverrides[activeDetailCategory].length;
+            }
+            refreshPreviewSummaryFromState();
+            addSuccessNotification(formatLabel(activeDetailCategory) + ' selection applied.', 'green');
+            $('#previewDetailsModal').modal('hide');
+        }
+
+        function refreshPreviewSummaryFromState() {
+            if (!latestPreviewPayload) {
+                return;
+            }
+            const counts = Object.assign({}, latestPreviewPayload.counts || {});
+            Object.keys(latestPreviewDetails).forEach(function (categoryKey) {
+                const rows = latestPreviewDetails[categoryKey] || [];
+                const selectedCount = rows.filter(function (row) { return row.selected; }).length;
+                if (counts[categoryKey] !== undefined && Object.prototype.hasOwnProperty.call(selectionOverrides, categoryKey)) {
+                    counts[categoryKey] = selectedCount;
+                }
+            });
+            const warningCount = (latestPreviewPayload.warnings || []).length;
+            const promotionCount = (latestPreviewPayload.promotionPreview || []).length;
+            $('#previewBox').html(
+                '<div class="preview-panel">' +
+                    '<div class="preview-topline">' +
+                        '<div class="preview-route">' +
+                            '<div class="session-pill"><i class="download icon"></i> From: ' + $('<div>').text((latestPreviewPayload.sourceSession || {}).sessionYear || 'N/A').html() + '</div>' +
+                            '<div class="preview-route-arrow"><i class="arrow right icon"></i></div>' +
+                            '<div class="session-pill"><i class="upload icon"></i> To: ' + $('<div>').text((latestPreviewPayload.targetSession || {}).sessionYear || 'N/A').html() + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="preview-stat-grid">' +
+                        '<div class="preview-stat-card"><div class="label">Estimated Rows</div><div class="value">' + totalPreviewCount(counts) + '</div></div>' +
+                        '<div class="preview-stat-card"><div class="label">Warnings</div><div class="value">' + warningCount + '</div></div>' +
+                        '<div class="preview-stat-card"><div class="label">Categories</div><div class="value">' + Object.keys(counts).length + '</div></div>' +
+                        '<div class="preview-stat-card"><div class="label">Promotion Rows</div><div class="value">' + promotionCount + '</div></div>' +
+                    '</div>' +
+                    '<div class="preview-section-card">' +
+                        '<div class="section-head"><h5>Estimated Rows</h5><span class="mapping-help">Use the detail links to narrow the exact records.</span></div>' +
+                        '<div class="section-body">' + renderCountList(counts, latestPreviewDetails) + '</div>' +
+                    '</div>' +
+                    '<div class="preview-section-card preview-warning-card">' +
+                        '<div class="section-head"><h5>Warnings</h5><span class="mapping-help">Dependency and duplicate notes appear here.</span></div>' +
+                        '<div class="section-body">' + renderWarnings(latestPreviewPayload.warnings) + '</div>' +
+                    '</div>' +
+                    (promotionCount
+                        ? '<div class="preview-section-card">' +
+                            '<div class="section-head"><h5>Promotion Preview</h5><span class="mapping-help">Review mapped class movement before import.</span></div>' +
+                            '<div class="section-body">' + renderPromotionPreview(latestPreviewPayload.promotionPreview) + '</div>' +
+                          '</div>'
+                        : '') +
+                '</div>'
+            );
+        }
+
+        function formatLabel(label) {
+            return label
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, function (char) { return char.toUpperCase(); })
+                .trim();
+        }
+
+        function validateSessionImportSelection() {
+            const sourceId = $('#sourceSessionID').val();
+            const targetId = $('#targetSessionID').val();
+            if (!sourceId || !targetId) {
+                requiredFieldError();
+                return false;
+            }
+            if (sourceId === targetId) {
+                addErrorNotification('Source session and target session must be different.');
+                return false;
+            }
+            return true;
+        }
+
+        function previewSessionImport() {
+            if (!validateSessionImportSelection()) {
+                return;
+            }
+            showLoading();
+            $.ajax({
+                type: 'post',
+                url: "{% url 'managementAppAPI:preview_session_import_api' %}",
+                data: formDataFromSessionImport(),
+                contentType: false,
+                processData: false,
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        const payload = response.data || {};
+                        latestPreviewPayload = payload;
+                        latestPreviewDetails = payload.details || {};
+                        selectionOverrides = {};
+                        Object.keys(latestPreviewDetails).forEach(function (categoryKey) {
+                            selectionOverrides[categoryKey] = (latestPreviewDetails[categoryKey] || [])
+                                .filter(function (row) { return row.selected; })
+                                .map(function (row) { return row.id; });
+                        });
+                        refreshPreviewSummaryFromState();
+                        addSuccessNotification(response.message, response.color || 'green');
+                    } else {
+                        addErrorNotification(response.message || 'Unable to preview import.');
+                    }
+                    hideLoading();
+                },
+                error: function (xhr) {
+                    latestPreviewPayload = null;
+                    latestPreviewDetails = {};
+                    addErrorNotification((xhr.responseJSON || {}).message || 'Unable to preview import.');
+                    hideLoading();
+                }
+            });
+        }
+
+        function runSessionImport() {
+            if (!validateSessionImportSelection()) {
+                return;
+            }
+            showLoading();
+            $.ajax({
+                type: 'post',
+                url: "{% url 'managementAppAPI:run_session_import_api' %}",
+                data: formDataFromSessionImport(),
+                contentType: false,
+                processData: false,
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        const payload = response.data || {};
+                        $('#summaryBox').html(
+                            '<div class="session-pill"><i class="check circle icon"></i> Target: ' + $('<div>').text((payload.targetSession || {}).sessionYear || 'N/A').html() + '</div>' +
+                            '<div style="margin-top:1rem;"><strong>Copied</strong>' + renderSummaryBlocks('Copied', payload.copied) + '</div>' +
+                            '<div style="margin-top:1rem;"><strong>Skipped</strong>' + renderSummaryBlocks('Skipped', payload.skipped) + '</div>' +
+                            '<div style="margin-top:1rem;"><strong>Warnings</strong>' + renderWarnings(payload.warnings) + '</div>'
+                        );
+                        addSuccessNotification(response.message, response.color || 'green');
+                    } else {
+                        addErrorNotification(response.message || 'Unable to run import.');
+                    }
+                    hideLoading();
+                },
+                error: function (xhr) {
+                    addErrorNotification((xhr.responseJSON || {}).message || 'Unable to run import.');
+                    hideLoading();
+                }
+            });
+        }
+    </script>
+{% endblock %}
