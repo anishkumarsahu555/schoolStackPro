@@ -1,0 +1,18 @@
+{% if school_license.school_id and school_license.show_banner %}
+    <div class="school-license-banner {{ school_license.badge_class }}">
+        <div class="license-banner-icon">
+            <i class="{% if school_license.is_available %}shield alternate icon{% else %}exclamation triangle icon{% endif %}"></i>
+        </div>
+        <div class="license-banner-copy">
+            <div class="license-banner-title">
+                License {{ school_license.label|lower }}
+                {% if school_license.valid_until %}
+                    <span>• valid until {{ school_license.valid_until|date:'d M Y' }}</span>
+                {% endif %}
+            </div>
+            <div class="license-banner-text">
+                {{ school_license.detail }} {% if not school_license.is_available %}{{ school_license.message }}{% endif %}
+            </div>
+        </div>
+    </div>
+{% endif %}

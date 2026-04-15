@@ -15,6 +15,92 @@
             margin-bottom: 1rem;
         }
 
+        .management-dashboard .license-panel {
+            border: 1px solid var(--app-border);
+            border-radius: 18px;
+            padding: 1rem 1.05rem;
+            margin-bottom: 1rem;
+            background:
+                radial-gradient(circle at top right, rgba(37, 99, 235, 0.11), transparent 26%),
+                linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
+        }
+
+        .management-dashboard .license-panel-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.8rem;
+            align-items: flex-start;
+            margin-bottom: 0.9rem;
+        }
+
+        .management-dashboard .license-panel-title {
+            margin: 0;
+            font-size: 1.02rem;
+            font-weight: 800;
+            color: var(--app-text);
+        }
+
+        .management-dashboard .license-panel-subtitle {
+            margin-top: 0.3rem;
+            color: var(--app-muted);
+            font-size: 0.9rem;
+        }
+
+        .management-dashboard .license-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.42rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .management-dashboard .license-pill.positive {
+            background: rgba(16, 185, 129, 0.12);
+            color: #047857;
+        }
+
+        .management-dashboard .license-pill.warning {
+            background: rgba(245, 158, 11, 0.14);
+            color: #b45309;
+        }
+
+        .management-dashboard .license-pill.negative {
+            background: rgba(239, 68, 68, 0.14);
+            color: #b91c1c;
+        }
+
+        .management-dashboard .license-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .management-dashboard .license-metric {
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 14px;
+            padding: 0.85rem 0.95rem;
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        .management-dashboard .license-metric-label {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--app-muted);
+        }
+
+        .management-dashboard .license-metric-value {
+            margin-top: 0.3rem;
+            color: var(--app-text);
+            font-weight: 800;
+            font-size: 0.98rem;
+        }
+
         .management-dashboard .hero-title {
             margin: 0;
             font-size: 1.35rem;
@@ -154,6 +240,17 @@
             border-color: rgba(116, 169, 255, 0.34);
         }
 
+        html[data-theme="dark"] .management-dashboard .license-panel {
+            background:
+                radial-gradient(circle at top right, rgba(96, 165, 250, 0.14), transparent 26%),
+                linear-gradient(135deg, rgba(22, 29, 39, 0.98), rgba(24, 34, 47, 0.95));
+        }
+
+        html[data-theme="dark"] .management-dashboard .license-metric {
+            background: rgba(15, 23, 42, 0.38);
+            border-color: rgba(148, 163, 184, 0.18);
+        }
+
         .management-dashboard .quick-actions {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -189,6 +286,10 @@
                 justify-self: start;
                 grid-column: 2;
             }
+
+            .management-dashboard .license-metrics {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 {% endblock %}
@@ -200,6 +301,39 @@
                 <h2 class="hero-title">Management Dashboard</h2>
                 <div class="hero-subtitle">
                     Session: {{ current_session_year }} | Overview of students, teachers, academics, and operations
+                </div>
+            </div>
+
+            <div class="license-panel">
+                <div class="license-panel-top">
+                    <div>
+                        <h3 class="license-panel-title">License Validation</h3>
+                        <div class="license-panel-subtitle">{{ school_license.dashboard_note }}</div>
+                    </div>
+                    <div class="license-pill {{ school_license.badge_class }}">
+                        <i class="shield alternate icon"></i>
+                        {{ school_license.label }}
+                    </div>
+                </div>
+                <div class="license-metrics">
+                    <div class="license-metric">
+                        <div class="license-metric-label">School</div>
+                        <div class="license-metric-value">{{ school_license.school_name }}</div>
+                    </div>
+                    <div class="license-metric">
+                        <div class="license-metric-label">Valid Until</div>
+                        <div class="license-metric-value">
+                            {% if school_license.valid_until %}
+                                {{ school_license.valid_until|date:'d M Y' }}
+                            {% else %}
+                                Not configured
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="license-metric">
+                        <div class="license-metric-label">Validation Detail</div>
+                        <div class="license-metric-value">{{ school_license.detail }}</div>
+                    </div>
                 </div>
             </div>
 

@@ -57,6 +57,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'homeApp.middleware.RoleSessionBootstrapMiddleware',
+    'homeApp.middleware.SchoolLicenseMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -75,6 +76,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'homeApp.context_processors.app_branding',
+                'homeApp.context_processors.school_license',
             ],
         },
     },
@@ -230,7 +232,3 @@ CSRF_TRUSTED_ORIGINS = [
     "https://schoolsstack.in",
     "https://www.schoolsstack.in",
 ]
-
-VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '')
-VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '')
-VAPID_ADMIN_EMAIL = os.getenv('VAPID_ADMIN_EMAIL', 'mailto:admin@schoolsstack.in')
