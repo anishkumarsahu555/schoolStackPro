@@ -1,0 +1,999 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Receipt {{ receipt.receiptNo }}</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
+
+        .receipt-page {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .print-only {
+            display: none !important;
+        }
+
+        .receipt-page .finance-shell > .ui.pointing.secondary.menu {
+            border: 1px solid rgba(148, 163, 184, 0.16) !important;
+            border-radius: 18px 18px 0 0 !important;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98)) !important;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+        }
+
+        .receipt-page .finance-shell > .ui.pointing.secondary.menu .item.active {
+            background: linear-gradient(180deg, #60a5fa, #3b82f6) !important;
+            color: #eff6ff !important;
+            box-shadow: inset 0 -4px 0 #93c5fd;
+        }
+
+        .receipt-page .finance-shell > .ui.pointing.secondary.menu .item.active i.icon {
+            color: #eff6ff !important;
+        }
+
+        .receipt-page .finance-page-intro {
+            color: #64748b !important;
+        }
+
+        .receipt-page .finance-page-intro:hover {
+            color: #334155 !important;
+        }
+
+        .receipt-shell {
+            max-width: 960px;
+            margin: 0 auto;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 28px;
+            padding: 1.35rem;
+            background:
+                radial-gradient(circle at top right, rgba(59, 130, 246, 0.09), transparent 22%),
+                radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05), transparent 24%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.98));
+            box-shadow: 0 24px 54px rgba(15, 23, 42, 0.08);
+        }
+
+        .receipt-head {
+            display: grid;
+            grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+            gap: 1rem;
+            align-items: stretch;
+            margin-bottom: 1.15rem;
+        }
+
+        .receipt-school-card,
+        .receipt-total-card {
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.76);
+        }
+
+        .receipt-school-card {
+            padding: 1.15rem 1.2rem;
+        }
+
+        .receipt-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.42rem 0.82rem;
+            border-radius: 999px;
+            background: rgba(30, 64, 175, 0.08);
+            color: #1d4ed8;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .receipt-school h2 {
+            margin: 0.9rem 0 0.28rem;
+            font-size: 1.7rem;
+            color: var(--app-text);
+            line-height: 1.2;
+        }
+
+        .receipt-school .meta {
+            color: var(--app-muted);
+            line-height: 1.6;
+        }
+
+        .receipt-total-card {
+            padding: 1.15rem;
+            display: grid;
+            gap: 0.95rem;
+            background:
+                linear-gradient(135deg, rgba(37, 99, 235, 0.06), rgba(16, 185, 129, 0.06)),
+                rgba(255, 255, 255, 0.82);
+        }
+
+        .receipt-stamp {
+            display: grid;
+            gap: 0.25rem;
+        }
+
+        .receipt-stamp .kind,
+        .receipt-total-label {
+            color: var(--app-muted);
+            text-transform: uppercase;
+            font-size: 0.74rem;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+
+        .receipt-stamp .number {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--app-text);
+            word-break: break-word;
+        }
+
+        .receipt-stamp .date {
+            color: var(--app-muted);
+        }
+
+        .receipt-total-value {
+            font-size: 2rem;
+            font-weight: 900;
+            line-height: 1;
+            color: var(--app-text);
+        }
+
+        .receipt-total-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .receipt-mini-stat {
+            padding-top: 0.75rem;
+            border-top: 1px dashed rgba(148, 163, 184, 0.28);
+        }
+
+        .receipt-mini-stat .label {
+            color: var(--app-muted);
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+
+        .receipt-mini-stat .value {
+            margin-top: 0.22rem;
+            font-weight: 800;
+            color: var(--app-text);
+        }
+
+        .receipt-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+            margin-bottom: 1.05rem;
+        }
+
+        .receipt-chip {
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 20px;
+            padding: 0.95rem 1rem;
+            background: rgba(255, 255, 255, 0.78);
+        }
+
+        .receipt-chip .label {
+            color: var(--app-muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+
+        .receipt-chip .value {
+            margin-top: 0.32rem;
+            font-weight: 800;
+            color: var(--app-text);
+            line-height: 1.45;
+            word-break: break-word;
+        }
+
+        .receipt-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(148, 163, 184, 0.15);
+        }
+
+        .receipt-section-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: flex-end;
+            margin-bottom: 0.85rem;
+        }
+
+        .receipt-section-title {
+            margin: 0;
+            font-size: 1.08rem;
+            color: var(--app-text);
+        }
+
+        .receipt-section-subtitle {
+            margin-top: 0.18rem;
+            color: var(--app-muted);
+            font-size: 0.9rem;
+        }
+
+        .receipt-total-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.52rem 0.82rem;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.08);
+            color: #1d4ed8;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .receipt-table-wrap {
+            overflow-x: auto;
+            border-radius: 20px;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        .receipt-table-wrap table {
+            margin: 0 !important;
+        }
+
+        .receipt-table-wrap table.ui.table {
+            background: transparent;
+            color: var(--app-text);
+        }
+
+        .receipt-table-wrap table.ui.table thead th {
+            background: rgba(241, 245, 249, 0.92);
+            color: var(--app-muted);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+        }
+
+        .receipt-table-wrap table.ui.table tbody td,
+        .receipt-table-wrap table.ui.table tfoot th {
+            color: var(--app-text);
+            border-top: 1px solid rgba(148, 163, 184, 0.12);
+        }
+
+        .receipt-table-wrap table.ui.table tfoot th {
+            background: rgba(248, 250, 252, 0.9);
+        }
+
+        .receipt-allocation-list {
+            display: none;
+            gap: 0.75rem;
+        }
+
+        .receipt-allocation-card {
+            display: grid;
+            gap: 0.6rem;
+            padding: 0.95rem;
+            border-radius: 18px;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            background: rgba(255, 255, 255, 0.74);
+        }
+
+        .receipt-allocation-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .receipt-allocation-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--app-text);
+            line-height: 1.35;
+        }
+
+        .receipt-allocation-desc {
+            margin-top: 0.18rem;
+            color: var(--app-muted);
+            line-height: 1.45;
+        }
+
+        .receipt-allocation-amount {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.44rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(16, 185, 129, 0.12);
+            color: #047857;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .receipt-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+
+        .receipt-footer {
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .receipt-note {
+            color: var(--app-muted);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+
+        .receipt-signature {
+            justify-self: end;
+            width: 100%;
+            max-width: 280px;
+            padding-top: 1.2rem;
+            border-top: 1px dashed rgba(148, 163, 184, 0.4);
+            text-align: center;
+            color: var(--app-muted);
+            font-size: 0.85rem;
+        }
+
+        html[data-theme="dark"] .receipt-shell {
+            background:
+                radial-gradient(circle at top right, rgba(96, 165, 250, 0.12), transparent 24%),
+                radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.08), transparent 26%),
+                linear-gradient(180deg, rgba(20, 28, 39, 0.99), rgba(21, 30, 44, 0.98));
+            box-shadow: 0 28px 50px rgba(2, 8, 23, 0.36);
+        }
+
+        html[data-theme="dark"] .receipt-page .finance-shell > .ui.pointing.secondary.menu {
+            border-color: rgba(148, 163, 184, 0.14) !important;
+            background: linear-gradient(180deg, rgba(29, 36, 48, 0.98), rgba(20, 27, 38, 0.98)) !important;
+            box-shadow: inset 0 -1px 0 rgba(148, 163, 184, 0.12);
+        }
+
+        html[data-theme="dark"] .receipt-page .finance-page-intro {
+            color: #dbeafe !important;
+        }
+
+        html[data-theme="dark"] .receipt-page .finance-page-intro:hover {
+            color: #ffffff !important;
+        }
+
+        html[data-theme="dark"] .receipt-brand {
+            background: rgba(116, 169, 255, 0.14);
+            color: #b7d1ff;
+        }
+
+        html[data-theme="dark"] .receipt-school-card,
+        html[data-theme="dark"] .receipt-total-card,
+        html[data-theme="dark"] .receipt-stamp,
+        html[data-theme="dark"] .receipt-chip,
+        html[data-theme="dark"] .receipt-table-wrap,
+        html[data-theme="dark"] .receipt-allocation-card {
+            background: rgba(15, 23, 42, 0.42);
+            border-color: rgba(148, 163, 184, 0.18);
+        }
+
+        html[data-theme="dark"] .receipt-total-card {
+            background:
+                linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.14)),
+                rgba(15, 23, 42, 0.5);
+        }
+
+        html[data-theme="dark"] .receipt-total-pill {
+            background: rgba(96, 165, 250, 0.16);
+            color: #bfdbfe;
+        }
+
+        html[data-theme="dark"] .receipt-allocation-amount {
+            background: rgba(16, 185, 129, 0.18);
+            color: #a7f3d0;
+        }
+
+        html[data-theme="dark"] .receipt-table-wrap table.ui.table {
+            color: #e2e8f0;
+        }
+
+        html[data-theme="dark"] .receipt-table-wrap table.ui.table thead th {
+            background: rgba(30, 41, 59, 0.9);
+            color: #94a3b8;
+            border-bottom-color: rgba(148, 163, 184, 0.14);
+        }
+
+        html[data-theme="dark"] .receipt-table-wrap table.ui.table tbody td,
+        html[data-theme="dark"] .receipt-table-wrap table.ui.table tfoot th {
+            color: #e2e8f0;
+            border-top-color: rgba(148, 163, 184, 0.12);
+        }
+
+        html[data-theme="dark"] .receipt-table-wrap table.ui.table tfoot th {
+            background: rgba(15, 23, 42, 0.7);
+        }
+
+        @media (max-width: 767px) {
+            .receipt-shell {
+                padding: 0.95rem;
+                border-radius: 22px;
+            }
+
+            .receipt-head {
+                grid-template-columns: 1fr;
+            }
+
+            .receipt-school-card,
+            .receipt-total-card {
+                padding: 1rem;
+            }
+
+            .receipt-school h2 {
+                font-size: 1.35rem;
+            }
+
+            .receipt-total-value {
+                font-size: 1.6rem;
+            }
+
+            .receipt-total-meta,
+            .receipt-meta-grid,
+            .receipt-summary-grid,
+            .receipt-footer {
+                grid-template-columns: 1fr;
+            }
+
+            .receipt-stamp,
+            .receipt-signature {
+                width: 100%;
+                text-align: left;
+            }
+
+            .receipt-section-head,
+            .receipt-allocation-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .receipt-table-wrap {
+                display: none;
+            }
+
+            .receipt-allocation-list {
+                display: grid;
+            }
+        }
+
+        @media print {
+            html,
+            body {
+                background: #ffffff !important;
+                color: #111827 !important;
+            }
+
+            body > #sidebar,
+            body > #mobileSidebarBackdrop,
+            body > nav.ui.top.fixed.menu,
+            body > .student-mobile-bottom-nav,
+            body > .app-notice-stack {
+                display: none !important;
+            }
+
+            body,
+            body.pushable,
+            body.pushable > .pusher,
+            body > .pusher,
+            body > .pusher > .main-content {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                min-height: auto !important;
+                width: 100% !important;
+                max-width: none !important;
+                overflow: visible !important;
+                transform: none !important;
+            }
+
+            .receipt-page {
+                display: block;
+            }
+
+            .print-hide {
+                display: none !important;
+            }
+
+            .print-only {
+                display: block !important;
+            }
+
+            .receipt-shell {
+                border: 1px solid #94a3b8;
+                border-radius: 0;
+                max-width: none;
+                width: 100%;
+                margin: 0;
+                padding: 10pt 12pt 12pt;
+                background: #fff;
+                box-shadow: none;
+                font-size: 9.5pt;
+            }
+
+            .receipt-print-header {
+                display: grid;
+                grid-template-columns: 64pt minmax(0, 1fr) 120pt;
+                gap: 10pt;
+                align-items: center;
+                padding-bottom: 10pt;
+                border-bottom: 2px solid #1e3a8a;
+                margin-bottom: 10pt;
+            }
+
+            .receipt-print-logo {
+                width: 58pt;
+                height: 58pt;
+                border: 1px solid #cbd5e1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                background: #ffffff;
+            }
+
+            .receipt-print-logo img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+
+            .receipt-print-center {
+                text-align: center;
+            }
+
+            .receipt-print-school {
+                font-size: 18pt;
+                font-weight: 800;
+                color: #0f172a;
+                line-height: 1.1;
+            }
+
+            .receipt-print-address,
+            .receipt-print-contact {
+                margin-top: 3pt;
+                color: #475569 !important;
+                font-size: 8.5pt;
+                line-height: 1.35;
+            }
+
+            .receipt-print-title {
+                margin-top: 7pt;
+                display: inline-block;
+                padding: 4pt 14pt;
+                border: 1px solid #1e3a8a;
+                background: #eff6ff;
+                color: #1e3a8a;
+                font-size: 10pt;
+                font-weight: 800;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            .receipt-print-copy {
+                text-align: right;
+                font-size: 8pt;
+                color: #475569 !important;
+                line-height: 1.35;
+            }
+
+            .receipt-head {
+                grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
+                gap: 10pt;
+                margin-bottom: 10pt;
+                align-items: start;
+                padding-bottom: 10pt;
+                border-bottom: 1px solid #cbd5e1;
+            }
+
+            .receipt-school-card,
+            .receipt-total-card,
+            .receipt-chip,
+            .receipt-table-wrap,
+            .receipt-allocation-card {
+                background: #ffffff !important;
+                border-color: #cbd5e1 !important;
+                box-shadow: none !important;
+            }
+
+            .receipt-school-card,
+            .receipt-total-card {
+                border-radius: 0;
+                padding: 0;
+                align-self: start;
+                border: 0 !important;
+            }
+
+            .receipt-total-card {
+                background: #f8fafc !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 10pt 12pt;
+            }
+
+            .receipt-total-meta {
+                gap: 0;
+                border-top: 1px dashed #cbd5e1;
+                padding-top: 6pt;
+            }
+
+            .receipt-brand {
+                padding: 0;
+                border-radius: 0;
+                background: transparent !important;
+                color: #1d4ed8 !important;
+                font-size: 8.5pt;
+                letter-spacing: 0.08em;
+            }
+
+            .receipt-school h2 {
+                margin-top: 5pt;
+                margin-bottom: 4pt;
+                font-size: 18pt;
+            }
+
+            .receipt-school .meta {
+                line-height: 1.45;
+                font-size: 9pt;
+            }
+
+            .receipt-school-card .receipt-brand,
+            .receipt-school-card h2 {
+                display: none !important;
+            }
+
+            .receipt-school .meta,
+            .receipt-stamp .kind,
+            .receipt-total-label,
+            .receipt-mini-stat .label,
+            .receipt-chip .label,
+            .receipt-section-subtitle,
+            .receipt-note,
+            .receipt-signature {
+                color: #4b5563 !important;
+            }
+
+            .receipt-stamp .number,
+            .receipt-total-value,
+            .receipt-mini-stat .value,
+            .receipt-chip .value,
+            .receipt-section-title,
+            .receipt-allocation-title,
+            .receipt-table-wrap table.ui.table tbody td,
+            .receipt-table-wrap table.ui.table tfoot th {
+                color: #111827 !important;
+            }
+
+            .receipt-total-value {
+                font-size: 20pt;
+            }
+
+            .receipt-mini-stat,
+            .receipt-section,
+            .receipt-signature {
+                border-color: #d1d5db !important;
+            }
+
+            .receipt-mini-stat {
+                padding-top: 0;
+                border-top: 0;
+            }
+
+            .receipt-meta-grid,
+            .receipt-summary-grid {
+                gap: 0;
+                margin: 0;
+                border-top: 1px solid #cbd5e1;
+                border-left: 1px solid #cbd5e1;
+            }
+
+            .receipt-meta-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+
+            .receipt-summary-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+
+            .receipt-chip {
+                border-radius: 0;
+                padding: 8pt 9pt;
+                border-top: 0 !important;
+                border-left: 0 !important;
+                min-height: 54pt;
+            }
+
+            .receipt-total-pill,
+            .receipt-allocation-amount {
+                background: transparent !important;
+                color: #1d4ed8 !important;
+                border: 1px solid #bfdbfe;
+                box-shadow: none !important;
+                padding: 4pt 8pt;
+                font-size: 9pt;
+                border-radius: 999px;
+            }
+
+            .receipt-section {
+                margin-top: 10pt;
+                padding: 0;
+                border-top: 0;
+            }
+
+            .receipt-section-head {
+                margin-bottom: 6pt;
+            }
+
+            .receipt-section-subtitle {
+                display: block;
+            }
+
+            .receipt-table-wrap {
+                border-radius: 0;
+                overflow: visible;
+                border: 1px solid #94a3b8 !important;
+            }
+
+            .receipt-table-wrap table.ui.table {
+                font-size: 9pt;
+            }
+
+            .receipt-table-wrap table.ui.table thead th {
+                background: #f8fafc !important;
+                color: #334155 !important;
+                border-bottom: 1px solid #94a3b8 !important;
+                padding: 6pt 7pt !important;
+                font-size: 8pt !important;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+            }
+
+            .receipt-table-wrap table.ui.table tbody td,
+            .receipt-table-wrap table.ui.table tfoot th {
+                border-top: 1px solid #e5e7eb !important;
+                padding: 5pt 7pt !important;
+            }
+
+            .receipt-table-wrap table.ui.table tfoot th {
+                background: #f8fafc !important;
+                border-top: 1px solid #94a3b8 !important;
+            }
+
+            .receipt-allocation-list {
+                display: none !important;
+            }
+
+            .receipt-table-wrap {
+                display: block !important;
+            }
+
+            .receipt-footer {
+                grid-template-columns: minmax(0, 1fr) 180px;
+                gap: 0.6rem;
+                padding: 10pt 0 0;
+                align-items: end;
+                border-top: 1px solid #cbd5e1;
+                margin-top: 10pt;
+            }
+
+            .receipt-note {
+                font-size: 8pt;
+                line-height: 1.35;
+            }
+
+            .receipt-signature {
+                max-width: 180px;
+                padding-top: 6pt;
+                font-size: 8pt;
+                justify-self: end;
+                text-align: center;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="receipt-page">
+        <div class="print-hide finance-shell" style="margin-bottom: 1rem;">
+            <div class="ui pointing secondary menu">
+                <div class="item active">
+                    <i class="print icon"></i>
+                    Receipt Detail
+                </div>
+                <div class="finance-page-actions">
+                    <a class="ui blue mini button right" href="{% url 'managementApp:manage_receipts' %}">
+                        <i class="arrow left icon"></i>
+                        Back to Receipts
+                    </a>
+                    <button type="button" class="ui green mini plus button right" onclick="window.print()">
+                        <i class="plus square outline icon"></i>
+                        Print Receipt
+                    </button>
+                </div>
+            </div>
+            <div class="finance-page-intro">
+                Review the receipt details, then print or share the allocation summary directly from the finance module.
+            </div>
+        </div>
+
+        <div class="receipt-shell">
+            <div class="receipt-print-header print-only">
+                <div class="receipt-print-logo">
+                    {% if school.schoolLogo %}
+                        <img src="{{ school.schoolLogo }}" alt="School Logo">
+                    {% elif request.session.current_session.SchoolLogo %}
+                        <img src="{{ request.session.current_session.SchoolLogo }}" alt="School Logo">
+                    {% elif app_icon_url %}
+                        <img src="{{ app_icon_url }}" alt="School Logo">
+                    {% else %}
+                        <span style="font-size:8pt; color:#64748b; font-weight:700;">LOGO</span>
+                    {% endif %}
+                </div>
+                <div class="receipt-print-center">
+                    <div class="receipt-print-school">{{ school.schoolName|default:school.name|default:'School Receipt' }}</div>
+                    <div class="receipt-print-address">{{ school.address|default:'Address not available' }}</div>
+                    <div class="receipt-print-contact">{{ school.phoneNumber|default:'N/A' }} | {{ school.email|default:'N/A' }}</div>
+                    <div class="receipt-print-title">{{ finance_config.receiptTitle|default:'Payment Receipt' }}</div>
+                </div>
+                <div class="receipt-print-copy">
+                    Finance Copy<br>
+                    Generated on {{ receipt.receiptDate|date:'d M Y' }}
+                </div>
+            </div>
+            <div class="receipt-head">
+                <div class="receipt-school-card">
+                    <div class="receipt-school">
+                        <div class="receipt-brand">
+                            <i class="receipt icon"></i>
+                            {{ finance_config.receiptTitle|default:'Payment Receipt' }}
+                        </div>
+                        <h2>{{ school.schoolName|default:school.name|default:'School Receipt' }}</h2>
+                        <div class="meta">{{ school.address|default:'Address not available' }}</div>
+                        <div class="meta">{{ school.phoneNumber|default:'N/A' }} | {{ school.email|default:'N/A' }}</div>
+                    </div>
+                </div>
+                <div class="receipt-total-card">
+                    <div class="receipt-stamp">
+                        <div class="kind">Receipt Number</div>
+                        <div class="number">{{ receipt.receiptNo }}</div>
+                        <div class="date">{{ receipt.receiptDate|date:'d M Y' }}</div>
+                    </div>
+                    <div>
+                        <div class="receipt-total-label">Amount Received</div>
+                        <div class="receipt-total-value">Rs {{ receipt.amountReceived|floatformat:2 }}</div>
+                    </div>
+                    <div class="receipt-total-meta">
+                        <div class="receipt-mini-stat">
+                            <div class="label">Payment Status</div>
+                            <div class="value">{{ receipt.get_status_display|default:receipt.status|default:'Confirmed' }}</div>
+                        </div>
+                        <div class="receipt-mini-stat">
+                            <div class="label">Allocations</div>
+                            <div class="value">{{ allocations|length }} item{{ allocations|length|pluralize }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="receipt-meta-grid">
+                <div class="receipt-chip">
+                    <div class="label">Received From</div>
+                    <div class="value">{{ receipt.receivedFromName|default:receipt.partyID.displayName|default:'N/A' }}</div>
+                </div>
+                <div class="receipt-chip">
+                    <div class="label">Student</div>
+                    <div class="value">{{ student.name|default:'N/A' }}</div>
+                </div>
+                <div class="receipt-chip">
+                    <div class="label">Class</div>
+                    <div class="value">{% if student.standardID %}{{ student.standardID.name }}{% if student.standardID.section %} - {{ student.standardID.section }}{% endif %}{% else %}N/A{% endif %}</div>
+                </div>
+                <div class="receipt-chip">
+                    <div class="label">Payment Mode</div>
+                    <div class="value">{{ receipt.paymentModeID.name|default:'N/A' }}</div>
+                </div>
+            </div>
+
+            <div class="receipt-section">
+                <div class="receipt-section-head">
+                    <div>
+                        <h3 class="receipt-section-title">Allocation Summary</h3>
+                        <div class="receipt-section-subtitle">Breakdown of the receipt amount across linked finance charges.</div>
+                    </div>
+                    <div class="receipt-total-pill">Receipt Total: Rs {{ receipt.amountReceived|floatformat:2 }}</div>
+                </div>
+
+                <div class="receipt-table-wrap">
+                    <table class="ui celled compact table">
+                        <thead>
+                        <tr>
+                            <th>Fee Head</th>
+                            <th>Description</th>
+                            <th>Allocated</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in allocations %}
+                            <tr>
+                                <td>{% if row.studentChargeID.feeHeadID %}{{ row.studentChargeID.feeHeadID.name }}{% else %}N/A{% endif %}</td>
+                                <td>{{ row.studentChargeID.title|default:'N/A' }}</td>
+                                <td><strong>Rs {{ row.allocatedAmount|floatformat:2 }}</strong></td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3" class="center aligned">No allocations found.</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <th colspan="2" style="text-align:right;">Receipt Total</th>
+                            <th>Rs {{ receipt.amountReceived|floatformat:2 }}</th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="receipt-allocation-list">
+                    {% for row in allocations %}
+                        <article class="receipt-allocation-card">
+                            <div class="receipt-allocation-top">
+                                <div>
+                                    <div class="receipt-allocation-title">{% if row.studentChargeID.feeHeadID %}{{ row.studentChargeID.feeHeadID.name }}{% else %}N/A{% endif %}</div>
+                                    <div class="receipt-allocation-desc">{{ row.studentChargeID.title|default:'N/A' }}</div>
+                                </div>
+                                <div class="receipt-allocation-amount">Rs {{ row.allocatedAmount|floatformat:2 }}</div>
+                            </div>
+                        </article>
+                    {% empty %}
+                        <div class="finance-empty">No allocations found.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="receipt-summary-grid">
+                <div class="receipt-chip">
+                    <div class="label">Reference</div>
+                    <div class="value">{{ receipt.referenceNo|default:'N/A' }}</div>
+                </div>
+                <div class="receipt-chip">
+                    <div class="label">Remark</div>
+                    <div class="value">{{ receipt.notes|default:'N/A' }}</div>
+                </div>
+                <div class="receipt-chip">
+                    <div class="label">Charged</div>
+                    <div class="value">Rs {{ total_charged|floatformat:2 }}</div>
+                </div>
+                <div class="receipt-chip">
+                    <div class="label">Outstanding</div>
+                    <div class="value">Rs {{ total_balance|floatformat:2 }}</div>
+                </div>
+            </div>
+
+            <div class="receipt-footer">
+                <div class="receipt-note">
+                    {{ finance_config.receiptFooterNote|default:'This receipt reflects the current finance allocation summary for the recorded payment.' }}
+                </div>
+                <div class="receipt-signature">
+                    Authorized Signature
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

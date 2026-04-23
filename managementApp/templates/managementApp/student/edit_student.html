@@ -578,6 +578,46 @@
                             <input type="number" name="totalFee" id="totalFee" placeholder="Total Fees" value="{{instance.totalFee}}">
                         </div>
                     </div>
+                    <h4 class="ui dividing header">Admission Payment</h4>
+                    {% if admission_receipt %}
+                        <div style="margin-bottom: 0.75rem;">
+                            <a class="ui mini blue button" target="_blank" href="{% url 'managementApp:finance_receipt_detail' admission_receipt.id %}">
+                                <i class="print icon"></i>
+                                Open Current Receipt
+                            </a>
+                        </div>
+                    {% endif %}
+                    <input type="hidden" name="admissionPaymentTouched" id="admissionPaymentTouched" value="false">
+                    <div class="five fields">
+                        <div class="field">
+                            <label>Receipt Status</label>
+                            <div class="ui checkbox" style="margin-top: 0.7rem;">
+                                <input type="checkbox" name="admissionFeePaid" id="admissionFeePaid" {% if admission_receipt and admission_receipt.status == 'confirmed' %}checked{% endif %}>
+                                <label>Update admission receipt</label>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Amount Received</label>
+                            <input type="number" name="admissionAmountReceived" id="admissionAmountReceived" placeholder="Amount Received" min="0" step="0.01" value="{% if admission_receipt %}{{ admission_receipt.amountReceived }}{% endif %}">
+                        </div>
+                        <div class="field">
+                            <label>Payment Mode</label>
+                            <select class="ui dropdown" id="admissionPaymentMode">
+                                <option value="">Select Payment Mode</option>
+                                <option value="CASH" {% if admission_receipt and admission_receipt.paymentModeID and admission_receipt.paymentModeID.code == 'CASH' %}selected{% endif %}>Cash</option>
+                                <option value="BANK" {% if admission_receipt and admission_receipt.paymentModeID and admission_receipt.paymentModeID.code == 'BANK' %}selected{% endif %}>Bank</option>
+                                <option value="UPI" {% if admission_receipt and admission_receipt.paymentModeID and admission_receipt.paymentModeID.code == 'UPI' %}selected{% endif %}>UPI</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Reference No.</label>
+                            <input type="text" name="admissionPaymentReference" id="admissionPaymentReference" placeholder="Reference / UTR / Cheque No." value="{% if admission_receipt %}{{ admission_receipt.referenceNo|default:'' }}{% endif %}">
+                        </div>
+                        <div class="field">
+                            <label>Remark</label>
+                            <input type="text" name="admissionPaymentRemark" id="admissionPaymentRemark" placeholder="Payment remark" value="{% if admission_receipt %}{{ admission_receipt.notes|default:'' }}{% endif %}">
+                        </div>
+                    </div>
                     <input type="hidden" name="editID" id="editID" value="{{instance.id}}">
 
 
@@ -941,10 +981,35 @@
             });
 
             $('#editID').val('{{instance.id}}');
+            $('#admissionPaymentTouched').val('false');
             $('#cImg').css('background-image', "url({% static 'images/add_photo.svg' %})");
             clearPhotoFieldError();
             hideLoading();
         }
+
+        function markAdmissionPaymentTouched() {
+            $('#admissionPaymentTouched').val('true');
+        }
+
+        function bindAdmissionPaymentHelpers() {
+            $('#admissionFeePaid, #admissionAmountReceived, #admissionPaymentMode, #admissionPaymentReference, #admissionPaymentRemark')
+                .on('change input', function () {
+                    markAdmissionPaymentTouched();
+                });
+
+            $('#admissionFeePaid').on('change', function () {
+                const checked = $(this).is(':checked');
+                const admissionFee = $('#admissionFee').val();
+                if (checked && !$('#admissionAmountReceived').val() && admissionFee) {
+                    $('#admissionAmountReceived').val(admissionFee);
+                }
+                if (checked && !$('#admissionPaymentMode').val()) {
+                    $('#admissionPaymentMode').dropdown('set selected', 'CASH');
+                }
+            });
+        }
+
+        bindAdmissionPaymentHelpers();
 
 function addStudentData() {
     showLoading();

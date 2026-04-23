@@ -1,0 +1,343 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Cash & Bank Book</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Cash &amp; Bank Book
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Review posted debit and credit movement for finance asset accounts, with opening and closing balances shown in a clear, book-style report."
+                       data-position="bottom center"></i>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+        <section>
+            <div class="finance-panel-header">
+                <div>
+                    <h3 class="finance-panel-title">Book Filters</h3>
+                    <div class="finance-panel-subtitle">Choose the cash or bank account and optional date range to build the book.</div>
+                </div>
+            </div>
+            <form class="ui tiny form">
+                {% csrf_token %}
+                <div class="finance-filter-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+                    <div class="field required">
+                        <label>Account</label>
+                        <select class="ui search dropdown" id="bookAccount"></select>
+                    </div>
+                    <div class="field">
+                        <label>Date From</label>
+                        <div class="ui calendar" id="bookDateFromCal">
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text" id="bookDateFrom" placeholder="Date From">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Date To</label>
+                        <div class="ui calendar" id="bookDateToCal">
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text" id="bookDateTo" placeholder="Date To">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="finance-filter-actions">
+                    <button type="button" class="ui green button" onclick="loadCashBankBook()">
+                        <i class="search icon"></i>
+                        Load Book
+                    </button>
+                    <button type="button" class="ui mini red button" onclick="resetCashBankBookFilters()">
+                        <i class="icon times circle"></i>
+                        Clear
+                    </button>
+                    <button type="button" class="ui blue button" onclick="printCashBankBookPdf()">
+                        <i class="file pdf outline icon"></i>
+                        Export PDF
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="finance-summary-grid" id="cashBankSummary" style="display:none;">
+            <div class="finance-summary-item">
+                <div class="value" id="bookOpeningBalance">Rs 0.00</div>
+                <div class="label">Opening</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="bookTotalDebit">Rs 0.00</div>
+                <div class="label">Total Debit</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="bookTotalCredit">Rs 0.00</div>
+                <div class="label">Total Credit</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="bookClosingBalance">Rs 0.00</div>
+                <div class="label">Closing</div>
+            </div>
+        </section>
+
+        <section class="finance-table-panel" id="cashBankTableWrap" style="display:none;">
+            <div class="finance-table-head">
+                <div>
+                    <h3 class="finance-panel-title">Book Entries</h3>
+                    <div class="finance-panel-subtitle" id="bookTitle">Cash &amp; Bank Book</div>
+                </div>
+            </div>
+            <div class="finance-table-wrap">
+                <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="cashBankTable" style="width:100%;">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Txn No.</th>
+                        <th>Type</th>
+                        <th>Reference</th>
+                        <th>Party</th>
+                        <th>Narration</th>
+                        <th>Debit</th>
+                        <th>Credit</th>
+                        <th>Balance</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let cashBankAccounts = [];
+        let cashBankTable;
+        let currentCashBankPayload = {summary: {}, rows: []};
+        $('.ui.dropdown').dropdown();
+        $('#bookDateFromCal, #bookDateToCal').calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date) {
+                    if (!date) return '';
+                    return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                }
+            }
+        });
+
+        function money(value) {
+            return 'Rs ' + Number(value || 0).toFixed(2);
+        }
+
+        function reportPeriodLabel() {
+            const from = $('#bookDateFrom').val() || 'Beginning';
+            const to = $('#bookDateTo').val() || 'Today';
+            return from + ' to ' + to;
+        }
+
+        function printCashBankBookPdf() {
+            const summary = currentCashBankPayload.summary || {};
+            const rows = currentCashBankPayload.rows || [];
+            if (!summary.accountLabel) {
+                addErrorNotification('Load a cash or bank book first before exporting PDF.');
+                return;
+            }
+
+            const printWindow = window.open('', '_blank', 'width=1100,height=900');
+            if (!printWindow) {
+                addErrorNotification('Unable to open print window.');
+                return;
+            }
+
+            const rowHtml = rows.length ? rows.map(function (row) {
+                return '<tr>' +
+                    '<td>' + row.date + '</td>' +
+                    '<td>' + (row.txnNo || '-') + '</td>' +
+                    '<td style="text-transform:capitalize;">' + String(row.txnType || '').replace(/_/g, ' ') + '</td>' +
+                    '<td>' + (row.reference || '-') + '</td>' +
+                    '<td>' + (row.party || '-') + '</td>' +
+                    '<td>' + (row.narration || '-') + '</td>' +
+                    '<td style="text-align:right;">' + money(row.debit) + '</td>' +
+                    '<td style="text-align:right;">' + money(row.credit) + '</td>' +
+                    '<td style="text-align:right;">' + money(row.balance) + '</td>' +
+                    '</tr>';
+            }).join('') : '<tr><td colspan="9" style="text-align:center;">No book entries found for the selected range.</td></tr>';
+
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Cash Bank Book</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; color:#111827; margin:24px; }
+                        h1, h2, h3, p { margin:0; }
+                        .header { margin-bottom:20px; }
+                        .meta { color:#4b5563; margin-top:6px; }
+                        .summary { display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin:18px 0 22px; }
+                        .summary-card { border:1px solid #d1d5db; border-radius:8px; padding:12px 14px; }
+                        .summary-card .label { color:#6b7280; font-size:12px; text-transform:uppercase; letter-spacing:0.05em; }
+                        .summary-card .value { margin-top:6px; font-size:20px; font-weight:700; }
+                        table { width:100%; border-collapse:collapse; }
+                        th, td { border:1px solid #d1d5db; padding:8px 10px; font-size:12px; vertical-align:top; }
+                        th { background:#f3f4f6; text-align:left; }
+                        .footnote { margin-top:14px; color:#6b7280; font-size:11px; }
+                        @media print {
+                            body { margin:12mm; }
+                            .summary { page-break-inside:avoid; }
+                            table { page-break-inside:auto; }
+                            tr { page-break-inside:avoid; page-break-after:auto; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Cash & Bank Book</h1>
+                        <p class="meta">Account: ${summary.accountLabel || ''}</p>
+                        <p class="meta">Period: ${reportPeriodLabel()}</p>
+                    </div>
+                    <div class="summary">
+                        <div class="summary-card">
+                            <div class="label">Opening Balance</div>
+                            <div class="value">${money(summary.openingBalance)}</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="label">Total Debit</div>
+                            <div class="value">${money(summary.totalDebit)}</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="label">Total Credit</div>
+                            <div class="value">${money(summary.totalCredit)}</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="label">Closing Balance</div>
+                            <div class="value">${money(summary.closingBalance)}</div>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Txn No.</th>
+                                <th>Type</th>
+                                <th>Reference</th>
+                                <th>Party</th>
+                                <th>Narration</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                                <th>Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowHtml}</tbody>
+                    </table>
+                    <div class="footnote">
+                        Generated from the finance module using the currently selected account and date filters.
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(function () {
+                printWindow.print();
+            }, 250);
+        }
+
+        cashBankTable = $('#cashBankTable').DataTable({
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            scrollX: true,
+            scrollY: '360px',
+            stateSave: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+                }
+            }],
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{% url 'managementAppAPI:finance_cash_bank_book_rows_api' %}",
+                data: function (d) {
+                    d.accountID = $('#bookAccount').val() || '';
+                    d.dateFrom = $('#bookDateFrom').val() || '';
+                    d.dateTo = $('#bookDateTo').val() || '';
+                }
+            },
+            language: {
+                emptyTable: 'Load a cash or bank account to view book entries.'
+            }
+        });
+
+        function loadCashBankAccounts() {
+            $.get("{% url 'managementAppAPI:get_finance_account_options_api' %}", function (response) {
+                cashBankAccounts = (response.data || []).filter(function (row) {
+                    return row.Type === 'asset';
+                });
+                const options = ['<option value="">Select Account</option>'].concat(cashBankAccounts.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Label + '</option>';
+                }));
+                $('#bookAccount').html(options.join('')).dropdown('refresh');
+                if (cashBankAccounts.length) {
+                    $('#bookAccount').dropdown('set selected', String(cashBankAccounts[0].ID));
+                }
+            });
+        }
+
+        function resetCashBankBookFilters() {
+            $('#bookDateFrom, #bookDateTo').val('');
+            $('#cashBankSummary, #cashBankTableWrap').hide();
+            currentCashBankPayload = {summary: {}, rows: []};
+            cashBankTable.ajax.reload();
+        }
+
+        function loadCashBankBook() {
+            const accountId = $('#bookAccount').val();
+            if (!accountId) {
+                requiredFieldError();
+                return;
+            }
+            $.get("{% url 'managementAppAPI:get_cash_bank_book_api' %}", {
+                accountID: accountId,
+                dateFrom: $('#bookDateFrom').val(),
+                dateTo: $('#bookDateTo').val()
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load book.');
+                    return;
+                }
+                const payload = response.data || {};
+                currentCashBankPayload = payload;
+                const summary = payload.summary || {};
+                const rows = payload.rows || [];
+                $('#bookTitle').text(summary.accountLabel || 'Cash & Bank Book');
+                $('#bookOpeningBalance').text(money(summary.openingBalance));
+                $('#bookTotalDebit').text(money(summary.totalDebit));
+                $('#bookTotalCredit').text(money(summary.totalCredit));
+                $('#bookClosingBalance').text(money(summary.closingBalance));
+                $('#cashBankSummary, #cashBankTableWrap').show();
+                cashBankTable.columns.adjust();
+                cashBankTable.ajax.reload();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load book.');
+            });
+        }
+
+        loadCashBankAccounts();
+    </script>
+{% endblock %}

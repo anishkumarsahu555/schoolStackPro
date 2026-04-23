@@ -1,0 +1,793 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Receipts</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Receipt Register
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px; display:flex; gap:0.55rem; align-items:center;">
+                    <button type="button" class="ui green mini plus button" onclick="openManualReceiptModal()">
+                        <i class="plus square outline icon"></i>
+                        Add Receipt
+                    </button>
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Review all finance-backed receipts in one place, filter by class or student, and move directly to printable receipt views without leaving the finance workspace."
+                       data-position="bottom center"></i>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+        <section>
+            <div class="finance-panel-header">
+                <div>
+                    <h3 class="finance-panel-title">Filter Receipts</h3>
+                    <div class="finance-panel-subtitle">Narrow the register by academic, student, status, and date.</div>
+                </div>
+            </div>
+            <form class="ui tiny form">
+                {% csrf_token %}
+                <div class="finance-filter-grid">
+                    <div class="field">
+                        <label>Class - Section</label>
+                        <select class="ui search dropdown" id="receiptStandard">
+                            <option value="">All Classes</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Student</label>
+                        <select class="ui search dropdown" id="receiptStudent">
+                            <option value="">All Students</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Status</label>
+                        <select class="ui dropdown" id="receiptStatus">
+                            <option value="">All Statuses</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="draft">Draft</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="reversed">Reversed</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Date From</label>
+                        <div class="ui calendar" id="receiptDateFromCal">
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text" id="receiptDateFrom" placeholder="Date From">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Date To</label>
+                        <div class="ui calendar" id="receiptDateToCal">
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text" id="receiptDateTo" placeholder="Date To">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="finance-filter-actions">
+                    <button type="button" class="ui green button" onclick="loadReceipts()">
+                        <i class="search icon"></i>
+                        Load Receipts
+                    </button>
+                    <button type="button" class="ui mini red button" onclick="resetReceiptFilters()">
+                        <i class="icon times circle"></i>
+                        Clear Filters
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="finance-summary-grid" id="receiptSummary" style="display:none;">
+            <div class="finance-summary-item">
+                <div class="value" id="receiptTotalCount">0</div>
+                <div class="label">Receipts</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="receiptTotalAmount">Rs 0.00</div>
+                <div class="label">Total Amount</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="receiptConfirmedAmount">Rs 0.00</div>
+                <div class="label">Confirmed</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="receiptCancelledAmount">Rs 0.00</div>
+                <div class="label">Cancelled</div>
+            </div>
+        </section>
+
+        <section class="finance-table-panel">
+            <div class="finance-table-head">
+                <div>
+                    <h3 class="finance-panel-title">Receipt Register</h3>
+                    <div class="finance-panel-subtitle">Finance-backed incoming transactions with allocation visibility.</div>
+                </div>
+            </div>
+            <div class="finance-table-wrap">
+                <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="receiptTable" style="width:100%;">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Receipt No</th>
+                        <th>Student</th>
+                        <th>Class</th>
+                        <th>Heads</th>
+                        <th>Mode</th>
+                        <th>Reference</th>
+                        <th>Amount</th>
+                        <th>Allocated</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="finance-table-panel" id="receiptAdjustmentSection" style="display:none;">
+            <div class="finance-table-head">
+                <div>
+                    <h3 class="finance-panel-title">Receipt Adjustments</h3>
+                    <div class="finance-panel-subtitle" id="receiptAdjustmentTitle">Refunds and reversal history for the selected receipt.</div>
+                </div>
+            </div>
+            <div class="finance-summary-grid" style="margin-bottom:1rem;">
+                <div class="finance-summary-item">
+                    <div class="value" id="receiptAdjustmentAmount">Rs 0.00</div>
+                    <div class="label">Receipt Amount</div>
+                </div>
+                <div class="finance-summary-item">
+                    <div class="value" id="receiptAdjustmentRefunded">Rs 0.00</div>
+                    <div class="label">Refunded</div>
+                </div>
+                <div class="finance-summary-item">
+                    <div class="value" id="receiptAdjustmentStatus">-</div>
+                    <div class="label">Receipt Status</div>
+                </div>
+            </div>
+            <div class="finance-table-wrap">
+                <table class="ui unstackable tiny celled very compact table" style="width:100%;">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Reference</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Remark</th>
+                    </tr>
+                    </thead>
+                    <tbody id="receiptAdjustmentRows">
+                    <tr><td colspan="6" class="center aligned">Choose a receipt history action to review its adjustments.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui small modal" id="manualReceiptModal">
+        <i class="close icon"></i>
+        <div class="header">Add Receipt</div>
+        <div class="content">
+            <form class="ui tiny form" id="manualReceiptForm">
+                {% csrf_token %}
+                <div class="two fields">
+                    <div class="field required">
+                        <label>Class - Section</label>
+                        <select class="ui search dropdown" id="manualReceiptStandard">
+                            <option value="">Select Class</option>
+                        </select>
+                    </div>
+                    <div class="field required">
+                        <label>Student</label>
+                        <select class="ui search dropdown" id="manualReceiptStudent">
+                            <option value="">Select Student</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="three fields">
+                    <div class="field required">
+                        <label>Receipt Date</label>
+                        <div class="ui calendar" id="manualReceiptDateCal">
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text" id="manualReceiptDate" placeholder="Receipt Date">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field required">
+                        <label>Payment Mode</label>
+                        <select class="ui dropdown" id="manualReceiptPaymentMode">
+                            <option value="">Select Mode</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Reference No.</label>
+                        <input type="text" id="manualReceiptReference" placeholder="Reference Number">
+                    </div>
+                </div>
+                <div class="two fields">
+                    <div class="field">
+                        <label>Received From</label>
+                        <input type="text" id="manualReceiptReceivedFrom" placeholder="Payer Name">
+                    </div>
+                    <div class="field">
+                        <label>Remark</label>
+                        <input type="text" id="manualReceiptNote" placeholder="Notes">
+                    </div>
+                </div>
+                <div class="ui divider"></div>
+                <div class="finance-panel-header" style="margin-bottom:0.75rem;">
+                    <div>
+                        <h4 class="finance-panel-title" style="font-size:1rem;">Allocate Against Charges</h4>
+                        <div class="finance-panel-subtitle">Enter receipt amounts against one or more outstanding student charges.</div>
+                    </div>
+                    <div class="finance-summary-item" style="min-width:160px; padding:0.75rem 0.9rem;">
+                        <div class="value" id="manualReceiptTotal">Rs 0.00</div>
+                        <div class="label">Receipt Total</div>
+                    </div>
+                </div>
+                <div id="manualReceiptCharges" class="ui relaxed divided list">
+                    <div class="item">
+                        <div class="content" style="color:var(--app-muted);">Select a student to load outstanding charges.</div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="actions">
+            <div class="ui cancel button">Cancel</div>
+            <button type="button" class="ui green button" onclick="submitManualReceipt()">
+                <i class="save icon"></i>
+                Save Receipt
+            </button>
+        </div>
+    </div>
+
+    <div class="ui tiny modal" id="reverseReceiptModal">
+        <i class="close icon"></i>
+        <div class="header">Reverse Receipt</div>
+        <div class="content">
+            <p id="reverseReceiptLabel" style="margin-bottom:0.75rem;"></p>
+            <div class="ui tiny form">
+                <div class="field">
+                    <label>Reason</label>
+                    <textarea id="reverseReceiptReason" rows="3" placeholder="Reason for reversal"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="actions">
+            <div class="ui cancel button">Cancel</div>
+            <button type="button" class="ui red button" onclick="submitReceiptReversal()">
+                <i class="undo icon"></i>
+                Confirm Reversal
+            </button>
+        </div>
+    </div>
+
+    <div class="ui small modal" id="refundReceiptModal">
+        <i class="close icon"></i>
+        <div class="header">Create Refund</div>
+        <div class="content">
+            <p id="refundReceiptLabel" style="margin-bottom:0.75rem;"></p>
+            <form class="ui tiny form" id="refundReceiptForm">
+                <div class="three fields">
+                    <div class="field required">
+                        <label>Refund Date</label>
+                        <div class="ui calendar" id="refundReceiptDateCal">
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text" id="refundReceiptDate" placeholder="Refund Date">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field required">
+                        <label>Payment Mode</label>
+                        <select class="ui dropdown" id="refundReceiptPaymentMode">
+                            <option value="">Select Mode</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Reference No.</label>
+                        <input type="text" id="refundReceiptReference" placeholder="Reference Number">
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Remark</label>
+                    <input type="text" id="refundReceiptNote" placeholder="Refund note">
+                </div>
+                <div class="ui divider"></div>
+                <div class="finance-panel-header" style="margin-bottom:0.75rem;">
+                    <div>
+                        <h4 class="finance-panel-title" style="font-size:1rem;">Allocate Refund</h4>
+                        <div class="finance-panel-subtitle">Refund against the original receipt allocations without exceeding the remaining refundable amount.</div>
+                    </div>
+                    <div class="finance-summary-item" style="min-width:160px; padding:0.75rem 0.9rem;">
+                        <div class="value" id="refundReceiptTotal">Rs 0.00</div>
+                        <div class="label">Refund Total</div>
+                    </div>
+                </div>
+                <div id="refundReceiptCharges" class="ui relaxed divided list">
+                    <div class="item">
+                        <div class="content" style="color:var(--app-muted);">Select a receipt to load refundable allocations.</div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="actions">
+            <div class="ui cancel button">Cancel</div>
+            <button type="button" class="ui orange button" onclick="submitReceiptRefund()">
+                <i class="reply icon"></i>
+                Save Refund
+            </button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let receiptTable;
+        let receiptPaymentModes = [];
+        let receiptReverseId = null;
+        let receiptRefundId = null;
+        $('.ui.dropdown').dropdown();
+        $('#receiptDateFromCal, #receiptDateToCal').calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date) {
+                    if (!date) return '';
+                    return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                }
+            }
+        });
+        $('#manualReceiptDateCal').calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date) {
+                    if (!date) return '';
+                    return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                }
+            }
+        });
+        $('#refundReceiptDateCal').calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date) {
+                    if (!date) return '';
+                    return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                }
+            }
+        });
+
+        function money(value) {
+            return 'Rs ' + Number(value || 0).toFixed(2);
+        }
+
+        function statusPill(statusValue) {
+            const status = String(statusValue || 'draft').toLowerCase();
+            return '<span class="finance-status-pill ' + status + '">' + status.replace('_', ' ') + '</span>';
+        }
+
+        receiptTable = $('#receiptTable').DataTable({
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            scrollX: true,
+            scrollY: '360px',
+            stateSave: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+                }
+            }],
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{% url 'managementAppAPI:FinanceReceiptListJson' %}",
+                data: function (d) {
+                    d.student = $('#receiptStudent').val() || '';
+                    d.status = $('#receiptStatus').val() || '';
+                    d.dateFrom = $('#receiptDateFrom').val() || '';
+                    d.dateTo = $('#receiptDateTo').val() || '';
+                }
+            },
+            language: {
+                emptyTable: 'Load receipts to view finance-backed collections.'
+            }
+        });
+
+        function getReceiptStandardList() {
+            $.get("{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}", function (response) {
+                const rows = response.data || [];
+                const options = ['<option value="">All Classes</option>'].concat(rows.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Name + '</option>';
+                }));
+                $('#receiptStandard').html(options.join('')).dropdown('refresh');
+                const modalOptions = ['<option value="">Select Class</option>'].concat(rows.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Name + '</option>';
+                }));
+                $('#manualReceiptStandard').html(modalOptions.join('')).dropdown('refresh');
+            });
+        }
+
+        function getReceiptStudentList() {
+            const standardId = $('#receiptStandard').val();
+            if (!standardId) {
+                $('#receiptStudent').html('<option value="">All Students</option>').dropdown('refresh');
+                return;
+            }
+            $.get("{% url 'managementAppAPI:get_student_list_by_class_api' %}", {standard: standardId}, function (response) {
+                const rows = response.data || [];
+                const options = ['<option value="">All Students</option>'].concat(rows.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Name + '</option>';
+                }));
+                $('#receiptStudent').html(options.join('')).dropdown('refresh');
+            });
+        }
+
+        $('#receiptStandard').on('change', getReceiptStudentList);
+
+        function getManualReceiptStudentList() {
+            const standardId = $('#manualReceiptStandard').val();
+            if (!standardId) {
+                $('#manualReceiptStudent').html('<option value="">Select Student</option>').dropdown('refresh');
+                renderManualReceiptCharges([]);
+                return;
+            }
+            $.get("{% url 'managementAppAPI:get_student_list_by_class_api' %}", {standard: standardId}, function (response) {
+                const rows = response.data || [];
+                const options = ['<option value="">Select Student</option>'].concat(rows.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Name + '</option>';
+                }));
+                $('#manualReceiptStudent').html(options.join('')).dropdown('refresh');
+                renderManualReceiptCharges([]);
+            });
+        }
+
+        $('#manualReceiptStandard').on('change', getManualReceiptStudentList);
+        $('#manualReceiptStudent').on('change', function () {
+            const studentId = $('#manualReceiptStudent').val();
+            if (!studentId) {
+                renderManualReceiptCharges([]);
+                return;
+            }
+            $.get("{% url 'managementAppAPI:get_receipt_charge_options_api' %}", {student: studentId}, function (response) {
+                renderManualReceiptCharges(response.data || []);
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load outstanding charges.');
+            });
+        });
+
+        function loadFinancePaymentModes() {
+            $.get("{% url 'managementAppAPI:get_finance_payment_mode_options_api' %}", function (response) {
+                receiptPaymentModes = response.data || [];
+                const options = ['<option value="">Select Mode</option>'].concat(receiptPaymentModes.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Name + '</option>';
+                }));
+                $('#manualReceiptPaymentMode').html(options.join('')).dropdown('refresh');
+            });
+        }
+
+        function renderManualReceiptCharges(rows) {
+            if (!rows.length) {
+                $('#manualReceiptCharges').html('<div class="item"><div class="content" style="color:var(--app-muted);">No outstanding charges found for this student.</div></div>');
+                $('#manualReceiptTotal').text('Rs 0.00');
+                return;
+            }
+            const html = rows.map(function (row) {
+                return `
+                    <div class="item" data-charge-id="${row.ID}">
+                        <div class="content">
+                            <div style="display:flex; justify-content:space-between; gap:0.75rem; align-items:flex-start; flex-wrap:wrap;">
+                                <div style="min-width:0;">
+                                    <div style="font-weight:700; color:var(--app-text);">${row.FeeHead}</div>
+                                    <div style="color:var(--app-muted); margin-top:0.2rem;">${row.Title}</div>
+                                    <div style="font-size:0.82rem; color:var(--app-muted); margin-top:0.15rem;">${row.ChargeDate} | Balance ${money(row.BalanceAmount)}</div>
+                                </div>
+                                <div style="display:flex; gap:0.5rem; align-items:center;">
+                                    <button type="button" class="ui mini basic button" onclick="fillFullReceiptAmount(${row.ID}, ${Number(row.BalanceAmount)})">Full</button>
+                                    <div class="ui tiny input" style="width:130px;">
+                                        <input type="number" min="0" step="0.01" max="${row.BalanceAmount}" data-charge-input="${row.ID}" placeholder="0.00">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            $('#manualReceiptCharges').html(html);
+            $('#manualReceiptCharges').find('input[data-charge-input]').on('input', updateManualReceiptTotal);
+            updateManualReceiptTotal();
+        }
+
+        function fillFullReceiptAmount(chargeId, amount) {
+            $('input[data-charge-input="' + chargeId + '"]').val(Number(amount).toFixed(2)).trigger('input');
+        }
+
+        function updateManualReceiptTotal() {
+            let total = 0;
+            $('#manualReceiptCharges').find('input[data-charge-input]').each(function () {
+                total += Number($(this).val() || 0);
+            });
+            $('#manualReceiptTotal').text(money(total));
+        }
+
+        function resetManualReceiptForm() {
+            $('#manualReceiptForm')[0].reset();
+            $('#manualReceiptStandard').dropdown('clear');
+            $('#manualReceiptStudent').html('<option value="">Select Student</option>').dropdown('refresh');
+            $('#manualReceiptPaymentMode').dropdown('clear');
+            $('#manualReceiptDate').val('');
+            renderManualReceiptCharges([]);
+        }
+
+        function openManualReceiptModal() {
+            resetManualReceiptForm();
+            const today = new Date();
+            $('#manualReceiptDateCal').calendar('set date', today, false, false);
+            $('#manualReceiptModal').modal({
+                autofocus: false,
+                detachable: false
+            }).modal('show');
+        }
+
+        function submitManualReceipt() {
+            const allocations = [];
+            $('#manualReceiptCharges').find('input[data-charge-input]').each(function () {
+                const amount = Number($(this).val() || 0);
+                if (amount > 0) {
+                    allocations.push({
+                        chargeID: $(this).data('charge-input'),
+                        amount: amount.toFixed(2)
+                    });
+                }
+            });
+            $.post("{% url 'managementAppAPI:create_manual_payment_receipt_api' %}", {
+                studentID: $('#manualReceiptStudent').val(),
+                paymentModeID: $('#manualReceiptPaymentMode').val(),
+                receiptDate: $('#manualReceiptDate').val(),
+                receivedFromName: $('#manualReceiptReceivedFrom').val(),
+                referenceNo: $('#manualReceiptReference').val(),
+                notes: $('#manualReceiptNote').val(),
+                allocations: JSON.stringify(allocations)
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to create receipt.');
+                    return;
+                }
+                $('#manualReceiptModal').modal('hide');
+                addSuccessNotification(response.message || 'Receipt created successfully.');
+                loadReceipts();
+                if (response.data && response.data.receiptUrl) {
+                    window.open(response.data.receiptUrl, '_blank');
+                }
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to create receipt.');
+            });
+        }
+
+        function openReverseReceiptModal(receiptId, receiptNo) {
+            receiptReverseId = receiptId;
+            $('#reverseReceiptReason').val('');
+            $('#reverseReceiptLabel').text('Reverse receipt ' + receiptNo + '? This will remove its confirmed effect from student balances and create a reversal entry in finance.');
+            $('#reverseReceiptModal').modal({
+                autofocus: false,
+                detachable: false
+            }).modal('show');
+        }
+
+        function submitReceiptReversal() {
+            if (!receiptReverseId) {
+                return;
+            }
+            $.post("{% url 'managementAppAPI:reverse_payment_receipt_api' %}", {
+                receiptID: receiptReverseId,
+                reason: $('#reverseReceiptReason').val()
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to reverse receipt.');
+                    return;
+                }
+                $('#reverseReceiptModal').modal('hide');
+                receiptReverseId = null;
+                addSuccessNotification(response.message || 'Receipt reversed successfully.');
+                loadReceipts();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to reverse receipt.');
+            });
+        }
+
+        function renderRefundReceiptCharges(rows) {
+            if (!rows.length) {
+                $('#refundReceiptCharges').html('<div class="item"><div class="content" style="color:var(--app-muted);">No refundable allocations remain for this receipt.</div></div>');
+                $('#refundReceiptTotal').text('Rs 0.00');
+                return;
+            }
+            const html = rows.map(function (row) {
+                return `
+                    <div class="item">
+                        <div class="content">
+                            <div style="display:flex; justify-content:space-between; gap:0.75rem; align-items:flex-start; flex-wrap:wrap;">
+                                <div style="min-width:0;">
+                                    <div style="font-weight:700; color:var(--app-text);">${row.FeeHead}</div>
+                                    <div style="color:var(--app-muted); margin-top:0.2rem;">${row.Title}</div>
+                                    <div style="font-size:0.82rem; color:var(--app-muted); margin-top:0.15rem;">Allocated ${money(row.AllocatedAmount)} | Already Refunded ${money(row.RefundedAmount)}</div>
+                                </div>
+                                <div style="display:flex; gap:0.5rem; align-items:center;">
+                                    <button type="button" class="ui mini basic button" onclick="fillFullRefundAmount(${row.ID}, ${Number(row.RefundableAmount)})">Full</button>
+                                    <div class="ui tiny input" style="width:130px;">
+                                        <input type="number" min="0" step="0.01" max="${row.RefundableAmount}" data-refund-input="${row.ID}" placeholder="0.00">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            $('#refundReceiptCharges').html(html);
+            $('#refundReceiptCharges').find('input[data-refund-input]').on('input', updateRefundReceiptTotal);
+            updateRefundReceiptTotal();
+        }
+
+        function fillFullRefundAmount(chargeId, amount) {
+            $('input[data-refund-input="' + chargeId + '"]').val(Number(amount).toFixed(2)).trigger('input');
+        }
+
+        function updateRefundReceiptTotal() {
+            let total = 0;
+            $('#refundReceiptCharges').find('input[data-refund-input]').each(function () {
+                total += Number($(this).val() || 0);
+            });
+            $('#refundReceiptTotal').text(money(total));
+        }
+
+        function openRefundReceiptModal(receiptId, receiptNo) {
+            receiptRefundId = receiptId;
+            $('#refundReceiptForm')[0].reset();
+            $('#refundReceiptPaymentMode').html($('#manualReceiptPaymentMode').html()).dropdown('refresh');
+            const today = new Date();
+            $('#refundReceiptDateCal').calendar('set date', today, false, false);
+            $('#refundReceiptLabel').text('Create a finance refund for receipt ' + receiptNo + '.');
+            $.get("{% url 'managementAppAPI:get_receipt_refund_options_api' %}", {receiptID: receiptId}, function (response) {
+                renderRefundReceiptCharges(response.data || []);
+                $('#refundReceiptModal').modal({
+                    autofocus: false,
+                    detachable: false
+                }).modal('show');
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load refundable allocations.');
+            });
+        }
+
+        function submitReceiptRefund() {
+            if (!receiptRefundId) {
+                return;
+            }
+            const allocations = [];
+            $('#refundReceiptCharges').find('input[data-refund-input]').each(function () {
+                const amount = Number($(this).val() || 0);
+                if (amount > 0) {
+                    allocations.push({
+                        chargeID: $(this).data('refund-input'),
+                        amount: amount.toFixed(2)
+                    });
+                }
+            });
+            $.post("{% url 'managementAppAPI:create_payment_refund_api' %}", {
+                receiptID: receiptRefundId,
+                paymentModeID: $('#refundReceiptPaymentMode').val(),
+                refundDate: $('#refundReceiptDate').val(),
+                referenceNo: $('#refundReceiptReference').val(),
+                notes: $('#refundReceiptNote').val(),
+                allocations: JSON.stringify(allocations)
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to create refund.');
+                    return;
+                }
+                $('#refundReceiptModal').modal('hide');
+                receiptRefundId = null;
+                addSuccessNotification(response.message || 'Refund created successfully.');
+                loadReceipts();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to create refund.');
+            });
+        }
+
+        function openReceiptAdjustments(receiptId, receiptNo) {
+            $.get("{% url 'managementAppAPI:get_receipt_adjustment_history_api' %}", {
+                receiptID: receiptId
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load receipt adjustments.');
+                    return;
+                }
+                const data = response.data || {};
+                const receipt = data.receipt || {};
+                const rows = data.rows || [];
+                $('#receiptAdjustmentTitle').text('Refund and reversal history for receipt ' + (receipt.receiptNo || receiptNo) + '.');
+                $('#receiptAdjustmentAmount').text(money(receipt.amountReceived));
+                $('#receiptAdjustmentRefunded').text(money(receipt.totalRefunded));
+                $('#receiptAdjustmentStatus').html(statusPill(receipt.status || '-'));
+                $('#receiptAdjustmentRows').html(
+                    rows.length ? rows.map(function (row) {
+                        return '<tr>' +
+                            '<td>' + row.date + '</td>' +
+                            '<td style="text-transform:capitalize;">' + row.type.replace(/_/g, ' ') + '</td>' +
+                            '<td><strong>' + row.reference + '</strong></td>' +
+                            '<td>' + money(row.amount) + '</td>' +
+                            '<td>' + statusPill(row.status) + '</td>' +
+                            '<td>' + (row.note || '-') + '</td>' +
+                            '</tr>';
+                    }).join('') : '<tr><td colspan="6" class="center aligned">No refund or reversal entries are linked to this receipt yet.</td></tr>'
+                );
+                $('#receiptAdjustmentSection').show();
+                document.getElementById('receiptAdjustmentSection').scrollIntoView({behavior: 'smooth', block: 'start'});
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load receipt adjustments.');
+            });
+        }
+
+        function resetReceiptFilters() {
+            $('#receiptStandard').dropdown('clear');
+            $('#receiptStudent').html('<option value="">All Students</option>').dropdown('refresh');
+            $('#receiptStatus').dropdown('clear');
+            $('#receiptDateFrom').val('');
+            $('#receiptDateTo').val('');
+            $('#receiptSummary').hide();
+            $('#receiptAdjustmentSection').hide();
+            receiptTable.ajax.reload();
+        }
+
+        function loadReceipts() {
+            $.get("{% url 'managementAppAPI:get_payment_receipt_list_api' %}", {
+                student: $('#receiptStudent').val(),
+                status: $('#receiptStatus').val(),
+                dateFrom: $('#receiptDateFrom').val(),
+                dateTo: $('#receiptDateTo').val()
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load receipts.');
+                    return;
+                }
+                const payload = response.data || {};
+                const summary = payload.summary || {};
+                const rows = payload.rows || [];
+
+                $('#receiptTotalCount').text(summary.totalReceipts || 0);
+                $('#receiptTotalAmount').text(money(summary.totalAmount));
+                $('#receiptConfirmedAmount').text(money(summary.confirmedAmount));
+                $('#receiptCancelledAmount').text(money(summary.cancelledAmount));
+                $('#receiptSummary').show();
+
+                receiptTable.ajax.reload();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load receipts.');
+            });
+        }
+
+        getReceiptStandardList();
+        loadFinancePaymentModes();
+        loadReceipts();
+    </script>
+{% endblock %}

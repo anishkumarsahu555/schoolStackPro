@@ -1,0 +1,531 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Payroll</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Payroll
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px; display:flex; gap:0.55rem; align-items:center;">
+                    <button type="button" class="ui green mini plus button" onclick="openPayrollRunModal()">
+                        <i class="plus square outline icon"></i>
+                        Generate Run
+                    </button>
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Generate payroll from active teacher salaries, post salary accruals into finance, and record individual salary payments from one screen."
+                       data-position="bottom center"></i>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+                <section>
+                    <div class="finance-panel-header">
+                        <div>
+                            <h3 class="finance-panel-title">Payroll Filters</h3>
+                            <div class="finance-panel-subtitle">Filter salary runs by month and year, then open a run to review or complete payments.</div>
+                        </div>
+                    </div>
+                    <form class="ui tiny form">
+                        {% csrf_token %}
+                        <div class="finance-filter-grid">
+                            <div class="field">
+                                <label>Month</label>
+                                <select class="ui dropdown" id="payrollMonthFilter">
+                                    <option value="">All Months</option>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Year</label>
+                                <input type="number" id="payrollYearFilter" min="2000" max="2100" placeholder="Year">
+                            </div>
+                        </div>
+                        <div class="finance-filter-actions">
+                            <button type="button" class="ui green button" onclick="loadPayrollRuns()">
+                                <i class="search icon"></i>
+                                Load Payroll
+                            </button>
+                            <button type="button" class="ui mini red button" onclick="resetPayrollFilters()">
+                                <i class="icon times circle"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="finance-summary-grid" id="payrollSummary" style="display:none;">
+                    <div class="finance-summary-item">
+                        <div class="value" id="payrollTotalRuns">0</div>
+                        <div class="label">Runs</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="payrollPostedRuns">0</div>
+                        <div class="label">Posted Runs</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="payrollTotalPayable">Rs 0.00</div>
+                        <div class="label">Total Payable</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="payrollTotalPaid">Rs 0.00</div>
+                        <div class="label">Paid</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="payrollTotalPending">Rs 0.00</div>
+                        <div class="label">Pending</div>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Payroll Runs</h3>
+                            <div class="finance-panel-subtitle">Run generation uses the active teacher salary records in the current school session.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny sortable celled very compact table" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Run No</th>
+                                <th>Period</th>
+                                <th>Run Date</th>
+                                <th>Lines</th>
+                                <th>Payable</th>
+                                <th>Paid</th>
+                                <th>Pending</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody id="payrollRunRows">
+                            <tr><td colspan="9" class="center aligned">Load payroll runs to continue.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel" id="payrollDetailSection" style="display:none;">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Run Details</h3>
+                            <div class="finance-panel-subtitle" id="payrollDetailSubtitle">Review salary lines and record salary payments.</div>
+                        </div>
+                        <div style="display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap;">
+                            <div class="finance-summary-item" style="min-width:150px; padding:0.75rem 0.9rem;">
+                                <div class="value" id="selectedPayrollPending">Rs 0.00</div>
+                                <div class="label">Pending</div>
+                            </div>
+                            <button type="button" class="ui blue button" id="postPayrollRunButton" style="display:none;" onclick="postSelectedPayrollRun()">
+                                <i class="upload icon"></i>
+                                Post Run
+                            </button>
+                        </div>
+                    </div>
+                    <div class="finance-summary-grid" style="margin-bottom:1rem;">
+                        <div class="finance-summary-item">
+                            <div class="value" id="selectedPayrollRunNo">-</div>
+                            <div class="label">Run No</div>
+                        </div>
+                        <div class="finance-summary-item">
+                            <div class="value" id="selectedPayrollPeriod">-</div>
+                            <div class="label">Period</div>
+                        </div>
+                        <div class="finance-summary-item">
+                            <div class="value" id="selectedPayrollDate">-</div>
+                            <div class="label">Run Date</div>
+                        </div>
+                        <div class="finance-summary-item">
+                            <div class="value" id="selectedPayrollStatus">-</div>
+                            <div class="label">Status</div>
+                        </div>
+                        <div class="finance-summary-item">
+                            <div class="value" id="selectedPayrollPayable">Rs 0.00</div>
+                            <div class="label">Payable</div>
+                        </div>
+                        <div class="finance-summary-item">
+                            <div class="value" id="selectedPayrollPaid">Rs 0.00</div>
+                            <div class="label">Paid</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny sortable celled very compact table" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Teacher</th>
+                                <th>Basic</th>
+                                <th>Allowance</th>
+                                <th>Deduction</th>
+                                <th>Advance</th>
+                                <th>Net</th>
+                                <th>Status</th>
+                                <th>Payment Date</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody id="payrollLineRows">
+                            <tr><td colspan="9" class="center aligned">Select a run to view salary lines.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui small modal" id="payrollRunModal">
+        <i class="close icon"></i>
+        <div class="header">Generate Payroll Run</div>
+        <div class="content">
+            <form class="ui tiny form" id="payrollRunForm">
+                <div class="three fields">
+                    <div class="field required">
+                        <label>Month</label>
+                        <select class="ui dropdown" id="payrollRunMonth">
+                            <option value="">Select Month</option>
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="field required">
+                        <label>Year</label>
+                        <input type="number" id="payrollRunYear" min="2000" max="2100" placeholder="Year">
+                    </div>
+                    <div class="field required">
+                        <label>Run Date</label>
+                        <div class="ui calendar" id="payrollRunDateCal">
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text" id="payrollRunDate" placeholder="Run Date">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="actions">
+            <div class="ui cancel button">Cancel</div>
+            <button type="button" class="ui green button" onclick="submitPayrollRun()">
+                <i class="save icon"></i>
+                Generate
+            </button>
+        </div>
+    </div>
+
+    <div class="ui tiny modal" id="payrollLinePaymentModal">
+        <i class="close icon"></i>
+        <div class="header">Record Salary Payment</div>
+        <div class="content">
+            <p id="payrollLinePaymentLabel" style="margin-bottom:0.75rem;"></p>
+            <form class="ui tiny form">
+                <div class="two fields">
+                    <div class="field required">
+                        <label>Payment Date</label>
+                        <div class="ui calendar" id="payrollLinePaymentDateCal">
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text" id="payrollLinePaymentDate" placeholder="Payment Date">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field required">
+                        <label>Payment Mode</label>
+                        <select class="ui dropdown" id="payrollLinePaymentMode">
+                            <option value="">Select Mode</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="actions">
+            <div class="ui cancel button">Cancel</div>
+            <button type="button" class="ui green button" onclick="submitPayrollLinePayment()">
+                <i class="money bill alternate outline icon"></i>
+                Save Payment
+            </button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let selectedPayrollRunId = null;
+        let selectedPayrollLineId = null;
+
+        $('.ui.dropdown').dropdown();
+        $('#payrollRunDateCal, #payrollLinePaymentDateCal').calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date) {
+                    if (!date) return '';
+                    return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                }
+            }
+        });
+
+        function money(value) {
+            return 'Rs ' + Number(value || 0).toFixed(2);
+        }
+
+        function statusPill(statusValue) {
+            const status = String(statusValue || 'draft').toLowerCase();
+            return '<span class="finance-status-pill ' + status + '">' + status.replace('_', ' ') + '</span>';
+        }
+
+        function loadFinancePaymentModesForPayroll() {
+            $.get("{% url 'managementAppAPI:get_finance_payment_mode_options_api' %}", function (response) {
+                const rows = response.data || [];
+                const options = ['<option value="">Select Mode</option>'].concat(rows.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Name + '</option>';
+                }));
+                $('#payrollLinePaymentMode').html(options.join('')).dropdown('refresh');
+            });
+        }
+
+        function loadPayrollRuns() {
+            $.get("{% url 'managementAppAPI:get_payroll_run_list_api' %}", {
+                month: $('#payrollMonthFilter').val(),
+                year: $('#payrollYearFilter').val()
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load payroll runs.');
+                    return;
+                }
+                const data = response.data || {};
+                const summary = data.summary || {};
+                const rows = data.rows || [];
+
+                $('#payrollTotalRuns').text(summary.totalRuns || 0);
+                $('#payrollPostedRuns').text(summary.postedRuns || 0);
+                $('#payrollTotalPayable').text(money(summary.totalPayable));
+                $('#payrollTotalPaid').text(money(summary.totalPaid));
+                $('#payrollTotalPending').text(money(summary.totalPending));
+                $('#payrollSummary').show();
+
+                if (!rows.length) {
+                    $('#payrollRunRows').html('<tr><td colspan="9" class="center aligned">No payroll runs found for the selected filters.</td></tr>');
+                    return;
+                }
+
+                $('#payrollRunRows').html(rows.map(function (row) {
+                    const openButton = '<button type="button" class="ui mini basic button" onclick="openPayrollRun(' + row.id + ')"><i class="eye icon"></i>Open</button>';
+                    const postButton = (row.status === 'processed' || row.status === 'posted')
+                        ? '<button type="button" class="ui mini blue button" onclick="postPayrollRunDirect(' + row.id + ')"><i class="upload icon"></i>Post</button>'
+                        : '';
+                    return `
+                        <tr>
+                            <td><strong>${row.runNo || '-'}</strong></td>
+                            <td>${row.period}</td>
+                            <td>${row.runDate}</td>
+                            <td>${row.lineCount}</td>
+                            <td>${money(row.payableAmount)}</td>
+                            <td>${money(row.paidAmount)}</td>
+                            <td>${money(row.pendingAmount)}<div style="font-size:0.8rem; color:var(--app-muted);">${row.pendingCount} pending</div></td>
+                            <td>${statusPill(row.status)}</td>
+                            <td><div style="display:flex; gap:0.45rem; flex-wrap:wrap;">${openButton}${postButton}</div></td>
+                        </tr>
+                    `;
+                }).join(''));
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load payroll runs.');
+            });
+        }
+
+        function openPayrollRun(runId) {
+            selectedPayrollRunId = runId;
+            $.get("{% url 'managementAppAPI:get_payroll_run_detail_api' %}", {
+                runID: runId
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load payroll run.');
+                    return;
+                }
+                const data = response.data || {};
+                const run = data.run || {};
+                const rows = data.rows || [];
+
+                $('#selectedPayrollRunNo').text(run.runNo || '-');
+                $('#selectedPayrollPeriod').text(run.period || '-');
+                $('#selectedPayrollDate').text(run.runDate || '-');
+                $('#selectedPayrollStatus').html(statusPill(run.status));
+                $('#selectedPayrollPayable').text(money(run.totalPayable));
+                $('#selectedPayrollPaid').text(money(run.totalPaid));
+                $('#selectedPayrollPending').text(money(run.totalPending));
+                $('#payrollDetailSubtitle').text('Run ' + (run.runNo || run.period || '') + ' contains ' + rows.length + ' payable line(s).');
+                if (run.canPost) {
+                    $('#postPayrollRunButton').show();
+                } else {
+                    $('#postPayrollRunButton').hide();
+                }
+                $('#payrollDetailSection').show();
+
+                if (!rows.length) {
+                    $('#payrollLineRows').html('<tr><td colspan="9" class="center aligned">No salary lines found for this payroll run.</td></tr>');
+                    return;
+                }
+
+                $('#payrollLineRows').html(rows.map(function (row) {
+                    const payButton = row.paymentStatus === 'pending'
+                        ? '<button type="button" class="ui mini green button" onclick="openPayrollPaymentModal(' + row.id + ', \'' + String(row.teacherName).replace(/'/g, "\\'") + '\', ' + Number(row.netAmount || 0) + ')"><i class="money bill alternate outline icon"></i>Pay</button>'
+                        : row.paymentStatus === 'submitted'
+                            ? '<span style="color:var(--app-muted);">Awaiting approval</span>'
+                            : '';
+                    return `
+                        <tr>
+                            <td>${row.teacherName}</td>
+                            <td>${money(row.basicAmount)}</td>
+                            <td>${money(row.allowanceAmount)}</td>
+                            <td>${money(row.deductionAmount)}</td>
+                            <td>${money(row.advanceRecoveryAmount)}</td>
+                            <td><strong>${money(row.netAmount)}</strong></td>
+                            <td>${statusPill(row.paymentStatus)}</td>
+                            <td>${row.paymentDate || '—'}</td>
+                            <td>${payButton || '<span style="color:var(--app-muted);">Paid</span>'}</td>
+                        </tr>
+                    `;
+                }).join(''));
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load payroll run.');
+            });
+        }
+
+        function resetPayrollFilters() {
+            $('#payrollMonthFilter').dropdown('clear');
+            $('#payrollYearFilter').val('');
+            loadPayrollRuns();
+        }
+
+        function openPayrollRunModal() {
+            const today = new Date();
+            $('#payrollRunForm')[0].reset();
+            $('#payrollRunMonth').dropdown('clear');
+            $('#payrollRunYear').val(today.getFullYear());
+            $('#payrollRunDateCal').calendar('set date', today, false, false);
+            $('#payrollRunModal').modal({
+                autofocus: false,
+                detachable: false
+            }).modal('show');
+        }
+
+        function submitPayrollRun() {
+            $.post("{% url 'managementAppAPI:create_payroll_run_api' %}", {
+                month: $('#payrollRunMonth').val(),
+                year: $('#payrollRunYear').val(),
+                runDate: $('#payrollRunDate').val()
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to generate payroll run.');
+                    return;
+                }
+                $('#payrollRunModal').modal('hide');
+                addSuccessNotification(response.message || 'Payroll run generated successfully.');
+                loadPayrollRuns();
+                if (response.data && response.data.id) {
+                    openPayrollRun(response.data.id);
+                }
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to generate payroll run.');
+            });
+        }
+
+        function postPayrollRunDirect(runId) {
+            $.post("{% url 'managementAppAPI:post_payroll_run_api' %}", {
+                runID: runId
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to post payroll run.');
+                    return;
+                }
+                addSuccessNotification(response.message || 'Payroll run posted successfully.');
+                loadPayrollRuns();
+                if (selectedPayrollRunId === runId) {
+                    openPayrollRun(runId);
+                }
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to post payroll run.');
+            });
+        }
+
+        function postSelectedPayrollRun() {
+            if (!selectedPayrollRunId) {
+                return;
+            }
+            postPayrollRunDirect(selectedPayrollRunId);
+        }
+
+        function openPayrollPaymentModal(lineId, teacherName, amount) {
+            selectedPayrollLineId = lineId;
+            $('#payrollLinePaymentLabel').text('Record salary payment of ' + money(amount) + ' for ' + teacherName + '.');
+            $('#payrollLinePaymentMode').dropdown('clear');
+            $('#payrollLinePaymentDateCal').calendar('set date', new Date(), false, false);
+            $('#payrollLinePaymentModal').modal({
+                autofocus: false,
+                detachable: false
+            }).modal('show');
+        }
+
+        function submitPayrollLinePayment() {
+            if (!selectedPayrollLineId) {
+                return;
+            }
+            $.post("{% url 'managementAppAPI:pay_payroll_line_api' %}", {
+                lineID: selectedPayrollLineId,
+                paymentDate: $('#payrollLinePaymentDate').val(),
+                paymentModeID: $('#payrollLinePaymentMode').val()
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to record salary payment.');
+                    return;
+                }
+                $('#payrollLinePaymentModal').modal('hide');
+                addSuccessNotification(response.message || 'Salary payment recorded successfully.');
+                loadPayrollRuns();
+                if (selectedPayrollRunId) {
+                    openPayrollRun(selectedPayrollRunId);
+                }
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to record salary payment.');
+            });
+        }
+
+        (function initPayrollPage() {
+            const today = new Date();
+            $('#payrollMonthFilter').dropdown('set selected', String(today.getMonth() + 1));
+            $('#payrollYearFilter').val(today.getFullYear());
+            $('#payrollRunMonth').dropdown();
+            loadFinancePaymentModesForPayroll();
+            loadPayrollRuns();
+        })();
+    </script>
+{% endblock %}

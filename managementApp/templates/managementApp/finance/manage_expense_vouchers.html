@@ -1,0 +1,978 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Expense Vouchers</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+    <style>
+        .expense-payee-field {
+            position: relative;
+        }
+
+        .expense-payee-shell {
+            position: relative;
+        }
+
+        .expense-payee-shell .search.icon {
+            position: absolute;
+            left: 0.85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(59, 130, 246, 0.88);
+            pointer-events: none;
+        }
+
+        .expense-payee-shell input {
+            padding-left: 2.6rem !important;
+            border-radius: 12px !important;
+        }
+
+        .expense-payee-menu {
+            position: absolute;
+            top: calc(100% + 0.45rem);
+            left: 0;
+            right: 0;
+            z-index: 35;
+            display: none;
+            padding: 0.4rem;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.16);
+            backdrop-filter: blur(8px);
+        }
+
+        .expense-payee-menu.active {
+            display: block;
+        }
+
+        .expense-payee-menu-inner {
+            max-height: 220px;
+            overflow-y: auto;
+            display: grid;
+            gap: 0.3rem;
+        }
+
+        .expense-payee-option {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.72rem 0.82rem;
+            border: 0;
+            border-radius: 11px;
+            background: transparent;
+            color: #0f172a;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+        }
+
+        .expense-payee-option:hover,
+        .expense-payee-option.active {
+            background: rgba(59, 130, 246, 0.1);
+            color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .expense-payee-option-main {
+            display: grid;
+            gap: 0.16rem;
+            min-width: 0;
+        }
+
+        .expense-payee-option-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .expense-payee-option-meta {
+            font-size: 0.73rem;
+            color: #64748b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .expense-payee-option-tag {
+            flex-shrink: 0;
+            padding: 0.18rem 0.5rem;
+            border-radius: 999px;
+            background: rgba(16, 185, 129, 0.12);
+            color: #047857;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            text-transform: uppercase;
+        }
+
+        .expense-payee-empty {
+            padding: 0.82rem;
+            border-radius: 11px;
+            background: rgba(59, 130, 246, 0.06);
+            color: #475569;
+            font-size: 0.8rem;
+            line-height: 1.45;
+        }
+
+        html[data-theme="dark"] .expense-payee-menu {
+            border-color: rgba(148, 163, 184, 0.16);
+            background: rgba(17, 24, 39, 0.96);
+            box-shadow: 0 18px 38px rgba(2, 6, 23, 0.5);
+        }
+
+        html[data-theme="dark"] .expense-payee-option {
+            color: #e2e8f0;
+        }
+
+        html[data-theme="dark"] .expense-payee-option:hover,
+        html[data-theme="dark"] .expense-payee-option.active {
+            background: rgba(96, 165, 250, 0.14);
+            color: #bfdbfe;
+        }
+
+        html[data-theme="dark"] .expense-payee-option-meta,
+        html[data-theme="dark"] .expense-payee-empty {
+            color: #94a3b8;
+        }
+
+        html[data-theme="dark"] .expense-payee-option-tag {
+            background: rgba(16, 185, 129, 0.14);
+            color: #6ee7b7;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Expense Vouchers
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Set up expense categories, record vouchers, and review outgoing finance activity in one management-style workspace. The finance posting rules stay the same; this just makes the workflow much easier to use."
+                       data-position="bottom center"></i>
+                    <button class="ui green mini plus button right" type="button" onclick="openExpenseVoucherModal()">
+                        <i class="plus square outline icon"></i>
+                        Add Voucher
+                    </button>
+                    <button class="ui blue mini button right" type="button" onclick="openExpenseCategoryModal()">
+                        <i class="plus square outline icon"></i>
+                        Add Category
+                    </button>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+
+        <section class="finance-summary-grid" id="expenseSummary">
+            <div class="finance-summary-item">
+                <div class="value" id="expenseCategoryCount">0</div>
+                <div class="label">Categories</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="expenseVoucherCount">0</div>
+                <div class="label">Vouchers</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="expenseVoucherTotal">Rs 0.00</div>
+                <div class="label">Net Outflow</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="expenseVoucherPaidCount">0</div>
+                <div class="label">Paid Vouchers</div>
+            </div>
+        </section>
+
+        <section>
+            <div class="finance-panel-header">
+                <div>
+                    <h3 class="finance-panel-title">Expense Categories</h3>
+                    <div class="finance-panel-subtitle">Define the expense buckets and accounts used by vouchers through a standard management modal.</div>
+                </div>
+            </div>
+            <div class="finance-empty" style="padding: 0.5rem 0;">
+                Use <strong>Add Category</strong> or the row edit action to manage categories in a modal.
+            </div>
+        </section>
+
+        <section class="finance-table-panel">
+            <div class="finance-table-head">
+                <div>
+                    <h3 class="finance-panel-title">Category List</h3>
+                    <div class="finance-panel-subtitle">Configured expense heads and the accounts they post into.</div>
+                </div>
+            </div>
+            <div class="finance-table-wrap">
+                <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="expenseCategoryTable" style="width:100%;">
+                    <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Expense Account</th>
+                        <th>Payable Account</th>
+                        <th>Status</th>
+                        <th>Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <div class="finance-panel-header">
+                <div>
+                    <h3 class="finance-panel-title">Expense Voucher Entry</h3>
+                    <div class="finance-panel-subtitle">Record vendor or operational payments with the same add/edit modal flow used in management.</div>
+                </div>
+            </div>
+            <div class="finance-empty" style="padding: 0.5rem 0;">
+                Use <strong>Add Voucher</strong> or the row edit action to open the expense voucher modal.
+            </div>
+        </section>
+
+        <section class="finance-table-panel">
+            <div class="finance-table-head">
+                <div>
+                    <h3 class="finance-panel-title">Expense Voucher List</h3>
+                    <div class="finance-panel-subtitle">Recent outgoing entries with payment context and status.</div>
+                </div>
+            </div>
+            <div class="finance-table-wrap">
+                <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="expenseVoucherTable" style="width:100%;">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Voucher No.</th>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Payee</th>
+                        <th>Net Amount</th>
+                        <th>Status</th>
+                        <th>Payment</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <div class="ui modal" id="expenseCategoryModal">
+            <i class="close icon"></i>
+            <div class="header" id="expenseCategoryModalTitle">Add Expense Category</div>
+            <div class="content">
+                <form class="ui tiny form" id="expenseCategoryForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="expenseCategoryId">
+                    <div class="four fields">
+                        <div class="field required">
+                            <label>Code</label>
+                            <input type="text" id="expenseCategoryCode" placeholder="OFFICE_SUPPLIES">
+                        </div>
+                        <div class="field required">
+                            <label>Name</label>
+                            <input type="text" id="expenseCategoryName" placeholder="Office Supplies">
+                        </div>
+                        <div class="field required">
+                            <label>Expense Account</label>
+                            <select class="ui search dropdown" id="expenseCategoryExpenseAccount"></select>
+                        </div>
+                        <div class="field">
+                            <label>Payable Account</label>
+                            <select class="ui search dropdown" id="expenseCategoryPayableAccount"></select>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="ui checkbox">
+                            <input type="checkbox" id="expenseCategoryIsActive" checked>
+                            <label>Active</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="actions">
+                <div class="ui cancel button">Cancel</div>
+                <button type="button" class="ui right labeled icon button green" onclick="saveExpenseCategory()">
+                    Save
+                    <i class="checkmark icon"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="ui modal" id="expenseVoucherModal">
+            <i class="close icon"></i>
+            <div class="header" id="expenseVoucherModalTitle">Add Expense Voucher</div>
+            <div class="content">
+                <form class="ui tiny form" id="expenseVoucherForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="expenseVoucherId">
+                    <div class="four fields">
+                        <div class="field required">
+                            <label>Voucher Date</label>
+                            <div class="ui calendar" id="expenseVoucherDateCal">
+                                <div class="ui input left icon">
+                                    <i class="calendar icon"></i>
+                                    <input type="text" id="expenseVoucherDate" placeholder="Voucher Date">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="field required">
+                            <label>Expense Category</label>
+                            <select class="ui search dropdown" id="expenseVoucherCategory"></select>
+                        </div>
+                        <div class="field required">
+                            <label>Title</label>
+                            <input type="text" id="expenseVoucherTitle" placeholder="Internet bill payment">
+                        </div>
+                        <div class="field">
+                            <label>Payee</label>
+                            <div class="expense-payee-field">
+                                <div class="expense-payee-shell">
+                                    <i class="search icon"></i>
+                                    <input type="text" id="expenseVoucherPayeeName" list="expenseVoucherPayeeSuggestions" placeholder="Search or enter payee name" autocomplete="off">
+                                    <div class="expense-payee-menu" id="expenseVoucherPayeeMenu">
+                                        <div class="expense-payee-menu-inner" id="expenseVoucherPayeeMenuInner"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <datalist id="expenseVoucherPayeeSuggestions"></datalist>
+                        </div>
+                    </div>
+                    <div class="four fields">
+                        <div class="field required">
+                            <label>Gross Amount</label>
+                            <input type="number" id="expenseVoucherGrossAmount" min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="field">
+                            <label>Deduction</label>
+                            <input type="number" id="expenseVoucherDeductionAmount" min="0" step="0.01" placeholder="0.00" value="0">
+                        </div>
+                        <div class="field">
+                            <label>Bill No.</label>
+                            <input type="text" id="expenseVoucherBillNo" placeholder="Bill Number">
+                        </div>
+                        <div class="field">
+                            <label>Bill Date</label>
+                            <div class="ui calendar" id="expenseVoucherBillDateCal">
+                                <div class="ui input left icon">
+                                    <i class="calendar icon"></i>
+                                    <input type="text" id="expenseVoucherBillDate" placeholder="Bill Date">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="four fields">
+                        <div class="field">
+                            <label>Status</label>
+                            <select class="ui dropdown" id="expenseVoucherApprovalStatus">
+                                <option value="draft">Draft</option>
+                                <option value="submitted">Submitted</option>
+                                <option value="approved">Approved</option>
+                                <option value="paid">Paid</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Payment Mode</label>
+                            <select class="ui search dropdown" id="expenseVoucherPaymentMode"></select>
+                        </div>
+                        <div class="field">
+                            <label>Payment Account</label>
+                            <select class="ui search dropdown" id="expenseVoucherPaymentAccount"></select>
+                        </div>
+                        <div class="field">
+                            <div class="ui checkbox" style="margin-top: 1.9rem;">
+                                <input type="checkbox" id="expenseVoucherImmediatePayment" checked>
+                                <label>Immediate payment</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Description</label>
+                        <textarea id="expenseVoucherDescription" rows="2" placeholder="Voucher remark"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="actions">
+                <div class="ui cancel button">Cancel</div>
+                <button type="button" class="ui right labeled icon button green" onclick="saveExpenseVoucher()">
+                    Save
+                    <i class="checkmark icon"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="ui basic modal custom" id="deleteExpenseModal">
+            <div class="ui icon header">
+                <i class="trash alternate icon red"></i>
+                Record Will Be Deleted
+            </div>
+            <div class="content">
+                <p style="text-align: center" id="deleteExpenseModalMessage">This record will be deleted. Are you sure?</p>
+            </div>
+            <div class="actions">
+                <div class="ui red basic cancel inverted button">
+                    <i class="remove icon"></i>
+                    No
+                </div>
+                <input type="hidden" id="deleteExpenseTargetId">
+                <input type="hidden" id="deleteExpenseTargetType">
+                <div class="ui green ok inverted button" onclick="confirmDeleteExpenseRecord()">
+                    <i class="checkmark icon"></i>
+                    Yes
+                </div>
+            </div>
+        </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let expenseCategories = [];
+        let financeAccounts = [];
+        let paymentModes = [];
+        let expenseVouchers = [];
+        let vendorSuggestions = [];
+        let expenseCategoryTable;
+        let expenseVoucherTable;
+        let activePayeeMenuIndex = -1;
+        let payeeSearchTimer = null;
+        let payeeSearchToken = 0;
+
+        $('.ui.dropdown').dropdown();
+        $('.ui.checkbox').checkbox();
+
+        $('#expenseVoucherDateCal, #expenseVoucherBillDateCal').calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date) {
+                    if (!date) return '';
+                    return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                }
+            }
+        });
+
+        function money(value) {
+            return 'Rs ' + Number(value || 0).toFixed(2);
+        }
+
+        function statusPill(statusValue) {
+            const status = String(statusValue || 'draft').toLowerCase();
+            return '<span class="finance-status-pill ' + status + '">' + status.replace('_', ' ') + '</span>';
+        }
+
+        function activePill(isActive) {
+            const label = isActive ? 'active' : 'inactive';
+            return '<span class="finance-status-pill ' + label + '">' + label + '</span>';
+        }
+
+        expenseCategoryTable = $('#expenseCategoryTable').DataTable({
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            scrollX: true,
+            scrollY: '260px',
+            stateSave: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {columns: [0, 1, 2, 3, 4, 5]}
+            }],
+            processing: true,
+            serverSide: true,
+            ajax: "{% url 'managementAppAPI:FinanceExpenseCategoryListJson' %}",
+            language: {emptyTable: 'No expense categories found.'}
+        });
+
+        expenseVoucherTable = $('#expenseVoucherTable').DataTable({
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            scrollX: true,
+            scrollY: '360px',
+            stateSave: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {columns: [0, 1, 2, 3, 4, 5, 6, 7]}
+            }],
+            processing: true,
+            serverSide: true,
+            ajax: "{% url 'managementAppAPI:FinanceExpenseVoucherListJson' %}",
+            language: {emptyTable: 'No expense vouchers found.'}
+        });
+
+        function refreshExpenseSummary() {
+            const total = expenseVouchers.reduce(function (sum, row) {
+                return sum + Number(row.netAmount || 0);
+            }, 0);
+            const paidCount = expenseVouchers.filter(function (row) {
+                return row.approvalStatus === 'paid';
+            }).length;
+            $('#expenseCategoryCount').text(expenseCategories.length);
+            $('#expenseVoucherCount').text(expenseVouchers.length);
+            $('#expenseVoucherTotal').text(money(total));
+            $('#expenseVoucherPaidCount').text(paidCount);
+        }
+
+        function populateFinanceAccounts() {
+            const options = ['<option value="">Select Account</option>'].concat(financeAccounts.map(function (row) {
+                return '<option value="' + row.ID + '">' + row.Label + '</option>';
+            }));
+            $('#expenseCategoryExpenseAccount, #expenseCategoryPayableAccount, #expenseVoucherPaymentAccount').html(options.join('')).dropdown('refresh');
+        }
+
+        function populatePaymentModes() {
+            const options = ['<option value="">Select Payment Mode</option>'].concat(paymentModes.map(function (row) {
+                return '<option value="' + row.ID + '" data-linked-account-id="' + (row.LinkedAccountID || '') + '">' + row.Name + '</option>';
+            }));
+            $('#expenseVoucherPaymentMode').html(options.join('')).dropdown('refresh');
+        }
+
+        function populateExpenseCategories() {
+            const options = ['<option value="">Select Expense Category</option>'].concat(expenseCategories.map(function (row) {
+                return '<option value="' + row.id + '">' + row.name + '</option>';
+            }));
+            $('#expenseVoucherCategory').html(options.join('')).dropdown('refresh');
+        }
+
+        function populateVendorSuggestions() {
+            const options = vendorSuggestions.map(function (row) {
+                const label = String(row.displayName || '').trim();
+                const escapedLabel = $('<div>').text(label).html();
+                return '<option value="' + escapedLabel + '"></option>';
+            });
+            $('#expenseVoucherPayeeSuggestions').html(options.join(''));
+            renderPayeeMenu($('#expenseVoucherPayeeName').val());
+        }
+
+        function escapeHtml(value) {
+            return $('<div>').text(value || '').html();
+        }
+
+        function buildPayeeMenuRows(searchValue) {
+            const query = String(searchValue || '').trim().toLowerCase();
+            const rows = vendorSuggestions.filter(function (row) {
+                const label = String(row.displayName || '').toLowerCase();
+                const phone = String(row.phoneNumber || '').toLowerCase();
+                const email = String(row.email || '').toLowerCase();
+                return !query || label.includes(query) || phone.includes(query) || email.includes(query);
+            }).slice(0, 8);
+            return rows;
+        }
+
+        function schedulePayeeSearch(searchValue) {
+            if (payeeSearchTimer) {
+                clearTimeout(payeeSearchTimer);
+            }
+            payeeSearchTimer = setTimeout(function () {
+                runPayeeSearch(searchValue);
+            }, 250);
+        }
+
+        function runPayeeSearch(searchValue) {
+            const currentToken = ++payeeSearchToken;
+            $.get("{% url 'managementAppAPI:search_vendor_suggestions_api' %}", {
+                q: searchValue || '',
+                limit: 8
+            }, function (response) {
+                if (currentToken !== payeeSearchToken) {
+                    return;
+                }
+                if (!response.success) {
+                    return;
+                }
+                vendorSuggestions = response.data || [];
+                populateVendorSuggestions();
+            });
+        }
+
+        function openPayeeMenu() {
+            $('#expenseVoucherPayeeMenu').addClass('active');
+        }
+
+        function closePayeeMenu() {
+            $('#expenseVoucherPayeeMenu').removeClass('active');
+            activePayeeMenuIndex = -1;
+            $('#expenseVoucherPayeeMenuInner .expense-payee-option').removeClass('active');
+        }
+
+        function highlightPayeeMenu(index) {
+            const options = $('#expenseVoucherPayeeMenuInner .expense-payee-option');
+            options.removeClass('active');
+            if (!options.length) {
+                activePayeeMenuIndex = -1;
+                return;
+            }
+            if (index < 0) {
+                index = options.length - 1;
+            }
+            if (index >= options.length) {
+                index = 0;
+            }
+            activePayeeMenuIndex = index;
+            const activeOption = options.eq(index);
+            activeOption.addClass('active');
+            const container = $('#expenseVoucherPayeeMenuInner');
+            const top = activeOption.position().top;
+            const bottom = top + activeOption.outerHeight();
+            if (top < 0) {
+                container.scrollTop(container.scrollTop() + top);
+            } else if (bottom > container.innerHeight()) {
+                container.scrollTop(container.scrollTop() + (bottom - container.innerHeight()));
+            }
+        }
+
+        function selectPayeeOption(value) {
+            $('#expenseVoucherPayeeName').val(value || '');
+            closePayeeMenu();
+        }
+
+        function renderPayeeMenu(searchValue) {
+            const rows = buildPayeeMenuRows(searchValue);
+            const query = String(searchValue || '').trim();
+            let html = '';
+            if (rows.length) {
+                html = rows.map(function (row) {
+                    const title = escapeHtml(row.displayName || '');
+                    const metaParts = [row.phoneNumber || '', row.email || ''].filter(Boolean);
+                    return (
+                        '<button type="button" class="expense-payee-option" data-value="' + title + '">' +
+                            '<span class="expense-payee-option-main">' +
+                                '<span class="expense-payee-option-title">' + title + '</span>' +
+                                '<span class="expense-payee-option-meta">' + escapeHtml(metaParts.join(' | ') || 'Existing vendor') + '</span>' +
+                            '</span>' +
+                            '<span class="expense-payee-option-tag">Vendor</span>' +
+                        '</button>'
+                    );
+                }).join('');
+            } else if (query) {
+                html = '<div class="expense-payee-empty">No existing vendor matched. You can continue with <strong>' + escapeHtml(query) + '</strong> as a new payee.</div>';
+            } else {
+                html = '<div class="expense-payee-empty">Start typing to see vendor suggestions.</div>';
+            }
+            $('#expenseVoucherPayeeMenuInner').html(html);
+            if (rows.length) {
+                openPayeeMenu();
+            } else if (query) {
+                openPayeeMenu();
+            } else {
+                closePayeeMenu();
+            }
+        }
+
+        function loadFinanceAccountOptions() {
+            $.get("{% url 'managementAppAPI:get_finance_account_options_api' %}", function (response) {
+                financeAccounts = response.data || [];
+                populateFinanceAccounts();
+            });
+        }
+
+        function loadPaymentModeOptions() {
+            $.get("{% url 'managementAppAPI:get_finance_payment_mode_options_api' %}", function (response) {
+                paymentModes = response.data || [];
+                populatePaymentModes();
+            });
+        }
+
+        function loadExpenseCategories() {
+            $.get("{% url 'managementAppAPI:get_expense_category_list_api' %}", function (response) {
+                expenseCategories = response.data || [];
+                populateExpenseCategories();
+                renderExpenseCategories();
+                refreshExpenseSummary();
+            });
+        }
+
+        function loadExpenseVouchers() {
+            $.get("{% url 'managementAppAPI:get_expense_voucher_list_api' %}", function (response) {
+                expenseVouchers = response.data || [];
+                renderExpenseVouchers();
+                refreshExpenseSummary();
+            });
+        }
+
+        function renderExpenseCategories() {
+            expenseCategoryTable.ajax.reload(null, false);
+        }
+
+        function renderExpenseVouchers() {
+            expenseVoucherTable.ajax.reload(null, false);
+        }
+
+        function resetExpenseCategoryForm() {
+            $('#expenseCategoryId').val('');
+            $('#expenseCategoryCode, #expenseCategoryName').val('');
+            $('#expenseCategoryExpenseAccount, #expenseCategoryPayableAccount').dropdown('clear');
+            $('#expenseCategoryIsActive').prop('checked', true);
+            $('.ui.checkbox').checkbox('refresh');
+        }
+
+        function openExpenseCategoryModal() {
+            resetExpenseCategoryForm();
+            $('#expenseCategoryModalTitle').text('Add Expense Category');
+            $('#expenseCategoryModal').modal('show');
+        }
+
+        function editExpenseCategory(id) {
+            const row = expenseCategories.find(function (item) { return item.id === id; });
+            if (!row) return;
+            resetExpenseCategoryForm();
+            $('#expenseCategoryId').val(row.id);
+            $('#expenseCategoryCode').val(row.code);
+            $('#expenseCategoryName').val(row.name);
+            $('#expenseCategoryExpenseAccount').dropdown('set selected', String(row.expenseAccountID || ''));
+            $('#expenseCategoryPayableAccount').dropdown('set selected', String(row.payableAccountID || ''));
+            $('#expenseCategoryIsActive').prop('checked', !!row.isActive);
+            $('.ui.checkbox').checkbox('refresh');
+            $('#expenseCategoryModalTitle').text('Edit Expense Category');
+            $('#expenseCategoryModal').modal('show');
+        }
+
+        function saveExpenseCategory() {
+            const data = new FormData();
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            data.append('id', $('#expenseCategoryId').val());
+            data.append('code', $('#expenseCategoryCode').val());
+            data.append('name', $('#expenseCategoryName').val());
+            data.append('expenseAccountID', $('#expenseCategoryExpenseAccount').val());
+            data.append('payableAccountID', $('#expenseCategoryPayableAccount').val());
+            data.append('isActive', $('#expenseCategoryIsActive').is(':checked'));
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:upsert_expense_category_api' %}",
+                data: data,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, 'green');
+                        $('#expenseCategoryModal').modal('hide');
+                        resetExpenseCategoryForm();
+                        loadExpenseCategories();
+                    } else {
+                        addErrorNotification(response.message || 'Unable to save category.');
+                    }
+                },
+                error: function (xhr) {
+                    addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to save category.');
+                }
+            });
+        }
+
+        function deleteExpenseCategory(id) {
+            $('#deleteExpenseTargetType').val('category');
+            $('#deleteExpenseTargetId').val(id);
+            $('#deleteExpenseModalMessage').text('This expense category will be deleted. Are you sure?');
+            $('#deleteExpenseModal').modal('show');
+        }
+
+        function resetExpenseVoucherForm() {
+            $('#expenseVoucherId').val('');
+            $('#expenseVoucherDate, #expenseVoucherTitle, #expenseVoucherPayeeName, #expenseVoucherGrossAmount, #expenseVoucherDeductionAmount, #expenseVoucherBillNo, #expenseVoucherBillDate, #expenseVoucherDescription').val('');
+            $('#expenseVoucherCategory, #expenseVoucherPaymentMode, #expenseVoucherPaymentAccount').dropdown('clear');
+            $('#expenseVoucherApprovalStatus').dropdown('set selected', 'draft');
+            $('#expenseVoucherImmediatePayment').prop('checked', true);
+            $('.ui.checkbox').checkbox('refresh');
+            vendorSuggestions = [];
+            $('#expenseVoucherPayeeSuggestions').html('');
+            closePayeeMenu();
+        }
+
+        function openExpenseVoucherModal() {
+            resetExpenseVoucherForm();
+            $('#expenseVoucherModalTitle').text('Add Expense Voucher');
+            $('#expenseVoucherModal').modal('show');
+        }
+
+        function confirmDeleteExpenseRecord() {
+            const recordType = $('#deleteExpenseTargetType').val();
+            if (recordType === 'category') {
+                performDeleteExpenseCategory($('#deleteExpenseTargetId').val());
+                return;
+            }
+            performDeleteExpenseVoucher($('#deleteExpenseTargetId').val());
+        }
+
+        function performDeleteExpenseCategory(id) {
+            const data = new FormData();
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            data.append('id', id);
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:delete_expense_category_api' %}",
+                data: data,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, 'green');
+                        $('#deleteExpenseModal').modal('hide');
+                        loadExpenseCategories();
+                    } else {
+                        addErrorNotification(response.message || 'Unable to delete category.');
+                    }
+                },
+                error: function (xhr) {
+                    addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to delete category.');
+                }
+            });
+        }
+
+        $('#expenseVoucherPaymentMode').on('change', function () {
+            const selectedId = $(this).val();
+            const row = paymentModes.find(function (item) { return String(item.ID) === String(selectedId); });
+            if (row && row.LinkedAccountID) {
+                $('#expenseVoucherPaymentAccount').dropdown('set selected', String(row.LinkedAccountID));
+            }
+        });
+
+        $('#expenseVoucherPayeeName').on('focus', function () {
+            schedulePayeeSearch($(this).val());
+        });
+
+        $('#expenseVoucherPayeeName').on('input', function () {
+            schedulePayeeSearch($(this).val());
+        });
+
+        $('#expenseVoucherPayeeName').on('keydown', function (event) {
+            const options = $('#expenseVoucherPayeeMenuInner .expense-payee-option');
+            if (!$('#expenseVoucherPayeeMenu').hasClass('active') || !options.length) {
+                return;
+            }
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                highlightPayeeMenu(activePayeeMenuIndex + 1);
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                highlightPayeeMenu(activePayeeMenuIndex - 1);
+            } else if (event.key === 'Enter' && activePayeeMenuIndex >= 0) {
+                event.preventDefault();
+                selectPayeeOption(options.eq(activePayeeMenuIndex).data('value'));
+            } else if (event.key === 'Escape') {
+                closePayeeMenu();
+            }
+        });
+
+        $(document).on('mousedown', '#expenseVoucherPayeeMenuInner .expense-payee-option', function (event) {
+            event.preventDefault();
+            selectPayeeOption($(this).data('value'));
+        });
+
+        $(document).on('click', function (event) {
+            if (!$(event.target).closest('.expense-payee-field').length) {
+                closePayeeMenu();
+            }
+        });
+
+        function editExpenseVoucher(id) {
+            const row = expenseVouchers.find(function (item) { return item.id === id; });
+            if (!row) return;
+            resetExpenseVoucherForm();
+            $('#expenseVoucherId').val(row.id);
+            $('#expenseVoucherDate').val(row.voucherDate);
+            $('#expenseVoucherCategory').dropdown('set selected', String(row.categoryID || ''));
+            $('#expenseVoucherTitle').val(row.title);
+            $('#expenseVoucherPayeeName').val(row.payeeName);
+            $('#expenseVoucherGrossAmount').val(row.grossAmount);
+            $('#expenseVoucherDeductionAmount').val(row.deductionAmount);
+            $('#expenseVoucherBillNo').val(row.billNo);
+            $('#expenseVoucherBillDate').val(row.billDate || '');
+            $('#expenseVoucherApprovalStatus').dropdown('set selected', row.requestedApprovalStatus || row.approvalStatus);
+            $('#expenseVoucherImmediatePayment').prop('checked', !!row.isImmediatePayment);
+            $('.ui.checkbox').checkbox('refresh');
+            $('#expenseVoucherPaymentMode').dropdown('set selected', String(row.paymentModeID || ''));
+            $('#expenseVoucherPaymentAccount').dropdown('set selected', String(row.paymentAccountID || ''));
+            $('#expenseVoucherDescription').val(row.description);
+            $('#expenseVoucherModalTitle').text('Edit Expense Voucher');
+            $('#expenseVoucherModal').modal('show');
+        }
+
+        function saveExpenseVoucher() {
+            const data = new FormData();
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            data.append('id', $('#expenseVoucherId').val());
+            data.append('voucherDate', $('#expenseVoucherDate').val());
+            data.append('expenseCategoryID', $('#expenseVoucherCategory').val());
+            data.append('title', $('#expenseVoucherTitle').val());
+            data.append('payeeName', $('#expenseVoucherPayeeName').val());
+            data.append('grossAmount', $('#expenseVoucherGrossAmount').val());
+            data.append('deductionAmount', $('#expenseVoucherDeductionAmount').val());
+            data.append('billNo', $('#expenseVoucherBillNo').val());
+            data.append('billDate', $('#expenseVoucherBillDate').val());
+            data.append('approvalStatus', $('#expenseVoucherApprovalStatus').val());
+            data.append('paymentModeID', $('#expenseVoucherPaymentMode').val());
+            data.append('paymentAccountID', $('#expenseVoucherPaymentAccount').val());
+            data.append('isImmediatePayment', $('#expenseVoucherImmediatePayment').is(':checked'));
+            data.append('description', $('#expenseVoucherDescription').val());
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:upsert_expense_voucher_api' %}",
+                data: data,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, 'green');
+                        $('#expenseVoucherModal').modal('hide');
+                        resetExpenseVoucherForm();
+                        loadExpenseVouchers();
+                    } else {
+                        addErrorNotification(response.message || 'Unable to save voucher.');
+                    }
+                },
+                error: function (xhr) {
+                    addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to save voucher.');
+                }
+            });
+        }
+
+        function deleteExpenseVoucher(id) {
+            $('#deleteExpenseTargetType').val('voucher');
+            $('#deleteExpenseTargetId').val(id);
+            $('#deleteExpenseModalMessage').text('This expense voucher will be deleted. Are you sure?');
+            $('#deleteExpenseModal').modal('show');
+        }
+
+        function performDeleteExpenseVoucher(id) {
+            const data = new FormData();
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            data.append('id', id);
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:delete_expense_voucher_api' %}",
+                data: data,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, 'green');
+                        $('#deleteExpenseModal').modal('hide');
+                        loadExpenseVouchers();
+                    } else {
+                        addErrorNotification(response.message || 'Unable to delete voucher.');
+                    }
+                },
+                error: function (xhr) {
+                    addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to delete voucher.');
+                }
+            });
+        }
+
+        loadFinanceAccountOptions();
+        loadPaymentModeOptions();
+        loadExpenseCategories();
+        loadExpenseVouchers();
+    </script>
+{% endblock %}

@@ -1,0 +1,247 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Finance Settings</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Finance Settings
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px; display:flex; gap:0.55rem; align-items:center;">
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Manage default finance accounts, receipt text, and the document numbering rules used across receipts, vouchers, refunds, and ledger transactions."
+                       data-position="bottom center"></i>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+                <section class="finance-summary-grid" id="financeSettingsSummary" style="display:none;">
+                    <div class="finance-summary-item">
+                        <div class="value" id="previewReceiptNo">-</div>
+                        <div class="label">Next Receipt No</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="previewVoucherNo">-</div>
+                        <div class="label">Next Voucher No</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="previewRefundNo">-</div>
+                        <div class="label">Next Refund No</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="previewTxnNo">-</div>
+                        <div class="label">Next Txn No</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="previewPayrollNo">-</div>
+                        <div class="label">Next Payroll No</div>
+                    </div>
+                </section>
+
+                <form class="ui tiny form" id="financeSettingsForm">
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Receipt Branding</h3>
+                            <div class="finance-panel-subtitle">Set the receipt title and footer text used in the finance receipt print view.</div>
+                        </div>
+                    </div>
+                    <div class="finance-form-shell">
+                        <div class="two fields">
+                            <div class="field required">
+                                <label>Receipt Title</label>
+                                <input type="text" id="receiptTitle" placeholder="Payment Receipt">
+                            </div>
+                            <div class="field">
+                                <label>Sequence Padding</label>
+                                <input type="number" id="sequencePadding" min="3" max="8" placeholder="5">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Receipt Footer Note</label>
+                            <textarea rows="3" id="receiptFooterNote" placeholder="Footer note shown on the printed receipt"></textarea>
+                        </div>
+                        <div class="grouped fields" style="margin-top:0.75rem;">
+                            <label>Number Format</label>
+                            <div class="field">
+                                <div class="ui checkbox">
+                                    <input type="checkbox" id="includeDateSegment">
+                                    <label>Include date segment in generated document numbers</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Default Accounts</h3>
+                            <div class="finance-panel-subtitle">These defaults are used to keep finance payment modes and receipt flows aligned with your preferred cash and bank accounts.</div>
+                        </div>
+                    </div>
+                    <div class="finance-form-shell">
+                        <div class="two fields">
+                            <div class="field">
+                                <label>Default Cash Account</label>
+                                <select class="ui search dropdown" id="defaultCashAccountID"></select>
+                            </div>
+                            <div class="field">
+                                <label>Default Bank Account</label>
+                                <select class="ui search dropdown" id="defaultBankAccountID"></select>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Numbering Rules</h3>
+                            <div class="finance-panel-subtitle">Prefixes are applied when new finance documents are created. Existing document numbers remain unchanged.</div>
+                        </div>
+                    </div>
+                    <div class="finance-form-shell">
+                        <div class="five fields">
+                            <div class="field required">
+                                <label>Receipt Prefix</label>
+                                <input type="text" id="receiptPrefix" maxlength="20" placeholder="RCT">
+                            </div>
+                            <div class="field required">
+                                <label>Voucher Prefix</label>
+                                <input type="text" id="voucherPrefix" maxlength="20" placeholder="EXP">
+                            </div>
+                            <div class="field required">
+                                <label>Refund Prefix</label>
+                                <input type="text" id="refundPrefix" maxlength="20" placeholder="RFD">
+                            </div>
+                            <div class="field required">
+                                <label>Transaction Prefix</label>
+                                <input type="text" id="transactionPrefix" maxlength="20" placeholder="TXN">
+                            </div>
+                            <div class="field required">
+                                <label>Payroll Prefix</label>
+                                <input type="text" id="payrollPrefix" maxlength="20" placeholder="PAY">
+                            </div>
+                        </div>
+
+                        <div class="grouped fields" style="margin-top:1rem;">
+                            <label>Actions</label>
+                            <div class="finance-filter-actions" style="margin-top:0.2rem;">
+                                <button type="button" class="ui green button" onclick="saveFinanceSettings()">
+                                    <i class="save icon"></i>
+                                    Save Settings
+                                </button>
+                                <button type="button" class="ui mini red button" onclick="loadFinanceSettings()">
+                                    <i class="times circle icon"></i>
+                                    Reload
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let financeSettingPayload = {};
+
+        function populateAccountDropdown(targetSelector, rows, selectedId) {
+            const $target = $(targetSelector);
+            const options = ['<option value="">Select Account</option>'].concat((rows || []).map(function (row) {
+                return '<option value="' + row.ID + '">' + row.Label + '</option>';
+            }));
+            $target.html(options.join(''));
+            $target.dropdown('refresh');
+            if (selectedId) {
+                $target.dropdown('set selected', String(selectedId));
+            } else {
+                $target.dropdown('clear');
+            }
+        }
+
+        function applyFinanceSettings(data) {
+            financeSettingPayload = data || {};
+            const settings = financeSettingPayload.settings || {};
+            const previews = financeSettingPayload.previews || {};
+
+            $('#receiptTitle').val(settings.receiptTitle || '');
+            $('#receiptFooterNote').val(settings.receiptFooterNote || '');
+            $('#receiptPrefix').val(settings.receiptPrefix || 'RCT');
+            $('#voucherPrefix').val(settings.voucherPrefix || 'EXP');
+            $('#refundPrefix').val(settings.refundPrefix || 'RFD');
+            $('#transactionPrefix').val(settings.transactionPrefix || 'TXN');
+            $('#payrollPrefix').val(settings.payrollPrefix || 'PAY');
+            $('#sequencePadding').val(settings.sequencePadding || 5);
+            $('#includeDateSegment').prop('checked', !!settings.includeDateSegment);
+
+            populateAccountDropdown('#defaultCashAccountID', financeSettingPayload.accountOptions || [], settings.defaultCashAccountID);
+            populateAccountDropdown('#defaultBankAccountID', financeSettingPayload.accountOptions || [], settings.defaultBankAccountID);
+
+            $('#previewReceiptNo').text(previews.receipt || '-');
+            $('#previewVoucherNo').text(previews.voucher || '-');
+            $('#previewRefundNo').text(previews.refund || '-');
+            $('#previewTxnNo').text(previews.transaction || '-');
+            $('#previewPayrollNo').text(previews.payroll || '-');
+            $('#financeSettingsSummary').show();
+            $('.ui.checkbox').checkbox();
+        }
+
+        function loadFinanceSettings() {
+            $.get("{% url 'managementAppAPI:get_finance_settings_api' %}", function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load finance settings.');
+                    return;
+                }
+                applyFinanceSettings(response.data || {});
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load finance settings.');
+            });
+        }
+
+        function saveFinanceSettings() {
+            $.post("{% url 'managementAppAPI:upsert_finance_settings_api' %}", {
+                receiptTitle: $('#receiptTitle').val(),
+                receiptFooterNote: $('#receiptFooterNote').val(),
+                receiptPrefix: $('#receiptPrefix').val(),
+                voucherPrefix: $('#voucherPrefix').val(),
+                refundPrefix: $('#refundPrefix').val(),
+                transactionPrefix: $('#transactionPrefix').val(),
+                payrollPrefix: $('#payrollPrefix').val(),
+                sequencePadding: $('#sequencePadding').val(),
+                includeDateSegment: $('#includeDateSegment').is(':checked') ? '1' : '0',
+                defaultCashAccountID: $('#defaultCashAccountID').val(),
+                defaultBankAccountID: $('#defaultBankAccountID').val()
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to save finance settings.');
+                    return;
+                }
+                applyFinanceSettings({
+                    settings: response.data.settings || {},
+                    accountOptions: financeSettingPayload.accountOptions || [],
+                    previews: response.data.previews || {}
+                });
+                addSuccessNotification(response.message || 'Finance settings saved successfully.');
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to save finance settings.');
+            });
+        }
+
+        $('.ui.dropdown').dropdown();
+        $('.ui.checkbox').checkbox();
+        loadFinanceSettings();
+    </script>
+{% endblock %}

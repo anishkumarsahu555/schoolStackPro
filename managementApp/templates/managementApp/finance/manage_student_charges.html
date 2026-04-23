@@ -1,0 +1,245 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Student Charges</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Student Charges
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Review the dues side of finance across admission, monthly tuition, and miscellaneous heads. This gives the accounts team a clean view of what has been charged, what is already paid, and what is still pending."
+                       data-position="bottom center"></i>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+        <section>
+            <div class="finance-panel-header">
+                <div>
+                    <h3 class="finance-panel-title">Filter Charges</h3>
+                    <div class="finance-panel-subtitle">Slice finance-backed dues by class, student, status, and charge date.</div>
+                </div>
+            </div>
+            <form class="ui tiny form">
+                {% csrf_token %}
+                <div class="finance-filter-grid">
+                    <div class="field">
+                        <label>Class - Section</label>
+                        <select class="ui search dropdown" id="chargeStandard">
+                            <option value="">All Classes</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Student</label>
+                        <select class="ui search dropdown" id="chargeStudent">
+                            <option value="">All Students</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Status</label>
+                        <select class="ui dropdown" id="chargeStatus">
+                            <option value="">All Statuses</option>
+                            <option value="posted">Posted</option>
+                            <option value="partial">Partial</option>
+                            <option value="paid">Paid</option>
+                            <option value="draft">Draft</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Date From</label>
+                        <input type="text" id="chargeDateFrom" placeholder="dd/mm/yyyy">
+                    </div>
+                    <div class="field">
+                        <label>Date To</label>
+                        <input type="text" id="chargeDateTo" placeholder="dd/mm/yyyy">
+                    </div>
+                </div>
+                <div class="finance-filter-actions">
+                    <button type="button" class="ui green button" onclick="loadCharges()">
+                        <i class="search icon"></i>
+                        Load Charges
+                    </button>
+                    <button type="button" class="ui mini red button" onclick="resetChargeFilters()">
+                        <i class="icon times circle"></i>
+                        Clear Filters
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="finance-summary-grid" id="chargeSummary" style="display:none;">
+            <div class="finance-summary-item">
+                <div class="value" id="chargeTotalCount">0</div>
+                <div class="label">Charges</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="chargeTotalNet">Rs 0.00</div>
+                <div class="label">Net Charged</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="chargeTotalPaid">Rs 0.00</div>
+                <div class="label">Paid</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="chargeTotalBalance">Rs 0.00</div>
+                <div class="label">Outstanding</div>
+            </div>
+        </section>
+
+        <section class="finance-table-panel">
+            <div class="finance-table-head">
+                <div>
+                    <h3 class="finance-panel-title">Charge Register</h3>
+                    <div class="finance-panel-subtitle">A finance-centered list of all posted student dues and their balances.</div>
+                </div>
+            </div>
+            <div class="finance-table-wrap">
+                <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="chargeTable" style="width:100%;">
+                    <thead>
+                    <tr>
+                        <th>Charge Date</th>
+                        <th>Due Date</th>
+                        <th>Student</th>
+                        <th>Class</th>
+                        <th>Head</th>
+                        <th>Reference</th>
+                        <th>Description</th>
+                        <th>Net</th>
+                        <th>Paid</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let chargeTable;
+        $('.ui.dropdown').dropdown();
+
+        function money(value) {
+            return 'Rs ' + Number(value || 0).toFixed(2);
+        }
+
+        function statusPill(statusValue) {
+            const status = String(statusValue || 'draft').toLowerCase();
+            return '<span class="finance-status-pill ' + status + '">' + status.replace('_', ' ') + '</span>';
+        }
+
+        chargeTable = $('#chargeTable').DataTable({
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            scrollX: true,
+            scrollY: '360px',
+            stateSave: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                }
+            }],
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{% url 'managementAppAPI:FinanceStudentChargeListJson' %}",
+                data: function (d) {
+                    d.standard = $('#chargeStandard').val() || '';
+                    d.student = $('#chargeStudent').val() || '';
+                    d.status = $('#chargeStatus').val() || '';
+                    d.dateFrom = $('#chargeDateFrom').val() || '';
+                    d.dateTo = $('#chargeDateTo').val() || '';
+                }
+            },
+            language: {
+                emptyTable: 'Load charges to review finance-backed dues.'
+            }
+        });
+
+        function getChargeStandardList() {
+            $.get("{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}", function (response) {
+                const rows = response.data || [];
+                const options = ['<option value="">All Classes</option>'].concat(rows.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Name + '</option>';
+                }));
+                $('#chargeStandard').html(options.join('')).dropdown('refresh');
+            });
+        }
+
+        function getChargeStudentList() {
+            const standardId = $('#chargeStandard').val();
+            if (!standardId) {
+                $('#chargeStudent').html('<option value="">All Students</option>').dropdown('refresh');
+                return;
+            }
+            $.get("{% url 'managementAppAPI:get_student_list_by_class_api' %}", {standard: standardId}, function (response) {
+                const rows = response.data || [];
+                const options = ['<option value="">All Students</option>'].concat(rows.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Name + '</option>';
+                }));
+                $('#chargeStudent').html(options.join('')).dropdown('refresh');
+            });
+        }
+
+        $('#chargeStandard').on('change', getChargeStudentList);
+
+        function resetChargeFilters() {
+            $('#chargeStandard').dropdown('clear');
+            $('#chargeStudent').html('<option value="">All Students</option>').dropdown('refresh');
+            $('#chargeStatus').dropdown('clear');
+            $('#chargeDateFrom').val('');
+            $('#chargeDateTo').val('');
+            $('#chargeSummary').hide();
+            chargeTable.ajax.reload();
+        }
+
+        function loadCharges() {
+            $.get("{% url 'managementAppAPI:get_student_charge_list_api' %}", {
+                standard: $('#chargeStandard').val(),
+                student: $('#chargeStudent').val(),
+                status: $('#chargeStatus').val(),
+                dateFrom: $('#chargeDateFrom').val(),
+                dateTo: $('#chargeDateTo').val()
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load charges.');
+                    return;
+                }
+                const payload = response.data || {};
+                const summary = payload.summary || {};
+                const rows = payload.rows || [];
+
+                $('#chargeTotalCount').text(summary.totalCharges || 0);
+                $('#chargeTotalNet').text(money(summary.totalNetAmount));
+                $('#chargeTotalPaid').text(money(summary.totalPaidAmount));
+                $('#chargeTotalBalance').text(money(summary.totalBalanceAmount));
+                $('#chargeSummary').show();
+
+                chargeTable.ajax.reload();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load charges.');
+            });
+        }
+
+        getChargeStandardList();
+        loadCharges();
+    </script>
+{% endblock %}

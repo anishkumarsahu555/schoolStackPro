@@ -1,0 +1,210 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Finance Dashboard</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Finance Dashboard
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Track collections, open student dues, outgoing payments, and liquidity from one place. The finance module now follows the same management workspace pattern while keeping all finance activity together."
+                       data-position="bottom center"></i>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+
+        <section class="finance-action-grid">
+            <a class="finance-action-card" href="{% url 'managementApp:manage_receipts' %}">
+                <span class="icon-wrap"><i class="receipt icon"></i></span>
+                <span class="title">Receipts</span>
+                <span class="meta">Review incoming collections and print receipts.</span>
+            </a>
+            <a class="finance-action-card" href="{% url 'managementApp:finance_reports' %}">
+                <span class="icon-wrap"><i class="chart pie icon"></i></span>
+                <span class="title">Finance Reports</span>
+                <span class="meta">View trial balance, income &amp; expenditure, and balance sheet summaries.</span>
+            </a>
+            <a class="finance-action-card" href="{% url 'managementApp:finance_controls' %}">
+                <span class="icon-wrap"><i class="shield alternate icon"></i></span>
+                <span class="title">Finance Controls</span>
+                <span class="meta">Manage lock periods, approvals, and safer finance operations.</span>
+            </a>
+            <a class="finance-action-card" href="{% url 'managementApp:finance_settings' %}">
+                <span class="icon-wrap"><i class="cogs icon"></i></span>
+                <span class="title">Finance Settings</span>
+                <span class="meta">Configure document numbering, receipt text, and default finance accounts.</span>
+            </a>
+            <a class="finance-action-card" href="{% url 'managementApp:finance_audit_trail' %}">
+                <span class="icon-wrap"><i class="stream icon"></i></span>
+                <span class="title">Audit Trail</span>
+                <span class="meta">Trace finance transactions, source records, and ledger lines over time.</span>
+            </a>
+            <a class="finance-action-card" href="{% url 'managementApp:finance_reconciliation' %}">
+                <span class="icon-wrap"><i class="tasks icon"></i></span>
+                <span class="title">Reconciliation</span>
+                <span class="meta">Find missing postings, mismatched balances, and safe repair actions.</span>
+            </a>
+            <a class="finance-action-card" href="{% url 'managementApp:manage_student_charges' %}">
+                <span class="icon-wrap"><i class="file invoice dollar icon"></i></span>
+                <span class="title">Student Charges</span>
+                <span class="meta">Track admission, tuition, and other outstanding dues.</span>
+            </a>
+            <a class="finance-action-card" href="{% url 'managementApp:finance_payroll' %}">
+                <span class="icon-wrap"><i class="money check alternate icon"></i></span>
+                <span class="title">Payroll</span>
+                <span class="meta">Generate salary runs, post accruals, and record staff payments.</span>
+            </a>
+            <a class="finance-action-card" href="{% url 'managementApp:manage_vendors' %}">
+                <span class="icon-wrap"><i class="truck icon"></i></span>
+                <span class="title">Vendors</span>
+                <span class="meta">Maintain vendor master records used in expense and payable workflows.</span>
+            </a>
+            <a class="finance-action-card" href="{% url 'managementApp:vendor_payables' %}">
+                <span class="icon-wrap"><i class="handshake outline icon"></i></span>
+                <span class="title">Vendor Payables</span>
+                <span class="meta">Review outstanding vendor liabilities and open voucher balances.</span>
+            </a>
+            <a class="finance-action-card" href="{% url 'managementApp:vendor_statement' %}">
+                <span class="icon-wrap"><i class="book open icon"></i></span>
+                <span class="title">Vendor Statement</span>
+                <span class="meta">Trace vendor accruals, payments, and running payable balances.</span>
+            </a>
+            <a class="finance-action-card" href="{% url 'managementApp:manage_expense_vouchers' %}">
+                <span class="icon-wrap"><i class="file alternate outline icon"></i></span>
+                <span class="title">Expense Vouchers</span>
+                <span class="meta">Manage outgoing payments and approvals.</span>
+            </a>
+            <a class="finance-action-card" href="{% url 'managementApp:cash_bank_book' %}">
+                <span class="icon-wrap"><i class="wallet icon"></i></span>
+                <span class="title">Cash &amp; Bank</span>
+                <span class="meta">Monitor balances and transaction movement.</span>
+            </a>
+        </section>
+
+        <section class="finance-highlight-panel">
+            <div class="finance-highlight-label">Outstanding Student Dues</div>
+            <div class="finance-highlight-value">Rs {{ charge_total_balance|floatformat:2 }}</div>
+            <div class="finance-highlight-note">
+                {{ open_charges_count }} active charge{{ open_charges_count|pluralize }} still need settlement across the current school session.
+            </div>
+            <div class="finance-summary-grid" style="gap:0.65rem;">
+                <div class="finance-summary-item">
+                    <div class="value">Rs {{ cash_balance|floatformat:2 }}</div>
+                    <div class="label">Cash Balance</div>
+                </div>
+                <div class="finance-summary-item">
+                    <div class="value">Rs {{ bank_balance|floatformat:2 }}</div>
+                    <div class="label">Bank Balance</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="finance-metric-grid">
+            <div class="finance-metric-card">
+                <div class="finance-metric-label">Fee Heads</div>
+                <div class="finance-metric-value">{{ fee_heads_count }}</div>
+                <div class="finance-metric-meta">Configured finance-backed charging heads.</div>
+            </div>
+            <div class="finance-metric-card">
+                <div class="finance-metric-label">Charged</div>
+                <div class="finance-metric-value">Rs {{ charge_total_due|floatformat:2 }}</div>
+                <div class="finance-metric-meta">Total dues posted into the finance ledger.</div>
+            </div>
+            <div class="finance-metric-card">
+                <div class="finance-metric-label">Collected</div>
+                <div class="finance-metric-value">Rs {{ receipt_total|floatformat:2 }}</div>
+                <div class="finance-metric-meta">{{ receipt_count }} confirmed receipt{{ receipt_count|pluralize }} recorded.</div>
+            </div>
+            <div class="finance-metric-card">
+                <div class="finance-metric-label">Expenses Paid</div>
+                <div class="finance-metric-value">Rs {{ expense_total|floatformat:2 }}</div>
+                <div class="finance-metric-meta">{{ expense_voucher_count }} paid voucher{{ expense_voucher_count|pluralize }} moved through finance.</div>
+            </div>
+        </section>
+
+        <div class="ui stackable two column grid" style="margin:0;">
+            <div class="column">
+                <section class="finance-activity-section">
+                    <div class="finance-panel-header">
+                        <div>
+                            <h3 class="finance-panel-title">Recent Receipts</h3>
+                            <div class="finance-panel-subtitle">Latest confirmed collections entering the finance books.</div>
+                        </div>
+                        <span class="finance-badge"><i class="arrow down icon"></i>Incoming</span>
+                    </div>
+                    <div class="finance-activity-list">
+                        {% for receipt in recent_receipts %}
+                            <article class="finance-activity-card">
+                                <div class="finance-activity-top">
+                                    <div class="finance-activity-heading">
+                                        <div class="finance-activity-ref">{{ receipt.receiptNo }}</div>
+                                        <div class="finance-activity-date">{{ receipt.receiptDate|date:"d M Y" }}</div>
+                                    </div>
+                                    <div class="finance-activity-amount">Rs {{ receipt.amountReceived|floatformat:2 }}</div>
+                                </div>
+                                <div class="finance-activity-main">
+                                    <div class="finance-activity-title">{{ receipt.studentID.name|default:receipt.receivedFromName|default:'-' }}</div>
+                                    <div class="finance-activity-meta">{{ receipt.paymentModeID.name|default:'Mode not set' }}</div>
+                                </div>
+                                <div class="finance-activity-actions">
+                                    <a class="finance-page-link finance-activity-link" href="{% url 'managementApp:finance_receipt_detail' receipt.id %}">Open Receipt</a>
+                                </div>
+                            </article>
+                        {% empty %}
+                            <div class="finance-empty">No confirmed receipts yet.</div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+
+            <div class="column">
+                <section class="finance-activity-section">
+                    <div class="finance-panel-header">
+                        <div>
+                            <h3 class="finance-panel-title">Recent Expense Vouchers</h3>
+                            <div class="finance-panel-subtitle">Outgoing finance activity posted from vouchers.</div>
+                        </div>
+                        <span class="finance-badge" style="background:rgba(245, 158, 11, 0.12); color:#b45309;">
+                            <i class="arrow up icon"></i>Outgoing
+                        </span>
+                    </div>
+                    <div class="finance-activity-list">
+                        {% for voucher in recent_expenses %}
+                            <article class="finance-activity-card">
+                                <div class="finance-activity-top">
+                                    <div class="finance-activity-heading">
+                                        <div class="finance-activity-ref">{{ voucher.voucherNo }}</div>
+                                        <div class="finance-activity-date">{{ voucher.voucherDate|date:"d M Y" }}</div>
+                                    </div>
+                                    <div class="finance-activity-amount">Rs {{ voucher.netAmount|floatformat:2 }}</div>
+                                </div>
+                                <div class="finance-activity-main">
+                                    <div class="finance-activity-title">{{ voucher.expenseCategoryID.name }}</div>
+                                    <div class="finance-activity-meta">{{ voucher.get_approvalStatus_display }}</div>
+                                </div>
+                                <div class="finance-activity-actions">
+                                    <a class="finance-page-link finance-activity-link" href="{% url 'managementApp:manage_expense_vouchers' %}">Open Vouchers</a>
+                                </div>
+                            </article>
+                        {% empty %}
+                            <div class="finance-empty">No expense vouchers yet.</div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+        </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,664 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Finance Reports</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Finance Reports
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Run ledger-based accounting summaries for the selected date range and review trial balance, income & expenditure, and balance sheet totals from one place."
+                       data-position="bottom center"></i>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+                <section>
+                    <div class="finance-panel-header">
+                        <div>
+                            <h3 class="finance-panel-title">Report Filters</h3>
+                            <div class="finance-panel-subtitle">Choose an optional period to calculate accounting reports from posted finance entries.</div>
+                        </div>
+                    </div>
+                    <form class="ui tiny form">
+                        {% csrf_token %}
+                        <div class="finance-filter-grid">
+                            <div class="field">
+                                <label>Date From</label>
+                                <div class="ui calendar" id="reportDateFromCal">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" id="reportDateFrom" placeholder="Date From">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label>Date To</label>
+                                <div class="ui calendar" id="reportDateToCal">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" id="reportDateTo" placeholder="Date To">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label>General Ledger Account</label>
+                                <select class="ui search dropdown" id="reportAccount">
+                                    <option value="">Select Account</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="finance-filter-actions">
+                            <button type="button" class="ui green button" onclick="loadFinanceReports()">
+                                <i class="chart pie icon"></i>
+                                Load Reports
+                            </button>
+                            <button type="button" class="ui mini red button" onclick="resetFinanceReportFilters()">
+                                <i class="icon times circle"></i>
+                                Clear
+                            </button>
+                            <button type="button" class="ui blue button" onclick="printFinanceReports()">
+                                <i class="print icon"></i>
+                                Print
+                            </button>
+                            <button type="button" class="ui basic button" onclick="exportTrialBalanceCsv()">
+                                <i class="download icon"></i>
+                                Export Trial Balance
+                            </button>
+                            <button type="button" class="ui basic button" onclick="exportGeneralLedgerCsv()">
+                                <i class="download icon"></i>
+                                Export General Ledger
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="finance-summary-grid" id="financeReportSummary" style="display:none;">
+                    <div class="finance-summary-item">
+                        <div class="value" id="reportAssetTotal">Rs 0.00</div>
+                        <div class="label">Assets</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="reportLiabilityTotal">Rs 0.00</div>
+                        <div class="label">Liabilities</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="reportIncomeTotal">Rs 0.00</div>
+                        <div class="label">Income</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="reportExpenseTotal">Rs 0.00</div>
+                        <div class="label">Expense</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="reportNetSurplus">Rs 0.00</div>
+                        <div class="label">Net Surplus</div>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Trial Balance</h3>
+                            <div class="finance-panel-subtitle">Account-wise debit and credit closing balances from posted ledger entries.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny sortable celled very compact table" id="trialBalanceTable" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Account</th>
+                                <th>Type</th>
+                                <th>Debit Movement</th>
+                                <th>Credit Movement</th>
+                                <th>Closing Debit</th>
+                                <th>Closing Credit</th>
+                            </tr>
+                            </thead>
+                            <tbody id="trialBalanceBody">
+                            <tr><td colspan="7" class="center aligned">Load reports to view trial balance.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <div class="ui stackable two column grid" style="margin:0;">
+                    <div class="column">
+                        <section class="finance-table-panel" style="height:100%;">
+                            <div class="finance-table-head">
+                                <div>
+                                    <h3 class="finance-panel-title">Income &amp; Expenditure</h3>
+                                    <div class="finance-panel-subtitle">Operating result from income and expense accounts.</div>
+                                </div>
+                            </div>
+                            <div class="finance-table-wrap">
+                                <table class="ui unstackable tiny celled very compact table" style="width:100%;">
+                                    <thead>
+                                    <tr>
+                                        <th>Income Account</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="incomeRows">
+                                    <tr><td colspan="2" class="center aligned">Load reports to view income.</td></tr>
+                                    </tbody>
+                                    <tfoot>
+                                    <tr>
+                                        <th>Total Income</th>
+                                        <th id="incomeTotalFooter">Rs 0.00</th>
+                                    </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <div class="finance-table-wrap" style="margin-top:0.9rem;">
+                                <table class="ui unstackable tiny celled very compact table" style="width:100%;">
+                                    <thead>
+                                    <tr>
+                                        <th>Expense Account</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="expenseRows">
+                                    <tr><td colspan="2" class="center aligned">Load reports to view expenses.</td></tr>
+                                    </tbody>
+                                    <tfoot>
+                                    <tr>
+                                        <th>Total Expense</th>
+                                        <th id="expenseTotalFooter">Rs 0.00</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Net Surplus</th>
+                                        <th id="netSurplusFooter">Rs 0.00</th>
+                                    </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="column">
+                        <section class="finance-table-panel" style="height:100%;">
+                            <div class="finance-table-head">
+                                <div>
+                                    <h3 class="finance-panel-title">Balance Sheet</h3>
+                                    <div class="finance-panel-subtitle">Asset, liability, and equity balances from the selected period.</div>
+                                </div>
+                            </div>
+                            <div class="finance-table-wrap">
+                                <table class="ui unstackable tiny celled very compact table" style="width:100%;">
+                                    <thead>
+                                    <tr>
+                                        <th>Assets</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="assetRows">
+                                    <tr><td colspan="2" class="center aligned">Load reports to view assets.</td></tr>
+                                    </tbody>
+                                    <tfoot>
+                                    <tr>
+                                        <th>Total Assets</th>
+                                        <th id="assetTotalFooter">Rs 0.00</th>
+                                    </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <div class="finance-table-wrap" style="margin-top:0.9rem;">
+                                <table class="ui unstackable tiny celled very compact table" style="width:100%;">
+                                    <thead>
+                                    <tr>
+                                        <th>Liabilities &amp; Equity</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="liabilityEquityRows">
+                                    <tr><td colspan="2" class="center aligned">Load reports to view liabilities and equity.</td></tr>
+                                    </tbody>
+                                    <tfoot>
+                                    <tr>
+                                        <th>Total Liabilities + Equity</th>
+                                        <th id="liabilityEquityFooter">Rs 0.00</th>
+                                    </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">General Ledger</h3>
+                            <div class="finance-panel-subtitle" id="generalLedgerTitle">Select an account to review detailed ledger movement and closing balance.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny celled very compact table" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Reference</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Party</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                                <th>Running Balance</th>
+                            </tr>
+                            </thead>
+                            <tbody id="generalLedgerRows">
+                            <tr><td colspan="8" class="center aligned">Select an account and load reports to view general ledger details.</td></tr>
+                            </tbody>
+                            <tfoot>
+                            <tr>
+                                <th colspan="7">Closing Balance</th>
+                                <th id="generalLedgerClosing">Rs 0.00</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let currentFinanceReportData = {
+            summary: {},
+            trialBalance: [],
+            incomeStatement: {},
+            balanceSheet: {},
+            generalLedger: {}
+        };
+
+        $('.ui.dropdown').dropdown();
+        $('#reportDateFromCal, #reportDateToCal').calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date) {
+                    if (!date) return '';
+                    return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                }
+            }
+        });
+
+        function money(value) {
+            return 'Rs ' + Number(value || 0).toFixed(2);
+        }
+
+        function reportPeriodLabel() {
+            const from = $('#reportDateFrom').val() || 'Beginning';
+            const to = $('#reportDateTo').val() || 'Today';
+            return from + ' to ' + to;
+        }
+
+        function csvEscape(value) {
+            const text = String(value == null ? '' : value);
+            if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+                return '"' + text.replace(/"/g, '""') + '"';
+            }
+            return text;
+        }
+
+        function downloadCsv(filename, headers, rows) {
+            const csv = [headers.map(csvEscape).join(',')]
+                .concat(rows.map(function (row) {
+                    return row.map(csvEscape).join(',');
+                }))
+                .join('\n');
+            const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function exportTrialBalanceCsv() {
+            const rows = currentFinanceReportData.trialBalance || [];
+            if (!rows.length) {
+                addErrorNotification('Load reports first to export the trial balance.');
+                return;
+            }
+            downloadCsv(
+                'trial-balance.csv',
+                ['Code', 'Account', 'Type', 'Debit Movement', 'Credit Movement', 'Closing Debit', 'Closing Credit'],
+                rows.map(function (row) {
+                    return [
+                        row.accountCode,
+                        row.accountName,
+                        row.accountType,
+                        Number(row.debitTotal || 0).toFixed(2),
+                        Number(row.creditTotal || 0).toFixed(2),
+                        Number(row.closingDebit || 0).toFixed(2),
+                        Number(row.closingCredit || 0).toFixed(2)
+                    ];
+                })
+            );
+        }
+
+        function exportGeneralLedgerCsv() {
+            const ledger = currentFinanceReportData.generalLedger || {};
+            const rows = ledger.rows || [];
+            if (!ledger.accountID || !rows.length) {
+                addErrorNotification('Select an account and load reports first to export the general ledger.');
+                return;
+            }
+            downloadCsv(
+                'general-ledger-' + (ledger.accountLabel || 'account').replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '.csv',
+                ['Date', 'Reference', 'Type', 'Description', 'Party', 'Debit', 'Credit', 'Running Balance'],
+                rows.map(function (row) {
+                    return [
+                        row.date,
+                        row.reference,
+                        row.txnType,
+                        row.description || '',
+                        row.party || '',
+                        Number(row.debit || 0).toFixed(2),
+                        Number(row.credit || 0).toFixed(2),
+                        Number(row.balance || 0).toFixed(2)
+                    ];
+                })
+            );
+        }
+
+        function printFinanceReports() {
+            const data = currentFinanceReportData || {};
+            if (!(data.trialBalance || []).length) {
+                addErrorNotification('Load reports first before printing.');
+                return;
+            }
+            const summary = data.summary || {};
+            const incomeStatement = data.incomeStatement || {};
+            const balanceSheet = data.balanceSheet || {};
+            const generalLedger = data.generalLedger || {};
+            const printWindow = window.open('', '_blank', 'width=1100,height=900');
+            if (!printWindow) {
+                addErrorNotification('Unable to open print window.');
+                return;
+            }
+
+            const simpleRows = function (rows, emptyLabel) {
+                if (!rows || !rows.length) {
+                    return '<tr><td colspan="2" style="text-align:center;">' + emptyLabel + '</td></tr>';
+                }
+                return rows.map(function (row) {
+                    return '<tr><td>' + row.accountName + '</td><td style="text-align:right;">' + money(row.amount) + '</td></tr>';
+                }).join('');
+            };
+
+            const trialBalanceRows = (data.trialBalance || []).map(function (row) {
+                return '<tr>' +
+                    '<td>' + row.accountCode + '</td>' +
+                    '<td>' + row.accountName + '</td>' +
+                    '<td style="text-transform:capitalize;">' + row.accountType + '</td>' +
+                    '<td style="text-align:right;">' + money(row.debitTotal) + '</td>' +
+                    '<td style="text-align:right;">' + money(row.creditTotal) + '</td>' +
+                    '<td style="text-align:right;">' + money(row.closingDebit) + '</td>' +
+                    '<td style="text-align:right;">' + money(row.closingCredit) + '</td>' +
+                    '</tr>';
+            }).join('');
+
+            const ledgerRows = (generalLedger.rows || []).map(function (row) {
+                return '<tr>' +
+                    '<td>' + row.date + '</td>' +
+                    '<td>' + row.reference + '</td>' +
+                    '<td>' + String(row.txnType || '').replace(/_/g, ' ') + '</td>' +
+                    '<td>' + (row.description || '-') + '</td>' +
+                    '<td>' + (row.party || '-') + '</td>' +
+                    '<td style="text-align:right;">' + money(row.debit) + '</td>' +
+                    '<td style="text-align:right;">' + money(row.credit) + '</td>' +
+                    '<td style="text-align:right;">' + money(row.balance) + '</td>' +
+                    '</tr>';
+            }).join('');
+
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Finance Reports</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; color:#111827; margin:24px; }
+                        h1, h2, h3 { margin:0 0 10px; }
+                        .meta { margin-bottom:18px; color:#4b5563; }
+                        .summary { display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; margin:18px 0 24px; }
+                        .summary-card { border:1px solid #d1d5db; padding:10px 12px; border-radius:8px; }
+                        .summary-card strong { display:block; font-size:18px; margin-bottom:4px; }
+                        table { width:100%; border-collapse:collapse; margin:12px 0 20px; }
+                        th, td { border:1px solid #d1d5db; padding:8px 10px; font-size:12px; vertical-align:top; }
+                        th { background:#f3f4f6; text-align:left; }
+                        .grid-two { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+                        .section { margin-bottom:24px; page-break-inside:avoid; }
+                        @media print { body { margin:12mm; } }
+                    </style>
+                </head>
+                <body>
+                    <h1>Finance Reports</h1>
+                    <div class="meta">Period: ${reportPeriodLabel()}</div>
+                    <div class="summary">
+                        <div class="summary-card"><strong>${money(summary.assetTotal)}</strong>Assets</div>
+                        <div class="summary-card"><strong>${money(summary.liabilityTotal)}</strong>Liabilities</div>
+                        <div class="summary-card"><strong>${money(summary.incomeTotal)}</strong>Income</div>
+                        <div class="summary-card"><strong>${money(summary.expenseTotal)}</strong>Expense</div>
+                        <div class="summary-card"><strong>${money(summary.netSurplus)}</strong>Net Surplus</div>
+                    </div>
+                    <div class="section">
+                        <h2>Trial Balance</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Code</th><th>Account</th><th>Type</th><th>Debit Movement</th><th>Credit Movement</th><th>Closing Debit</th><th>Closing Credit</th>
+                                </tr>
+                            </thead>
+                            <tbody>${trialBalanceRows}</tbody>
+                        </table>
+                    </div>
+                    <div class="grid-two">
+                        <div class="section">
+                            <h2>Income & Expenditure</h2>
+                            <table>
+                                <thead><tr><th>Income Account</th><th>Amount</th></tr></thead>
+                                <tbody>${simpleRows(incomeStatement.income || [], 'No income accounts in range.')}</tbody>
+                                <tfoot><tr><th>Total Income</th><th style="text-align:right;">${money(incomeStatement.totalIncome)}</th></tr></tfoot>
+                            </table>
+                            <table>
+                                <thead><tr><th>Expense Account</th><th>Amount</th></tr></thead>
+                                <tbody>${simpleRows(incomeStatement.expense || [], 'No expense accounts in range.')}</tbody>
+                                <tfoot>
+                                    <tr><th>Total Expense</th><th style="text-align:right;">${money(incomeStatement.totalExpense)}</th></tr>
+                                    <tr><th>Net Surplus</th><th style="text-align:right;">${money(incomeStatement.netSurplus)}</th></tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <div class="section">
+                            <h2>Balance Sheet</h2>
+                            <table>
+                                <thead><tr><th>Assets</th><th>Amount</th></tr></thead>
+                                <tbody>${simpleRows(balanceSheet.assets || [], 'No asset balances in range.')}</tbody>
+                                <tfoot><tr><th>Total Assets</th><th style="text-align:right;">${money(balanceSheet.totalAssets)}</th></tr></tfoot>
+                            </table>
+                            <table>
+                                <thead><tr><th>Liabilities & Equity</th><th>Amount</th></tr></thead>
+                                <tbody>${
+                                    ((balanceSheet.liabilities || []).map(function (row) {
+                                        return '<tr><td>Liability: ' + row.accountName + '</td><td style="text-align:right;">' + money(row.amount) + '</td></tr>';
+                                    }).join('')) +
+                                    ((balanceSheet.equity || []).map(function (row) {
+                                        return '<tr><td>Equity: ' + row.accountName + '</td><td style="text-align:right;">' + money(row.amount) + '</td></tr>';
+                                    }).join('')) ||
+                                    '<tr><td colspan="2" style="text-align:center;">No liabilities or equity balances in range.</td></tr>'
+                                }</tbody>
+                                <tfoot><tr><th>Total Liabilities + Equity</th><th style="text-align:right;">${money((balanceSheet.totalLiabilities || 0) + (balanceSheet.totalEquity || 0))}</th></tr></tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    ${
+                        generalLedger.accountID ? `
+                        <div class="section">
+                            <h2>General Ledger</h2>
+                            <div class="meta">Account: ${generalLedger.accountLabel || ''}</div>
+                            <table>
+                                <thead>
+                                    <tr><th>Date</th><th>Reference</th><th>Type</th><th>Description</th><th>Party</th><th>Debit</th><th>Credit</th><th>Running Balance</th></tr>
+                                </thead>
+                                <tbody>${ledgerRows || '<tr><td colspan="8" style="text-align:center;">No posted ledger movement found for this account in the selected range.</td></tr>'}</tbody>
+                                <tfoot><tr><th colspan="7">Closing Balance</th><th style="text-align:right;">${money(generalLedger.closingBalance)}</th></tr></tfoot>
+                            </table>
+                        </div>` : ''
+                    }
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(function () {
+                printWindow.print();
+            }, 250);
+        }
+
+        function loadFinanceAccounts() {
+            $.get("{% url 'managementAppAPI:get_finance_account_options_api' %}", function (response) {
+                const rows = response.data || [];
+                const options = ['<option value="">Select Account</option>'].concat(rows.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Code + ' - ' + row.Name + '</option>';
+                }));
+                $('#reportAccount').html(options.join('')).dropdown('refresh');
+            });
+        }
+
+        function renderSimpleRows(targetId, rows, emptyText) {
+            const $target = $('#' + targetId);
+            if (!rows.length) {
+                $target.html('<tr><td colspan="2" class="center aligned">' + emptyText + '</td></tr>');
+                return;
+            }
+            $target.html(rows.map(function (row) {
+                return '<tr><td>' + row.accountName + '</td><td><strong>' + money(row.amount) + '</strong></td></tr>';
+            }).join(''));
+        }
+
+        function loadFinanceReports() {
+            $.get("{% url 'managementAppAPI:get_finance_reports_api' %}", {
+                dateFrom: $('#reportDateFrom').val(),
+                dateTo: $('#reportDateTo').val(),
+                accountID: $('#reportAccount').val()
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load finance reports.');
+                    return;
+                }
+
+                const data = response.data || {};
+                currentFinanceReportData = data;
+                const summary = data.summary || {};
+                const trialBalance = data.trialBalance || [];
+                const incomeStatement = data.incomeStatement || {};
+                const balanceSheet = data.balanceSheet || {};
+                const generalLedger = data.generalLedger || {};
+
+                $('#reportAssetTotal').text(money(summary.assetTotal));
+                $('#reportLiabilityTotal').text(money(summary.liabilityTotal));
+                $('#reportIncomeTotal').text(money(summary.incomeTotal));
+                $('#reportExpenseTotal').text(money(summary.expenseTotal));
+                $('#reportNetSurplus').text(money(summary.netSurplus));
+                $('#financeReportSummary').show();
+
+                if (!trialBalance.length) {
+                    $('#trialBalanceBody').html('<tr><td colspan="7" class="center aligned">No posted finance entries found for the selected range.</td></tr>');
+                } else {
+                    $('#trialBalanceBody').html(trialBalance.map(function (row) {
+                        return `
+                            <tr>
+                                <td>${row.accountCode}</td>
+                                <td>${row.accountName}</td>
+                                <td style="text-transform:capitalize;">${row.accountType}</td>
+                                <td>${money(row.debitTotal)}</td>
+                                <td>${money(row.creditTotal)}</td>
+                                <td>${money(row.closingDebit)}</td>
+                                <td>${money(row.closingCredit)}</td>
+                            </tr>
+                        `;
+                    }).join(''));
+                }
+
+                renderSimpleRows('incomeRows', incomeStatement.income || [], 'No income accounts in range.');
+                renderSimpleRows('expenseRows', incomeStatement.expense || [], 'No expense accounts in range.');
+                renderSimpleRows('assetRows', balanceSheet.assets || [], 'No asset balances in range.');
+
+                const liabilityEquityRows = []
+                    .concat((balanceSheet.liabilities || []).map(function (row) {
+                        return '<tr><td>Liability: ' + row.accountName + '</td><td><strong>' + money(row.amount) + '</strong></td></tr>';
+                    }))
+                    .concat((balanceSheet.equity || []).map(function (row) {
+                        return '<tr><td>Equity: ' + row.accountName + '</td><td><strong>' + money(row.amount) + '</strong></td></tr>';
+                    }));
+                $('#liabilityEquityRows').html(liabilityEquityRows.length ? liabilityEquityRows.join('') : '<tr><td colspan="2" class="center aligned">No liabilities or equity balances in range.</td></tr>');
+
+                $('#incomeTotalFooter').text(money(incomeStatement.totalIncome));
+                $('#expenseTotalFooter').text(money(incomeStatement.totalExpense));
+                $('#netSurplusFooter').text(money(incomeStatement.netSurplus));
+                $('#assetTotalFooter').text(money(balanceSheet.totalAssets));
+                $('#liabilityEquityFooter').text(money((balanceSheet.totalLiabilities || 0) + (balanceSheet.totalEquity || 0)));
+
+                if (!generalLedger.accountID) {
+                    $('#generalLedgerTitle').text('Select an account to review detailed ledger movement and closing balance.');
+                    $('#generalLedgerRows').html('<tr><td colspan="8" class="center aligned">Select an account and load reports to view general ledger details.</td></tr>');
+                    $('#generalLedgerClosing').text('Rs 0.00');
+                } else {
+                    $('#generalLedgerTitle').text('Detailed ledger movement for ' + (generalLedger.accountLabel || 'selected account') + '.');
+                    const ledgerRows = generalLedger.rows || [];
+                    $('#generalLedgerRows').html(
+                        ledgerRows.length ? ledgerRows.map(function (row) {
+                            return '<tr>' +
+                                '<td>' + row.date + '</td>' +
+                                '<td><strong>' + row.reference + '</strong></td>' +
+                                '<td style="text-transform:capitalize;">' + String(row.txnType || '').replace(/_/g, ' ') + '</td>' +
+                                '<td>' + (row.description || '-') + '</td>' +
+                                '<td>' + (row.party || '-') + '</td>' +
+                                '<td>' + money(row.debit) + '</td>' +
+                                '<td>' + money(row.credit) + '</td>' +
+                                '<td>' + money(row.balance) + '</td>' +
+                                '</tr>';
+                        }).join('') : '<tr><td colspan="8" class="center aligned">No posted ledger movement found for this account in the selected range.</td></tr>'
+                    );
+                    $('#generalLedgerClosing').text(money(generalLedger.closingBalance));
+                }
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load finance reports.');
+            });
+        }
+
+        function resetFinanceReportFilters() {
+            $('#reportDateFrom').val('');
+            $('#reportDateTo').val('');
+            $('#reportAccount').dropdown('clear');
+            currentFinanceReportData = {
+                summary: {},
+                trialBalance: [],
+                incomeStatement: {},
+                balanceSheet: {},
+                generalLedger: {}
+            };
+            loadFinanceReports();
+        }
+
+        loadFinanceAccounts();
+        loadFinanceReports();
+    </script>
+{% endblock %}

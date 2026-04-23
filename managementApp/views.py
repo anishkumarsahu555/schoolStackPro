@@ -1,9 +1,12 @@
 import json
+from decimal import Decimal
 from datetime import date, timedelta, datetime
 
-from django.db.models import Count
+from django.db.models import Count, Q, Sum
 from django.shortcuts import render, get_object_or_404, redirect
 
+from financeApp.models import ExpenseCategory, ExpenseVoucher, FeeHead, FinanceAccount, FinanceApprovalRule, FinanceConfiguration, FinanceEntry, FinanceParty, FinancePeriod, PaymentReceipt, PayrollRun, StudentCharge
+from financeApp.services import bootstrap_expense_categories, bootstrap_school_finance, get_finance_configuration
 from homeApp.models import SchoolDetail, SchoolSession
 from homeApp.session_utils import get_session_month_sequence
 from homeApp.utils import login_required
@@ -230,10 +233,326 @@ def student_detail(request, id=None):
 @check_groups('Admin', 'Owner')
 def edit_student_detail(request, id=None):
     instance = get_object_or_404(Student, pk=id)
+    admission_receipt = PaymentReceipt.objects.select_related('paymentModeID').filter(
+        studentID_id=instance.id,
+        schoolID_id=instance.schoolID_id or request.session.get('current_session', {}).get('SchoolID'),
+        sourceModule='student_admission_receipt',
+        sourceRecordID=f'{instance.id}:admission',
+        isDeleted=False,
+    ).order_by('-datetime').first()
     context = {
         'instance': instance,
+        'admission_receipt': admission_receipt,
     }
     return render(request, 'managementApp/student/edit_student.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def finance_dashboard(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=request.user)
+        bootstrap_expense_categories(school_id=school_id, session_id=session_id, user_obj=request.user)
+
+    fee_heads_qs = FeeHead.objects.filter(isDeleted=False)
+    charge_qs = StudentCharge.objects.filter(isDeleted=False)
+    receipt_qs = PaymentReceipt.objects.filter(isDeleted=False)
+    expense_qs = ExpenseVoucher.objects.filter(isDeleted=False)
+    finance_accounts_qs = FinanceAccount.objects.filter(isDeleted=False)
+
+    if school_id:
+        fee_heads_qs = fee_heads_qs.filter(schoolID_id=school_id)
+        charge_qs = charge_qs.filter(schoolID_id=school_id)
+        receipt_qs = receipt_qs.filter(schoolID_id=school_id)
+        expense_qs = expense_qs.filter(schoolID_id=school_id)
+        finance_accounts_qs = finance_accounts_qs.filter(schoolID_id=school_id)
+    if session_id:
+        fee_heads_qs = fee_heads_qs.filter(sessionID_id=session_id)
+        charge_qs = charge_qs.filter(sessionID_id=session_id)
+        receipt_qs = receipt_qs.filter(sessionID_id=session_id)
+        expense_qs = expense_qs.filter(sessionID_id=session_id)
+        finance_accounts_qs = finance_accounts_qs.filter(sessionID_id=session_id)
+
+    charge_summary = charge_qs.aggregate(
+        total_due=Sum('netAmount'),
+        total_paid=Sum('paidAmount'),
+        total_balance=Sum('balanceAmount'),
+    )
+    confirmed_receipt_qs = receipt_qs.filter(status='confirmed')
+    paid_expense_qs = expense_qs.filter(approvalStatus='paid')
+
+    cash_account = finance_accounts_qs.filter(accountCode='CASH_ON_HAND').first()
+    bank_account = finance_accounts_qs.filter(accountCode='BANK_MAIN').first()
+
+    def account_balance(account_obj):
+        if not account_obj:
+            return Decimal('0.00')
+        totals = FinanceEntry.objects.filter(
+            accountID=account_obj,
+            transactionID__isDeleted=False,
+            transactionID__status='posted',
+        ).aggregate(
+            debit_total=Sum('amount', filter=Q(entryType='debit')),
+            credit_total=Sum('amount', filter=Q(entryType='credit')),
+        )
+        return (totals.get('debit_total') or Decimal('0.00')) - (totals.get('credit_total') or Decimal('0.00'))
+
+    context = {
+        'fee_heads_count': fee_heads_qs.count(),
+        'open_charges_count': charge_qs.exclude(status__in=['paid', 'cancelled']).count(),
+        'charge_total_due': charge_summary.get('total_due') or Decimal('0.00'),
+        'charge_total_paid': charge_summary.get('total_paid') or Decimal('0.00'),
+        'charge_total_balance': charge_summary.get('total_balance') or Decimal('0.00'),
+        'receipt_count': confirmed_receipt_qs.count(),
+        'receipt_total': confirmed_receipt_qs.aggregate(total=Sum('amountReceived')).get('total') or Decimal('0.00'),
+        'expense_voucher_count': paid_expense_qs.count(),
+        'expense_total': paid_expense_qs.aggregate(total=Sum('netAmount')).get('total') or Decimal('0.00'),
+        'cash_balance': account_balance(cash_account),
+        'bank_balance': account_balance(bank_account),
+        'recent_receipts': confirmed_receipt_qs.select_related('studentID', 'paymentModeID').order_by('-receiptDate', '-id')[:5],
+        'recent_expenses': expense_qs.select_related('expenseCategoryID', 'paymentModeID').order_by('-voucherDate', '-id')[:5],
+    }
+    return render(request, 'managementApp/finance/dashboard.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_fee_heads(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=request.user)
+    context = {
+        'fee_head_categories': FeeHead.CATEGORY_CHOICES,
+        'fee_head_recurrence_types': FeeHead.RECURRENCE_CHOICES,
+    }
+    return render(request, 'managementApp/finance/manage_fee_heads.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_receipts(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=request.user)
+    context = {}
+    return render(request, 'managementApp/finance/manage_receipts.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def finance_reports(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=request.user)
+    context = {}
+    return render(request, 'managementApp/finance/reports.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def finance_controls(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=request.user)
+    context = {
+        'period_status_choices': FinancePeriod.STATUS_CHOICES,
+        'approval_rule_document_choices': FinanceApprovalRule.DOCUMENT_TYPE_CHOICES,
+        'approval_rule_mode_choices': FinanceApprovalRule.APPROVAL_MODE_CHOICES,
+    }
+    return render(request, 'managementApp/finance/controls.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def finance_settings(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    context = {}
+    if school_id and session_id:
+        setup = bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=request.user)
+        config_obj = get_finance_configuration(school_id=school_id, session_id=session_id, user_obj=request.user)
+        account_choices = FinanceAccount.objects.filter(
+            schoolID_id=school_id,
+            sessionID_id=session_id,
+            isDeleted=False,
+            isActive=True,
+        ).order_by('accountCode', 'accountName')
+        context = {
+            'finance_config': config_obj,
+            'finance_account_choices': account_choices,
+            'default_cash_account': config_obj.defaultCashAccountID or setup['accounts'].get('CASH_ON_HAND'),
+            'default_bank_account': config_obj.defaultBankAccountID or setup['accounts'].get('BANK_MAIN'),
+        }
+    return render(request, 'managementApp/finance/settings.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def finance_audit_trail(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=request.user)
+    return render(request, 'managementApp/finance/audit_trail.html', {})
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def finance_reconciliation(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=request.user)
+    return render(request, 'managementApp/finance/reconciliation.html', {})
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def finance_payroll(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=request.user)
+    context = {}
+    return render(request, 'managementApp/finance/payroll.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_vendors(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_expense_categories(school_id=school_id, session_id=session_id, user_obj=request.user)
+    return render(request, 'managementApp/finance/manage_vendors.html', {})
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def vendor_payables(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_expense_categories(school_id=school_id, session_id=session_id, user_obj=request.user)
+    return render(request, 'managementApp/finance/vendor_payables.html', {})
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def vendor_statement(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_expense_categories(school_id=school_id, session_id=session_id, user_obj=request.user)
+    context = {
+        'selected_vendor_id': request.GET.get('vendor') or '',
+    }
+    return render(request, 'managementApp/finance/vendor_statement.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_student_charges(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=request.user)
+    context = {}
+    return render(request, 'managementApp/finance/manage_student_charges.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def student_finance_ledger(request):
+    context = {}
+    return render(request, 'managementApp/finance/student_ledger.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def finance_receipt_detail(request, id=None):
+    receipt = get_object_or_404(
+        PaymentReceipt.objects.select_related(
+            'studentID',
+            'studentID__standardID',
+            'studentID__parentID',
+            'partyID',
+            'paymentModeID',
+            'schoolID',
+            'sessionID',
+            'depositAccountID',
+        ),
+        pk=id,
+        isDeleted=False,
+    )
+    allocations = list(
+        receipt.allocations.select_related('studentChargeID', 'studentChargeID__feeHeadID').all().order_by('id')
+    )
+    student_obj = receipt.studentID
+    charge_ids = [row.studentChargeID_id for row in allocations]
+    charges = list(StudentCharge.objects.filter(id__in=charge_ids, isDeleted=False))
+    total_charged = sum((row.netAmount for row in charges), start=0)
+    total_paid = sum((row.paidAmount for row in charges), start=0)
+    total_balance = sum((row.balanceAmount for row in charges), start=0)
+    finance_config = get_finance_configuration(
+        school_id=receipt.schoolID_id,
+        session_id=receipt.sessionID_id,
+        user_obj=request.user,
+    )
+    context = {
+        'receipt': receipt,
+        'allocations': allocations,
+        'student': student_obj,
+        'school': receipt.schoolID,
+        'finance_config': finance_config,
+        'total_charged': total_charged,
+        'total_paid': total_paid,
+        'total_balance': total_balance,
+    }
+    return render(request, 'managementApp/finance/receipt_detail.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_expense_vouchers(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_expense_categories(school_id=school_id, session_id=session_id, user_obj=request.user)
+    context = {}
+    return render(request, 'managementApp/finance/manage_expense_vouchers.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def cash_bank_book(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_expense_categories(school_id=school_id, session_id=session_id, user_obj=request.user)
+    context = {}
+    return render(request, 'managementApp/finance/cash_bank_book.html', context)
 
 
 @login_required
