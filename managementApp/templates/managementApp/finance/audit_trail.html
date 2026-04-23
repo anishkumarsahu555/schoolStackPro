@@ -1,0 +1,232 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Audit Trail</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Audit Trail
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Review finance transactions with source references, status, user trail, and underlying ledger entries."
+                       data-position="bottom center"></i>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+                <section>
+                    <div class="finance-panel-header">
+                        <div>
+                            <h3 class="finance-panel-title">Audit Filters</h3>
+                            <div class="finance-panel-subtitle">Filter finance transactions by date, type, source module, status, or free text.</div>
+                        </div>
+                    </div>
+                    <form class="ui tiny form">
+                        <div class="finance-filter-grid">
+                            <div class="field">
+                                <label>Date From</label>
+                                <div class="ui calendar" id="auditDateFromCal">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" id="auditDateFrom" placeholder="Date From">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label>Date To</label>
+                                <div class="ui calendar" id="auditDateToCal">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" id="auditDateTo" placeholder="Date To">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label>Type</label>
+                                <select class="ui dropdown" id="auditTxnType">
+                                    <option value="">All Types</option>
+                                    <option value="student_charge">Student Charge</option>
+                                    <option value="student_receipt">Student Receipt</option>
+                                    <option value="expense_accrual">Expense Accrual</option>
+                                    <option value="expense_payment">Expense Payment</option>
+                                    <option value="payroll_accrual">Payroll Accrual</option>
+                                    <option value="salary_payment">Salary Payment</option>
+                                    <option value="refund">Refund</option>
+                                    <option value="reversal">Reversal</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Status</label>
+                                <select class="ui dropdown" id="auditStatus">
+                                    <option value="">All Statuses</option>
+                                    <option value="posted">Posted</option>
+                                    <option value="reversed">Reversed</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Source Module</label>
+                                <input type="text" id="auditSourceModule" placeholder="finance_manual_receipt">
+                            </div>
+                            <div class="field">
+                                <label>Search</label>
+                                <input type="text" id="auditSearch" placeholder="Txn no / reference / description">
+                            </div>
+                        </div>
+                        <div class="finance-filter-actions">
+                            <button type="button" class="ui green button" onclick="loadAuditTrail()">
+                                <i class="search icon"></i>
+                                Load Trail
+                            </button>
+                            <button type="button" class="ui mini red button" onclick="resetAuditTrailFilters()">
+                                <i class="icon times circle"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="finance-summary-grid" id="auditSummary" style="display:none;">
+                    <div class="finance-summary-item">
+                        <div class="value" id="auditTotalTransactions">0</div>
+                        <div class="label">Transactions</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="auditPostedTransactions">0</div>
+                        <div class="label">Posted</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="auditReversedTransactions">0</div>
+                        <div class="label">Reversed</div>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Audit Transactions</h3>
+                            <div class="finance-panel-subtitle">Paged finance transaction history with ledger entry summaries.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="auditTrailTable" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Txn No.</th>
+                                <th>Type</th>
+                                <th>Reference</th>
+                                <th>Description</th>
+                                <th>Source</th>
+                                <th>Entries</th>
+                                <th>Edited By</th>
+                                <th>Updated On</th>
+                                <th>Status</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let auditTrailTable;
+        $('.ui.dropdown').dropdown();
+        $('#auditDateFromCal, #auditDateToCal').calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date) {
+                    if (!date) return '';
+                    return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                }
+            }
+        });
+
+        function money(value) {
+            return 'Rs ' + Number(value || 0).toFixed(2);
+        }
+
+        function statusPill(statusValue) {
+            const status = String(statusValue || 'draft').toLowerCase();
+            return '<span class="finance-status-pill ' + status + '">' + status.replace('_', ' ') + '</span>';
+        }
+
+        auditTrailTable = $('#auditTrailTable').DataTable({
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            scrollX: true,
+            scrollY: '420px',
+            stateSave: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4, 5, 7, 8, 9]
+                }
+            }],
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{% url 'managementAppAPI:FinanceAuditTrailListJson' %}",
+                data: function (d) {
+                    d.dateFrom = $('#auditDateFrom').val() || '';
+                    d.dateTo = $('#auditDateTo').val() || '';
+                    d.txnType = $('#auditTxnType').val() || '';
+                    d.status = $('#auditStatus').val() || '';
+                    d.sourceModule = $('#auditSourceModule').val() || '';
+                }
+            },
+            language: {
+                emptyTable: 'Load audit trail filters to view finance transactions.'
+            }
+        });
+
+        function loadAuditTrail() {
+            $.get("{% url 'managementAppAPI:get_finance_audit_trail_api' %}", {
+                dateFrom: $('#auditDateFrom').val(),
+                dateTo: $('#auditDateTo').val(),
+                txnType: $('#auditTxnType').val(),
+                status: $('#auditStatus').val(),
+                sourceModule: $('#auditSourceModule').val(),
+                search: $('#auditSearch').val()
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load audit trail.');
+                    return;
+                }
+                const data = response.data || {};
+                const summary = data.summary || {};
+                const rows = data.rows || [];
+                $('#auditTotalTransactions').text(summary.totalTransactions || 0);
+                $('#auditPostedTransactions').text(summary.postedTransactions || 0);
+                $('#auditReversedTransactions').text(summary.reversedTransactions || 0);
+                $('#auditSummary').show();
+                auditTrailTable.ajax.reload();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load audit trail.');
+            });
+        }
+
+        function resetAuditTrailFilters() {
+            $('#auditDateFrom, #auditDateTo, #auditSourceModule, #auditSearch').val('');
+            $('#auditTxnType, #auditStatus').dropdown('clear');
+            loadAuditTrail();
+        }
+
+        loadAuditTrail();
+    </script>
+{% endblock %}

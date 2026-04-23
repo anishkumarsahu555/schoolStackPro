@@ -1,0 +1,228 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Vendor Payables</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Vendor Payables
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Review vendor-wise payable balances and voucher-level outstanding liabilities created by expense accrual flows."
+                       data-position="bottom center"></i>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+                <section>
+                    <form class="ui tiny form">
+                        <div class="three fields">
+                            <div class="field">
+                                <label>Vendor</label>
+                                <select class="ui search dropdown" id="vendorPayableVendor"></select>
+                            </div>
+                            <div class="field">
+                                <label>Status</label>
+                                <select class="ui dropdown" id="vendorPayableStatus">
+                                    <option value="all">All Vendors</option>
+                                    <option value="outstanding">Outstanding Only</option>
+                                    <option value="settled">Settled Only</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>&nbsp;</label>
+                                <div class="finance-filter-actions" style="margin-top:0;">
+                                    <button type="button" class="ui green button" onclick="loadVendorPayables()">
+                                        <i class="search icon"></i>
+                                        Load Payables
+                                    </button>
+                                    <button type="button" class="ui mini red button" onclick="resetVendorPayablesFilters()">
+                                        <i class="times circle icon"></i>
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="finance-summary-grid" id="vendorPayableSummary" style="display:none;">
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorPayableVendorCount">0</div>
+                        <div class="label">Vendors</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorPayableBalanceCount">0</div>
+                        <div class="label">With Balance</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorPayableOutstandingAmount">Rs 0.00</div>
+                        <div class="label">Outstanding</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorPayablePaidAmount">Rs 0.00</div>
+                        <div class="label">Paid</div>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Vendor Balance Summary</h3>
+                            <div class="finance-panel-subtitle">Aggregated payable position by vendor across accrued and paid expense vouchers.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="vendorPayableTable" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Vendor</th>
+                                <th>Phone</th>
+                                <th>Vouchers</th>
+                                <th>Accrued</th>
+                                <th>Paid</th>
+                                <th>Outstanding</th>
+                                <th>Last Voucher</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Voucher Liability Register</h3>
+                            <div class="finance-panel-subtitle">Voucher-level payable status for vendor liabilities and settled payable flows.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="vendorVoucherTable" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Voucher No.</th>
+                                <th>Vendor</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Accrued</th>
+                                <th>Paid</th>
+                                <th>Outstanding</th>
+                                <th>Status</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let vendorPayableTable;
+        let vendorVoucherTable;
+        let vendorPayablePayload = {};
+
+        function money(value) {
+            return 'Rs ' + Number(value || 0).toFixed(2);
+        }
+
+        function loadVendorPayablesMeta() {
+            const selectedVendorId = $('#vendorPayableVendor').val();
+            $.get("{% url 'managementAppAPI:get_vendor_payables_api' %}", function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load vendor payables.');
+                    return;
+                }
+                vendorPayablePayload = response.data || {};
+                const summary = vendorPayablePayload.summary || {};
+                const vendorOptions = vendorPayablePayload.vendorOptions || [];
+
+                const selectOptions = ['<option value="">All Vendors</option>'].concat(vendorOptions.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Label + '</option>';
+                }));
+                $('#vendorPayableVendor').html(selectOptions.join(''));
+                $('#vendorPayableVendor').dropdown('refresh');
+                if (selectedVendorId) {
+                    $('#vendorPayableVendor').dropdown('set selected', String(selectedVendorId));
+                }
+
+                $('#vendorPayableVendorCount').text(summary.vendorCount || 0);
+                $('#vendorPayableBalanceCount').text(summary.vendorsWithBalance || 0);
+                $('#vendorPayableOutstandingAmount').text(money(summary.outstandingAmount));
+                $('#vendorPayablePaidAmount').text(money(summary.paidAmount));
+                $('#vendorPayableSummary').show();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load vendor payables.');
+            });
+        }
+
+        function vendorPayableFilters(data) {
+            data.vendorID = $('#vendorPayableVendor').val();
+            data.status = $('#vendorPayableStatus').val();
+        }
+
+        function loadVendorPayables() {
+            loadVendorPayablesMeta();
+            vendorPayableTable.ajax.reload(null, false);
+            vendorVoucherTable.ajax.reload(null, false);
+        }
+
+        function resetVendorPayablesFilters() {
+            $('#vendorPayableVendor').dropdown('clear');
+            $('#vendorPayableStatus').dropdown('set selected', 'all');
+            loadVendorPayables();
+        }
+
+        $('.ui.dropdown').dropdown();
+
+        vendorPayableTable = $('#vendorPayableTable').DataTable({
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            processing: true,
+            serverSide: true,
+            scrollX: true,
+            stateSave: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            buttons: [{extend: 'excel'}],
+            ajax: {
+                url: "{% url 'managementAppAPI:finance_vendor_payables_rows_api' %}",
+                data: vendorPayableFilters
+            },
+            language: {emptyTable: 'No vendor payable rows found.'}
+        });
+
+        vendorVoucherTable = $('#vendorVoucherTable').DataTable({
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            processing: true,
+            serverSide: true,
+            scrollX: true,
+            stateSave: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            buttons: [{extend: 'excel'}],
+            ajax: {
+                url: "{% url 'managementAppAPI:finance_vendor_outstanding_voucher_rows_api' %}",
+                data: vendorPayableFilters
+            },
+            language: {emptyTable: 'No vendor voucher liability rows found.'}
+        });
+
+        loadVendorPayables();
+    </script>
+{% endblock %}

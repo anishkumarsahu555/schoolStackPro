@@ -1015,6 +1015,38 @@
                             <input type="number" name="totalFee" id="totalFee" placeholder="Total Fees">
                         </div>
                     </div>
+                    <h4 class="ui dividing header">Admission Payment</h4>
+                    <input type="hidden" name="admissionPaymentTouched" id="admissionPaymentTouched" value="false">
+                    <div class="five fields">
+                        <div class="field">
+                            <label>Receipt Status</label>
+                            <div class="ui checkbox" style="margin-top: 0.7rem;">
+                                <input type="checkbox" name="admissionFeePaid" id="admissionFeePaid">
+                                <label>Admission payment received</label>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Amount Received</label>
+                            <input type="number" name="admissionAmountReceived" id="admissionAmountReceived" placeholder="Amount Received" min="0" step="0.01">
+                        </div>
+                        <div class="field">
+                            <label>Payment Mode</label>
+                            <select class="ui dropdown" id="admissionPaymentMode">
+                                <option value="">Select Payment Mode</option>
+                                <option value="CASH">Cash</option>
+                                <option value="BANK">Bank</option>
+                                <option value="UPI">UPI</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Reference No.</label>
+                            <input type="text" name="admissionPaymentReference" id="admissionPaymentReference" placeholder="Reference / UTR / Cheque No.">
+                        </div>
+                        <div class="field">
+                            <label>Remark</label>
+                            <input type="text" name="admissionPaymentRemark" id="admissionPaymentRemark" placeholder="Payment remark">
+                        </div>
+                    </div>
 
 
                 </form>
@@ -1523,6 +1555,30 @@
             $('#stateP').val(state).change();
         } 
 
+        function markAdmissionPaymentTouched() {
+            $('#admissionPaymentTouched').val('true');
+        }
+
+        function bindAdmissionPaymentHelpers() {
+            $('#admissionFeePaid, #admissionAmountReceived, #admissionPaymentMode, #admissionPaymentReference, #admissionPaymentRemark')
+                .on('change input', function () {
+                    markAdmissionPaymentTouched();
+                });
+
+            $('#admissionFeePaid').on('change', function () {
+                const checked = $(this).is(':checked');
+                const admissionFee = $('#admissionFee').val();
+                if (checked && !$('#admissionAmountReceived').val() && admissionFee) {
+                    $('#admissionAmountReceived').val(admissionFee);
+                }
+                if (checked && !$('#admissionPaymentMode').val()) {
+                    $('#admissionPaymentMode').dropdown('set selected', 'CASH');
+                }
+            });
+        }
+
+        bindAdmissionPaymentHelpers();
+
 function addStudentData() {
     let data = new FormData();
 
@@ -1625,6 +1681,7 @@ function addStudentData() {
                 $('#addForm').trigger('reset');
                 croppedImageFile = null;
                 $('#imageUpload').val('');
+                $('#admissionPaymentTouched').val('false');
                 setPhotoPreview(defaultStudentPhoto);
             } else {
                 addErrorNotification(response.message);

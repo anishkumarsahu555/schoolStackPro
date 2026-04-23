@@ -1,0 +1,215 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Vendor Statement</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Vendor Statement
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Open one vendor statement to trace accruals, settlements, and the running payable balance from vendor-linked finance activity."
+                       data-position="bottom center"></i>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+                <section>
+                    <div class="finance-panel-header">
+                        <div>
+                            <h3 class="finance-panel-title">Select Vendor</h3>
+                            <div class="finance-panel-subtitle">Choose a vendor to review voucher accruals, payments, and closing payable balance.</div>
+                        </div>
+                    </div>
+                    <form class="ui tiny form">
+                        <div class="two fields">
+                            <div class="field required">
+                                <label>Vendor</label>
+                                <select class="ui search dropdown" id="vendorStatementVendor">
+                                    <option value="">Select Vendor</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>&nbsp;</label>
+                                <div class="finance-filter-actions" style="margin-top:0;">
+                                    <button type="button" class="ui green button" onclick="loadVendorStatement()">
+                                        <i class="search icon"></i>
+                                        Load Statement
+                                    </button>
+                                    <button type="button" class="ui mini red button" onclick="resetVendorStatementFilters()">
+                                        <i class="times circle icon"></i>
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="finance-summary-grid" id="vendorStatementSummary" style="display:none;">
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorStatementTotalAccrued">Rs 0.00</div>
+                        <div class="label">Accrued</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorStatementTotalPaid">Rs 0.00</div>
+                        <div class="label">Paid</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorStatementClosingBalance">Rs 0.00</div>
+                        <div class="label">Closing Balance</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorStatementVoucherCount">0</div>
+                        <div class="label">Active Vouchers</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorStatementOpenCount">0</div>
+                        <div class="label">Open Vouchers</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorStatementSettledCount">0</div>
+                        <div class="label">Settled Vouchers</div>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel" id="vendorStatementTableWrap" style="display:none;">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Vendor Statement Rows</h3>
+                            <div class="finance-panel-subtitle" id="vendorStatementTitle">Vendor | N/A</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="vendorStatementTable" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Reference</th>
+                                <th>Category</th>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let vendorStatementTable;
+        const initialVendorStatementId = "{{ selected_vendor_id|escapejs }}";
+
+        $('.ui.dropdown').dropdown();
+
+        function money(value) {
+            return 'Rs ' + Number(value || 0).toFixed(2);
+        }
+
+        function loadVendorStatementOptions(callback) {
+            $.get("{% url 'managementAppAPI:get_vendor_payables_api' %}", function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load vendors.');
+                    return;
+                }
+                const vendorOptions = response.data.vendorOptions || [];
+                const options = ['<option value="">Select Vendor</option>'].concat(vendorOptions.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Label + '</option>';
+                }));
+                $('#vendorStatementVendor').html(options.join('')).dropdown('refresh');
+                if (initialVendorStatementId) {
+                    $('#vendorStatementVendor').dropdown('set selected', String(initialVendorStatementId));
+                }
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load vendors.');
+            });
+        }
+
+        function resetVendorStatementFilters() {
+            $('#vendorStatementVendor').dropdown('clear');
+            $('#vendorStatementSummary, #vendorStatementTableWrap').hide();
+            $('#vendorStatementTitle').text('Vendor | N/A');
+            vendorStatementTable.ajax.reload();
+        }
+
+        function loadVendorStatement() {
+            const vendorId = $('#vendorStatementVendor').val();
+            if (!vendorId) {
+                requiredFieldError();
+                return;
+            }
+            $.get("{% url 'managementAppAPI:get_vendor_statement_api' %}", {vendor: vendorId}, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load vendor statement.');
+                    return;
+                }
+                const summary = (response.data || {}).summary || {};
+                $('#vendorStatementTitle').text((summary.vendorName || 'Vendor') + ' | Statement');
+                $('#vendorStatementTotalAccrued').text(money(summary.totalAccrued));
+                $('#vendorStatementTotalPaid').text(money(summary.totalPaid));
+                $('#vendorStatementClosingBalance').text(money(summary.closingBalance));
+                $('#vendorStatementVoucherCount').text(summary.voucherCount || 0);
+                $('#vendorStatementOpenCount').text(summary.openVoucherCount || 0);
+                $('#vendorStatementSettledCount').text(summary.settledVoucherCount || 0);
+                $('#vendorStatementSummary, #vendorStatementTableWrap').show();
+                vendorStatementTable.columns.adjust();
+                vendorStatementTable.ajax.reload();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load vendor statement.');
+            });
+        }
+
+        vendorStatementTable = $('#vendorStatementTable').DataTable({
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            processing: true,
+            serverSide: true,
+            scrollX: true,
+            stateSave: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+                }
+            }],
+            ajax: {
+                url: "{% url 'managementAppAPI:finance_vendor_statement_rows_api' %}",
+                data: function (d) {
+                    d.vendor = $('#vendorStatementVendor').val() || '';
+                }
+            },
+            language: {
+                emptyTable: 'Load a vendor to view the statement.'
+            }
+        });
+
+        loadVendorStatementOptions(function () {
+            if ($('#vendorStatementVendor').val()) {
+                loadVendorStatement();
+            }
+        });
+    </script>
+{% endblock %}

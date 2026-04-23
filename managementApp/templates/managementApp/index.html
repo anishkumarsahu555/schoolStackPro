@@ -114,6 +114,73 @@
         <span>Fee Details</span>
     </a>
 
+    <!-- FINANCE -->
+    <div class="nav-section">Finance &amp; Accounts</div>
+    <a class="nav-item {% if request.resolver_match.url_name == 'finance_dashboard' %}active{% endif %}" href="{% url 'managementApp:finance_dashboard' %}">
+        <i class="chart bar icon"></i>
+        <span>Finance Dashboard</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'manage_receipts' %}active{% endif %}" href="{% url 'managementApp:manage_receipts' %}">
+        <i class="receipt icon"></i>
+        <span>Receipts</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'finance_reports' %}active{% endif %}" href="{% url 'managementApp:finance_reports' %}">
+        <i class="chart pie icon"></i>
+        <span>Finance Reports</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'finance_controls' %}active{% endif %}" href="{% url 'managementApp:finance_controls' %}">
+        <i class="shield alternate icon"></i>
+        <span>Finance Controls</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'finance_settings' %}active{% endif %}" href="{% url 'managementApp:finance_settings' %}">
+        <i class="cogs icon"></i>
+        <span>Finance Settings</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'finance_audit_trail' %}active{% endif %}" href="{% url 'managementApp:finance_audit_trail' %}">
+        <i class="stream icon"></i>
+        <span>Audit Trail</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'finance_reconciliation' %}active{% endif %}" href="{% url 'managementApp:finance_reconciliation' %}">
+        <i class="tasks icon"></i>
+        <span>Reconciliation</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'manage_student_charges' %}active{% endif %}" href="{% url 'managementApp:manage_student_charges' %}">
+        <i class="file invoice dollar icon"></i>
+        <span>Student Charges</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'manage_fee_heads' %}active{% endif %}" href="{% url 'managementApp:manage_fee_heads' %}">
+        <i class="tags icon"></i>
+        <span>Fee Heads</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'student_finance_ledger' %}active{% endif %}" href="{% url 'managementApp:student_finance_ledger' %}">
+        <i class="book icon"></i>
+        <span>Student Ledger</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'finance_payroll' %}active{% endif %}" href="{% url 'managementApp:finance_payroll' %}">
+        <i class="money check alternate icon"></i>
+        <span>Payroll</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'manage_vendors' %}active{% endif %}" href="{% url 'managementApp:manage_vendors' %}">
+        <i class="truck icon"></i>
+        <span>Vendors</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'vendor_payables' %}active{% endif %}" href="{% url 'managementApp:vendor_payables' %}">
+        <i class="handshake outline icon"></i>
+        <span>Vendor Payables</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'vendor_statement' %}active{% endif %}" href="{% url 'managementApp:vendor_statement' %}">
+        <i class="book open icon"></i>
+        <span>Vendor Statement</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'manage_expense_vouchers' %}active{% endif %}" href="{% url 'managementApp:manage_expense_vouchers' %}">
+        <i class="file alternate outline icon"></i>
+        <span>Expense Vouchers</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.url_name == 'cash_bank_book' %}active{% endif %}" href="{% url 'managementApp:cash_bank_book' %}">
+        <i class="wallet icon"></i>
+        <span>Cash & Bank Book</span>
+    </a>
+
     <!-- EXAMS -->
     <div class="nav-section">Exams</div>
     <a class="nav-item" href="{% url 'managementApp:manage_exams' %}">

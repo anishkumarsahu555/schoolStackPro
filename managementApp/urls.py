@@ -43,6 +43,23 @@ urlpatterns = [
     # Fee
     path('student_fee/', student_fee, name='student_fee'),
     path('student_fee_details/', student_fee_details, name='student_fee_details'),
+    path('finance/', finance_dashboard, name='finance_dashboard'),
+    path('finance/receipts/', manage_receipts, name='manage_receipts'),
+    path('finance/reports/', finance_reports, name='finance_reports'),
+    path('finance/controls/', finance_controls, name='finance_controls'),
+    path('finance/settings/', finance_settings, name='finance_settings'),
+    path('finance/audit-trail/', finance_audit_trail, name='finance_audit_trail'),
+    path('finance/reconciliation/', finance_reconciliation, name='finance_reconciliation'),
+    path('finance/payroll/', finance_payroll, name='finance_payroll'),
+    path('finance/vendors/', manage_vendors, name='manage_vendors'),
+    path('finance/vendor-payables/', vendor_payables, name='vendor_payables'),
+    path('finance/vendor-statement/', vendor_statement, name='vendor_statement'),
+    path('finance/student-charges/', manage_student_charges, name='manage_student_charges'),
+    path('finance/fee-heads/', manage_fee_heads, name='manage_fee_heads'),
+    path('finance/student-ledger/', student_finance_ledger, name='student_finance_ledger'),
+    path('finance/receipt/<int:id>/', finance_receipt_detail, name='finance_receipt_detail'),
+    path('finance/expense-vouchers/', manage_expense_vouchers, name='manage_expense_vouchers'),
+    path('finance/cash-bank-book/', cash_bank_book, name='cash_bank_book'),
 
     #marks
     path('student_marks/', student_marks, name='student_marks'),

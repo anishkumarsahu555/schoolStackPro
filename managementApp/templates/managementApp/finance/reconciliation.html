@@ -1,0 +1,271 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Reconciliation</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Reconciliation
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Find common finance mismatches and run safe repair actions against receipts, charges, vouchers, and payroll postings."
+                       data-position="bottom center"></i>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+                <section class="finance-filter-actions" style="margin-top:0;">
+                    <button type="button" class="ui green button" onclick="loadReconciliation()">
+                        <i class="sync icon"></i>
+                        Run Checks
+                    </button>
+                </section>
+
+                <section class="finance-summary-grid" id="reconciliationSummary" style="display:none;">
+                    <div class="finance-summary-item">
+                        <div class="value" id="reconReceiptIssues">0</div>
+                        <div class="label">Receipt Issues</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="reconChargeIssues">0</div>
+                        <div class="label">Charge Issues</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="reconVoucherIssues">0</div>
+                        <div class="label">Voucher Issues</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="reconPayrollIssues">0</div>
+                        <div class="label">Payroll Issues</div>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Receipts Missing Ledger</h3>
+                            <div class="finance-panel-subtitle">Confirmed receipts that do not currently have a finance transaction tied to their source reference.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny celled very compact table" id="reconReceiptTable" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Receipt</th>
+                                <th>Student</th>
+                                <th>Amount</th>
+                                <th>Issue</th>
+                                <th>Repair</th>
+                            </tr>
+                            </thead>
+                            <tbody id="reconReceiptRows">
+                            <tr><td colspan="6" class="center aligned">Run checks to load reconciliation issues.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Charge Balance Mismatches</h3>
+                            <div class="finance-panel-subtitle">Charges where stored paid and balance amounts do not match allocations and refunds.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny celled very compact table" id="reconChargeTable" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Charge</th>
+                                <th>Student</th>
+                                <th>Current Paid</th>
+                                <th>Expected Paid</th>
+                                <th>Current Balance</th>
+                                <th>Expected Balance</th>
+                                <th>Repair</th>
+                            </tr>
+                            </thead>
+                            <tbody id="reconChargeRows">
+                            <tr><td colspan="7" class="center aligned">Run checks to load reconciliation issues.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Expense Voucher Posting Issues</h3>
+                            <div class="finance-panel-subtitle">Approved or paid vouchers missing their accrual or payment ledger postings.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny celled very compact table" id="reconVoucherTable" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Voucher</th>
+                                <th>Title</th>
+                                <th>Amount</th>
+                                <th>Issue</th>
+                                <th>Repair</th>
+                            </tr>
+                            </thead>
+                            <tbody id="reconVoucherRows">
+                            <tr><td colspan="6" class="center aligned">Run checks to load reconciliation issues.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Payroll Payment Issues</h3>
+                            <div class="finance-panel-subtitle">Paid payroll lines that do not yet have a linked salary payment transaction.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny celled very compact table" id="reconPayrollTable" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Teacher</th>
+                                <th>Period</th>
+                                <th>Amount</th>
+                                <th>Issue</th>
+                            </tr>
+                            </thead>
+                            <tbody id="reconPayrollRows">
+                            <tr><td colspan="4" class="center aligned">Run checks to load reconciliation issues.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let reconReceiptTable;
+        let reconChargeTable;
+        let reconVoucherTable;
+        let reconPayrollTable;
+
+        function repairIssue(issueType, recordId) {
+            $.post("{% url 'managementAppAPI:repair_finance_reconciliation_issue_api' %}", {
+                issueType: issueType,
+                recordID: recordId
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to repair issue.');
+                    return;
+                }
+                addSuccessNotification(response.message || 'Repair completed successfully.');
+                loadReconciliation();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to repair issue.');
+            });
+        }
+
+        function initReconTables() {
+            reconReceiptTable = $('#reconReceiptTable').DataTable({
+                dom: '<"top"lBf>rt<"bottom"ip>',
+                processing: true,
+                serverSide: true,
+                scrollX: true,
+                stateSave: true,
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                buttons: [{extend: 'excel'}],
+                ajax: {
+                    url: "{% url 'managementAppAPI:finance_recon_receipt_rows_api' %}",
+                    type: 'GET'
+                },
+                language: {emptyTable: 'Run checks to load reconciliation issues.'}
+            });
+            reconChargeTable = $('#reconChargeTable').DataTable({
+                dom: '<"top"lBf>rt<"bottom"ip>',
+                processing: true,
+                serverSide: true,
+                scrollX: true,
+                stateSave: true,
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                buttons: [{extend: 'excel'}],
+                ajax: {
+                    url: "{% url 'managementAppAPI:finance_recon_charge_rows_api' %}",
+                    type: 'GET'
+                },
+                language: {emptyTable: 'Run checks to load reconciliation issues.'}
+            });
+            reconVoucherTable = $('#reconVoucherTable').DataTable({
+                dom: '<"top"lBf>rt<"bottom"ip>',
+                processing: true,
+                serverSide: true,
+                scrollX: true,
+                stateSave: true,
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                buttons: [{extend: 'excel'}],
+                ajax: {
+                    url: "{% url 'managementAppAPI:finance_recon_voucher_rows_api' %}",
+                    type: 'GET'
+                },
+                language: {emptyTable: 'Run checks to load reconciliation issues.'}
+            });
+            reconPayrollTable = $('#reconPayrollTable').DataTable({
+                dom: '<"top"lBf>rt<"bottom"ip>',
+                processing: true,
+                serverSide: true,
+                scrollX: true,
+                stateSave: true,
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                buttons: [{extend: 'excel'}],
+                ajax: {
+                    url: "{% url 'managementAppAPI:finance_recon_payroll_rows_api' %}",
+                    type: 'GET'
+                },
+                language: {emptyTable: 'Run checks to load reconciliation issues.'}
+            });
+        }
+
+        function loadReconciliation() {
+            $.get("{% url 'managementAppAPI:get_finance_reconciliation_api' %}", function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load reconciliation.');
+                    return;
+                }
+                const data = response.data || {};
+                const summary = data.summary || {};
+
+                $('#reconReceiptIssues').text(summary.receiptIssues || 0);
+                $('#reconChargeIssues').text(summary.chargeIssues || 0);
+                $('#reconVoucherIssues').text(summary.voucherIssues || 0);
+                $('#reconPayrollIssues').text(summary.payrollIssues || 0);
+                $('#reconciliationSummary').show();
+                reconReceiptTable.ajax.reload(null, false);
+                reconChargeTable.ajax.reload(null, false);
+                reconVoucherTable.ajax.reload(null, false);
+                reconPayrollTable.ajax.reload(null, false);
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load reconciliation.');
+            });
+        }
+
+        initReconTables();
+        loadReconciliation();
+    </script>
+{% endblock %}

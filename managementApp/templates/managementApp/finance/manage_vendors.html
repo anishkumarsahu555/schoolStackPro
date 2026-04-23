@@ -1,0 +1,272 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Vendors</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Vendors
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Maintain vendor master records used by expense vouchers, payables, and outgoing finance postings."
+                       data-position="bottom center"></i>
+                    <button class="ui green mini plus button right" type="button" onclick="openVendorModal()">
+                        <i class="plus square outline icon"></i>
+                        Add Vendor
+                    </button>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+                <section class="finance-summary-grid" id="vendorSummary">
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorCount">0</div>
+                        <div class="label">Vendors</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorActiveCount">0</div>
+                        <div class="label">Active</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorWithPhoneCount">0</div>
+                        <div class="label">With Phone</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="vendorWithTaxCount">0</div>
+                        <div class="label">With Tax Id</div>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Vendor Master</h3>
+                            <div class="finance-panel-subtitle">Create and maintain vendor details for expense and payable workflows.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="vendorTable" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Vendor</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Tax Id</th>
+                                <th>Status</th>
+                                <th>Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <div class="ui modal" id="vendorModal">
+                    <i class="close icon"></i>
+                    <div class="header" id="vendorModalTitle">Add Vendor</div>
+                    <div class="content">
+                        <form class="ui tiny form" id="vendorForm">
+                            {% csrf_token %}
+                            <input type="hidden" id="vendorId">
+                            <div class="two fields">
+                                <div class="field required">
+                                    <label>Vendor Name</label>
+                                    <input type="text" id="vendorDisplayName" placeholder="ABC Traders">
+                                </div>
+                                <div class="field">
+                                    <label>Phone Number</label>
+                                    <input type="text" id="vendorPhoneNumber" placeholder="Phone Number">
+                                </div>
+                            </div>
+                            <div class="two fields">
+                                <div class="field">
+                                    <label>Email</label>
+                                    <input type="email" id="vendorEmail" placeholder="vendor@example.com">
+                                </div>
+                                <div class="field">
+                                    <label>Tax Identifier</label>
+                                    <input type="text" id="vendorTaxIdentifier" placeholder="GST / Tax Id">
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label>Address</label>
+                                <textarea rows="2" id="vendorAddress" placeholder="Vendor Address"></textarea>
+                            </div>
+                            <div class="field">
+                                <div class="ui checkbox">
+                                    <input type="checkbox" id="vendorIsActive" checked>
+                                    <label>Active</label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="actions">
+                        <div class="ui cancel button">Cancel</div>
+                        <button type="button" class="ui right labeled icon button green" onclick="saveVendor()">
+                            Save
+                            <i class="checkmark icon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ui basic modal custom" id="deleteVendorModal">
+                    <div class="ui icon header">
+                        <i class="trash alternate icon red"></i>
+                        Vendor Will Be Deleted
+                    </div>
+                    <div class="content">
+                        <p style="text-align: center">This vendor will be deleted. Are you sure?</p>
+                    </div>
+                    <div class="actions">
+                        <div class="ui red basic cancel inverted button">
+                            <i class="remove icon"></i>
+                            No
+                        </div>
+                        <input type="hidden" id="deleteVendorId">
+                        <div class="ui green ok inverted button" onclick="confirmDeleteVendor()">
+                            <i class="checkmark icon"></i>
+                            Yes
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let vendorRows = [];
+        let vendorTable;
+
+        $('.ui.checkbox').checkbox();
+
+        function updateVendorSummary() {
+            $('#vendorCount').text(vendorRows.length);
+            $('#vendorActiveCount').text(vendorRows.filter(row => row.isActive).length);
+            $('#vendorWithPhoneCount').text(vendorRows.filter(row => row.phoneNumber).length);
+            $('#vendorWithTaxCount').text(vendorRows.filter(row => row.taxIdentifier).length);
+        }
+
+        function resetVendorForm() {
+            $('#vendorId').val('');
+            $('#vendorDisplayName').val('');
+            $('#vendorPhoneNumber').val('');
+            $('#vendorEmail').val('');
+            $('#vendorTaxIdentifier').val('');
+            $('#vendorAddress').val('');
+            $('#vendorIsActive').prop('checked', true);
+            $('.ui.checkbox').checkbox('refresh');
+        }
+
+        function loadVendors() {
+            $.get("{% url 'managementAppAPI:get_vendor_list_api' %}", function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load vendors.');
+                    return;
+                }
+                vendorRows = response.data || [];
+                updateVendorSummary();
+                if (vendorTable) {
+                    vendorTable.ajax.reload(null, false);
+                }
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load vendors.');
+            });
+        }
+
+        function openVendorModal() {
+            resetVendorForm();
+            $('#vendorModalTitle').text('Add Vendor');
+            $('#vendorModal').modal('show');
+        }
+
+        function editVendor(id) {
+            const row = vendorRows.find(item => Number(item.id) === Number(id));
+            if (!row) {
+                addErrorNotification('Vendor not found.');
+                return;
+            }
+            resetVendorForm();
+            $('#vendorModalTitle').text('Edit Vendor');
+            $('#vendorId').val(row.id);
+            $('#vendorDisplayName').val(row.displayName || '');
+            $('#vendorPhoneNumber').val(row.phoneNumber || '');
+            $('#vendorEmail').val(row.email || '');
+            $('#vendorTaxIdentifier').val(row.taxIdentifier || '');
+            $('#vendorAddress').val(row.address || '');
+            $('#vendorIsActive').prop('checked', !!row.isActive);
+            $('.ui.checkbox').checkbox('refresh');
+            $('#vendorModal').modal('show');
+        }
+
+        function saveVendor() {
+            $.post("{% url 'managementAppAPI:upsert_vendor_api' %}", {
+                id: $('#vendorId').val(),
+                displayName: $('#vendorDisplayName').val(),
+                phoneNumber: $('#vendorPhoneNumber').val(),
+                email: $('#vendorEmail').val(),
+                taxIdentifier: $('#vendorTaxIdentifier').val(),
+                address: $('#vendorAddress').val(),
+                isActive: $('#vendorIsActive').is(':checked') ? '1' : '0'
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to save vendor.');
+                    return;
+                }
+                $('#vendorModal').modal('hide');
+                resetVendorForm();
+                loadVendors();
+                addSuccessNotification(response.message || 'Vendor saved successfully.');
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to save vendor.');
+            });
+        }
+
+        function deleteVendor(id) {
+            $('#deleteVendorId').val(id);
+            $('#deleteVendorModal').modal('show');
+        }
+
+        function confirmDeleteVendor() {
+            $.post("{% url 'managementAppAPI:delete_vendor_api' %}", {
+                id: $('#deleteVendorId').val()
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to delete vendor.');
+                    return;
+                }
+                $('#deleteVendorModal').modal('hide');
+                loadVendors();
+                addSuccessNotification(response.message || 'Vendor deleted successfully.');
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to delete vendor.');
+            });
+        }
+
+        vendorTable = $('#vendorTable').DataTable({
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            processing: true,
+            serverSide: true,
+            scrollX: true,
+            stateSave: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            buttons: [{extend: 'excel'}],
+            ajax: "{% url 'managementAppAPI:FinanceVendorListJson' %}",
+            language: {emptyTable: 'No vendors found.'}
+        });
+
+        loadVendors();
+    </script>
+{% endblock %}

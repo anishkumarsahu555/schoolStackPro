@@ -1,0 +1,568 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Finance Controls</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Finance Controls
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px; display:flex; gap:0.55rem; align-items:center;">
+                    <button type="button" class="ui blue mini button" onclick="openApprovalRuleModal()">
+                        <i class="sliders horizontal icon"></i>
+                        Add Rule
+                    </button>
+                    <button type="button" class="ui green mini plus button" onclick="openFinancePeriodModal()">
+                        <i class="plus square outline icon"></i>
+                        Add Period
+                    </button>
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Use finance periods to soft-lock or close accounting windows and review submitted finance documents before they post further into operations."
+                       data-position="bottom center"></i>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+                <section class="finance-summary-grid" id="financeControlSummary" style="display:none;">
+                    <div class="finance-summary-item">
+                        <div class="value" id="financeOpenPeriods">0</div>
+                        <div class="label">Open Periods</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="financeLockedPeriods">0</div>
+                        <div class="label">Locked Periods</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="financePendingApprovals">0</div>
+                        <div class="label">Pending Approvals</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="financeActiveApprovalRules">0</div>
+                        <div class="label">Active Rules</div>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Approval Rules</h3>
+                            <div class="finance-panel-subtitle">Configure amount bands that decide whether receipts, refunds, payroll runs, and expense vouchers can move directly or must stop in the approval queue.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny celled very compact table" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Rule</th>
+                                <th>Document</th>
+                                <th>Amount Band</th>
+                                <th>Mode</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody id="financeApprovalRuleRows">
+                            <tr><td colspan="7" class="center aligned">Loading approval rules...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Finance Periods</h3>
+                            <div class="finance-panel-subtitle">Soft-lock or close date ranges to stop backdated finance edits and postings.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny celled very compact table" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Period Start</th>
+                                <th>Period End</th>
+                                <th>Status</th>
+                                <th>Closed At</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody id="financePeriodRows">
+                            <tr><td colspan="5" class="center aligned">Loading finance periods...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="finance-table-panel">
+                    <div class="finance-table-head">
+                        <div>
+                            <h3 class="finance-panel-title">Pending Approvals</h3>
+                            <div class="finance-panel-subtitle">Submitted finance documents waiting for approval before confirmation, posting, or payment handling.</div>
+                        </div>
+                    </div>
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny celled very compact table" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Document</th>
+                                <th>Type</th>
+                                <th>Title</th>
+                                <th>Details</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody id="financeApprovalRows">
+                            <tr><td colspan="7" class="center aligned">Loading approval queue...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui small modal" id="financePeriodModal">
+        <i class="close icon"></i>
+        <div class="header" id="financePeriodModalTitle">Add Finance Period</div>
+        <div class="content">
+            <form class="ui tiny form" id="financePeriodForm">
+                <input type="hidden" id="financePeriodId">
+                <div class="three fields">
+                    <div class="field required">
+                        <label>Period Start</label>
+                        <div class="ui calendar" id="financePeriodStartCal">
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text" id="financePeriodStart" placeholder="Period Start">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field required">
+                        <label>Period End</label>
+                        <div class="ui calendar" id="financePeriodEndCal">
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text" id="financePeriodEnd" placeholder="Period End">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field required">
+                        <label>Status</label>
+                        <select class="ui dropdown" id="financePeriodStatus">
+                            {% for key, label in period_status_choices %}
+                                <option value="{{ key }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="actions">
+            <div class="ui cancel button">Cancel</div>
+            <button type="button" class="ui green button" onclick="saveFinancePeriod()">
+                <i class="save icon"></i>
+                Save Period
+            </button>
+        </div>
+    </div>
+
+    <div class="ui small modal" id="approvalRuleModal">
+        <i class="close icon"></i>
+        <div class="header" id="approvalRuleModalTitle">Add Approval Rule</div>
+        <div class="content">
+            <form class="ui tiny form" id="approvalRuleForm">
+                <input type="hidden" id="approvalRuleId">
+                <div class="two fields">
+                    <div class="field required">
+                        <label>Rule Name</label>
+                        <input type="text" id="approvalRuleName" placeholder="High Value Voucher Approval">
+                    </div>
+                    <div class="field required">
+                        <label>Document Type</label>
+                        <select class="ui dropdown" id="approvalRuleDocumentType">
+                            {% for key, label in approval_rule_document_choices %}
+                                <option value="{{ key }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="four fields">
+                    <div class="field required">
+                        <label>Min Amount</label>
+                        <input type="number" id="approvalRuleMinAmount" min="0" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="field">
+                        <label>Max Amount</label>
+                        <input type="number" id="approvalRuleMaxAmount" min="0" step="0.01" placeholder="Leave blank for no upper limit">
+                    </div>
+                    <div class="field required">
+                        <label>Mode</label>
+                        <select class="ui dropdown" id="approvalRuleMode">
+                            {% for key, label in approval_rule_mode_choices %}
+                                <option value="{{ key }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field required">
+                        <label>Priority</label>
+                        <input type="number" id="approvalRulePriority" min="1" step="1" value="1">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="ui checkbox">
+                        <input type="checkbox" id="approvalRuleIsActive" checked>
+                        <label>Active</label>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="actions">
+            <div class="ui cancel button">Cancel</div>
+            <button type="button" class="ui green button" onclick="saveApprovalRule()">
+                <i class="save icon"></i>
+                Save Rule
+            </button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let financePeriods = [];
+        let financeApprovalRules = [];
+
+        $('.ui.dropdown').dropdown();
+        $('#financePeriodStartCal, #financePeriodEndCal').calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date) {
+                    if (!date) return '';
+                    return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                }
+            }
+        });
+
+        function statusPill(statusValue) {
+            const status = String(statusValue || 'draft').toLowerCase();
+            return '<span class="finance-status-pill ' + status + '">' + status.replace('_', ' ') + '</span>';
+        }
+
+        function money(value) {
+            return 'Rs ' + Number(value || 0).toFixed(2);
+        }
+
+        function loadFinanceControls() {
+            $.get("{% url 'managementAppAPI:get_finance_control_center_api' %}", function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load finance controls.');
+                    return;
+                }
+                const data = response.data || {};
+                const summary = data.summary || {};
+                financePeriods = data.periods || [];
+                const pendingApprovals = data.pendingApprovals || [];
+
+                $('#financeOpenPeriods').text(summary.openPeriods || 0);
+                $('#financeLockedPeriods').text(summary.lockedPeriods || 0);
+                $('#financePendingApprovals').text(summary.pendingApprovals || 0);
+                $('#financeActiveApprovalRules').text(summary.activeApprovalRules || 0);
+                $('#financeControlSummary').show();
+                financeApprovalRules = data.approvalRules || [];
+
+                if (!financePeriods.length) {
+                    $('#financePeriodRows').html('<tr><td colspan="5" class="center aligned">No finance periods configured yet.</td></tr>');
+                } else {
+                    $('#financePeriodRows').html(financePeriods.map(function (row) {
+                        return `
+                            <tr>
+                                <td>${row.periodStart}</td>
+                                <td>${row.periodEnd}</td>
+                                <td>${statusPill(row.status)}</td>
+                                <td>${row.closedAt || '—'}</td>
+                                <td>
+                                    <button
+                                        type="button"
+                                        data-inverted=""
+                                        data-tooltip="Edit Detail"
+                                        data-position="left center"
+                                        data-variation="mini"
+                                        style="font-size:10px;"
+                                        onclick="editFinancePeriod(${row.id})"
+                                        class="ui circular facebook icon button green">
+                                        <i class="pencil icon"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join(''));
+                }
+
+                if (!financeApprovalRules.length) {
+                    $('#financeApprovalRuleRows').html('<tr><td colspan="7" class="center aligned">No approval rules configured yet.</td></tr>');
+                } else {
+                    $('#financeApprovalRuleRows').html(financeApprovalRules.map(function (row) {
+                        const amountBand = row.maxAmount === null
+                            ? money(row.minAmount) + ' and above'
+                            : money(row.minAmount) + ' - ' + money(row.maxAmount);
+                        return `
+                            <tr>
+                                <td><strong>${row.ruleName}</strong></td>
+                                <td>${row.documentTypeLabel}</td>
+                                <td>${amountBand}</td>
+                                <td>${statusPill(row.approvalMode === 'approval_required' ? 'submitted' : 'approved')}</td>
+                                <td>${row.priority}</td>
+                                <td>${row.isActive ? statusPill('active') : statusPill('draft')}</td>
+                                <td>
+                                    <button
+                                        type="button"
+                                        data-inverted=""
+                                        data-tooltip="Edit Detail"
+                                        data-position="left center"
+                                        data-variation="mini"
+                                        style="font-size:10px;"
+                                        onclick="editApprovalRule(${row.id})"
+                                        class="ui circular facebook icon button green">
+                                        <i class="pencil icon"></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        data-inverted=""
+                                        data-tooltip="Delete"
+                                        data-position="left center"
+                                        data-variation="mini"
+                                        style="font-size:10px; margin-left: 3px;"
+                                        onclick="deleteApprovalRule(${row.id})"
+                                        class="ui circular youtube icon button">
+                                        <i class="trash alternate icon"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join(''));
+                }
+
+                if (!pendingApprovals.length) {
+                    $('#financeApprovalRows').html('<tr><td colspan="7" class="center aligned">No submitted finance documents are waiting for approval.</td></tr>');
+                } else {
+                    $('#financeApprovalRows').html(pendingApprovals.map(function (row) {
+                        const actionButton = row.approveAction === 'approveReceipt'
+                            ? `<button type="button" class="ui mini green button" onclick="approveReceipt(${row.id})"><i class="check icon"></i>Approve</button>`
+                            : row.approveAction === 'approveRefund'
+                                ? `<button type="button" class="ui mini green button" onclick="approveRefund(${row.id})"><i class="check icon"></i>Approve</button>`
+                                : row.approveAction === 'approvePayrollPayment'
+                                    ? `<button type="button" class="ui mini green button" onclick="approvePayrollPayment(${row.id})"><i class="check icon"></i>Approve</button>`
+                                : row.approveAction === 'approvePayrollRun'
+                                    ? `<button type="button" class="ui mini green button" onclick="approvePayrollRun(${row.id})"><i class="check icon"></i>Approve</button>`
+                                    : `<button type="button" class="ui mini green button" onclick="approveVoucher(${row.id})"><i class="check icon"></i>Approve</button>`;
+                        return `
+                            <tr>
+                                <td>${row.date}</td>
+                                <td><strong>${row.documentNo}</strong></td>
+                                <td>${row.documentTypeLabel}</td>
+                                <td>${row.title}<div class="finance-panel-subtitle" style="margin-top:0.25rem;">Target: ${String(row.requestedApprovalStatus || '').replace('_', ' ')}</div></td>
+                                <td>${row.meta || '—'}</td>
+                                <td>${money(row.amount)}${row.matchedRuleLabel ? `<div class="finance-panel-subtitle" style="margin-top:0.25rem;">Rule: ${row.matchedRuleLabel}</div>` : ''}</td>
+                                <td>${actionButton}</td>
+                            </tr>
+                        `;
+                    }).join(''));
+                }
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load finance controls.');
+            });
+        }
+
+        function openFinancePeriodModal() {
+            $('#financePeriodForm')[0].reset();
+            $('#financePeriodId').val('');
+            $('#financePeriodStatus').dropdown('set selected', 'open');
+            $('#financePeriodModalTitle').text('Add Finance Period');
+            $('#financePeriodModal').modal({autofocus:false, detachable:false}).modal('show');
+        }
+
+        function openApprovalRuleModal() {
+            $('#approvalRuleForm')[0].reset();
+            $('#approvalRuleId').val('');
+            $('#approvalRuleDocumentType').dropdown('set selected', 'expense_voucher');
+            $('#approvalRuleMode').dropdown('set selected', 'approval_required');
+            $('#approvalRulePriority').val('1');
+            $('#approvalRuleIsActive').prop('checked', true);
+            $('.ui.checkbox').checkbox('refresh');
+            $('#approvalRuleModalTitle').text('Add Approval Rule');
+            $('#approvalRuleModal').modal({autofocus:false, detachable:false}).modal('show');
+        }
+
+        function editApprovalRule(ruleId) {
+            const row = financeApprovalRules.find(function (item) { return Number(item.id) === Number(ruleId); });
+            if (!row) return;
+            $('#approvalRuleId').val(row.id);
+            $('#approvalRuleName').val(row.ruleName);
+            $('#approvalRuleDocumentType').dropdown('set selected', row.documentType);
+            $('#approvalRuleMinAmount').val(row.minAmount);
+            $('#approvalRuleMaxAmount').val(row.maxAmount === null ? '' : row.maxAmount);
+            $('#approvalRuleMode').dropdown('set selected', row.approvalMode);
+            $('#approvalRulePriority').val(row.priority);
+            $('#approvalRuleIsActive').prop('checked', !!row.isActive);
+            $('.ui.checkbox').checkbox('refresh');
+            $('#approvalRuleModalTitle').text('Edit Approval Rule');
+            $('#approvalRuleModal').modal({autofocus:false, detachable:false}).modal('show');
+        }
+
+        function editFinancePeriod(periodId) {
+            const row = financePeriods.find(function (item) { return Number(item.id) === Number(periodId); });
+            if (!row) return;
+            $('#financePeriodId').val(row.id);
+            $('#financePeriodStart').val(row.periodStart);
+            $('#financePeriodEnd').val(row.periodEnd);
+            $('#financePeriodStatus').dropdown('set selected', row.status);
+            $('#financePeriodModalTitle').text('Edit Finance Period');
+            $('#financePeriodModal').modal({autofocus:false, detachable:false}).modal('show');
+        }
+
+        function saveFinancePeriod() {
+            $.post("{% url 'managementAppAPI:upsert_finance_period_api' %}", {
+                id: $('#financePeriodId').val(),
+                periodStart: $('#financePeriodStart').val(),
+                periodEnd: $('#financePeriodEnd').val(),
+                status: $('#financePeriodStatus').val()
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to save finance period.');
+                    return;
+                }
+                $('#financePeriodModal').modal('hide');
+                addSuccessNotification(response.message || 'Finance period saved successfully.');
+                loadFinanceControls();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to save finance period.');
+            });
+        }
+
+        function saveApprovalRule() {
+            $.post("{% url 'managementAppAPI:upsert_finance_approval_rule_api' %}", {
+                id: $('#approvalRuleId').val(),
+                ruleName: $('#approvalRuleName').val(),
+                documentType: $('#approvalRuleDocumentType').val(),
+                minAmount: $('#approvalRuleMinAmount').val(),
+                maxAmount: $('#approvalRuleMaxAmount').val(),
+                approvalMode: $('#approvalRuleMode').val(),
+                priority: $('#approvalRulePriority').val(),
+                isActive: $('#approvalRuleIsActive').is(':checked')
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to save approval rule.');
+                    return;
+                }
+                $('#approvalRuleModal').modal('hide');
+                addSuccessNotification(response.message || 'Approval rule saved successfully.');
+                loadFinanceControls();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to save approval rule.');
+            });
+        }
+
+        function deleteApprovalRule(ruleId) {
+            $.post("{% url 'managementAppAPI:delete_finance_approval_rule_api' %}", {
+                id: ruleId
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to delete approval rule.');
+                    return;
+                }
+                addSuccessNotification(response.message || 'Approval rule deleted successfully.');
+                loadFinanceControls();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to delete approval rule.');
+            });
+        }
+
+        function approveVoucher(voucherId) {
+            $.post("{% url 'managementAppAPI:approve_expense_voucher_api' %}", {
+                id: voucherId
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to approve voucher.');
+                    return;
+                }
+                addSuccessNotification(response.message || 'Expense voucher approved successfully.');
+                loadFinanceControls();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to approve voucher.');
+            });
+        }
+
+        function approveReceipt(receiptId) {
+            $.post("{% url 'managementAppAPI:approve_payment_receipt_api' %}", {
+                id: receiptId
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to approve receipt.');
+                    return;
+                }
+                addSuccessNotification(response.message || 'Payment receipt approved successfully.');
+                loadFinanceControls();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to approve receipt.');
+            });
+        }
+
+        function approveRefund(refundId) {
+            $.post("{% url 'managementAppAPI:approve_payment_refund_api' %}", {
+                id: refundId
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to approve refund.');
+                    return;
+                }
+                addSuccessNotification(response.message || 'Payment refund approved successfully.');
+                loadFinanceControls();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to approve refund.');
+            });
+        }
+
+        function approvePayrollRun(runId) {
+            $.post("{% url 'managementAppAPI:approve_payroll_run_api' %}", {
+                id: runId
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to approve payroll run.');
+                    return;
+                }
+                addSuccessNotification(response.message || 'Payroll run approved successfully.');
+                loadFinanceControls();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to approve payroll run.');
+            });
+        }
+
+        function approvePayrollPayment(lineId) {
+            $.post("{% url 'managementAppAPI:approve_payroll_payment_api' %}", {
+                id: lineId
+            }, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to approve salary payment.');
+                    return;
+                }
+                addSuccessNotification(response.message || 'Salary payment approved successfully.');
+                loadFinanceControls();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to approve salary payment.');
+            });
+        }
+
+        loadFinanceControls();
+    </script>
+{% endblock %}

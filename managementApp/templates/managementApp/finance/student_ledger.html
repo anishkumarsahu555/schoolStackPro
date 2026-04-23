@@ -1,0 +1,210 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Student Ledger</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Student Ledger
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Open a student ledger to trace every charge, receipt, and running balance from the finance system. Receipt rows keep direct print access for fast office workflows."
+                       data-position="bottom center"></i>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+        <section>
+            <div class="finance-panel-header">
+                <div>
+                    <h3 class="finance-panel-title">Select Student</h3>
+                    <div class="finance-panel-subtitle">Choose a class and student to load the finance-backed ledger.</div>
+                </div>
+            </div>
+            <form class="ui tiny form">
+                {% csrf_token %}
+                <div class="finance-filter-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+                    <div class="field required">
+                        <label>Class - Section</label>
+                        <select class="ui search dropdown" id="ledgerStandard">
+                            <option value="">Search By Class Name</option>
+                        </select>
+                    </div>
+                    <div class="field required">
+                        <label>Student</label>
+                        <select class="ui search dropdown" id="ledgerStudent">
+                            <option value="">Search By Student Name-Roll</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>&nbsp;</label>
+                        <div class="finance-filter-actions" style="margin-top:0; align-items:center;">
+                            <button type="button" class="ui green button" onclick="loadLedger()">
+                                <i class="search icon"></i>
+                                Load Ledger
+                            </button>
+                            <button type="button" class="ui red button" onclick="resetLedgerFilters()">
+                                <i class="icon times circle"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <section class="finance-summary-grid" id="ledgerSummary" style="display:none;">
+            <div class="finance-summary-item">
+                <div class="value" id="ledgerTotalCharged">Rs 0.00</div>
+                <div class="label">Total Charged</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="ledgerTotalPaid">Rs 0.00</div>
+                <div class="label">Total Paid</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="ledgerTotalBalance">Rs 0.00</div>
+                <div class="label">Outstanding</div>
+            </div>
+        </section>
+
+        <section class="finance-table-panel" id="ledgerTableWrap" style="display:none;">
+            <div class="finance-table-head">
+                <div>
+                    <h3 class="finance-panel-title">Ledger Statement</h3>
+                    <div class="finance-panel-subtitle" id="ledgerTitle">Student | N/A</div>
+                </div>
+            </div>
+            <div class="finance-table-wrap">
+                <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="ledgerTable" style="width:100%;">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Reference</th>
+                        <th>Head</th>
+                        <th>Description</th>
+                        <th>Charge</th>
+                        <th>Receipt</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let ledgerTable;
+        $('.ui.dropdown').dropdown();
+
+        function money(value) {
+            return 'Rs ' + Number(value || 0).toFixed(2);
+        }
+
+        function statusPill(statusValue) {
+            const status = String(statusValue || 'draft').toLowerCase();
+            return '<span class="finance-status-pill ' + status + '">' + status.replace('_', ' ') + '</span>';
+        }
+
+        ledgerTable = $('#ledgerTable').DataTable({
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            scrollX: true,
+            scrollY: '360px',
+            stateSave: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+                }
+            }],
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{% url 'managementAppAPI:finance_student_ledger_rows_api' %}",
+                data: function (d) {
+                    d.student = $('#ledgerStudent').val() || '';
+                }
+            },
+            language: {
+                emptyTable: 'Load a student to view the finance ledger.'
+            }
+        });
+
+        function getLedgerStandardList() {
+            $.get("{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}", function (response) {
+                const rows = response.data || [];
+                const options = ['<option value="">Search By Class Name</option>'].concat(rows.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Name + '</option>';
+                }));
+                $('#ledgerStandard').html(options.join('')).dropdown('refresh');
+            });
+        }
+
+        function getLedgerStudentList() {
+            $.get("{% url 'managementAppAPI:get_student_list_by_class_api' %}", {standard: $('#ledgerStandard').val()}, function (response) {
+                const rows = response.data || [];
+                const options = ['<option value="">Search By Student Name-Roll</option>'].concat(rows.map(function (row) {
+                    return '<option value="' + row.ID + '">' + row.Name + '</option>';
+                }));
+                $('#ledgerStudent').html(options.join('')).dropdown('refresh');
+            });
+        }
+
+        $('#ledgerStandard').on('change', getLedgerStudentList);
+
+        function resetLedgerFilters() {
+            $('#ledgerStandard').dropdown('clear');
+            $('#ledgerStudent').html('<option value="">Search By Student Name-Roll</option>').dropdown('refresh');
+            $('#ledgerSummary, #ledgerTableWrap').hide();
+            ledgerTable.ajax.reload();
+            $('#ledgerTitle').text('Student | N/A');
+        }
+
+        function loadLedger() {
+            const studentId = $('#ledgerStudent').val();
+            if (!studentId) {
+                requiredFieldError();
+                return;
+            }
+            $.get("{% url 'managementAppAPI:get_student_finance_ledger_api' %}", {student: studentId}, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load ledger.');
+                    return;
+                }
+                const payload = response.data || {};
+                const summary = payload.summary || {};
+                const rows = payload.rows || [];
+                $('#ledgerTitle').text((summary.studentName || 'Student') + ' | ' + (summary.className || 'N/A'));
+                $('#ledgerTotalCharged').text(money(summary.totalCharged));
+                $('#ledgerTotalPaid').text(money(summary.totalPaid));
+                $('#ledgerTotalBalance').text(money(summary.totalBalance));
+                $('#ledgerSummary, #ledgerTableWrap').show();
+                ledgerTable.columns.adjust();
+                ledgerTable.ajax.reload();
+            }).fail(function (xhr) {
+                addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to load ledger.');
+            });
+        }
+
+        getLedgerStandardList();
+    </script>
+{% endblock %}

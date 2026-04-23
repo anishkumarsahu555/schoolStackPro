@@ -1,0 +1,386 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Fee Heads</title>
+{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="user">
+                    Fee Heads
+                </div>
+                <div style=" position: absolute;right: 1.5rem;top: 18px;">
+                    <i class="info circle icon finance-page-intro"
+                       data-inverted=""
+                       data-tooltip="Manage the fee heads that power student charges and receipts. System heads stay protected, while custom heads can be introduced here without disturbing the existing admission and fee workflows."
+                       data-position="bottom center"></i>
+                    <button class="ui green mini plus button right" type="button" onclick="openFeeHeadModal()">
+                        <i class="plus square outline icon"></i>
+                        Add Fee Head
+                    </button>
+                </div>
+            </div>
+            <div class="ui tab finance-shell" data-tab="user">
+
+        <section class="finance-summary-grid" id="feeHeadSummary">
+            <div class="finance-summary-item">
+                <div class="value" id="feeHeadCount">0</div>
+                <div class="label">Fee Heads</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="feeHeadRecurringCount">0</div>
+                <div class="label">Recurring</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="feeHeadActiveCount">0</div>
+                <div class="label">Active</div>
+            </div>
+            <div class="finance-summary-item">
+                <div class="value" id="feeHeadDefaultTotal">Rs 0.00</div>
+                <div class="label">Default Total</div>
+            </div>
+        </section>
+
+        <section>
+            <div class="finance-panel-header">
+                <div>
+                    <h3 class="finance-panel-title">Fee Head Management</h3>
+                    <div class="finance-panel-subtitle">Create or update student fee heads through the same modal-driven workflow used across management.</div>
+                </div>
+            </div>
+            <div class="finance-empty" style="padding: 0.5rem 0;">
+                Use <strong>Add Fee Head</strong> or the row edit action to open the finance form in a management-style modal.
+            </div>
+        </section>
+
+        <section class="finance-table-panel">
+            <div class="finance-table-head">
+                <div>
+                    <h3 class="finance-panel-title">Fee Head List</h3>
+                    <div class="finance-panel-subtitle">Review the active and system-generated heads currently driving finance charges.</div>
+                </div>
+            </div>
+            <div class="finance-table-wrap">
+                <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="feeHeadTable">
+                    <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Default</th>
+                        <th>Recurring</th>
+                        <th>Income</th>
+                        <th>Receivable</th>
+                        <th>Status</th>
+                        <th>Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <div class="ui modal" id="feeHeadModal">
+            <i class="close icon"></i>
+            <div class="header" id="feeHeadModalTitle">Add Fee Head</div>
+            <div class="content">
+                <form class="ui tiny form" id="feeHeadForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="feeHeadId">
+                    <div class="four fields">
+                        <div class="field required">
+                            <label>Code</label>
+                            <input type="text" id="feeHeadCode" placeholder="ADMISSION_FEE">
+                        </div>
+                        <div class="field required">
+                            <label>Name</label>
+                            <input type="text" id="feeHeadName" placeholder="Admission Fee">
+                        </div>
+                        <div class="field required">
+                            <label>Category</label>
+                            <select class="ui dropdown" id="feeHeadCategory">
+                                {% for value, label in fee_head_categories %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Default Amount</label>
+                            <input type="number" id="feeHeadDefaultAmount" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="four fields">
+                        <div class="field required">
+                            <label>Income Account</label>
+                            <select class="ui search dropdown" id="feeHeadIncomeAccount"></select>
+                        </div>
+                        <div class="field required">
+                            <label>Receivable Account</label>
+                            <select class="ui search dropdown" id="feeHeadReceivableAccount"></select>
+                        </div>
+                        <div class="field">
+                            <label>Display Order</label>
+                            <input type="number" id="feeHeadDisplayOrder" placeholder="0" min="0" step="1">
+                        </div>
+                        <div class="field">
+                            <label>Recurrence</label>
+                            <select class="ui dropdown" id="feeHeadRecurrenceType">
+                                {% for value, label in fee_head_recurrence_types %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="two fields">
+                        <div class="field">
+                            <div class="ui checkbox" style="margin-top: 1.8rem;">
+                                <input type="checkbox" id="feeHeadIsRecurring">
+                                <label>Recurring fee head</label>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="ui checkbox" style="margin-top: 1.8rem;">
+                                <input type="checkbox" id="feeHeadIsActive" checked>
+                                <label>Active</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="actions">
+                <div class="ui cancel button">Cancel</div>
+                <button type="button" class="ui right labeled icon button green" onclick="saveFeeHead()">
+                    Save
+                    <i class="checkmark icon"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="ui basic modal custom" id="deleteFeeHeadModal">
+            <div class="ui icon header">
+                <i class="trash alternate icon red"></i>
+                Fee Head Will Be Deleted
+            </div>
+            <div class="content">
+                <p style="text-align: center">This fee head will be deleted. Are you sure?</p>
+            </div>
+            <div class="actions">
+                <div class="ui red basic cancel inverted button">
+                    <i class="remove icon"></i>
+                    No
+                </div>
+                <input type="hidden" id="deleteFeeHeadId">
+                <div class="ui green ok inverted button" onclick="confirmDeleteFeeHead()">
+                    <i class="checkmark icon"></i>
+                    Yes
+                </div>
+            </div>
+        </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let feeHeadRows = [];
+        let financeAccountRows = [];
+        let feeHeadTable;
+
+        $('.ui.checkbox').checkbox();
+        $('.ui.dropdown').dropdown();
+
+        function money(value) {
+            return 'Rs ' + Number(value || 0).toFixed(2);
+        }
+
+        function statusPill(statusValue) {
+            const status = String(statusValue || 'draft').toLowerCase();
+            return '<span class="finance-status-pill ' + status + '">' + status.replace('_', ' ') + '</span>';
+        }
+
+        function activePill(isActive) {
+            const label = isActive ? 'active' : 'inactive';
+            return '<span class="finance-status-pill ' + label + '">' + label + '</span>';
+        }
+
+        feeHeadTable = $('#feeHeadTable').DataTable({
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            scrollX: true,
+            scrollY: '360px',
+            stateSave: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+                }
+            }],
+            processing: true,
+            serverSide: true,
+            ajax: "{% url 'managementAppAPI:FinanceFeeHeadListJson' %}",
+            language: {
+                emptyTable: 'No fee heads found.'
+            }
+        });
+
+        function refreshFeeHeadSummary() {
+            const recurringCount = feeHeadRows.filter(function (row) { return !!row.isRecurring; }).length;
+            const activeCount = feeHeadRows.filter(function (row) { return !!row.isActive; }).length;
+            const defaultTotal = feeHeadRows.reduce(function (sum, row) {
+                return sum + Number(row.defaultAmount || 0);
+            }, 0);
+            $('#feeHeadCount').text(feeHeadRows.length);
+            $('#feeHeadRecurringCount').text(recurringCount);
+            $('#feeHeadActiveCount').text(activeCount);
+            $('#feeHeadDefaultTotal').text(money(defaultTotal));
+        }
+
+        function populateAccountDropdowns() {
+            const options = ['<option value="">Select Account</option>'].concat(financeAccountRows.map(function (row) {
+                return '<option value="' + row.ID + '">' + row.Label + '</option>';
+            }));
+            $('#feeHeadIncomeAccount').html(options.join(''));
+            $('#feeHeadReceivableAccount').html(options.join(''));
+            $('#feeHeadIncomeAccount, #feeHeadReceivableAccount').dropdown('refresh');
+        }
+
+        function loadFinanceAccounts() {
+            $.get("{% url 'managementAppAPI:get_finance_account_options_api' %}", function (response) {
+                financeAccountRows = response.data || [];
+                populateAccountDropdowns();
+            });
+        }
+
+        function renderFeeHeads() {
+            refreshFeeHeadSummary();
+        }
+
+        function loadFeeHeads() {
+            $.get("{% url 'managementAppAPI:get_fee_head_list_api' %}", function (response) {
+                feeHeadRows = response.data || [];
+                renderFeeHeads();
+                feeHeadTable.ajax.reload(null, false);
+            });
+        }
+
+        function resetFeeHeadForm() {
+            $('#feeHeadId').val('');
+            $('#feeHeadCode').val('');
+            $('#feeHeadName').val('');
+            $('#feeHeadCategory').dropdown('set selected', 'misc');
+            $('#feeHeadDefaultAmount').val('');
+            $('#feeHeadIncomeAccount').dropdown('clear');
+            $('#feeHeadReceivableAccount').dropdown('clear');
+            $('#feeHeadDisplayOrder').val('');
+            $('#feeHeadRecurrenceType').dropdown('set selected', 'one_time');
+            $('#feeHeadIsRecurring').prop('checked', false);
+            $('#feeHeadIsActive').prop('checked', true);
+            $('.ui.checkbox').checkbox('refresh');
+            $('#feeHeadForm .field').removeClass('error');
+        }
+
+        function openFeeHeadModal() {
+            resetFeeHeadForm();
+            $('#feeHeadModalTitle').text('Add Fee Head');
+            $('#feeHeadModal').modal('show');
+        }
+
+        function editFeeHead(id) {
+            const row = feeHeadRows.find(function (item) { return item.id === id; });
+            if (!row) return;
+            resetFeeHeadForm();
+            $('#feeHeadId').val(row.id);
+            $('#feeHeadCode').val(row.code);
+            $('#feeHeadName').val(row.name);
+            $('#feeHeadCategory').dropdown('set selected', row.category);
+            $('#feeHeadDefaultAmount').val(row.defaultAmount);
+            $('#feeHeadIncomeAccount').dropdown('set selected', String(row.incomeAccountID || ''));
+            $('#feeHeadReceivableAccount').dropdown('set selected', String(row.receivableAccountID || ''));
+            $('#feeHeadDisplayOrder').val(row.displayOrder);
+            $('#feeHeadRecurrenceType').dropdown('set selected', row.recurrenceType || 'one_time');
+            $('#feeHeadIsRecurring').prop('checked', !!row.isRecurring);
+            $('#feeHeadIsActive').prop('checked', !!row.isActive);
+            $('.ui.checkbox').checkbox('refresh');
+            $('#feeHeadModalTitle').text('Edit Fee Head');
+            $('#feeHeadModal').modal('show');
+        }
+
+        function saveFeeHead() {
+            const data = new FormData();
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            data.append('id', $('#feeHeadId').val());
+            data.append('code', $('#feeHeadCode').val());
+            data.append('name', $('#feeHeadName').val());
+            data.append('category', $('#feeHeadCategory').val());
+            data.append('defaultAmount', $('#feeHeadDefaultAmount').val());
+            data.append('incomeAccountID', $('#feeHeadIncomeAccount').val());
+            data.append('receivableAccountID', $('#feeHeadReceivableAccount').val());
+            data.append('displayOrder', $('#feeHeadDisplayOrder').val());
+            data.append('recurrenceType', $('#feeHeadRecurrenceType').val());
+            data.append('isRecurring', $('#feeHeadIsRecurring').is(':checked'));
+            data.append('isActive', $('#feeHeadIsActive').is(':checked'));
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:upsert_fee_head_api' %}",
+                data: data,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, 'green');
+                        $('#feeHeadModal').modal('hide');
+                        resetFeeHeadForm();
+                        loadFeeHeads();
+                    } else {
+                        addErrorNotification(response.message || 'Unable to save fee head.');
+                    }
+                },
+                error: function (xhr) {
+                    addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to save fee head.');
+                }
+            });
+        }
+
+        function deleteFeeHead(id) {
+            $('#deleteFeeHeadId').val(id);
+            $('#deleteFeeHeadModal').modal('show');
+        }
+
+        function confirmDeleteFeeHead() {
+            const data = new FormData();
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            data.append('id', $('#deleteFeeHeadId').val());
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:delete_fee_head_api' %}",
+                data: data,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, 'green');
+                        $('#deleteFeeHeadModal').modal('hide');
+                        loadFeeHeads();
+                    } else {
+                        addErrorNotification(response.message || 'Unable to delete fee head.');
+                    }
+                },
+                error: function (xhr) {
+                    addErrorNotification((xhr.responseJSON && xhr.responseJSON.message) || 'Unable to delete fee head.');
+                }
+            });
+        }
+
+        loadFinanceAccounts();
+        loadFeeHeads();
+    </script>
+{% endblock %}
