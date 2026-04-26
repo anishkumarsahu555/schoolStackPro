@@ -1,0 +1,147 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Certificates</title>
+{% endblock %}
+
+{% block css %}
+    <style>
+        #certificateIssueTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #certificateIssueTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 140px !important;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div class="item active" data-tab="user">Certificates</div>
+                <div style="margin-left:auto;">
+                    <a class="ui mini green button" href="{% url 'certificateApp:generator' %}">
+                        <i class="plus square icon"></i>
+                        Generate
+                    </a>
+                    <a class="ui mini blue button" href="{% url 'certificateApp:create_design' %}">
+                        <i class="paint brush icon"></i>
+                        Design
+                    </a>
+                </div>
+            </div>
+
+            <div class="ui tab active" data-tab="user">
+                <div class="ui three stackable cards">
+                    <div class="card">
+                        <div class="content">
+                            <div class="header">{{ certificate_types_count }}</div>
+                            <div class="meta">Certificate Types</div>
+                            <div class="description">Preconfigured and school-specific certificate definitions.</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="content">
+                            <div class="header">{{ certificate_designs_count }}</div>
+                            <div class="meta">Design Templates</div>
+                            <div class="description">Built-in presets plus custom certificate styles.</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="content">
+                            <div class="header">{{ certificate_issues_count }}</div>
+                            <div class="meta">Certificates Issued</div>
+                            <div class="description">Generated for the current school and active session.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui segment">
+                    <h4 class="ui header">Certificate Issue Register</h4>
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="certificateIssueTable" style="width:100%;">
+                        <thead>
+                        <tr>
+                            <th>Certificate No.</th>
+                            <th>Type</th>
+                            <th>Recipient</th>
+                            <th>Design</th>
+                            <th>Date</th>
+                            <th>Preview</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for issue in all_issues %}
+                            <tr>
+                                <td>{{ issue.certificateNumber }}</td>
+                                <td>{{ issue.certificateTypeID.name }}</td>
+                                <td>
+                                    {% if issue.studentID %}
+                                        {{ issue.studentID.name|default:'Student' }}
+                                    {% elif issue.teacherID %}
+                                        {{ issue.teacherID.name|default:'Teacher' }}
+                                    {% elif issue.parentID %}
+                                        {{ issue.parentID.fatherName|default:'Parent' }}
+                                    {% else %}
+                                        School
+                                    {% endif %}
+                                </td>
+                                <td>{{ issue.certificateDesignID.name|default:'Default Design' }}</td>
+                                <td>{{ issue.issueDate|date:'d-m-Y' }}</td>
+                                <td>
+                                    <a class="ui mini blue icon button" href="{% url 'certificateApp:issue_preview' issue.id %}" data-tooltip="Open Preview" data-position="left center" data-inverted="">
+                                        <i class="eye icon"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6">No certificates generated yet.</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        $('#certificateIssueTable').DataTable({
+            dom: 'Blfrtip',
+            scrollX: true,
+            scrollY: '420px',
+            stateSave: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {
+                    columns: [0, 1, 2, 3, 4]
+                }
+            }],
+            columnDefs: [
+                {name: 'certificateNumber', targets: 0, orderable: true},
+                {name: 'certificateType', targets: 1, orderable: true},
+                {name: 'recipient', targets: 2, orderable: true},
+                {name: 'design', targets: 3, orderable: true},
+                {name: 'issueDate', targets: 4, orderable: true},
+                {name: 'preview', targets: 5, orderable: false}
+            ],
+            aaSorting: [[4, 'desc']]
+        });
+    </script>
+{% endblock %}

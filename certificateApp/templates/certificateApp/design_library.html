@@ -1,0 +1,971 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Certificate Designs</title>
+{% endblock %}
+
+{% block css %}
+    <style>
+        :root {
+            --design-library-hero:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.1), transparent 28%),
+                linear-gradient(135deg, #eef2ff 0%, #f8fafc 52%, #f0fdf4 100%);
+            --design-library-border: rgba(148, 163, 184, 0.18);
+            --design-library-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
+            --design-library-card: rgba(255, 255, 255, 0.82);
+            --design-library-stage:
+                linear-gradient(180deg, rgba(255,255,255,0.06), transparent),
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(148, 163, 184, 0.05) 0,
+                    rgba(148, 163, 184, 0.05) 10px,
+                    transparent 10px,
+                    transparent 20px
+                );
+        }
+
+        html[data-theme="dark"] {
+            --design-library-hero:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), transparent 28%),
+                linear-gradient(135deg, rgba(15, 23, 42, 0.94) 0%, rgba(17, 24, 39, 0.96) 52%, rgba(10, 18, 31, 0.98) 100%);
+            --design-library-border: rgba(148, 163, 184, 0.16);
+            --design-library-shadow: 0 18px 38px rgba(2, 6, 23, 0.28);
+            --design-library-card: rgba(15, 23, 42, 0.56);
+        }
+
+        .design-library-wrap {
+            row-gap: 1rem;
+        }
+
+        .design-library-hero {
+            border-radius: 28px;
+            padding: 1.35rem 1.45rem 1.2rem;
+            border: 1px solid var(--design-library-border);
+            background: var(--design-library-hero);
+            box-shadow: var(--design-library-shadow);
+        }
+
+        .design-library-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.44rem 0.78rem;
+            border-radius: 999px;
+            background: var(--design-library-card);
+            border: 1px solid var(--design-library-border);
+            color: var(--app-brand);
+            font-size: 0.77rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .design-library-hero h2 {
+            margin: 0.9rem 0 0.35rem;
+            color: var(--app-text);
+            line-height: 1.1;
+        }
+
+        .design-library-hero p {
+            margin: 0;
+            color: var(--app-muted);
+            max-width: 760px;
+            line-height: 1.55;
+        }
+
+        .design-library-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .design-library-search {
+            min-width: 260px;
+            flex: 1 1 320px;
+            max-width: 420px;
+        }
+
+        .design-library-search-label {
+            display: block;
+            margin-bottom: 0.45rem;
+            color: var(--app-muted);
+            font-size: 0.77rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 700;
+        }
+
+        .design-library-search-row {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+        }
+
+        .design-library-search-shell {
+            position: relative;
+            flex: 1 1 auto;
+        }
+
+        .design-library-search-shell i {
+            position: absolute;
+            left: 0.9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--app-muted);
+            pointer-events: none;
+        }
+
+        .design-library-search-shell input {
+            width: 100%;
+            padding-left: 2.55rem !important;
+            border-radius: 999px !important;
+            background: var(--design-library-card) !important;
+            border: 1px solid var(--design-library-border) !important;
+            min-height: 42px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+        }
+
+        .design-library-search-shell input:focus {
+            border-color: rgba(37, 99, 235, 0.28) !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08) !important;
+        }
+
+        .design-library-search-clear {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.72rem 0.9rem;
+            background: rgba(241, 245, 249, 0.92);
+            color: #334155;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease;
+        }
+
+        .design-library-search-clear:hover {
+            transform: translateY(-1px);
+        }
+
+        .design-library-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .design-library-filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .design-library-filter-btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.42rem 0.72rem;
+            background: rgba(241, 245, 249, 0.92);
+            color: #334155;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease;
+        }
+
+        .design-library-filter-btn.active {
+            background: var(--app-brand, #1d4ed8);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .design-library-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.42rem;
+            padding: 0.44rem 0.76rem;
+            border-radius: 999px;
+            background: var(--design-library-card);
+            border: 1px solid var(--design-library-border);
+            color: var(--app-text);
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .design-library-group {
+            border-radius: 26px;
+            overflow: hidden;
+            border: 1px solid var(--design-library-border);
+            box-shadow: var(--design-library-shadow);
+            background: linear-gradient(180deg, var(--design-library-card), rgba(248,250,252,0.58));
+        }
+
+        html[data-theme="dark"] .design-library-group {
+            background: linear-gradient(180deg, rgba(15,23,42,0.56), rgba(17,24,39,0.4));
+        }
+
+        .design-library-group-head {
+            padding: 1.05rem 1.2rem;
+            border-bottom: 1px solid var(--design-library-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 1rem;
+            flex-wrap: wrap;
+            background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent);
+        }
+
+        .design-library-group-head h3 {
+            margin: 0;
+            color: var(--app-text);
+        }
+
+        .design-library-group-head p {
+            margin: 0.3rem 0 0;
+            color: var(--app-muted);
+            font-size: 0.9rem;
+        }
+
+        .design-library-group-meta {
+            color: var(--app-muted);
+            font-size: 0.86rem;
+            font-weight: 700;
+        }
+
+        .design-library-grid {
+            padding: 0.9rem;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.85rem;
+        }
+
+        .design-library-card {
+            border: 1px solid var(--design-library-border);
+            border-radius: 18px;
+            overflow: hidden;
+            background: var(--design-library-card);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .design-library-card.is-hidden {
+            display: none;
+        }
+
+        .design-library-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 32px rgba(15, 23, 42, 0.08);
+            border-color: rgba(37, 99, 235, 0.22);
+        }
+
+        .design-preview-stage {
+            padding: 0.7rem;
+            background: var(--design-library-stage);
+            border-bottom: 1px solid var(--design-library-border);
+        }
+
+        .design-preview-paper {
+            min-height: 176px;
+            border-radius: 14px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+            background: {{ row.designs.0.backgroundColor|default:'#ffffff' }};
+        }
+
+        .design-preview-paper.landscape {
+            min-height: 144px;
+        }
+
+        .design-preview-paper.form-sheet {
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.92)),
+                repeating-linear-gradient(
+                    180deg,
+                    rgba(15, 23, 42, 0.03) 0,
+                    rgba(15, 23, 42, 0.03) 1px,
+                    transparent 1px,
+                    transparent 26px
+                );
+        }
+
+        .design-preview-paper::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at top right, rgba(255,255,255,0.82), transparent 35%),
+                linear-gradient(135deg, rgba(255,255,255,0.08), transparent 56%);
+            pointer-events: none;
+        }
+
+        .design-preview-inner {
+            position: relative;
+            z-index: 1;
+            padding: 0.75rem 0.8rem 0.72rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 0.55rem;
+        }
+
+        .design-preview-topline {
+            font-size: 0.52rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .design-preview-school {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            text-align: center;
+        }
+
+        .design-preview-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 800;
+            background: rgba(255,255,255,0.82);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+        }
+
+        .design-preview-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 9px;
+        }
+
+        .design-preview-school-name {
+            font-size: 0.8rem;
+            font-weight: 800;
+        }
+
+        .design-preview-title {
+            font-size: 0.9rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            line-height: 1.15;
+        }
+
+        .design-preview-subtitle,
+        .design-preview-body,
+        .design-preview-footer {
+            color: #64748b;
+        }
+
+        .design-preview-subtitle {
+            font-size: 0.56rem;
+        }
+
+        .design-preview-body {
+            font-size: 0.6rem;
+            line-height: 1.4;
+            white-space: pre-line;
+        }
+
+        .design-preview-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            font-size: 0.5rem;
+            padding: 0.36rem 0.45rem;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+        }
+
+        .design-preview-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 0.6rem;
+            font-size: 0.52rem;
+        }
+
+        .design-preview-sign {
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .design-preview-sign-line {
+            height: 1px;
+            background: currentColor;
+            margin-bottom: 0.25rem;
+        }
+
+        .design-preview-ribbon::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            right: -28px;
+            width: 90px;
+            height: 18px;
+            transform: rotate(34deg);
+            background: var(--preview-accent, #1d4ed8);
+            opacity: 0.16;
+        }
+
+        .design-form-preview {
+            position: relative;
+            z-index: 1;
+            padding: 0.78rem 0.84rem 0.72rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 0.6rem;
+        }
+
+        .design-form-title {
+            text-align: center;
+            font-size: 0.88rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .design-form-lines {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .design-form-row {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            flex-wrap: nowrap;
+            font-size: 0.56rem;
+            color: #374151;
+        }
+
+        .design-form-line {
+            flex: 1 1 auto;
+            min-width: 32px;
+            border-bottom: 1px dotted currentColor;
+            height: 0.55rem;
+        }
+
+        .design-form-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 0.7rem;
+            font-size: 0.54rem;
+            color: #475569;
+        }
+
+        .design-form-sign {
+            min-width: 86px;
+            text-align: center;
+        }
+
+        .design-form-sign-line {
+            height: 1px;
+            background: currentColor;
+            margin-bottom: 0.22rem;
+        }
+
+        .design-card-body {
+            padding: 0.75rem 0.85rem 0.85rem;
+        }
+
+        .design-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 0.8rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .design-card-head h4 {
+            margin: 0;
+            color: var(--app-text);
+            font-size: 0.92rem;
+        }
+
+        .design-card-head p {
+            margin: 0.22rem 0 0;
+            color: var(--app-muted);
+            font-size: 0.78rem;
+        }
+
+        .design-type-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.32rem 0.58rem;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.1);
+            color: #1d4ed8;
+            font-size: 0.74rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .design-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.45rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .design-meta-item {
+            border-radius: 12px;
+            padding: 0.48rem 0.56rem;
+            background: rgba(255,255,255,0.68);
+            border: 1px solid var(--design-library-border);
+        }
+
+        .design-meta-item .label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--app-muted);
+            margin-bottom: 0.15rem;
+        }
+
+        .design-meta-item .value {
+            color: var(--app-text);
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .design-library-empty {
+            display: none;
+            margin-top: 0.9rem;
+        }
+
+        .design-library-empty.is-visible {
+            display: block;
+        }
+
+        .design-card-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .design-card-accent {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            color: var(--app-muted);
+            font-size: 0.84rem;
+            font-weight: 700;
+        }
+
+        .design-card-accent .dot {
+            width: 0.9rem;
+            height: 0.9rem;
+            border-radius: 999px;
+            border: 2px solid rgba(255,255,255,0.8);
+            box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.2);
+        }
+
+        html[data-theme="dark"] .design-type-pill {
+            background: rgba(37, 99, 235, 0.18);
+            color: #bfdbfe;
+        }
+
+        html[data-theme="dark"] .design-library-filter-btn {
+            background: rgba(15, 23, 42, 0.62);
+            color: #e2e8f0;
+        }
+
+        html[data-theme="dark"] .design-library-search-shell input,
+        html[data-theme="dark"] .design-library-search-clear {
+            background: rgba(15, 23, 42, 0.62) !important;
+            color: #e2e8f0;
+        }
+
+        html[data-theme="dark"] .design-meta-item,
+        html[data-theme="dark"] .design-preview-meta {
+            background: rgba(15, 23, 42, 0.42);
+        }
+
+        @media (max-width: 1200px) {
+            .design-library-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 800px) {
+            .design-library-grid,
+            .design-meta-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .design-library-group-head,
+            .design-library-toolbar,
+            .design-card-actions {
+                display: block;
+            }
+
+            .design-library-toolbar > * + *,
+            .design-card-actions > * + * {
+                margin-top: 0.7rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid design-library-wrap">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div class="item active" data-tab="user">Design Detail</div>
+                <div style="margin-left:auto;">
+                    <a class="ui mini green button" href="{% url 'certificateApp:create_design' %}">
+                        <i class="paint brush icon"></i>
+                        Add Custom Design
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="sixteen wide column">
+            <div class="design-library-hero">
+                <div class="design-library-kicker">
+                    <i class="paint brush icon"></i>
+                    Design Library
+                </div>
+                <h2>Browse certificate templates by their visual character, not just by name</h2>
+                <p>This gallery gives each design a compact paper preview so you can compare layout, color, proportion, and tone before opening the full detail page or using it in the generator.</p>
+                <div class="design-library-toolbar">
+                    <div class="field design-library-search">
+                        <label class="design-library-search-label">Search Designs</label>
+                        <div class="design-library-search-row">
+                            <div class="design-library-search-shell">
+                                <i class="search icon"></i>
+                                <input type="text" id="designLibrarySearch" placeholder="Search by design name, template, paper, or certificate type">
+                            </div>
+                            <button type="button" class="design-library-search-clear" id="designLibraryClearSearch">Clear</button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="design-library-filter-row" style="margin-bottom:0.65rem;">
+                            <button type="button" class="design-library-filter-btn active" data-library-filter="all">All</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="system">System</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="custom">Custom</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="portrait">Portrait</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="landscape">Landscape</button>
+                            <button type="button" class="design-library-filter-btn" id="designLibraryClearFilters">Clear</button>
+                        </div>
+                        <div class="design-library-chip-row">
+                            <div class="design-library-chip"><i class="images outline icon"></i> Small live previews</div>
+                            <div class="design-library-chip"><i class="certificate icon"></i> Grouped by certificate type</div>
+                            <div class="design-library-chip"><i class="palette icon"></i> System + custom layouts</div>
+                            <div class="design-library-chip"><i class="search icon"></i><span id="designLibraryCount">All designs</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% for row in design_rows %}
+            <div class="sixteen wide column">
+                <section class="design-library-group" data-design-group="{{ row.certificate_type.name|lower }}">
+                    <div class="design-library-group-head">
+                        <div>
+                            <h3>{{ row.certificate_type.name }}</h3>
+                            <p>{{ row.certificate_type.description|default:'Visual variants available for this certificate family.' }}</p>
+                        </div>
+                        <div class="design-library-group-meta">{{ row.designs|length }} design{{ row.designs|length|pluralize }}</div>
+                    </div>
+
+                    <div class="design-library-grid">
+                        {% for design in row.designs %}
+                            <article class="design-library-card"
+                                     data-search-text="{{ row.certificate_type.name|lower }} {{ design.name|lower }} {{ design.get_templateKey_display|lower }} {{ design.get_pageSize_display|lower }} {{ design.get_orientation_display|lower }} {{ design.get_borderStyle_display|lower }} {% if design.isCustom %}custom{% else %}system{% endif %}"
+                                     data-filter-type="{% if design.isCustom %}custom{% else %}system{% endif %}"
+                                     data-filter-orientation="{{ design.orientation|lower }}">
+                                <div class="design-preview-stage">
+                                    <div class="design-preview-paper {% if design.orientation == 'landscape' %}landscape{% endif %} {% if design.borderStyle == 'ribbon' %}design-preview-ribbon{% endif %} {% if design.templateKey == 'hand_fill_form' or design.templateKey == 'prize_day_form' %}form-sheet{% endif %}"
+                                         style="
+                                             background: {{ design.backgroundColor|default:'#ffffff' }};
+                                             color: {{ design.textColor|default:'#1f2937' }};
+                                             border:
+                                                {% if design.borderStyle == 'none' %}
+                                                    0
+                                                {% elif design.borderStyle == 'double' %}
+                                                    4px double {{ design.accentColor|default:'#1d4ed8' }}
+                                                {% elif design.borderStyle == 'ornate' %}
+                                                    6px solid {{ design.accentColor|default:'#1d4ed8' }}
+                                                {% else %}
+                                                    2px solid {{ design.accentColor|default:'#1d4ed8' }}
+                                                {% endif %};
+                                             --preview-accent: {{ design.accentColor|default:'#1d4ed8' }};
+                                             font-family: {{ design.fontFamily|default:'Georgia' }};
+                                         ">
+                                        {% if design.templateKey == 'hand_fill_form' or design.templateKey == 'prize_day_form' %}
+                                        <div class="design-form-preview">
+                                            <div class="design-form-title" style="color: {{ design.accentColor|default:'#1d4ed8' }};">{{ row.certificate_type.defaultTitle|default:row.certificate_type.name }}</div>
+                                            <div class="design-form-lines">
+                                                <div class="design-form-row">
+                                                    <span>This is to certify that</span>
+                                                    <span class="design-form-line"></span>
+                                                    <span>has</span>
+                                                    <span class="design-form-line" style="max-width:64px;"></span>
+                                                </div>
+                                                <div class="design-form-row">
+                                                    <span>for</span>
+                                                    <span class="design-form-line"></span>
+                                                    <span>held in</span>
+                                                    <span class="design-form-line"></span>
+                                                </div>
+                                                <div class="design-form-row">
+                                                    <span>year</span>
+                                                    <span class="design-form-line" style="max-width:78px;"></span>
+                                                    <span>class</span>
+                                                    <span class="design-form-line" style="max-width:92px;"></span>
+                                                </div>
+                                            </div>
+                                            <div class="design-form-footer">
+                                                <div>Date: <span class="design-form-line" style="display:inline-block; min-width:82px;"></span></div>
+                                                <div class="design-form-sign">
+                                                    <div class="design-form-sign-line"></div>
+                                                    <div>Principal</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="design-preview-inner" style="padding: {{ design.marginTopMm|default:12|floatformat:0|default:'12' }}px {{ design.marginRightMm|default:12|floatformat:0|default:'12' }}px {{ design.marginBottomMm|default:12|floatformat:0|default:'12' }}px {{ design.marginLeftMm|default:12|floatformat:0|default:'12' }}px;">
+                                            <div>
+                                                {% if design.customHeaderText %}
+                                                    <div class="design-preview-topline" style="color: {{ design.accentColor|default:'#1d4ed8' }}; text-align: {{ design.titleAlignment|default:'center' }};">{{ design.customHeaderText }}</div>
+                                                {% endif %}
+                                                <div class="design-preview-school">
+                                                    {% if design.showLogo %}
+                                                        <div class="design-preview-badge" style="color: {{ design.accentColor|default:'#1d4ed8' }};">
+                                                            {% if school and school.logo %}
+                                                                <img src="{{ school.logo.medium.url }}" alt="{{ school.schoolName|default:'School' }} logo">
+                                                            {% else %}
+                                                                {{ school.schoolName|default:'School'|slice:':1'|upper }}
+                                                            {% endif %}
+                                                        </div>
+                                                    {% endif %}
+                                                    <div>
+                                                        <div class="design-preview-school-name">{{ school.schoolName|default:'SchoolsStack' }}</div>
+                                                        <div class="design-preview-subtitle">
+                                                            {{ school.address|default:'Official school certificate'|truncatechars:42 }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="design-preview-title" style="color: {{ design.accentColor|default:'#1d4ed8' }}; text-align: {{ design.titleAlignment|default:'center' }};">
+                                                    {{ row.certificate_type.defaultTitle|default:row.certificate_type.name }}
+                                                </div>
+                                                <div class="design-preview-subtitle" style="text-align: {{ design.titleAlignment|default:'center' }};">
+                                                    {{ row.certificate_type.defaultSubtitle|default:'Presented with care' }}
+                                                </div>
+                                                <div class="design-preview-body" style="text-align: {{ design.bodyAlignment|default:'center' }};">
+                                                    {{ row.certificate_type.defaultBodyTemplate|default:'This certificate is issued as per school record.'|truncatechars:110 }}
+                                                </div>
+                                                <div class="design-preview-meta">
+                                                    <div>No. CERT-001</div>
+                                                    <div>Issued today</div>
+                                                </div>
+                                            </div>
+                                            <div class="design-preview-footer">
+                                                <div>{{ design.customFooterText|default:'Authorized school issue'|truncatechars:40 }}</div>
+                                                {% if design.showSignatureLine %}
+                                                    <div class="design-preview-sign">
+                                                        <div class="design-preview-sign-line"></div>
+                                                        <div>Sign</div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="design-card-body">
+                                    <div class="design-card-head">
+                                        <div>
+                                            <h4>{{ design.name }}</h4>
+                                            <p>{{ design.get_templateKey_display }}</p>
+                                        </div>
+                                        <div class="design-type-pill">
+                                            {% if design.isCustom %}Custom{% else %}System{% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="design-meta-grid">
+                                        <div class="design-meta-item">
+                                            <div class="label">Paper</div>
+                                            <div class="value">{{ design.get_pageSize_display }} / {{ design.get_orientation_display }}</div>
+                                        </div>
+                                        <div class="design-meta-item">
+                                            <div class="label">Border</div>
+                                            <div class="value">{{ design.get_borderStyle_display }}</div>
+                                        </div>
+                                        <div class="design-meta-item">
+                                            <div class="label">Title Align</div>
+                                            <div class="value">{{ design.get_titleAlignment_display }}</div>
+                                        </div>
+                                        <div class="design-meta-item">
+                                            <div class="label">Body Align</div>
+                                            <div class="value">{{ design.get_bodyAlignment_display }}</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="design-card-actions">
+                                        <div class="design-card-accent">
+                                            <span class="dot" style="background: {{ design.accentColor|default:'#1d4ed8' }};"></span>
+                                            {{ design.accentColor|default:'#1d4ed8' }}
+                                        </div>
+                                        <a class="ui mini blue button" href="{% url 'certificateApp:design_detail' design.id %}">
+                                            <i class="eye icon"></i>
+                                            View
+                                        </a>
+                                    </div>
+                                </div>
+                            </article>
+                        {% empty %}
+                            <div class="ui message">No designs available.</div>
+                        {% endfor %}
+                    </div>
+                    <div class="ui message design-library-empty" data-design-empty>No designs match this search.</div>
+                </section>
+            </div>
+        {% empty %}
+            <div class="sixteen wide column">
+                <div class="ui segment">No certificate designs available.</div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        (function () {
+            const searchInput = document.getElementById('designLibrarySearch');
+            const countLabel = document.getElementById('designLibraryCount');
+            if (!searchInput || !countLabel) {
+                return;
+            }
+
+            const storageKey = 'certificate_design_library_filters_v1';
+            const groups = Array.from(document.querySelectorAll('[data-design-group]'));
+            const cards = Array.from(document.querySelectorAll('.design-library-card[data-search-text]'));
+            const filterButtons = Array.from(document.querySelectorAll('[data-library-filter]'));
+            const clearButton = document.getElementById('designLibraryClearFilters');
+            const clearSearchButton = document.getElementById('designLibraryClearSearch');
+            let activeFilter = 'all';
+
+            function saveState() {
+                try {
+                    window.localStorage.setItem(storageKey, JSON.stringify({
+                        query: searchInput.value || '',
+                        filter: activeFilter || 'all'
+                    }));
+                } catch (error) {
+                }
+            }
+
+            function applyActiveFilterButton() {
+                filterButtons.forEach(function (node) {
+                    node.classList.toggle('active', node.getAttribute('data-library-filter') === activeFilter);
+                });
+            }
+
+            function restoreState() {
+                try {
+                    const raw = window.localStorage.getItem(storageKey);
+                    if (!raw) {
+                        return;
+                    }
+                    const parsed = JSON.parse(raw);
+                    if (parsed && typeof parsed.query === 'string') {
+                        searchInput.value = parsed.query;
+                    }
+                    if (parsed && typeof parsed.filter === 'string' && filterButtons.some(function (node) {
+                        return node.getAttribute('data-library-filter') === parsed.filter;
+                    })) {
+                        activeFilter = parsed.filter;
+                    }
+                } catch (error) {
+                }
+            }
+
+            function updateDesignLibrarySearch() {
+                const query = (searchInput.value || '').trim().toLowerCase();
+                let visibleCount = 0;
+
+                groups.forEach(function (group) {
+                    const groupCards = Array.from(group.querySelectorAll('.design-library-card[data-search-text]'));
+                    let groupVisibleCount = 0;
+
+                    groupCards.forEach(function (card) {
+                        const haystack = card.getAttribute('data-search-text') || '';
+                        const typeFilter = card.getAttribute('data-filter-type') || '';
+                        const orientationFilter = card.getAttribute('data-filter-orientation') || '';
+                        const matchesQuery = !query || haystack.indexOf(query) !== -1;
+                        const matchesFilter = activeFilter === 'all'
+                            || typeFilter === activeFilter
+                            || orientationFilter === activeFilter;
+                        const matches = matchesQuery && matchesFilter;
+                        card.classList.toggle('is-hidden', !matches);
+                        if (matches) {
+                            groupVisibleCount += 1;
+                            visibleCount += 1;
+                        }
+                    });
+
+                    group.classList.toggle('is-hidden', groupVisibleCount === 0);
+                    const emptyState = group.querySelector('[data-design-empty]');
+                    if (emptyState) {
+                        emptyState.classList.toggle('is-visible', query.length > 0 && groupVisibleCount === 0);
+                    }
+                });
+
+                if (!query) {
+                    countLabel.textContent = cards.length + ' design' + (cards.length === 1 ? '' : 's');
+                } else {
+                    countLabel.textContent = visibleCount + ' match' + (visibleCount === 1 ? '' : 'es');
+                }
+                saveState();
+            }
+
+            searchInput.addEventListener('input', updateDesignLibrarySearch);
+            filterButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    activeFilter = button.getAttribute('data-library-filter') || 'all';
+                    applyActiveFilterButton();
+                    updateDesignLibrarySearch();
+                });
+            });
+            if (clearButton) {
+                clearButton.addEventListener('click', function () {
+                    searchInput.value = '';
+                    activeFilter = 'all';
+                    applyActiveFilterButton();
+                    updateDesignLibrarySearch();
+                });
+            }
+            if (clearSearchButton) {
+                clearSearchButton.addEventListener('click', function () {
+                    searchInput.value = '';
+                    updateDesignLibrarySearch();
+                    searchInput.focus();
+                });
+            }
+            restoreState();
+            applyActiveFilterButton();
+            updateDesignLibrarySearch();
+        })();
+    </script>
+{% endblock %}

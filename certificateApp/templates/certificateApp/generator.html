@@ -1,0 +1,2918 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Generate Certificate</title>
+{% endblock %}
+
+{% block css %}
+    <style>
+        :root {
+            --generator-shell-bg:
+                radial-gradient(circle at top left, rgba(59, 130, 246, 0.08), transparent 28%),
+                linear-gradient(135deg, #eef2ff 0%, #f8fafc 48%, #f0fdf4 100%);
+            --generator-panel-border: rgba(148, 163, 184, 0.18);
+            --generator-panel-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+            --generator-preview-shell:
+                radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 30%),
+                linear-gradient(135deg, #f8fafc 0%, #eff6ff 58%, #eef2ff 100%);
+            --generator-preview-paper-shadow: 0 24px 52px rgba(15, 23, 42, 0.14);
+            --generator-preview-grid: rgba(148, 163, 184, 0.06);
+            --generator-preview-muted: #64748b;
+            --generator-preview-muted-strong: #475569;
+            --generator-preview-card: rgba(255, 255, 255, 0.82);
+            --generator-paper-muted: #6b7280;
+            --generator-paper-muted-strong: #475569;
+            --generator-paper-chip-bg: rgba(255,255,255,0.74);
+            --generator-paper-seal-bg: rgba(255,255,255,0.76);
+            --generator-paper-logo-bg: rgba(255,255,255,0.84);
+        }
+
+        html[data-theme="dark"] {
+            --generator-shell-bg:
+                radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 28%),
+                linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(17, 24, 39, 0.96) 48%, rgba(10, 18, 31, 0.98) 100%);
+            --generator-panel-border: rgba(148, 163, 184, 0.16);
+            --generator-panel-shadow: 0 18px 40px rgba(2, 6, 23, 0.28);
+            --generator-preview-shell:
+                radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 30%),
+                linear-gradient(135deg, rgba(15,23,42,0.88) 0%, rgba(17,24,39,0.92) 58%, rgba(10,18,31,0.96) 100%);
+            --generator-preview-paper-shadow: 0 26px 56px rgba(2, 6, 23, 0.42);
+            --generator-preview-grid: rgba(148, 163, 184, 0.08);
+            --generator-preview-muted: #cbd5e1;
+            --generator-preview-muted-strong: #e2e8f0;
+            --generator-preview-card: rgba(15, 23, 42, 0.56);
+        }
+
+        .certificate-generator-grid {
+            align-items: flex-start;
+            row-gap: 1rem;
+        }
+
+        .generator-class-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .generator-simple-context {
+            margin-bottom: 1rem;
+            padding: 0.95rem 1rem;
+            border-radius: 18px;
+            border: 1px solid var(--generator-panel-border);
+            background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(248,250,252,0.78));
+        }
+
+        .generator-simple-context strong {
+            display: block;
+            color: var(--app-text);
+            font-size: 0.95rem;
+        }
+
+        .generator-simple-context p {
+            margin: 0.25rem 0 0;
+            color: var(--app-muted);
+            font-size: 0.84rem;
+            line-height: 1.5;
+        }
+
+        .generator-simple-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+            margin-top: 0.75rem;
+        }
+
+        .generator-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 0.1rem 0 0.4rem;
+        }
+
+        .generator-topbar-title {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .generator-topbar-mark {
+            width: 2.6rem;
+            height: 2.6rem;
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(16, 185, 129, 0.16));
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            color: #1d4ed8;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+        }
+
+        .generator-topbar-copy h2 {
+            margin: 0;
+            font-size: 1.15rem;
+            color: var(--app-text);
+        }
+
+        .generator-topbar-copy p {
+            margin: 0.18rem 0 0;
+            color: var(--app-muted);
+            font-size: 0.84rem;
+            line-height: 1.45;
+        }
+
+        .generator-topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+        }
+
+        .generator-panel,
+        .generator-preview-panel {
+            border-radius: 26px !important;
+            overflow: hidden;
+            border: 1px solid var(--generator-panel-border) !important;
+            box-shadow: var(--generator-panel-shadow) !important;
+        }
+
+        .generator-panel-hero,
+        .generator-preview-hero {
+            padding: 1.3rem 1.4rem 1.1rem;
+            border-bottom: 1px solid var(--generator-panel-border);
+            background: var(--generator-shell-bg);
+        }
+
+        .generator-preview-hero {
+            background: var(--generator-preview-shell);
+        }
+
+        .generator-hero-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .generator-hero-side {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .generator-hero-stat {
+            padding: 0.9rem 0.95rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            backdrop-filter: blur(8px);
+        }
+
+        .generator-hero-stat strong {
+            display: block;
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--app-muted);
+        }
+
+        .generator-hero-stat span {
+            display: block;
+            margin-top: 0.34rem;
+            color: var(--app-text);
+            font-size: 0.94rem;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .generator-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.44rem 0.78rem;
+            border-radius: 999px;
+            background: var(--generator-preview-card);
+            border: 1px solid var(--generator-panel-border);
+            color: var(--app-brand);
+            font-size: 0.77rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .generator-panel-hero h2,
+        .generator-preview-hero h3 {
+            margin: 0.9rem 0 0.35rem;
+            line-height: 1.1;
+            color: var(--app-text);
+        }
+
+        .generator-panel-hero p,
+        .generator-preview-hero p {
+            margin: 0;
+            color: var(--app-muted);
+            line-height: 1.55;
+        }
+
+        .generator-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-top: 1rem;
+        }
+
+        .generator-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.42rem;
+            padding: 0.44rem 0.76rem;
+            border-radius: 999px;
+            background: var(--generator-preview-card);
+            border: 1px solid var(--generator-panel-border);
+            color: var(--app-text);
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .generator-warning-chip {
+            display: none;
+            align-items: center;
+            gap: 0.42rem;
+            padding: 0.44rem 0.76rem;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.26);
+            color: #9a3412;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .generator-warning-chip.is-visible {
+            display: inline-flex;
+        }
+
+        .generator-chip .dot {
+            width: 0.72rem;
+            height: 0.72rem;
+            border-radius: 999px;
+            background: var(--preview-accent, #1d4ed8);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .generator-form-wrap {
+            padding: 1.15rem 1.3rem 1.45rem;
+        }
+
+        .generator-form-wrap .field > label {
+            font-size: 0.78rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--app-muted) !important;
+            margin-bottom: 0.42rem !important;
+        }
+
+        .generator-form-wrap .ui.dropdown,
+        .generator-form-wrap input[type="text"],
+        .generator-form-wrap input[type="date"],
+        .generator-form-wrap textarea {
+            border-radius: 16px !important;
+            border: 1px solid rgba(148, 163, 184, 0.2) !important;
+            background: rgba(255,255,255,0.88) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.46);
+        }
+
+        .generator-form-wrap textarea {
+            min-height: 156px;
+            line-height: 1.6;
+        }
+
+        html[data-theme="dark"] .generator-form-wrap .ui.dropdown,
+        html[data-theme="dark"] .generator-form-wrap input[type="text"],
+        html[data-theme="dark"] .generator-form-wrap input[type="date"],
+        html[data-theme="dark"] .generator-form-wrap textarea {
+            background: rgba(15, 23, 42, 0.72) !important;
+            border-color: rgba(148, 163, 184, 0.16) !important;
+        }
+
+        .generator-section {
+            border: 1px solid var(--generator-panel-border);
+            border-radius: 24px;
+            padding: 1rem 1rem 0.25rem;
+            margin-bottom: 1rem;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.94), rgba(248,250,252,0.82)),
+                var(--generator-preview-card);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.42),
+                0 10px 28px rgba(15, 23, 42, 0.04);
+        }
+
+        html[data-theme="dark"] .generator-section {
+            background: linear-gradient(180deg, rgba(15,23,42,0.54), rgba(17,24,39,0.38));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .generator-section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.95rem;
+        }
+
+        .generator-section-head h4 {
+            margin: 0;
+            color: var(--app-text);
+            font-size: 1rem;
+        }
+
+        .generator-section-head p {
+            margin: 0;
+            max-width: 420px;
+            text-align: right;
+            color: var(--app-muted);
+            font-size: 0.85rem;
+            line-height: 1.45;
+        }
+
+        .generator-design-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.9rem;
+        }
+
+        .generator-design-tools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.9rem;
+        }
+
+        .generator-design-tools.is-hidden {
+            display: none;
+        }
+
+        .generator-design-lock {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.95rem;
+            padding: 0.8rem 0.9rem;
+            border-radius: 16px;
+            background: rgba(37, 99, 235, 0.08);
+            border: 1px solid rgba(37, 99, 235, 0.16);
+        }
+
+        .generator-design-lock.is-visible {
+            display: flex;
+        }
+
+        .generator-design-lock-copy strong {
+            display: block;
+            color: var(--app-text);
+            font-size: 0.9rem;
+        }
+
+        .generator-design-lock-copy span {
+            display: block;
+            margin-top: 0.2rem;
+            color: var(--app-muted);
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        .generator-design-lock-action {
+            flex-shrink: 0;
+        }
+
+        .generator-design-search {
+            min-width: 220px;
+            flex: 1 1 260px;
+        }
+
+        .generator-design-filter-group {
+            display: flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+        }
+
+        .generator-design-filter-btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.42rem 0.72rem;
+            background: rgba(241, 245, 249, 0.92);
+            color: #334155;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease;
+        }
+
+        .generator-design-filter-btn.active {
+            background: var(--preview-accent, #1d4ed8);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .generator-design-card {
+            border: 1px solid var(--generator-panel-border);
+            border-radius: 22px;
+            padding: 0.9rem 0.9rem 0.82rem;
+            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.88));
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .generator-design-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 34px rgba(15, 23, 42, 0.08);
+            border-color: rgba(59, 130, 246, 0.22);
+        }
+
+        .generator-design-card.active {
+            border-color: rgba(37, 99, 235, 0.34);
+            box-shadow:
+                0 18px 36px rgba(37, 99, 235, 0.12),
+                inset 0 0 0 1px rgba(37, 99, 235, 0.12);
+            background: linear-gradient(180deg, rgba(239,246,255,0.94), rgba(248,250,252,0.92));
+        }
+
+        .generator-design-card.is-hidden {
+            display: none;
+        }
+
+        .generator-design-empty {
+            display: none;
+            grid-column: 1 / -1;
+            border: 1px dashed var(--generator-panel-border);
+            border-radius: 18px;
+            padding: 1rem;
+            text-align: center;
+            color: var(--app-muted);
+            background: rgba(255,255,255,0.42);
+        }
+
+        .generator-design-empty.is-visible {
+            display: block;
+        }
+
+        .generator-design-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.7rem;
+        }
+
+        .generator-design-preview {
+            position: relative;
+            height: 132px;
+            margin-bottom: 0.85rem;
+            border-radius: 16px;
+            overflow: hidden;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.08), transparent),
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(148, 163, 184, 0.06) 0,
+                    rgba(148, 163, 184, 0.06) 10px,
+                    transparent 10px,
+                    transparent 20px
+                );
+            border: 1px solid var(--generator-panel-border);
+        }
+
+        .generator-design-preview-paper {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 76%;
+            height: 86%;
+            transform: translate(-50%, -50%);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #ffffff;
+            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14);
+        }
+
+        .generator-design-preview-paper.is-landscape {
+            width: 88%;
+            height: 70%;
+        }
+
+        .generator-design-preview-paper.image-overlay::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05));
+            pointer-events: none;
+        }
+
+        .generator-design-preview-paper.image-overlay .generator-design-preview-overlay {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .generator-design-preview-paper.image-overlay .generator-design-preview-overlay::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.36), rgba(255,255,255,0.12)),
+                repeating-linear-gradient(
+                    90deg,
+                    rgba(255,255,255,0.12) 0,
+                    rgba(255,255,255,0.12) 16px,
+                    transparent 16px,
+                    transparent 32px
+                );
+        }
+
+        .generator-design-preview-inner {
+            position: absolute;
+            inset: 0;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 0.45rem;
+        }
+
+        .generator-design-preview-topline {
+            font-size: 0.44rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            opacity: 0.95;
+        }
+
+        .generator-design-preview-school {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            text-align: center;
+        }
+
+        .generator-design-preview-badge {
+            width: 22px;
+            height: 22px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.84);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            font-size: 0.58rem;
+            font-weight: 800;
+        }
+
+        .generator-design-preview-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 7px;
+        }
+
+        .generator-design-preview-school-name {
+            font-size: 0.68rem;
+            font-weight: 800;
+            line-height: 1.05;
+        }
+
+        .generator-design-preview-title {
+            font-size: 0.76rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            line-height: 1.1;
+        }
+
+        .generator-design-preview-subtitle,
+        .generator-design-preview-body,
+        .generator-design-preview-footer {
+            color: var(--generator-preview-muted);
+        }
+
+        .generator-design-preview-subtitle {
+            font-size: 0.5rem;
+        }
+
+        .generator-design-preview-body {
+            font-size: 0.52rem;
+            line-height: 1.35;
+        }
+
+        .generator-design-preview-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.4rem;
+            font-size: 0.46rem;
+            font-weight: 700;
+            color: var(--generator-preview-muted-strong);
+        }
+
+        .generator-design-preview-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 0.45rem;
+            font-size: 0.46rem;
+        }
+
+        .generator-design-preview-sign {
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .generator-design-preview-sign-line {
+            height: 1px;
+            background: currentColor;
+            margin-bottom: 0.16rem;
+        }
+
+        .generator-design-dot {
+            width: 1rem;
+            height: 1rem;
+            border-radius: 999px;
+            background: #1d4ed8;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+            flex-shrink: 0;
+        }
+
+        .generator-design-card h5 {
+            margin: 0;
+            font-size: 0.96rem;
+            color: var(--app-text);
+        }
+
+        .generator-design-card p {
+            margin: 0.2rem 0 0;
+            color: var(--app-muted);
+            font-size: 0.82rem;
+            line-height: 1.45;
+        }
+
+        .generator-design-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin-top: 0.8rem;
+        }
+
+        .generator-design-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.34rem;
+            padding: 0.32rem 0.58rem;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid var(--generator-panel-border);
+            font-size: 0.76rem;
+            color: var(--generator-preview-muted-strong);
+            font-weight: 700;
+        }
+
+        html[data-theme="dark"] .generator-design-meta span {
+            background: rgba(15, 23, 42, 0.52);
+            color: #e2e8f0;
+        }
+
+        .generator-preview-stage-wrap {
+            padding: 1rem 1.15rem 1.25rem;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.06), transparent),
+                repeating-linear-gradient(
+                    45deg,
+                    var(--generator-preview-grid) 0,
+                    var(--generator-preview-grid) 10px,
+                    transparent 10px,
+                    transparent 20px
+                );
+        }
+
+        .generator-preview-controls {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .generator-control-card {
+            border-radius: 16px;
+            padding: 0.8rem 0.85rem;
+            background: var(--generator-preview-card);
+            border: 1px solid var(--generator-panel-border);
+        }
+
+        .generator-control-card label {
+            display: block;
+            margin-bottom: 0.55rem;
+            color: var(--app-muted);
+            font-size: 0.77rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 700;
+        }
+
+        .generator-control-card input[type="range"] {
+            width: 100%;
+        }
+
+        .generator-mode-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .generator-mode-btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.45rem 0.8rem;
+            background: rgba(241, 245, 249, 0.92);
+            color: #334155;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+        }
+
+        .generator-mode-btn.active {
+            background: var(--preview-accent, #1d4ed8);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        html[data-theme="dark"] .generator-mode-btn {
+            background: rgba(15, 23, 42, 0.62);
+            color: #e2e8f0;
+        }
+
+        html[data-theme="dark"] .generator-preview-calibration,
+        html[data-theme="dark"] .generator-preview-calibration-card {
+            background: rgba(15, 23, 42, 0.46);
+            border-color: rgba(148, 163, 184, 0.14);
+        }
+
+        html[data-theme="dark"] .generator-warning-chip {
+            background: rgba(245, 158, 11, 0.16);
+            border-color: rgba(245, 158, 11, 0.28);
+            color: #fdba74;
+        }
+
+        html[data-theme="dark"] .generator-preview-stage {
+            background:
+                linear-gradient(180deg, rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.9)),
+                repeating-linear-gradient(
+                    135deg,
+                    rgba(148, 163, 184, 0.08) 0,
+                    rgba(148, 163, 184, 0.08) 14px,
+                    transparent 14px,
+                    transparent 30px
+                );
+            border-color: rgba(148, 163, 184, 0.12);
+        }
+
+        html[data-theme="dark"] .generator-preview-stage-badge {
+            background: rgba(15, 23, 42, 0.56);
+            border-color: rgba(148, 163, 184, 0.16);
+            color: #e2e8f0;
+        }
+
+        html[data-theme="dark"] .generator-preview-loading {
+            background: rgba(15, 23, 42, 0.72);
+        }
+
+        html[data-theme="dark"] .generator-preview-loading-card {
+            background: rgba(15, 23, 42, 0.92);
+            border-color: rgba(148, 163, 184, 0.16);
+            color: #e2e8f0;
+        }
+
+        .generator-preview-stage {
+            min-height: 760px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            perspective: 1600px;
+            overflow: auto;
+            padding: 1rem;
+            border-radius: 24px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.76), rgba(248,250,252,0.92)),
+                repeating-linear-gradient(
+                    135deg,
+                    rgba(148, 163, 184, 0.08) 0,
+                    rgba(148, 163, 184, 0.08) 14px,
+                    transparent 14px,
+                    transparent 30px
+                );
+            border: 1px solid rgba(148, 163, 184, 0.14);
+            position: relative;
+        }
+
+        .generator-preview-stage-shell {
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        .generator-preview-stage-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .generator-preview-stage-copy {
+            min-width: 0;
+        }
+
+        .generator-preview-stage-title {
+            font-size: 0.96rem;
+            font-weight: 800;
+            color: var(--app-text);
+        }
+
+        .generator-preview-stage-subtitle {
+            margin-top: 0.18rem;
+            font-size: 0.78rem;
+            color: var(--app-muted);
+            line-height: 1.45;
+        }
+
+        .generator-preview-stage-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.46rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.04);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            font-size: 0.76rem;
+            font-weight: 800;
+            color: var(--app-text);
+            white-space: nowrap;
+        }
+
+        .generator-preview-stage-badge .dot {
+            width: 0.55rem;
+            height: 0.55rem;
+            border-radius: 999px;
+            background: #10b981;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+        }
+
+        .generator-preview-stage-frame {
+            position: relative;
+            width: 100%;
+        }
+
+        .generator-preview-fallback {
+            width: 100%;
+        }
+
+        .generator-preview-fallback.is-hidden {
+            display: none;
+        }
+
+        .generator-preview-loading {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            background: rgba(248, 250, 252, 0.82);
+            backdrop-filter: blur(2px);
+            z-index: 4;
+        }
+
+        .generator-preview-stage-shell.is-loading .generator-preview-loading {
+            display: flex;
+        }
+
+        .generator-preview-loading-card {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 0.82rem 1rem;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.94);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            box-shadow: 0 18px 34px rgba(15, 23, 42, 0.08);
+            color: var(--app-text);
+            font-size: 0.84rem;
+            font-weight: 700;
+        }
+
+        .generator-preview-canvas {
+            width: min(100%, 720px);
+            transform-origin: top center;
+            transition: width 0.28s ease, transform 0.3s ease;
+        }
+
+        .generator-preview-canvas.is-landscape {
+            width: min(100%, 840px);
+        }
+
+        .generator-preview-paper {
+            width: 100%;
+            min-height: 720px;
+            border-radius: 20px;
+            background: #ffffff;
+            color: #1f2937;
+            box-shadow: var(--generator-preview-paper-shadow);
+            position: relative;
+            overflow: hidden;
+            transition: min-height 0.26s ease, background-color 0.24s ease, border-color 0.24s ease, transform 0.28s ease, box-shadow 0.24s ease;
+            transform: translateY(0) rotateX(0.3deg);
+            border: 3px solid #1d4ed8;
+        }
+
+        .generator-preview-paper.is-exact-hidden {
+            display: none;
+        }
+
+        .generator-live-preview-frame {
+            width: 100%;
+            min-height: 720px;
+            border-radius: 20px;
+            background: transparent;
+            box-shadow: var(--generator-preview-paper-shadow);
+        }
+
+        .generator-preview-paper.template-modern_clean {
+            box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+        }
+
+        .generator-preview-paper.template-ceremonial_gold,
+        .generator-preview-paper.template-academic_seal {
+            box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+        }
+
+        .generator-preview-paper.template-heritage_script {
+            background-image:
+                radial-gradient(circle at top left, rgba(191, 219, 254, 0.22), transparent 24%),
+                linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.98));
+        }
+
+        .generator-preview-paper.template-minimal_duotone {
+            background-image:
+                linear-gradient(135deg, rgba(29, 78, 216, 0.05), transparent 22%),
+                linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,1));
+        }
+
+        .generator-preview-paper.template-hand_fill_form,
+        .generator-preview-paper.template-prize_day_form {
+            background-image:
+                linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.98)),
+                repeating-linear-gradient(
+                    180deg,
+                    rgba(15, 23, 42, 0.025) 0,
+                    rgba(15, 23, 42, 0.025) 1px,
+                    transparent 1px,
+                    transparent 32px
+                );
+        }
+
+        .generator-preview-canvas[data-mode="flat"] .generator-preview-paper {
+            transform: none;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+        }
+
+        .generator-preview-canvas[data-mode="pdf"] .generator-preview-paper {
+            transform: none;
+            box-shadow: none;
+            border-radius: 0;
+            outline: 1px solid rgba(148, 163, 184, 0.34);
+        }
+
+        .generator-preview-canvas[data-mode="focus"] .generator-preview-paper {
+            transform: translateY(-3px) rotateX(0.15deg) scale(1.015);
+        }
+
+        .generator-preview-paper::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at top right, rgba(255,255,255,0.86), transparent 35%),
+                linear-gradient(135deg, rgba(255,255,255,0.12), transparent 56%);
+            pointer-events: none;
+        }
+
+        .generator-preview-calibration {
+            display: none;
+            margin-top: 0.95rem;
+            padding: 0.85rem 0.95rem;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+        }
+
+        .generator-preview-calibration.is-active {
+            display: block;
+        }
+
+        .generator-preview-calibration-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .generator-preview-calibration-card {
+            border-radius: 14px;
+            padding: 0.72rem 0.78rem;
+            background: rgba(255,255,255,0.7);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+        }
+
+        .generator-preview-calibration-label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--app-muted);
+            margin-bottom: 0.35rem;
+        }
+
+        .generator-preview-calibration-value {
+            font-size: 0.94rem;
+            font-weight: 800;
+            color: var(--app-text);
+        }
+
+        .generator-preview-calibration-copy {
+            margin-top: 0.7rem;
+            color: var(--app-muted);
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+
+        .generator-image-overlay-preview {
+            display: none;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            min-height: inherit;
+        }
+
+        .generator-image-overlay-preview.is-active {
+            display: block;
+        }
+
+        .generator-image-overlay-layer {
+            position: absolute;
+            inset: 0;
+        }
+
+        .generator-image-overlay-item {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            display: block;
+            white-space: pre-line;
+            overflow-wrap: break-word;
+            word-break: normal;
+            hyphens: none;
+            text-wrap: pretty;
+        }
+
+        .generator-image-overlay-item.align-left {
+            transform: translate(0, -50%);
+            text-align: left;
+        }
+
+        .generator-image-overlay-item.align-right {
+            transform: translate(-100%, -50%);
+            text-align: right;
+        }
+
+        .generator-preview-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 2.2rem;
+            height: 100%;
+        }
+
+        .generator-preview-inner.is-hidden {
+            display: none;
+        }
+
+        .generator-preview-topline {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+        }
+
+        .generator-preview-school {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.95rem;
+        }
+
+        .generator-preview-school-badge {
+            width: 62px;
+            height: 62px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: var(--generator-paper-logo-bg);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+        }
+
+        .generator-preview-school-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 16px;
+        }
+
+        .generator-preview-school-name {
+            font-size: 1.7rem;
+            font-weight: 800;
+        }
+
+        .generator-preview-school-meta,
+        .generator-preview-subtitle,
+        .generator-preview-recipient-subtitle,
+        .generator-preview-note {
+            color: var(--generator-paper-muted);
+        }
+
+        .generator-preview-school-meta {
+            font-size: 0.87rem;
+            line-height: 1.45;
+        }
+
+        .generator-preview-title {
+            font-size: 2.1rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 1rem 0 0.35rem;
+        }
+
+        .generator-preview-subtitle {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .generator-preview-recipient {
+            font-size: 2.4rem;
+            font-weight: 700;
+            margin: 1rem 0 0.2rem;
+            max-width: 760px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.08;
+            text-wrap: balance;
+            overflow-wrap: break-word;
+        }
+
+        .generator-preview-recipient-subtitle {
+            font-size: 1rem;
+            margin-bottom: 1.6rem;
+            max-width: 760px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.45;
+            text-wrap: pretty;
+        }
+
+        .generator-preview-body {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            white-space: pre-line;
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        .generator-preview-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+            padding: 0.85rem 1rem;
+            border-radius: 14px;
+            background: var(--generator-paper-chip-bg);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            margin-top: 1.45rem;
+            text-align: left;
+            color: var(--generator-paper-muted-strong);
+        }
+
+        .generator-preview-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 1rem;
+            margin-top: 1.9rem;
+        }
+
+        .generator-preview-note {
+            max-width: 65%;
+            line-height: 1.5;
+            white-space: pre-line;
+        }
+
+        .generator-preview-signature {
+            min-width: 220px;
+            text-align: center;
+        }
+
+        .generator-preview-sign-line {
+            height: 1px;
+            background: currentColor;
+            margin-bottom: 0.52rem;
+        }
+
+        .generator-preview-seal {
+            display: inline-flex;
+            margin-top: 0.9rem;
+            padding: 0.35rem 0.72rem;
+            border-radius: 999px;
+            background: var(--generator-paper-seal-bg);
+            border: 1px solid rgba(148,163,184,0.18);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #334155;
+        }
+
+        .generator-preview-paper.template-classic_formal .generator-preview-topline,
+        .generator-preview-paper.template-ceremonial_gold .generator-preview-topline,
+        .generator-preview-paper.template-academic_seal .generator-preview-topline,
+        .generator-preview-paper.template-heritage_script .generator-preview-topline {
+            text-align: center;
+        }
+
+        .generator-preview-paper.template-classic_formal .generator-preview-school,
+        .generator-preview-paper.template-ceremonial_gold .generator-preview-school,
+        .generator-preview-paper.template-academic_seal .generator-preview-school,
+        .generator-preview-paper.template-heritage_script .generator-preview-school {
+            justify-content: center;
+            text-align: left;
+        }
+
+        .generator-preview-paper.template-classic_formal .generator-preview-title {
+            font-size: 2.35rem;
+            letter-spacing: 0.08em;
+        }
+
+        .generator-preview-paper.template-modern_clean {
+            border-radius: 14px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        .generator-preview-paper.template-modern_clean .generator-preview-topline,
+        .generator-preview-paper.template-minimal_duotone .generator-preview-topline {
+            text-align: left;
+            letter-spacing: 0.16em;
+        }
+
+        .generator-preview-paper.template-modern_clean .generator-preview-school,
+        .generator-preview-paper.template-minimal_duotone .generator-preview-school {
+            justify-content: flex-start;
+        }
+
+        .generator-preview-paper.template-modern_clean .generator-preview-title,
+        .generator-preview-paper.template-minimal_duotone .generator-preview-title {
+            text-align: left !important;
+            margin-top: 1.25rem;
+            letter-spacing: 0.02em;
+        }
+
+        .generator-preview-paper.template-modern_clean .generator-preview-subtitle,
+        .generator-preview-paper.template-minimal_duotone .generator-preview-subtitle,
+        .generator-preview-paper.template-modern_clean .generator-preview-recipient,
+        .generator-preview-paper.template-minimal_duotone .generator-preview-recipient,
+        .generator-preview-paper.template-modern_clean .generator-preview-recipient-subtitle,
+        .generator-preview-paper.template-minimal_duotone .generator-preview-recipient-subtitle,
+        .generator-preview-paper.template-modern_clean .generator-preview-body,
+        .generator-preview-paper.template-minimal_duotone .generator-preview-body {
+            text-align: left !important;
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        .generator-preview-paper.template-modern_clean .generator-preview-meta,
+        .generator-preview-paper.template-minimal_duotone .generator-preview-meta {
+            border-radius: 20px;
+        }
+
+        .generator-preview-paper.template-modern_clean .generator-preview-footer,
+        .generator-preview-paper.template-minimal_duotone .generator-preview-footer {
+            align-items: flex-end;
+        }
+
+        .generator-preview-paper.template-ceremonial_gold,
+        .generator-preview-paper.template-academic_seal {
+            background:
+                radial-gradient(circle at top right, rgba(255,255,255,0.82), transparent 34%),
+                linear-gradient(180deg, rgba(255,252,244,1), rgba(255,249,237,1));
+        }
+
+        .generator-preview-paper.template-ceremonial_gold {
+            box-shadow:
+                0 28px 54px rgba(15, 23, 42, 0.18),
+                inset 0 0 0 10px rgba(194, 101, 5, 0.16);
+        }
+
+        .generator-preview-paper.template-academic_seal {
+            box-shadow:
+                0 24px 48px rgba(15, 23, 42, 0.16),
+                inset 0 0 0 7px rgba(37, 99, 235, 0.1);
+        }
+
+        .generator-preview-paper.template-ceremonial_gold .generator-preview-title,
+        .generator-preview-paper.template-academic_seal .generator-preview-title {
+            font-size: 2.75rem;
+            letter-spacing: 0.06em;
+            text-align: center !important;
+        }
+
+        .generator-preview-paper.template-ceremonial_gold .generator-preview-subtitle,
+        .generator-preview-paper.template-academic_seal .generator-preview-subtitle,
+        .generator-preview-paper.template-ceremonial_gold .generator-preview-recipient,
+        .generator-preview-paper.template-academic_seal .generator-preview-recipient,
+        .generator-preview-paper.template-ceremonial_gold .generator-preview-recipient-subtitle,
+        .generator-preview-paper.template-academic_seal .generator-preview-recipient-subtitle,
+        .generator-preview-paper.template-ceremonial_gold .generator-preview-body,
+        .generator-preview-paper.template-academic_seal .generator-preview-body {
+            text-align: center !important;
+        }
+
+        .generator-preview-paper.template-ceremonial_gold .generator-preview-recipient,
+        .generator-preview-paper.template-academic_seal .generator-preview-recipient {
+            font-size: 2.95rem;
+        }
+
+        .generator-preview-paper.template-ceremonial_gold .generator-preview-meta,
+        .generator-preview-paper.template-academic_seal .generator-preview-meta {
+            border-radius: 24px;
+            background: rgba(255,255,255,0.7);
+        }
+
+        .generator-preview-paper.template-heritage_script {
+            background:
+                radial-gradient(circle at top left, rgba(191, 219, 254, 0.16), transparent 24%),
+                linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,249,1));
+        }
+
+        .generator-preview-paper.template-heritage_script .generator-preview-title {
+            font-size: 2.4rem;
+            letter-spacing: 0.03em;
+        }
+
+        .generator-preview-paper.template-heritage_script .generator-preview-recipient {
+            font-size: 2.75rem;
+        }
+
+        .generator-preview-paper.template-heritage_script .generator-preview-subtitle,
+        .generator-preview-paper.template-heritage_script .generator-preview-recipient-subtitle {
+            font-style: italic;
+        }
+
+        .generator-preview-paper.template-minimal_duotone {
+            background-image:
+                linear-gradient(90deg, rgba(29, 78, 216, 0.06) 0, rgba(29, 78, 216, 0.06) 14px, transparent 14px, transparent 100%),
+                linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,1));
+        }
+
+        .generator-preview-paper.template-minimal_duotone .generator-preview-recipient {
+            font-size: 2.65rem;
+        }
+
+        .generator-preview-seal.is-hidden,
+        .generator-preview-sign-line.is-hidden,
+        .generator-preview-school-badge.is-hidden,
+        .generator-form-preview.is-hidden {
+            display: none !important;
+        }
+
+        .generator-preview-custom-sign-note {
+            margin-top: 0.35rem;
+            color: var(--generator-paper-muted);
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+
+        .generator-form-preview {
+            position: relative;
+            z-index: 1;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 1rem;
+            height: 100%;
+            padding: 2.2rem;
+            color: #1f2937;
+        }
+
+        .generator-form-preview.is-active {
+            display: flex;
+        }
+
+        .generator-form-preview-title {
+            margin-top: 1rem;
+            font-size: 2rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+            color: var(--preview-accent, #1d4ed8);
+        }
+
+        .generator-form-preview-copy {
+            margin-top: 0.65rem;
+            text-align: center;
+            color: var(--generator-paper-muted);
+            font-size: 0.96rem;
+        }
+
+        .generator-form-preview-lines {
+            margin-top: 1.6rem;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .generator-form-preview-row {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+            font-size: 1rem;
+            line-height: 1.75;
+            justify-content: center;
+        }
+
+        .generator-form-preview-line {
+            flex: 1 1 180px;
+            min-width: 140px;
+            border-bottom: 2px dotted rgba(31, 41, 55, 0.7);
+            min-height: 1.35rem;
+        }
+
+        .generator-form-preview-line.is-short {
+            flex-basis: 160px;
+            max-width: 180px;
+        }
+
+        .generator-form-preview-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+            font-size: 1rem;
+        }
+
+        .generator-form-preview-signature {
+            min-width: 240px;
+            text-align: center;
+        }
+
+        .generator-form-preview-signature-line {
+            height: 1px;
+            background: currentColor;
+            margin-bottom: 0.52rem;
+        }
+
+        .generator-dimensions {
+            margin-top: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            color: var(--generator-preview-muted);
+            font-size: 0.88rem;
+        }
+
+        .generator-dimensions strong {
+            color: var(--app-text);
+        }
+
+        .generator-copy-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .generator-copy-chip {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.42rem 0.7rem;
+            background: rgba(241, 245, 249, 0.9);
+            color: #334155;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        html[data-theme="dark"] .generator-copy-chip {
+            background: rgba(15, 23, 42, 0.62);
+            color: #e2e8f0;
+        }
+
+        .generator-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1.2rem;
+            padding: 1rem 1.05rem;
+            border-radius: 22px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.86), rgba(248,250,252,0.74));
+            border: 1px solid rgba(148, 163, 184, 0.16);
+        }
+
+        .generator-actions-note {
+            max-width: 520px;
+            color: var(--app-muted);
+            font-size: 0.88rem;
+        }
+
+        .generator-issue-summary {
+            display: none;
+            margin-top: 0.85rem;
+            padding: 0.82rem 0.9rem;
+            border-radius: 16px;
+            background: var(--generator-preview-card);
+            border: 1px solid var(--generator-panel-border);
+        }
+
+        .generator-issue-summary.is-visible {
+            display: block;
+        }
+
+        .generator-issue-summary strong {
+            display: block;
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--app-muted);
+        }
+
+        .generator-issue-summary span {
+            display: block;
+            margin-top: 0.24rem;
+            color: var(--app-text);
+            font-size: 0.94rem;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .generator-issue-summary small {
+            display: block;
+            margin-top: 0.26rem;
+            color: var(--app-muted);
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        .generator-action-status {
+            margin-top: 0.5rem;
+            color: var(--app-muted);
+            font-size: 0.82rem;
+            line-height: 1.45;
+        }
+
+        .generator-actions-buttons {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .generator-section.is-hidden {
+            display: none;
+        }
+
+        .generator-locked-summary {
+            display: none;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.8rem;
+            margin-top: 0.3rem;
+        }
+
+        .generator-locked-summary.is-visible {
+            display: grid;
+        }
+
+        .generator-locked-card {
+            border-radius: 16px;
+            padding: 0.9rem 0.95rem;
+            background: var(--generator-preview-card);
+            border: 1px solid var(--generator-panel-border);
+        }
+
+        .generator-locked-card strong {
+            display: block;
+            color: var(--app-muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .generator-locked-card span {
+            display: block;
+            margin-top: 0.28rem;
+            color: var(--app-text);
+            font-size: 0.92rem;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .generator-design-specific .generator-topbar,
+        .generator-design-specific #generatorDesignSection,
+        .generator-design-specific .generator-hero-side,
+        .generator-design-specific #generatorHeroModeChip,
+        .generator-design-specific .generator-copy-tools {
+            display: none !important;
+        }
+
+        .generator-design-specific .generator-panel-hero {
+            padding: 1rem 1.15rem 0.9rem;
+        }
+
+        .generator-design-specific .generator-panel-hero h2 {
+            font-size: 1.45rem;
+            margin-top: 0.55rem;
+        }
+
+        .generator-design-specific .generator-panel-hero p {
+            max-width: none;
+        }
+
+        .generator-design-specific .generator-section {
+            border-radius: 18px;
+        }
+
+        .generator-design-specific .generator-section-head p {
+            max-width: none;
+            text-align: left;
+        }
+
+        .generator-design-specific .generator-locked-summary {
+            display: grid;
+            margin-top: 0.85rem;
+        }
+
+        .generator-design-specific .generator-type-field {
+            display: none !important;
+        }
+
+        @media (max-width: 1100px) {
+            .generator-hero-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .generator-readiness,
+            .generator-design-grid,
+            .generator-preview-controls,
+            .generator-preview-calibration-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .generator-section-head,
+            .generator-actions,
+            .generator-dimensions {
+                display: block;
+            }
+
+            .generator-section-head p {
+                text-align: left;
+                margin-top: 0.35rem;
+            }
+
+            .generator-preview-stage {
+                min-height: 620px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .generator-topbar,
+            .generator-topbar-actions,
+            .generator-hero-side {
+                display: block;
+            }
+
+            .generator-topbar-actions > * + *,
+            .generator-hero-stat + .generator-hero-stat {
+                margin-top: 0.7rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid certificate-generator-grid{% if preselected_design %} generator-design-specific{% endif %}">
+        <div class="sixteen wide column">
+            {% if preselected_design %}
+                <div class="ui pointing secondary menu">
+                    <div class="item active">Generate Certificate</div>
+                    <div style="position:absolute;right:1.5rem;top:18px;">
+                        <a class="ui mini basic button" href="{% url 'certificateApp:design_library' %}">
+                            <i class="clone outline icon"></i>
+                            Design Library
+                        </a>
+                        <a class="ui mini blue button" href="{% url 'certificateApp:design_detail' preselected_design.id %}">
+                            <i class="eye icon"></i>
+                            Design Detail
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="generator-topbar">
+                    <div class="generator-topbar-title">
+                        <div class="generator-topbar-mark">
+                            <i class="grid layout icon"></i>
+                        </div>
+                        <div class="generator-topbar-copy">
+                            <h2>Certificate Generator</h2>
+                            <p>Compose, preview, and issue polished certificates from one focused workspace.</p>
+                        </div>
+                    </div>
+                    <div class="generator-topbar-actions">
+                        <a class="ui mini basic button" href="{% url 'certificateApp:design_library' %}">
+                            <i class="clone outline icon"></i>
+                            Design Library
+                        </a>
+                        <a class="ui mini blue button" href="{% url 'certificateApp:create_design' %}">
+                            <i class="paint brush icon"></i>
+                            New Design
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="nine wide large screen ten wide computer sixteen wide tablet sixteen wide mobile column">
+            <div class="ui segment generator-panel">
+                <div class="generator-panel-hero">
+                    <div class="generator-hero-layout">
+                        <div>
+                            <div class="generator-kicker">
+                                <i class="file alternate outline icon"></i>
+                                {% if preselected_design %}Selected Design Issue{% else %}Generator Studio{% endif %}
+                            </div>
+                            <h2 id="generatorHeroTitle">{% if preselected_design %}Configure the selected certificate template{% else %}Compose a certificate with full control over tone, structure, and final output{% endif %}</h2>
+                            <p id="generatorHeroCopy">{% if preselected_design %}This workspace is pinned to the {{ preselected_design.name }} template. Add only the issue-specific content while the selected layout, paper setup, and visual styling remain locked to this template.{% else %}This workspace is built for precision. Choose the certificate model, pick a design language, tune the copy, and watch the live paper stage respond before generating the final document.{% endif %}</p>
+                            <div class="generator-toolbar">
+                                <div class="generator-chip"><span class="dot" id="heroAccentDot"></span><span id="heroDesignName">{% if preselected_design %}{{ preselected_design.name }}{% else %}Select a design{% endif %}</span></div>
+                                <div class="generator-chip"><i class="layer group icon"></i><span id="heroRecipientCategory">{% if preselected_type %}{{ preselected_type.recipientCategory|title }}{% else %}Recipient type pending{% endif %}</span></div>
+                                <div class="generator-chip" id="generatorHeroModeChip"><i class="columns icon"></i><span>Molecular control across title, copy, and finish</span></div>
+                            </div>
+                        </div>
+                        <div class="generator-hero-side">
+                            <div class="generator-hero-stat">
+                                <strong>Workflow</strong>
+                                <span>Design-aware issue flow with exact preview rendering</span>
+                            </div>
+                            <div class="generator-hero-stat">
+                                <strong>Output</strong>
+                                <span>Browser preview, Chromium PDF, and print-safe export</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="generator-form-wrap">
+                    {% if preselected_design %}
+                        <div class="generator-simple-context">
+                            <strong>{{ preselected_design.name }}</strong>
+                            <p>This template is already chosen for the issue flow. Fill the recipient and certificate text that belongs inside it, and the exact preview will stay anchored to this template’s structure.</p>
+                            <div class="generator-simple-chip-row">
+                                <div class="generator-chip"><span class="dot" style="background: {{ preselected_design.accentColor|default:'#1d4ed8' }};"></span><span>{{ preselected_type.name|default:'Certificate' }}</span></div>
+                                <div class="generator-chip"><i class="file alternate outline icon"></i><span>{{ preselected_design.pageSize }} {{ preselected_design.orientation|title }}</span></div>
+                                <div class="generator-chip"><i class="vector square icon"></i><span>{{ preselected_design.templateKey|default:'design'|cut:'_'|title }}</span></div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <form class="ui tiny form" id="certificateGeneratorForm">
+                        {% csrf_token %}
+                        {% if preselected_design %}
+                            <input type="hidden" id="certificateType" name="certificate_type_id" value="{{ preselected_type.id }}">
+                        {% endif %}
+                        {% if not preselected_design %}
+                            <select class="ui dropdown" id="certificateDesign" name="design_id" style="display:none;">
+                                <option value="">Select design</option>
+                            </select>
+                        {% endif %}
+                        <input type="hidden" id="selectedDesignIdInput" value="{% if preselected_design %}{{ preselected_design.id }}{% endif %}">
+
+                        <div class="generator-section" id="generatorModelSection">
+                            <div class="generator-section-head">
+                                <div><h4 id="generatorModelTitle">{% if preselected_design %}Template Context{% else %}Certificate Model{% endif %}</h4></div>
+                                <p id="generatorModelCopy">{% if preselected_design %}The certificate type, template family, and paper setup are already fixed from the selected template. Use this section only for issue-specific values that belong inside that layout.{% else %}Start with the certificate type. The generator will load compatible designs, default copy, and recipient rules from that template family.{% endif %}</p>
+                            </div>
+                            {% if not preselected_design %}
+                                <div class="field required generator-type-field">
+                                    <label>Certificate Type</label>
+                                    <select class="ui dropdown" id="certificateType" name="certificate_type_id">
+                                        <option value="">Select</option>
+                                        {% for certificate_type in certificate_types %}
+                                            <option value="{{ certificate_type.id }}">{{ certificate_type.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            {% endif %}
+                            <div class="two fields">
+                                <div class="field required">
+                                    <label>Date</label>
+                                    <div class="ui calendar" id="issueDateCalendar">
+                                        <div class="ui input left icon">
+                                            <i class="calendar icon"></i>
+                                            <input type="text" id="issueDateDisplay" placeholder="DD/MM/YYYY">
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="issueDate" name="issue_date">
+                                </div>
+                                <div class="field required" id="recipientFieldWrap">
+                                    <label>Recipient</label>
+                                    <select class="ui search dropdown" id="recipientId" name="recipient_id">
+                                        <option value="">Select recipient</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if not preselected_design %}
+                        <div class="generator-section" id="generatorDesignSection">
+                            <div class="generator-section-head">
+                                <div><h4>Design Language</h4></div>
+                                <p>Pick the visual shell for the certificate. Each card carries its own size, orientation, and accent behavior.</p>
+                            </div>
+                            <div class="generator-design-lock" id="generatorDesignLock">
+                                <div class="generator-design-lock-copy">
+                                    <strong id="generatorDesignLockTitle">Using selected design</strong>
+                                    <span id="generatorDesignLockCopy">This generator session is focused on one design.</span>
+                                </div>
+                                <div class="generator-design-lock-action">
+                                    <a class="ui mini basic button" href="{% url 'certificateApp:generator' %}">
+                                        <i class="grid layout icon"></i>
+                                        Back to all designs
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="generator-design-tools" id="generatorDesignTools">
+                                <div class="field generator-design-search">
+                                    <label>Find Design</label>
+                                    <input type="text" id="designSearchInput" placeholder="Search by design name or template">
+                                </div>
+                            </div>
+                            <div id="designCardGrid" class="generator-design-grid">
+                                <div class="generator-design-card">
+                                    <h5>No design loaded</h5>
+                                    <p>Select a certificate type to view matching presets and custom layouts.</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="generator-section" id="generatorContentSection">
+                            <div class="generator-section-head">
+                                <div><h4 id="generatorContentTitle">{% if preselected_design %}Template Content{% else %}Content Composition{% endif %}</h4></div>
+                                <p id="generatorContentCopy">{% if preselected_design %}Fill the variable content that this template expects. Static design choices such as layout, typography, border treatment, and paper remain locked to the selected template.{% else %}Tune the exact message that will be rendered. Leave a field empty to fall back to the certificate type’s default copy.{% endif %}</p>
+                            </div>
+
+                            <div class="two fields">
+                                <div class="field">
+                                    <label>Custom Title</label>
+                                    <input type="text" id="customTitle" name="custom_title" placeholder="Optional">
+                                </div>
+                                <div class="field">
+                                    <label>Custom Subtitle</label>
+                                    <input type="text" id="customSubtitle" name="custom_subtitle" placeholder="Optional">
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label>Body Content</label>
+                                <textarea id="customBodyText" name="custom_body_text" rows="7" placeholder="Override the default body text if needed."></textarea>
+                            </div>
+
+                            <div class="field">
+                                <label>Footer Note</label>
+                                <input type="text" id="customFooterText" name="custom_footer_text" placeholder="Optional footer">
+                            </div>
+                        </div>
+
+                        <div class="generator-actions">
+                            <div class="generator-actions-note">
+                                Use the live preview on the right to validate structure, tone, and visual hierarchy before generating. After the preview opens, you can print to PDF from the browser for a clean final copy.
+                                <div class="generator-issue-summary" id="generatorIssueSummary">
+                                    <strong>Generating With</strong>
+                                    <span id="generatorIssueSummaryText">Selected design will appear here.</span>
+                                    <small id="generatorIssueSummaryMeta">Template family and paper setup will appear here.</small>
+                                </div>
+                                <div class="generator-action-status" id="generatorActionStatus">{% if preselected_design %}Select the recipient and review the exact preview before generating.{% else %}Choose a certificate type to begin.{% endif %}</div>
+                            </div>
+                            <div class="generator-actions-buttons">
+                                <button type="button" id="saveBtn" class="ui mini green button saveBtn" onclick="generateCertificate()">
+                                    <i class="icon plus square"></i>
+                                    Generate
+                                </button>
+                                <button type="button" class="ui mini red button" onclick="clearCertificateForm()">
+                                    <i class="icon times circle"></i>
+                                    Clear
+                                </button>
+                                <button style="display:none;" type="button" id="saveBtnLoad" class="ui right labeled icon button green saveBtnLoad">
+                                    Generating ...
+                                    <i class="checkmark icon"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="seven wide large screen six wide computer sixteen wide tablet sixteen wide mobile column">
+            <div class="ui segment generator-preview-panel">
+                <div class="generator-preview-hero">
+                    <div class="generator-kicker">
+                        <i class="eye icon"></i>
+                        Live Stage
+                    </div>
+                    <h3>Preview the final certificate as you compose it</h3>
+                    <p>The stage reflects the current design, page proportions, and content overrides, so you can make deliberate micro-adjustments instead of guessing.</p>
+                    <div class="generator-toolbar">
+                        <div class="generator-chip"><span class="dot" id="previewAccentDot"></span><span id="previewDesignName">Design pending</span></div>
+                        <div class="generator-chip"><i class="file alternate outline icon"></i><span id="previewSizeChip">Paper pending</span></div>
+                        <div class="generator-chip"><i class="vector square icon"></i><span id="previewBorderChip">Border pending</span></div>
+                    </div>
+                </div>
+
+                <div class="generator-preview-stage-wrap">
+                    <div class="generator-preview-stage">
+                        <div class="generator-preview-stage-shell" id="generatorPreviewStageShell">
+                            <div class="generator-preview-stage-head">
+                                <div class="generator-preview-stage-copy">
+                                    <div class="generator-preview-stage-title">Exact Design Preview</div>
+                                    <div class="generator-preview-stage-subtitle">This surface uses the same certificate renderer as the final preview and PDF flow.</div>
+                                </div>
+                                <div class="generator-preview-stage-badge">
+                                    <span class="dot"></span>
+                                    <span>Exact renderer</span>
+                                </div>
+                            </div>
+                            <div class="generator-preview-stage-frame">
+                                <div class="generator-preview-loading" id="generatorPreviewLoading">
+                                    <div class="generator-preview-loading-card">
+                                        <i class="notched circle loading icon"></i>
+                                        <span>Refreshing the certificate preview...</span>
+                                    </div>
+                                </div>
+                                <div id="livePreviewFrame" class="generator-live-preview-frame">
+                                    {% if initial_exact_preview_context %}
+                                        <div class="generator-live-preview-shell">
+                                            {% include 'certificateApp/partials/certificate_document.html' with issue=initial_exact_preview_context.issue certificate_type=initial_exact_preview_context.certificate_type design=initial_exact_preview_context.design render_mode=initial_exact_preview_context.render_mode design_font_stack=initial_exact_preview_context.design_font_stack title=initial_exact_preview_context.title subtitle=initial_exact_preview_context.subtitle recipient_name=initial_exact_preview_context.recipient_name recipient_subtitle=initial_exact_preview_context.recipient_subtitle rendered_body=initial_exact_preview_context.rendered_body rendered_footer=initial_exact_preview_context.rendered_footer page_size_css=initial_exact_preview_context.page_size_css margin_top=initial_exact_preview_context.margin_top margin_right=initial_exact_preview_context.margin_right margin_bottom=initial_exact_preview_context.margin_bottom margin_left=initial_exact_preview_context.margin_left page_width_mm=initial_exact_preview_context.page_width_mm page_height_mm=initial_exact_preview_context.page_height_mm content_width_mm=initial_exact_preview_context.content_width_mm content_height_mm=initial_exact_preview_context.content_height_mm scope_data=initial_exact_preview_context.scope_data resolved_overlay_items=initial_exact_preview_context.resolved_overlay_items is_image_overlay=initial_exact_preview_context.is_image_overlay %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="generator-dimensions" id="previewDimensions">
+                        <span><strong>{% if preselected_design %}Selected Design Ready{% else %}Live Stage Ready{% endif %}</strong></span>
+                        <span>{% if preselected_design %}The exact preview stays tied to the selected certificate design.{% else %}Choose a certificate type to load the matching paper setup.{% endif %}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        $('.ui.dropdown').dropdown();
+        function padDatePart(value) {
+            return String(value).padStart(2, '0');
+        }
+
+        function formatIsoDate(date) {
+            return date.getFullYear() + '-' + padDatePart(date.getMonth() + 1) + '-' + padDatePart(date.getDate());
+        }
+
+        function formatDisplayDate(date) {
+            return padDatePart(date.getDate()) + '/' + padDatePart(date.getMonth() + 1) + '/' + date.getFullYear();
+        }
+
+        function setIssueDateValue(date) {
+            const nextIsoValue = date ? formatIsoDate(date) : '';
+            const nextDisplayValue = date ? formatDisplayDate(date) : '';
+            const hasChanged = $('#issueDate').val() !== nextIsoValue || $('#issueDateDisplay').val() !== nextDisplayValue;
+            if (!date) {
+                $('#issueDate').val('');
+                $('#issueDateDisplay').val('');
+                if (hasChanged) {
+                    $('#issueDate').trigger('change');
+                }
+                return;
+            }
+            $('#issueDate').val(nextIsoValue);
+            $('#issueDateDisplay').val(nextDisplayValue);
+            if (hasChanged) {
+                $('#issueDate').trigger('change');
+            }
+        }
+
+        $('#issueDateCalendar').calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date) {
+                    return date ? formatDisplayDate(date) : '';
+                }
+            },
+            onChange: function (date) {
+                setIssueDateValue(date);
+            }
+        });
+
+        setIssueDateValue(new Date());
+        const preselectedTypeId = "{{ preselected_type_id|default:''|escapejs }}";
+        const preselectedDesignId = "{{ preselected_design_id|default:''|escapejs }}";
+        const isDesignSpecificMode = !!preselectedDesignId;
+        const initialGeneratorMeta = {{ initial_generator_meta_json|safe }};
+
+        const sizeMap = {
+            A4: {w: 210, h: 297},
+            A5: {w: 148, h: 210},
+            LETTER: {w: 216, h: 279}
+        };
+        const previewFontStackMap = {
+            'Georgia': 'Georgia, "Times New Roman", Times, serif',
+            'Times New Roman': '"Times New Roman", Times, serif',
+            'Palatino': '"Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif',
+            'Trebuchet MS': '"Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", "Lucida Sans", Arial, sans-serif',
+            'Arial': 'Arial, Helvetica, sans-serif',
+            'Verdana': 'Verdana, Geneva, sans-serif',
+            'Courier New': '"Courier New", Courier, monospace'
+        };
+
+        let generatorMeta = {
+            recipientCategory: '',
+            defaultTitle: '',
+            defaultSubtitle: '',
+            defaultBodyTemplate: '',
+            defaultFooterText: '',
+            designs: [],
+            recipients: []
+        };
+        let selectedDesign = null;
+        let previewFrameId = null;
+        let currentMetaRequest = null;
+        let currentLivePreviewRequest = null;
+        let livePreviewRevision = 0;
+        let livePreviewRecoveryTimer = null;
+        const generatorMetaCache = {};
+        const $certificateType = $('#certificateType');
+        const $recipientId = $('#recipientId');
+        const $certificateDesign = $('#certificateDesign');
+        const $selectedDesignIdInput = $('#selectedDesignIdInput');
+        const $designCardGrid = $('#designCardGrid');
+        const $recipientFieldWrap = $('#recipientFieldWrap');
+        const $generatorPreviewStageShell = $('#generatorPreviewStageShell');
+        const $generatorPreviewLoading = $('#generatorPreviewLoading');
+        const $livePreviewFrame = $('#livePreviewFrame');
+        const $previewDimensions = $('#previewDimensions');
+        const $heroDesignName = $('#heroDesignName');
+        const $heroRecipientCategory = $('#heroRecipientCategory');
+        const $heroAccentDot = $('#heroAccentDot');
+        const $generatorHeroTitle = $('#generatorHeroTitle');
+        const $generatorHeroCopy = $('#generatorHeroCopy');
+        const $generatorHeroModeChip = $('#generatorHeroModeChip');
+        const $previewAccentDot = $('#previewAccentDot');
+        const $previewDesignName = $('#previewDesignName');
+        const $previewSizeChip = $('#previewSizeChip');
+        const $previewBorderChip = $('#previewBorderChip');
+        const $generatorActionStatus = $('#generatorActionStatus');
+        const $generatorIssueSummary = $('#generatorIssueSummary');
+        const $generatorIssueSummaryText = $('#generatorIssueSummaryText');
+        const $generatorIssueSummaryMeta = $('#generatorIssueSummaryMeta');
+        const $saveBtn = $('#saveBtn');
+        const $designSearchInput = $('#designSearchInput');
+        const $generatorModelSection = $('#generatorModelSection');
+        const $generatorModelTitle = $('#generatorModelTitle');
+        const $generatorModelCopy = $('#generatorModelCopy');
+        const $generatorDesignSection = $('#generatorDesignSection');
+        const $generatorContentTitle = $('#generatorContentTitle');
+        const $generatorContentCopy = $('#generatorContentCopy');
+        const $generatorDesignTools = $('#generatorDesignTools');
+        const $generatorDesignLock = $('#generatorDesignLock');
+        const $generatorDesignLockTitle = $('#generatorDesignLockTitle');
+        const $generatorDesignLockCopy = $('#generatorDesignLockCopy');
+
+        function getValue(id, fallback='') {
+            return ($('#' + id).val() || fallback).trim();
+        }
+
+        function prettyLabel(value) {
+            return String(value || '')
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+        }
+
+        function prettyBorder(templateKey, isCustom) {
+            if (isCustom) return 'Custom design';
+            const map = {
+                classic_formal: 'Formal structure',
+                modern_clean: 'Minimal shell',
+                ceremonial_gold: 'Ceremonial frame',
+                academic_seal: 'Academic seal',
+                heritage_script: 'Script heritage',
+                minimal_duotone: 'Duotone editorial',
+                hand_fill_form: 'Write-in form',
+                prize_day_form: 'Prize-day form',
+                custom: 'Custom design'
+            };
+            return map[templateKey] || 'Certificate shell';
+        }
+
+        function isFormTemplate(templateKey) {
+            return templateKey === 'hand_fill_form' || templateKey === 'prize_day_form';
+        }
+
+        function formatIssueDate(value) {
+            if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                return value || '-';
+            }
+            const parts = value.split('-');
+            return [parts[2], parts[1], parts[0]].join('-');
+        }
+
+        function borderCssForDesign(design) {
+            if (!design) {
+                return '3px solid #1d4ed8';
+            }
+            if (design.designMode === 'image_overlay') {
+                return '0';
+            }
+            const accent = design.accentColor || '#1d4ed8';
+            if (design.borderStyle === 'double') {
+                return '4px double ' + accent;
+            }
+            if (design.borderStyle === 'ornate') {
+                return '5px solid ' + accent;
+            }
+            if (design.borderStyle === 'none') {
+                return '0';
+            }
+            return '3px solid ' + accent;
+        }
+
+        function getTemplateClass(design) {
+            if (!design || !design.templateKey) {
+                return '';
+            }
+            return 'template-' + String(design.templateKey).replace(/[^a-z0-9_]/gi, '_');
+        }
+
+        function getPreviewProfile() {
+            const certificateLabel = ($certificateType.find('option:selected').text() || '').toLowerCase();
+            const defaultTitle = String(generatorMeta.defaultTitle || '').toLowerCase();
+            const profile = {
+                recipientFontSize: '2.4rem',
+                recipientMaxWidth: '760px',
+                recipientLineHeight: '1.08',
+                subtitleMaxWidth: '760px',
+                subtitleMarginBottom: '1.6rem',
+                bodyMaxWidth: '760px',
+                bodyFontSize: '1.1rem',
+                bodyLineHeight: '1.8',
+            };
+
+            if (certificateLabel.indexOf('transfer') !== -1 || defaultTitle.indexOf('transfer') !== -1) {
+                profile.recipientFontSize = '2.18rem';
+                profile.recipientMaxWidth = '700px';
+                profile.recipientLineHeight = '1.02';
+                profile.subtitleMaxWidth = '700px';
+                profile.subtitleMarginBottom = '1.35rem';
+                profile.bodyMaxWidth = '700px';
+                profile.bodyFontSize = '1.04rem';
+                profile.bodyLineHeight = '1.72';
+            } else if (certificateLabel.indexOf('bonafide') !== -1 || certificateLabel.indexOf('bona fide') !== -1 || defaultTitle.indexOf('bonafide') !== -1 || defaultTitle.indexOf('bona fide') !== -1) {
+                profile.recipientFontSize = '2.3rem';
+                profile.recipientMaxWidth = '720px';
+                profile.recipientLineHeight = '1.06';
+                profile.subtitleMaxWidth = '720px';
+                profile.subtitleMarginBottom = '1.45rem';
+                profile.bodyMaxWidth = '720px';
+                profile.bodyFontSize = '1.07rem';
+                profile.bodyLineHeight = '1.76';
+            } else if (certificateLabel.indexOf('character') !== -1 || defaultTitle.indexOf('character') !== -1 || certificateLabel.indexOf('conduct') !== -1 || defaultTitle.indexOf('conduct') !== -1) {
+                profile.recipientFontSize = '2.22rem';
+                profile.recipientMaxWidth = '710px';
+                profile.recipientLineHeight = '1.04';
+                profile.subtitleMaxWidth = '710px';
+                profile.subtitleMarginBottom = '1.42rem';
+                profile.bodyMaxWidth = '690px';
+                profile.bodyFontSize = '1.03rem';
+                profile.bodyLineHeight = '1.74';
+            } else if (certificateLabel.indexOf('participation') !== -1 || defaultTitle.indexOf('participation') !== -1 || certificateLabel.indexOf('achievement') !== -1 || defaultTitle.indexOf('achievement') !== -1 || certificateLabel.indexOf('merit') !== -1 || defaultTitle.indexOf('merit') !== -1) {
+                profile.recipientFontSize = '2.52rem';
+                profile.recipientMaxWidth = '780px';
+                profile.recipientLineHeight = '1.1';
+                profile.subtitleMaxWidth = '740px';
+                profile.subtitleMarginBottom = '1.7rem';
+                profile.bodyMaxWidth = '760px';
+                profile.bodyFontSize = '1.08rem';
+                profile.bodyLineHeight = '1.82';
+            }
+
+            return profile;
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderTemplateText(template, payload) {
+            return String(template || '').replace(/\$\{([^}]+)\}/g, function (_, key) {
+                return payload[key] !== undefined ? payload[key] : '';
+            });
+        }
+
+        function getSelectedRecipientMeta() {
+            const recipientId = String($recipientId.val() || '');
+            if (!recipientId || !generatorMeta.recipients || !generatorMeta.recipients.length) {
+                return null;
+            }
+            return generatorMeta.recipients.find(function (item) {
+                return String(item.id) === recipientId;
+            }) || null;
+        }
+
+        function resolvePreviewFontStack(fontFamily) {
+            return previewFontStackMap[fontFamily] || fontFamily || previewFontStackMap['Georgia'];
+        }
+
+        function formatDimension(value) {
+            const numeric = Number(value || 0);
+            return numeric.toFixed(numeric % 1 === 0 ? 0 : 1);
+        }
+
+        function clearCertificateForm() {
+            $('#certificateGeneratorForm')[0].reset();
+            setIssueDateValue(new Date());
+            if (!isDesignSpecificMode && $certificateType.length) {
+                $certificateType.dropdown('clear');
+            }
+            $recipientId.dropdown('clear');
+            $recipientId.html('<option value="">Select recipient</option>').dropdown('refresh');
+            $certificateDesign.html('<option value="">Select design</option>');
+            $designCardGrid.html(
+                '<div class="generator-design-card"><h5>No design loaded</h5><p>Select a certificate type to view matching presets and custom layouts.</p></div>'
+            );
+            $recipientFieldWrap.show();
+            generatorMeta = {
+                recipientCategory: '',
+                defaultTitle: '',
+                defaultSubtitle: '',
+                defaultBodyTemplate: '',
+                defaultFooterText: '',
+                designs: [],
+                recipients: []
+            };
+            selectedDesign = isDesignSpecificMode ? selectedDesign : null;
+            $heroDesignName.text(isDesignSpecificMode ? "{{ preselected_design.name|default:'Selected design'|escapejs }}" : 'Select a design');
+            $heroRecipientCategory.text('Recipient type pending');
+            $heroAccentDot.add($previewAccentDot).css('background', '#1d4ed8');
+            $previewDesignName.text(isDesignSpecificMode ? "{{ preselected_design.name|default:'Selected design'|escapejs }}" : 'Design pending');
+            $previewSizeChip.text(isDesignSpecificMode ? "{{ preselected_design.pageSize|default:'Paper' }} {{ preselected_design.orientation|default:'portrait'|title }}" : 'Paper pending');
+            $previewBorderChip.text(isDesignSpecificMode ? "{{ preselected_design.templateKey|default:'design'|escapejs }}" : 'Border pending');
+            livePreviewRevision = 0;
+            $livePreviewFrame.empty();
+            setLivePreviewLoading(false);
+            $generatorIssueSummary.removeClass('is-visible');
+            $generatorIssueSummaryText.text('Selected design will appear here.');
+            $generatorIssueSummaryMeta.text('Template family and paper setup will appear here.');
+            $previewDimensions.html('<span><strong>Live Stage Ready</strong></span><span>Choose a certificate type to load the matching paper setup.</span>');
+            if (!isDesignSpecificMode) {
+                $designSearchInput.val('');
+            }
+            updateGeneratorStatus();
+            schedulePreview();
+        }
+
+        function showGeneratorMetaLoading() {
+            selectedDesign = null;
+            $certificateDesign.val('');
+            $selectedDesignIdInput.val('');
+            livePreviewRevision = 0;
+            $livePreviewFrame.empty();
+            setLivePreviewLoading(false);
+            updateIssueSummary();
+            $previewDesignName.text('Design pending');
+            $previewSizeChip.text('Paper pending');
+            $previewBorderChip.text('Border pending');
+            $previewDimensions.html('<span><strong>Refreshing preview</strong></span><span>Loading the new certificate family and matching designs.</span>');
+            $designCardGrid.html(
+                '<div class="generator-design-card active"><h5>Loading designs...</h5><p>Fetching compatible layouts and recipient options for this certificate type.</p></div>'
+            );
+            $recipientId.html('<option value="">Loading recipients...</option>').dropdown('refresh');
+            updateGeneratorStatus();
+        }
+
+        function renderDesignCards() {
+            const designRows = isDesignSpecificMode
+                ? (generatorMeta.designs || []).filter(function (design) {
+                    return String(design.id) === String(preselectedDesignId);
+                })
+                : (generatorMeta.designs || []);
+
+            $generatorDesignTools.toggleClass('is-hidden', isDesignSpecificMode);
+            $generatorDesignLock.toggleClass('is-visible', isDesignSpecificMode && !!designRows.length);
+
+            if (isDesignSpecificMode && designRows.length) {
+                $generatorDesignLockTitle.text('Using design: ' + designRows[0].name);
+                $generatorDesignLockCopy.text('This generator session is pinned to the selected design, so the live stage and issue flow stay design-specific.');
+            }
+
+            if (!designRows.length) {
+                $designCardGrid.html('<div class="generator-design-card"><h5>No design available</h5><p>Create or enable a design for this certificate type to continue.</p></div>');
+                if (isDesignSpecificMode) {
+                    $generatorDesignLock.toggleClass('is-visible', true);
+                    $generatorDesignLockTitle.text('Selected design unavailable');
+                    $generatorDesignLockCopy.text('The requested design is not available for this certificate type or school scope.');
+                }
+                $selectedDesignIdInput.val('');
+                updateGeneratorStatus();
+                return;
+            }
+
+            const schoolName = '{{ school.schoolName|default:"School"|escapejs }}' || 'School';
+            const schoolInitial = schoolName.charAt(0).toUpperCase() || 'S';
+            const schoolLogoMarkup = `{% if school and school.logo %}<img src="{{ school.logo.medium.url }}" alt="{{ school.schoolName|default:'School' }} logo">{% else %}${schoolInitial}{% endif %}`;
+
+            const cards = designRows.map(function (design, index) {
+                const isLandscape = design.orientation === 'landscape';
+                const previewBg = design.backgroundImageUrl
+                    ? '<div class="generator-design-preview-overlay" style="background-image:url(' + "'" + design.backgroundImageUrl + "'" + ');"></div>'
+                    : '';
+                const previewPaperClass = 'generator-design-preview-paper' + (isLandscape ? ' is-landscape' : '') + (design.designMode === 'image_overlay' ? ' image-overlay' : '');
+                const previewBody = generatorMeta.defaultBodyTemplate || 'This certificate is issued as per school record.';
+                const bodySnippet = escapeHtml(previewBody.length > 88 ? previewBody.slice(0, 88) + '...' : previewBody);
+                const previewTopline = escapeHtml(design.customHeaderText || prettyLabel(design.templateKey));
+                const isFormDesign = isFormTemplate(design.templateKey);
+                const schoolBadgeMarkup = design.showLogo
+                    ? '<div class="generator-design-preview-badge" style="color:' + (design.accentColor || '#1d4ed8') + ';">' + schoolLogoMarkup + '</div>'
+                    : '';
+                const previewShell = isFormDesign
+                    ? '<div>' +
+                        '<div class="generator-design-preview-topline" style="color:' + (design.accentColor || '#1d4ed8') + '; text-align:' + (design.titleAlignment || 'center') + ';">' + previewTopline + '</div>' +
+                        '<div class="generator-design-preview-school">' +
+                            schoolBadgeMarkup +
+                            '<div class="generator-design-preview-school-name">' + escapeHtml(schoolName) + '</div>' +
+                        '</div>' +
+                        '<div class="generator-design-preview-title" style="color:' + (design.accentColor || '#1d4ed8') + '; text-align:center;">' + escapeHtml(generatorMeta.defaultTitle || 'Certificate') + '</div>' +
+                        '<div class="generator-design-preview-body" style="text-align:center;">This is to certify that ........ has ........ for ........</div>' +
+                        '<div class="generator-design-preview-body" style="text-align:center;">competition held in ........ year ........</div>' +
+                    '</div>' +
+                    '<div class="generator-design-preview-footer">' +
+                        '<div>Date: ............</div>' +
+                        '<div class="generator-design-preview-sign">' + (design.showSignatureLine ? '<div class="generator-design-preview-sign-line"></div>' : '') + '<div>Sign</div></div>' +
+                    '</div>'
+                    : '<div>' +
+                        '<div class="generator-design-preview-topline" style="color:' + (design.accentColor || '#1d4ed8') + '; text-align:' + (design.titleAlignment || 'center') + ';">' + previewTopline + '</div>' +
+                        '<div class="generator-design-preview-school">' +
+                            schoolBadgeMarkup +
+                            '<div class="generator-design-preview-school-name">' + escapeHtml(schoolName) + '</div>' +
+                        '</div>' +
+                        '<div class="generator-design-preview-title" style="color:' + (design.accentColor || '#1d4ed8') + '; text-align:' + (design.titleAlignment || 'center') + ';">' + escapeHtml(generatorMeta.defaultTitle || 'Certificate') + '</div>' +
+                        '<div class="generator-design-preview-subtitle" style="text-align:' + (design.titleAlignment || 'center') + ';">' + escapeHtml(generatorMeta.defaultSubtitle || 'Presented with care') + '</div>' +
+                        '<div class="generator-design-preview-body" style="text-align:' + (design.bodyAlignment || 'center') + ';">' + bodySnippet + '</div>' +
+                        '<div class="generator-design-preview-meta"><span>No. CERT-001</span><span>Issued today</span></div>' +
+                    '</div>' +
+                    '<div class="generator-design-preview-footer">' +
+                        '<div>' + escapeHtml((design.isCustom ? 'Custom-tailored issue flow' : 'System design preset').slice(0, 28)) + (design.showSeal ? '<div class="generator-preview-seal" style="margin-top:0.45rem;">Verified</div>' : '') + '</div>' +
+                        '<div class="generator-design-preview-sign">' + (design.showSignatureLine ? '<div class="generator-design-preview-sign-line"></div>' : '') + '<div>Sign</div></div>' +
+                    '</div>';
+                return (
+                    '<div class="generator-design-card' + (index === 0 ? ' active' : '') + '" role="button" tabindex="0" aria-pressed="' + (index === 0 ? 'true' : 'false') + '" data-design-id="' + design.id + '" data-design-mode="' + (design.designMode || 'html') + '" data-design-orientation="' + (design.orientation || 'portrait') + '" data-design-name="' + escapeHtml((design.name + ' ' + prettyLabel(design.templateKey)).toLowerCase()) + '">' +
+                        '<div class="generator-design-preview">' +
+                            '<div class="' + previewPaperClass + '" style="' +
+                                'background:' + (design.backgroundColor || '#ffffff') + ';' +
+                                'color:' + (design.textColor || '#1f2937') + ';' +
+                                'font-family:' + (design.fontFamily || 'Georgia') + ';' +
+                                'border:' + borderCssForDesign(design) + ';' +
+                            '">' +
+                                previewBg +
+                                '<div class="generator-design-preview-inner">' + previewShell + '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="generator-design-top">' +
+                            '<div style="display:flex; align-items:center; gap:0.65rem;">' +
+                                '<span class="generator-design-dot" style="background:' + (design.accentColor || '#1d4ed8') + ';"></span>' +
+                                '<div><h5>' + design.name + '</h5><p>' + prettyLabel(design.templateKey) + '</p></div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<p>' + (design.isCustom ? 'Custom-tailored layout for school-specific needs.' : 'Built-in preset for fast and consistent issue flow.') + '</p>' +
+                        '<div class="generator-design-meta">' +
+                            '<span><i class="file alternate outline icon"></i>' + design.pageSize + '</span>' +
+                            '<span><i class="exchange alternate icon"></i>' + prettyLabel(design.orientation) + '</span>' +
+                            '<span><i class="image outline icon"></i>' + prettyLabel(design.designMode || 'html') + '</span>' +
+                            '<span><i class="brush icon"></i>' + (design.isCustom ? 'Custom' : 'System') + '</span>' +
+                        '</div>' +
+                    '</div>'
+                );
+            });
+            $designCardGrid.html(cards.join('') + '<div class="generator-design-empty" id="generatorDesignEmpty">No designs match the current search or filter. Clear the filter to view all designs.</div>');
+            bindDesignCardHandlers();
+            if (isDesignSpecificMode) {
+                $('#generatorDesignEmpty').removeClass('is-visible');
+            } else {
+                applyDesignFilters();
+            }
+        }
+
+        function applyDesignFilters() {
+            if (isDesignSpecificMode) {
+                $designCardGrid.find('.generator-design-card[data-design-id]').removeClass('is-hidden');
+                $('#generatorDesignEmpty').removeClass('is-visible');
+                return;
+            }
+            const query = ($designSearchInput.val() || '').trim().toLowerCase();
+            let visibleCount = 0;
+            $designCardGrid.find('.generator-design-card[data-design-id]').each(function () {
+                const $card = $(this);
+                const matchesQuery = !query || String($card.data('design-name') || '').indexOf(query) !== -1;
+                const isVisible = matchesQuery;
+                $card.toggleClass('is-hidden', !isVisible);
+                if (isVisible) {
+                    visibleCount += 1;
+                }
+            });
+            $('#generatorDesignEmpty').toggleClass('is-visible', visibleCount === 0 && !!generatorMeta.designs.length);
+        }
+
+        function updateGeneratorStatus() {
+            const typeLabel = $certificateType.find('option:selected').text();
+            const recipientVisible = $recipientFieldWrap.is(':visible');
+            const recipientLabel = $recipientId.find('option:selected').text();
+            const hasType = !!$certificateType.val();
+            const hasDesign = !!(selectedDesign && ($certificateDesign.val() || $selectedDesignIdInput.val()));
+            const hasRecipient = recipientVisible ? !!$recipientId.val() : true;
+            const ready = hasType && hasDesign && hasRecipient;
+
+            $saveBtn.prop('disabled', !ready).toggleClass('disabled', !ready);
+
+            if (isDesignSpecificMode) {
+                if (!hasRecipient) {
+                    $generatorActionStatus.text('Select a recipient for this certificate design before generating.');
+                } else {
+                    $generatorActionStatus.text('Everything is ready. Review the fixed design preview and generate the certificate.');
+                }
+            } else if (!hasType) {
+                $generatorActionStatus.text('Choose a certificate type to begin.');
+            } else if (!hasDesign) {
+                $generatorActionStatus.text('Pick a design to activate the certificate stage and export setup.');
+            } else if (!hasRecipient) {
+                $generatorActionStatus.text('Select a recipient before generating the final certificate.');
+            } else {
+                $generatorActionStatus.text('Everything is in place. Generate the certificate when the live stage looks right.');
+            }
+        }
+
+        function updateIssueSummary() {
+            if (!selectedDesign) {
+                $generatorIssueSummary.removeClass('is-visible');
+                $generatorIssueSummaryText.text('Selected design will appear here.');
+                $generatorIssueSummaryMeta.text('Template family and paper setup will appear here.');
+                return;
+            }
+
+            const templateLabel = prettyLabel(selectedDesign.templateKey || 'custom_design');
+            const paperLabel = selectedDesign.pageSize === 'CUSTOM'
+                ? 'Custom'
+                : (selectedDesign.pageSize || 'A4');
+            const orientationLabel = prettyLabel(selectedDesign.orientation || 'portrait');
+            $generatorIssueSummary.addClass('is-visible');
+            $generatorIssueSummaryText.text(selectedDesign.name || 'Selected design');
+            $generatorIssueSummaryMeta.text(templateLabel + ' • ' + paperLabel + ' • ' + orientationLabel);
+        }
+
+        function buildLivePreviewUrl() {
+            const params = new URLSearchParams();
+            if ($certificateType.val()) {
+                params.set('certificate_type_id', $certificateType.val());
+            }
+            if (selectedDesign && selectedDesign.id) {
+                params.set('design_id', selectedDesign.id);
+            } else if ($selectedDesignIdInput.val()) {
+                params.set('design_id', $selectedDesignIdInput.val());
+            }
+            if ($recipientId.val()) {
+                params.set('recipient_id', $recipientId.val());
+            }
+            if ($('#issueDate').val()) {
+                params.set('issue_date', $('#issueDate').val());
+            }
+            params.set('custom_title', $('#customTitle').val() || '');
+            params.set('custom_subtitle', $('#customSubtitle').val() || '');
+            params.set('custom_body_text', $('#customBodyText').val() || '');
+            params.set('custom_footer_text', $('#customFooterText').val() || '');
+            params.set('embed', '1');
+            livePreviewRevision += 1;
+            params.set('_preview_rev', livePreviewRevision);
+            return "{% url 'certificateApp:generator_live_preview' %}?" + params.toString();
+        }
+
+        function resizeLivePreviewFrame(fallbackHeight) {
+            let nextHeight = fallbackHeight || 720;
+            const previewNode = $livePreviewFrame.get(0);
+            if (previewNode) {
+                nextHeight = Math.max(nextHeight, previewNode.scrollHeight || 0);
+            }
+            $livePreviewFrame.css('height', nextHeight + 'px');
+        }
+
+        function setLivePreviewLoading(isLoading) {
+            $generatorPreviewStageShell.toggleClass('is-loading', !!isLoading);
+            $generatorPreviewLoading.attr('aria-hidden', isLoading ? 'false' : 'true');
+        }
+
+        function finalizeLivePreviewLoad() {
+            resizeLivePreviewFrame(parseInt($livePreviewFrame.css('height'), 10) || 720);
+            setLivePreviewLoading(false);
+            if (livePreviewRecoveryTimer) {
+                window.clearTimeout(livePreviewRecoveryTimer);
+                livePreviewRecoveryTimer = null;
+            }
+        }
+
+        function updateLivePreviewFrame(frameHeight) {
+            const previewUrl = buildLivePreviewUrl();
+            const requestedRevision = livePreviewRevision;
+            $livePreviewFrame.css('height', frameHeight + 'px');
+            setLivePreviewLoading(true);
+            if (currentLivePreviewRequest && currentLivePreviewRequest.readyState !== 4) {
+                currentLivePreviewRequest.abort();
+            }
+            if (livePreviewRecoveryTimer) {
+                window.clearTimeout(livePreviewRecoveryTimer);
+            }
+            livePreviewRecoveryTimer = window.setTimeout(function () {
+                finalizeLivePreviewLoad();
+            }, 2500);
+            currentLivePreviewRequest = $.ajax({
+                type: 'get',
+                url: previewUrl,
+                success: function (html) {
+                    if (requestedRevision !== livePreviewRevision) {
+                        return;
+                    }
+                    $livePreviewFrame.html(html);
+                    finalizeLivePreviewLoad();
+                },
+                error: function (_xhr, statusText) {
+                    if (statusText === 'abort') {
+                        return;
+                    }
+                    if (requestedRevision !== livePreviewRevision) {
+                        return;
+                    }
+                    setLivePreviewLoading(false);
+                },
+                complete: function () {
+                    if (requestedRevision === livePreviewRevision) {
+                        currentLivePreviewRequest = null;
+                    }
+                }
+            });
+        }
+
+        function applyDesignSpecificLayout() {
+            const activeTypeLabel = $certificateType.find('option:selected').text() || 'Certificate type';
+            const paperSetup = selectedDesign
+                ? ((selectedDesign.pageSize === 'CUSTOM' ? 'Custom' : selectedDesign.pageSize) + ' ' + prettyLabel(selectedDesign.orientation || 'portrait'))
+                : 'Paper setup pending';
+            const templateLabel = selectedDesign ? prettyLabel(selectedDesign.templateKey || 'template') : 'template';
+
+            if (isDesignSpecificMode && selectedDesign) {
+                $generatorHeroTitle.text('Configure the selected certificate template');
+                $generatorHeroCopy.text('This workspace is pinned to the ' + selectedDesign.name + ' template. Add the issue-specific content while the layout, paper setup, and styling remain locked to this template.');
+                $generatorHeroModeChip.html('<i class="paint brush icon"></i><span>Template-specific issue flow</span>');
+                $generatorModelTitle.text('Template Context');
+                $generatorModelCopy.text('The certificate type, ' + templateLabel.toLowerCase() + ' template family, and ' + paperSetup + ' paper setup are already fixed here. Use this section only for issue-specific values that belong inside that layout.');
+                $generatorContentTitle.text('Template Content');
+                $generatorContentCopy.text('Fill the variable content that this template expects. Static design choices such as layout, typography, border treatment, and paper remain locked to the selected template.');
+                $generatorDesignSection.addClass('is-hidden');
+            } else {
+                $generatorHeroTitle.text('Compose a certificate with full control over tone, structure, and final output');
+                $generatorHeroCopy.text('This workspace is built for precision. Choose the certificate model, pick a design language, tune the copy, and watch the live paper stage respond before generating the final document.');
+                $generatorHeroModeChip.html('<i class="columns icon"></i><span>Molecular control across title, copy, and finish</span>');
+                $generatorModelTitle.text('Certificate Model');
+                $generatorModelCopy.text('Start with the certificate type. The generator will load compatible designs, default copy, and recipient rules from that template family.');
+                $generatorContentTitle.text('Content Composition');
+                $generatorContentCopy.text('Tune the exact message that will be rendered. Leave a field empty to fall back to the certificate type’s default copy.');
+                $generatorDesignSection.removeClass('is-hidden');
+            }
+        }
+
+        function selectDesign(designId) {
+            const designIdStr = String(designId);
+            selectedDesign = generatorMeta.designs.find(function (design) {
+                return String(design.id) === designIdStr;
+            }) || null;
+
+            if (!selectedDesign) {
+                return;
+            }
+
+            $designCardGrid.find('.generator-design-card').removeClass('active');
+            $designCardGrid.find('.generator-design-card').attr('aria-pressed', 'false');
+            $designCardGrid.find('.generator-design-card[data-design-id="' + designIdStr + '"]').addClass('active');
+            $designCardGrid.find('.generator-design-card[data-design-id="' + designIdStr + '"]').attr('aria-pressed', 'true');
+            $certificateDesign.val(designIdStr);
+            $selectedDesignIdInput.val(designIdStr);
+
+            $heroDesignName.text(selectedDesign.name);
+            $previewDesignName.text(selectedDesign.name);
+            $heroAccentDot.add($previewAccentDot).css('background', selectedDesign.accentColor || '#1d4ed8');
+
+            applyDesignSpecificLayout();
+            updateIssueSummary();
+            applyPreview();
+            updateGeneratorStatus();
+        }
+
+        function handleDesignCardSelection(event, element) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const designId = $(element).data('design-id');
+            if (!designId) {
+                return false;
+            }
+            selectDesign(String(designId));
+            return false;
+        }
+
+        function bindDesignCardHandlers() {
+            $designCardGrid.find('.generator-design-card[data-design-id]').off('.designSelect');
+            $designCardGrid.find('.generator-design-card[data-design-id]').on('click.designSelect', function (event) {
+                handleDesignCardSelection(event, this);
+            });
+            $designCardGrid.find('.generator-design-card[data-design-id]').on('keydown.designSelect', function (event) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    handleDesignCardSelection(event, this);
+                }
+            });
+        }
+
+        function schedulePreview() {
+            if (previewFrameId) {
+                window.cancelAnimationFrame(previewFrameId);
+            }
+            previewFrameId = window.requestAnimationFrame(function () {
+                previewFrameId = null;
+                applyPreview();
+            });
+        }
+
+        function applyGeneratorMeta(data) {
+            generatorMeta = data || {
+                recipientCategory: '',
+                defaultTitle: '',
+                defaultSubtitle: '',
+                defaultBodyTemplate: '',
+                defaultFooterText: '',
+                designs: [],
+                recipients: []
+            };
+            $designSearchInput.val('');
+            $('#customTitle').val('');
+            $('#customSubtitle').val('');
+            $('#customBodyText').val('');
+            $('#customFooterText').val('');
+            $('#customTitle').attr('placeholder', generatorMeta.defaultTitle || 'Optional');
+            $('#customSubtitle').attr('placeholder', generatorMeta.defaultSubtitle || 'Optional');
+            $('#customBodyText').attr('placeholder', generatorMeta.defaultBodyTemplate || '');
+            $('#customFooterText').attr('placeholder', generatorMeta.defaultFooterText || 'Optional footer');
+
+            const recipients = (generatorMeta.recipients || []).map(function (item) {
+                return '<option value="' + item.id + '">' + item.label + '</option>';
+            });
+            $recipientId.html('<option value="">Select recipient</option>' + recipients.join('')).dropdown('refresh');
+
+            if (generatorMeta.recipientCategory === 'school') {
+                $recipientFieldWrap.hide();
+            } else {
+                $recipientFieldWrap.show();
+            }
+
+            const hiddenOptions = (generatorMeta.designs || []).map(function (design) {
+                return '<option value="' + design.id + '">' + design.name + '</option>';
+            });
+            $certificateDesign.html('<option value="">Select design</option>' + hiddenOptions.join(''));
+
+            renderDesignCards();
+            if (generatorMeta.designs && generatorMeta.designs.length) {
+                const preferredDesign = preselectedDesignId && generatorMeta.designs.some(function (design) {
+                    return String(design.id) === String(preselectedDesignId);
+                }) ? preselectedDesignId : generatorMeta.designs[0].id;
+                selectDesign(preferredDesign);
+            } else {
+                selectedDesign = null;
+                updateGeneratorStatus();
+            }
+            schedulePreview();
+        }
+
+        function applyPreview() {
+            const pageSize = selectedDesign ? selectedDesign.pageSize : 'A4';
+            const orientation = selectedDesign ? selectedDesign.orientation : 'portrait';
+            const accent = selectedDesign ? (selectedDesign.accentColor || '#1d4ed8') : '#1d4ed8';
+            const recipientCategory = generatorMeta.recipientCategory || 'recipient';
+            const sizeDefaults = sizeMap[pageSize] || {w: 210, h: 297};
+            const rawWidth = selectedDesign && selectedDesign.pageSize === 'CUSTOM' && selectedDesign.pageWidthMm ? Number(selectedDesign.pageWidthMm) : sizeDefaults.w;
+            const rawHeight = selectedDesign && selectedDesign.pageSize === 'CUSTOM' && selectedDesign.pageHeightMm ? Number(selectedDesign.pageHeightMm) : sizeDefaults.h;
+            const displayWidth = orientation === 'landscape' ? rawHeight : rawWidth;
+            const displayHeight = orientation === 'landscape' ? rawWidth : rawHeight;
+            const ratio = displayHeight / displayWidth;
+            const paperHeight = Math.max(440, ratio * 540);
+            updateLivePreviewFrame(paperHeight);
+            $heroAccentDot.add($previewAccentDot).css('background', accent);
+            $previewSizeChip.text((selectedDesign ? selectedDesign.pageSize : 'Paper') + ' ' + orientation);
+            $previewBorderChip.text(selectedDesign ? prettyBorder(selectedDesign.templateKey, selectedDesign.isCustom) : 'Border pending');
+            $heroRecipientCategory.text(generatorMeta.recipientCategory ? prettyLabel(generatorMeta.recipientCategory) : 'Recipient type pending');
+            $previewDimensions.html(
+                selectedDesign
+                    ? '<span><strong>' + selectedDesign.name + '</strong></span><span>' + displayWidth + 'mm x ' + displayHeight + 'mm</span>'
+                    : '<span><strong>Live Stage Ready</strong></span><span>Choose a certificate type to load the matching paper setup.</span>'
+            );
+            updateGeneratorStatus();
+        }
+
+        $certificateType.on('change', function () {
+            const typeId = $(this).val();
+            if (!typeId) {
+                clearCertificateForm();
+                return;
+            }
+
+            if (generatorMetaCache[typeId]) {
+                applyGeneratorMeta(generatorMetaCache[typeId]);
+                return;
+            }
+
+            if (currentMetaRequest) {
+                currentMetaRequest.abort();
+            }
+
+            showGeneratorMetaLoading();
+            currentMetaRequest = $.ajax({
+                type: 'get',
+                url: "{% url 'certificateAppAPI:get_certificate_generator_meta_api' %}",
+                data: {certificate_type_id: typeId},
+                success: function (response) {
+                    if (!response.success) {
+                        addErrorNotification();
+                        return;
+                    }
+
+                    const data = response.data || {};
+                    generatorMetaCache[typeId] = data;
+                    applyGeneratorMeta(data);
+                },
+                error: function (xhr, statusText) {
+                    if (statusText === 'abort') {
+                        return;
+                    }
+                    addErrorNotification();
+                },
+                complete: function () {
+                    currentMetaRequest = null;
+                }
+            });
+        });
+
+        if (!isDesignSpecificMode) {
+            $designSearchInput.on('input', applyDesignFilters);
+
+            $certificateDesign.on('change', function () {
+                const designId = $(this).val();
+                if (!designId) {
+                    return;
+                }
+                selectDesign(designId);
+            });
+
+        }
+
+        $('#certificateGeneratorForm').on('input change', 'input, textarea, select', schedulePreview);
+        $recipientId.on('change', schedulePreview);
+
+        function generateCertificate() {
+            const typeId = $('#certificateType').val();
+            const designId = $selectedDesignIdInput.val() || $('#certificateDesign').val();
+            const recipientVisible = $('#recipientFieldWrap').is(':visible');
+            const recipientId = $('#recipientId').val();
+
+            showLoading();
+            if (!typeId || !designId || (recipientVisible && !recipientId)) {
+                requiredFieldError();
+                hideLoading();
+                return;
+            }
+
+            $.ajax({
+                type: 'post',
+                url: "{% url 'certificateAppAPI:create_certificate_issue_api' %}",
+                data: $('#certificateGeneratorForm').serialize() + '&design_id=' + encodeURIComponent(designId),
+                success: function (response) {
+                    if (response.success && response.data && response.data.preview_url) {
+                        hideLoading(false);
+                        window.location.href = response.data.preview_url;
+                        return;
+                    }
+                    addErrorNotification();
+                    hideLoading();
+                },
+                error: function () {
+                    addErrorNotification();
+                    hideLoading();
+                }
+            });
+        }
+
+        if (preselectedTypeId) {
+            if (!isDesignSpecificMode && $certificateType.length) {
+                $certificateType.val(preselectedTypeId);
+                $certificateType.dropdown('set selected', preselectedTypeId);
+                window.setTimeout(function () {
+                    $certificateType.trigger('change');
+                }, 0);
+            } else {
+                $certificateType.val(preselectedTypeId);
+                if (initialGeneratorMeta && initialGeneratorMeta.designs) {
+                    generatorMetaCache[preselectedTypeId] = initialGeneratorMeta;
+                    applyGeneratorMeta(initialGeneratorMeta);
+                } else {
+                    applyGeneratorMeta(generatorMetaCache[preselectedTypeId] || {
+                        recipientCategory: "{{ preselected_type.recipientCategory|default:''|escapejs }}",
+                        defaultTitle: "{{ preselected_type.defaultTitle|default:''|escapejs }}",
+                        defaultSubtitle: "{{ preselected_type.defaultSubtitle|default:''|escapejs }}",
+                        defaultBodyTemplate: "{{ preselected_type.defaultBodyTemplate|default:''|escapejs }}",
+                        defaultFooterText: "{{ preselected_type.defaultFooterText|default:''|escapejs }}",
+                        designs: [],
+                        recipients: []
+                    });
+                    window.setTimeout(function () {
+                        $certificateType.trigger('change');
+                    }, 0);
+                }
+            }
+        } else {
+            schedulePreview();
+        }
+
+        window.setTimeout(function () {
+            if ($livePreviewFrame.children().length) {
+                finalizeLivePreviewLoad();
+            }
+        }, 1200);
+    </script>
+{% endblock %}

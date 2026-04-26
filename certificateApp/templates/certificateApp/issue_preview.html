@@ -1,0 +1,32 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>{{ title }}</title>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div class="item active" data-tab="user">Certificate Preview</div>
+                <div style="margin-left:auto;">
+                    <a class="ui mini button" href="{{ preview_urls.print_url }}" target="_blank">
+                        <i class="print icon"></i>
+                        Print
+                    </a>
+                    <a class="ui mini blue button" href="{{ preview_urls.download_url }}">
+                        <i class="download icon"></i>
+                        Download PDF
+                    </a>
+                    <a class="ui mini green button" href="{% url 'certificateApp:generator' %}">
+                        <i class="plus square icon"></i>
+                        Generate Another
+                    </a>
+                </div>
+            </div>
+            <div class="ui segment" style="overflow:auto;">
+                {% include 'certificateApp/partials/certificate_document.html' %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

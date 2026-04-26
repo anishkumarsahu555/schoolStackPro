@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title|default:'Certificate Preview' }}</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+        }
+
+        body {
+            overflow: hidden;
+        }
+
+        .generator-live-preview-shell {
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+
+        .generator-live-preview-empty {
+            min-height: 420px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #64748b;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body>
+    {% if is_empty_preview %}
+        <div class="generator-live-preview-empty">
+            Select a certificate type and design to load the live preview.
+        </div>
+    {% else %}
+        <div class="generator-live-preview-shell">
+            {% include 'certificateApp/partials/certificate_document.html' %}
+        </div>
+    {% endif %}
+</body>
+</html>

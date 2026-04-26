@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        body {
+            margin: 0;
+            background: transparent;
+            width: {{ page_width_mm|default:'210' }}mm;
+            height: {{ page_height_mm|default:'297' }}mm;
+            overflow: hidden;
+        }
+        body,
+        html {
+            width: {{ page_width_mm|default:'210' }}mm;
+            height: {{ page_height_mm|default:'297' }}mm;
+            min-height: {{ page_height_mm|default:'297' }}mm;
+            max-height: {{ page_height_mm|default:'297' }}mm;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    {% include 'certificateApp/partials/certificate_document.html' %}
+</body>
+</html>

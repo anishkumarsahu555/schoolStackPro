@@ -77,6 +77,16 @@
         <span>Student ID Cards</span>
     </a>
 
+    <div class="nav-section">Certificates</div>
+    <a class="nav-item {% if request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'certificateApp:dashboard' %}">
+        <i class="certificate icon"></i>
+        <span>Certificate Dashboard</span>
+    </a>
+    <a class="nav-item {% if request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'design_library' %}active{% endif %}" href="{% url 'certificateApp:design_library' %}">
+        <i class="paint brush icon"></i>
+        <span>Design Library</span>
+    </a>
+
     <!-- PARENTS -->
     <div class="nav-section">Parents</div>
     <a class="nav-item" href="{% url 'managementApp:manage_parents' %}">
