@@ -124,6 +124,34 @@
             linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,1));
     }
 
+    .certificate-sheet.template-split_panel,
+    .certificate-sheet.template-ledger_grid,
+    .certificate-sheet.template-editorial_grid {
+        border-radius: 16px;
+    }
+
+    .certificate-sheet.template-laurel_frame,
+    .certificate-sheet.template-royal_arc {
+        background:
+            radial-gradient(circle at top center, rgba(255,255,255,0.88), transparent 32%),
+            linear-gradient(180deg, rgba(255,252,246,1), rgba(255,249,240,1));
+    }
+
+    .certificate-sheet.template-ribbon_banner {
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,251,245,1));
+    }
+
+    .certificate-sheet.template-crest_band {
+        background:
+            linear-gradient(180deg, rgba(248,250,252,1), rgba(255,255,255,1));
+    }
+
+    .certificate-sheet.template-award_plaque {
+        background:
+            linear-gradient(180deg, rgba(255,251,235,1), rgba(254,242,242,0.98));
+    }
+
     .certificate-sheet.certificate-sheet--fixed-canvas {
         width: var(--certificate-content-width-mm);
         max-width: var(--certificate-content-width-mm);
@@ -181,6 +209,86 @@
         {% endif %}
     }
 
+    .certificate-sheet.template-split_panel::after,
+    .certificate-sheet.template-ledger_grid::after,
+    .certificate-sheet.template-laurel_frame::after,
+    .certificate-sheet.template-ribbon_banner::after,
+    .certificate-sheet.template-royal_arc::after,
+    .certificate-sheet.template-editorial_grid::after,
+    .certificate-sheet.template-crest_band::after,
+    .certificate-sheet.template-award_plaque::after {
+        content: '';
+        position: absolute;
+        pointer-events: none;
+    }
+
+    .certificate-sheet.template-split_panel::after {
+        inset: 0 auto 0 0;
+        width: 18mm;
+        background:
+            linear-gradient(180deg, {{ design.accentColor|default:'#1d4ed8' }}, color-mix(in srgb, {{ design.accentColor|default:'#1d4ed8' }} 78%, white 22%));
+        opacity: 0.12;
+    }
+
+    .certificate-sheet.template-ledger_grid::after {
+        inset: 14px;
+        border: 1px dashed color-mix(in srgb, {{ design.accentColor|default:'#1d4ed8' }} 36%, white 64%);
+        border-radius: 14px;
+    }
+
+    .certificate-sheet.template-laurel_frame::after {
+        inset: 12px;
+        border: 1px solid color-mix(in srgb, {{ design.accentColor|default:'#1d4ed8' }} 32%, white 68%);
+        border-radius: 20px;
+        box-shadow: inset 0 0 0 8px rgba(255,255,255,0.42);
+    }
+
+    .certificate-sheet.template-ribbon_banner::after {
+        top: 22px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 72%;
+        height: 32px;
+        border-radius: 999px;
+        background: color-mix(in srgb, {{ design.accentColor|default:'#1d4ed8' }} 12%, white 88%);
+    }
+
+    .certificate-sheet.template-royal_arc::after {
+        top: -70px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 78%;
+        height: 160px;
+        border-radius: 0 0 999px 999px;
+        background: color-mix(in srgb, {{ design.accentColor|default:'#1d4ed8' }} 14%, white 86%);
+    }
+
+    .certificate-sheet.template-editorial_grid::after {
+        top: 0;
+        bottom: 0;
+        left: 16px;
+        width: 6px;
+        border-radius: 999px;
+        background: color-mix(in srgb, {{ design.accentColor|default:'#1d4ed8' }} 18%, white 82%);
+    }
+
+    .certificate-sheet.template-crest_band::after {
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 82px;
+        background: linear-gradient(180deg, color-mix(in srgb, {{ design.accentColor|default:'#1d4ed8' }} 10%, white 90%), transparent);
+    }
+
+    .certificate-sheet.template-award_plaque::after {
+        left: 18px;
+        right: 18px;
+        bottom: 18px;
+        height: 92px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.05), rgba(255,255,255,0.52));
+    }
+
     .certificate-inner {
         position: relative;
         z-index: 1;
@@ -188,7 +296,11 @@
     }
 
     .certificate-sheet.template-modern_clean .certificate-inner,
-    .certificate-sheet.template-minimal_duotone .certificate-inner {
+    .certificate-sheet.template-minimal_duotone .certificate-inner,
+    .certificate-sheet.template-split_panel .certificate-inner,
+    .certificate-sheet.template-ledger_grid .certificate-inner,
+    .certificate-sheet.template-editorial_grid .certificate-inner,
+    .certificate-sheet.template-crest_band .certificate-inner {
         text-align: left;
     }
 
@@ -203,14 +315,22 @@
     }
 
     .certificate-sheet.template-modern_clean .certificate-topline,
-    .certificate-sheet.template-minimal_duotone .certificate-topline {
+    .certificate-sheet.template-minimal_duotone .certificate-topline,
+    .certificate-sheet.template-split_panel .certificate-topline,
+    .certificate-sheet.template-ledger_grid .certificate-topline,
+    .certificate-sheet.template-editorial_grid .certificate-topline,
+    .certificate-sheet.template-crest_band .certificate-topline {
         text-align: left;
         letter-spacing: 0.16em;
     }
 
     .certificate-sheet.template-ceremonial_gold .certificate-topline,
     .certificate-sheet.template-academic_seal .certificate-topline,
-    .certificate-sheet.template-heritage_script .certificate-topline {
+    .certificate-sheet.template-heritage_script .certificate-topline,
+    .certificate-sheet.template-laurel_frame .certificate-topline,
+    .certificate-sheet.template-ribbon_banner .certificate-topline,
+    .certificate-sheet.template-royal_arc .certificate-topline,
+    .certificate-sheet.template-award_plaque .certificate-topline {
         text-align: center;
     }
 
@@ -224,9 +344,25 @@
     }
 
     .certificate-sheet.template-modern_clean .certificate-school,
-    .certificate-sheet.template-minimal_duotone .certificate-school {
+    .certificate-sheet.template-minimal_duotone .certificate-school,
+    .certificate-sheet.template-split_panel .certificate-school,
+    .certificate-sheet.template-ledger_grid .certificate-school,
+    .certificate-sheet.template-editorial_grid .certificate-school,
+    .certificate-sheet.template-crest_band .certificate-school {
         justify-content: flex-start;
         text-align: left;
+    }
+
+    .certificate-sheet.template-split_panel .certificate-school {
+        padding-left: 1rem;
+        margin-bottom: 1.1rem;
+    }
+
+    .certificate-sheet.template-royal_arc .certificate-school,
+    .certificate-sheet.template-laurel_frame .certificate-school,
+    .certificate-sheet.template-ribbon_banner .certificate-school,
+    .certificate-sheet.template-award_plaque .certificate-school {
+        margin-bottom: 1.1rem;
     }
 
     .certificate-school img {
@@ -264,7 +400,11 @@
     }
 
     .certificate-sheet.template-modern_clean .certificate-title,
-    .certificate-sheet.template-minimal_duotone .certificate-title {
+    .certificate-sheet.template-minimal_duotone .certificate-title,
+    .certificate-sheet.template-split_panel .certificate-title,
+    .certificate-sheet.template-ledger_grid .certificate-title,
+    .certificate-sheet.template-editorial_grid .certificate-title,
+    .certificate-sheet.template-crest_band .certificate-title {
         text-align: left;
         letter-spacing: 0.02em;
     }
@@ -281,6 +421,47 @@
         letter-spacing: 0.03em;
     }
 
+    .certificate-sheet.template-split_panel .certificate-title {
+        font-size: 2.55rem;
+        max-width: 78%;
+        padding-left: 1rem;
+    }
+
+    .certificate-sheet.template-ribbon_banner .certificate-title {
+        display: inline-block;
+        padding: 0.35rem 1.1rem;
+        border-radius: 999px;
+        background: color-mix(in srgb, {{ design.accentColor|default:'#1d4ed8' }} 10%, white 90%);
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .certificate-sheet.template-royal_arc .certificate-title {
+        font-size: 2.95rem;
+        margin-top: 0.7rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .certificate-sheet.template-award_plaque .certificate-title {
+        font-size: 2.7rem;
+        text-shadow: 0 1px 0 rgba(255,255,255,0.45);
+    }
+
+    .certificate-sheet.type-bonafide-certificate .certificate-title,
+    .certificate-sheet.type-transfer-certificate .certificate-title,
+    .certificate-sheet.type-experience-certificate .certificate-title,
+    .certificate-sheet.type-fee-paid-certificate .certificate-title {
+        font-size: 2.1rem;
+        letter-spacing: 0.08em;
+    }
+
+    .certificate-sheet.type-participation-certificate .certificate-title,
+    .certificate-sheet.type-character-certificate .certificate-title {
+        font-size: 2.45rem;
+    }
+
     .certificate-subtitle {
         font-size: 1rem;
         margin-bottom: 1rem;
@@ -289,8 +470,34 @@
     }
 
     .certificate-sheet.template-modern_clean .certificate-subtitle,
-    .certificate-sheet.template-minimal_duotone .certificate-subtitle {
+    .certificate-sheet.template-minimal_duotone .certificate-subtitle,
+    .certificate-sheet.template-split_panel .certificate-subtitle,
+    .certificate-sheet.template-ledger_grid .certificate-subtitle,
+    .certificate-sheet.template-editorial_grid .certificate-subtitle,
+    .certificate-sheet.template-crest_band .certificate-subtitle {
         text-align: left;
+    }
+
+    .certificate-sheet.template-split_panel .certificate-subtitle,
+    .certificate-sheet.template-split_panel .certificate-recipient,
+    .certificate-sheet.template-split_panel .certificate-recipient-subtitle {
+        padding-left: 1rem;
+    }
+
+    .certificate-sheet.type-bonafide-certificate .certificate-subtitle,
+    .certificate-sheet.type-transfer-certificate .certificate-subtitle,
+    .certificate-sheet.type-experience-certificate .certificate-subtitle,
+    .certificate-sheet.type-fee-paid-certificate .certificate-subtitle {
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.82rem;
+        color: color-mix(in srgb, {{ design.accentColor|default:'#1d4ed8' }} 58%, #475569 42%);
+    }
+
+    .certificate-sheet.type-participation-certificate .certificate-subtitle {
+        font-size: 1.05rem;
+        letter-spacing: 0.04em;
+        color: color-mix(in srgb, {{ design.accentColor|default:'#1d4ed8' }} 40%, #64748b 60%);
     }
 
     .certificate-sheet.template-heritage_script .certificate-subtitle,
@@ -307,7 +514,11 @@
     }
 
     .certificate-sheet.template-modern_clean .certificate-recipient,
-    .certificate-sheet.template-minimal_duotone .certificate-recipient {
+    .certificate-sheet.template-minimal_duotone .certificate-recipient,
+    .certificate-sheet.template-split_panel .certificate-recipient,
+    .certificate-sheet.template-ledger_grid .certificate-recipient,
+    .certificate-sheet.template-editorial_grid .certificate-recipient,
+    .certificate-sheet.template-crest_band .certificate-recipient {
         text-align: left;
     }
 
@@ -321,6 +532,27 @@
         font-size: 2.75rem;
     }
 
+    .certificate-sheet.template-editorial_grid .certificate-recipient {
+        font-size: 2.7rem;
+        max-width: 86%;
+    }
+
+    .certificate-sheet.template-laurel_frame .certificate-recipient {
+        font-size: 3rem;
+    }
+
+    .certificate-sheet.type-bonafide-certificate .certificate-recipient,
+    .certificate-sheet.type-transfer-certificate .certificate-recipient,
+    .certificate-sheet.type-fee-paid-certificate .certificate-recipient,
+    .certificate-sheet.type-experience-certificate .certificate-recipient {
+        font-size: 2.15rem;
+        letter-spacing: 0.01em;
+    }
+
+    .certificate-sheet.type-participation-certificate .certificate-recipient {
+        font-size: 2.75rem;
+    }
+
     .certificate-recipient-subtitle {
         font-size: 1rem;
         color: #6b7280;
@@ -329,7 +561,11 @@
     }
 
     .certificate-sheet.template-modern_clean .certificate-recipient-subtitle,
-    .certificate-sheet.template-minimal_duotone .certificate-recipient-subtitle {
+    .certificate-sheet.template-minimal_duotone .certificate-recipient-subtitle,
+    .certificate-sheet.template-split_panel .certificate-recipient-subtitle,
+    .certificate-sheet.template-ledger_grid .certificate-recipient-subtitle,
+    .certificate-sheet.template-editorial_grid .certificate-recipient-subtitle,
+    .certificate-sheet.template-crest_band .certificate-recipient-subtitle {
         text-align: left;
     }
 
@@ -342,15 +578,51 @@
     }
 
     .certificate-sheet.template-modern_clean .certificate-body,
-    .certificate-sheet.template-minimal_duotone .certificate-body {
+    .certificate-sheet.template-minimal_duotone .certificate-body,
+    .certificate-sheet.template-split_panel .certificate-body,
+    .certificate-sheet.template-ledger_grid .certificate-body,
+    .certificate-sheet.template-editorial_grid .certificate-body,
+    .certificate-sheet.template-crest_band .certificate-body {
         margin-left: 0;
         margin-right: 0;
         text-align: left;
     }
 
     .certificate-sheet.template-ceremonial_gold .certificate-body,
-    .certificate-sheet.template-academic_seal .certificate-body {
+    .certificate-sheet.template-academic_seal .certificate-body,
+    .certificate-sheet.template-laurel_frame .certificate-body,
+    .certificate-sheet.template-ribbon_banner .certificate-body,
+    .certificate-sheet.template-royal_arc .certificate-body,
+    .certificate-sheet.template-award_plaque .certificate-body {
         text-align: center;
+    }
+
+    .certificate-sheet.template-ledger_grid .certificate-body {
+        max-width: none;
+        border-top: 1px solid rgba(148, 163, 184, 0.22);
+        border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+        padding: 1rem 0;
+    }
+
+    .certificate-sheet.template-editorial_grid .certificate-body {
+        max-width: 70%;
+    }
+
+    .certificate-sheet.type-bonafide-certificate .certificate-body,
+    .certificate-sheet.type-transfer-certificate .certificate-body,
+    .certificate-sheet.type-fee-paid-certificate .certificate-body,
+    .certificate-sheet.type-experience-certificate .certificate-body {
+        line-height: 1.65;
+        max-width: 82%;
+    }
+
+    .certificate-sheet.type-character-certificate .certificate-body {
+        max-width: 78%;
+    }
+
+    .certificate-sheet.type-participation-certificate .certificate-body {
+        max-width: 74%;
+        line-height: 1.72;
     }
 
     .certificate-meta-strip {
@@ -366,9 +638,35 @@
     }
 
     .certificate-sheet.template-ceremonial_gold .certificate-meta-strip,
-    .certificate-sheet.template-academic_seal .certificate-meta-strip {
+    .certificate-sheet.template-academic_seal .certificate-meta-strip,
+    .certificate-sheet.template-laurel_frame .certificate-meta-strip,
+    .certificate-sheet.template-royal_arc .certificate-meta-strip,
+    .certificate-sheet.template-award_plaque .certificate-meta-strip {
         border-radius: 24px;
         background: rgba(255,255,255,0.7);
+    }
+
+    .certificate-sheet.template-ledger_grid .certificate-meta-strip,
+    .certificate-sheet.template-editorial_grid .certificate-meta-strip,
+    .certificate-sheet.template-crest_band .certificate-meta-strip {
+        background: transparent;
+        padding-left: 0;
+        padding-right: 0;
+        border-radius: 0;
+        border-left: 0;
+        border-right: 0;
+    }
+
+    .certificate-sheet.template-split_panel .certificate-meta-strip {
+        margin-left: 1rem;
+        width: calc(100% - 1rem);
+    }
+
+    .certificate-sheet.type-bonafide-certificate .certificate-meta-strip,
+    .certificate-sheet.type-transfer-certificate .certificate-meta-strip,
+    .certificate-sheet.type-fee-paid-certificate .certificate-meta-strip,
+    .certificate-sheet.type-experience-certificate .certificate-meta-strip {
+        margin-top: 1.6rem;
     }
 
     .certificate-meta-strip-right {
@@ -389,6 +687,33 @@
         color: #4b5563;
         line-height: 1.5;
         white-space: pre-line;
+    }
+
+    .certificate-sheet.template-award_plaque .certificate-footer {
+        position: relative;
+        z-index: 2;
+        margin-top: 2rem;
+        padding: 0.8rem 1rem;
+        border-radius: 16px;
+        background: rgba(255,255,255,0.6);
+    }
+
+    .certificate-sheet.template-crest_band .certificate-footer-note,
+    .certificate-sheet.template-editorial_grid .certificate-footer-note,
+    .certificate-sheet.template-ledger_grid .certificate-footer-note {
+        max-width: 58%;
+    }
+
+    .certificate-sheet.type-bonafide-certificate .certificate-footer-note,
+    .certificate-sheet.type-transfer-certificate .certificate-footer-note,
+    .certificate-sheet.type-fee-paid-certificate .certificate-footer-note,
+    .certificate-sheet.type-experience-certificate .certificate-footer-note {
+        max-width: 70%;
+        font-size: 0.92rem;
+    }
+
+    .certificate-sheet.type-participation-certificate .certificate-footer-note {
+        font-size: 0.98rem;
     }
 
     .certificate-signature {
@@ -664,7 +989,7 @@
     }
 </style>
 
-<div class="certificate-sheet{% if design and design.templateKey %} template-{{ design.templateKey }}{% endif %}{% if is_image_overlay %} image-overlay-sheet{% endif %}{% if design and design.templateKey == 'hand_fill_form' or design and design.templateKey == 'prize_day_form' %} form-sheet{% endif %}{% if render_mode == 'pdf' or render_mode == 'print' %} certificate-sheet--fixed-canvas{% endif %}{% if render_mode == 'print' %} certificate-sheet--print-optimized{% endif %}">
+<div class="certificate-sheet{% if design and design.templateKey %} template-{{ design.templateKey }}{% endif %}{% if certificate_type and certificate_type.slug %} type-{{ certificate_type.slug }}{% endif %}{% if is_image_overlay %} image-overlay-sheet{% endif %}{% if design and design.templateKey == 'hand_fill_form' or design and design.templateKey == 'prize_day_form' %} form-sheet{% endif %}{% if render_mode == 'pdf' or render_mode == 'print' %} certificate-sheet--fixed-canvas{% endif %}{% if render_mode == 'print' %} certificate-sheet--print-optimized{% endif %}">
     {% if is_image_overlay %}
     <div class="image-overlay-canvas">
         <div class="image-overlay-layer">

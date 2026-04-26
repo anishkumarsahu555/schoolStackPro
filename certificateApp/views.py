@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from urllib.parse import urlencode
 from datetime import datetime
+from types import SimpleNamespace
 import json
 
 from homeApp.utils import login_required
@@ -53,14 +54,141 @@ def design_library(request):
     school, _ = get_request_scope(request)
     ensure_system_certificate_defaults(school_id=school.id if school else None, user_obj=request.user)
 
+    def infer_purpose_tags(cert_type, design):
+        text = ' '.join([
+            cert_type.name or '',
+            cert_type.description or '',
+            design.name or '',
+            design.customHeaderText or '',
+            design.customFooterText or '',
+            design.templateKey or '',
+        ]).lower()
+        tags = []
+        if any(token in text for token in ['sports', 'athletic', 'championship', 'house']):
+            tags.append('sports')
+        if any(token in text for token in ['festival', 'cultural', 'music', 'arts', 'ceremonial', 'celebration']):
+            tags.append('festival')
+        if any(token in text for token in ['staff', 'teacher', 'service', 'experience', 'employment']):
+            tags.append('staff')
+        if any(token in text for token in ['merit', 'honor', 'honours', 'board', 'rank', 'distinction', 'scholar']):
+            tags.append('merit')
+        if any(token in text for token in ['record', 'ledger', 'attendance', 'transfer', 'fee', 'bonafide', 'archive', 'registry']):
+            tags.append('records')
+        if not tags:
+            tags.append('general')
+        return tags
+
     types = list(get_certificate_types(school_id=school.id if school else None))
-    design_rows = []
+    design_map = {}
+
+    def build_design_signature(design):
+        if design.isCustom or design.designMode == 'image_overlay':
+            return ('design', design.id)
+        return (
+            'family',
+            design.templateKey,
+            design.designMode,
+            design.pageSize,
+            design.orientation,
+            design.borderStyle,
+            design.titleAlignment,
+            design.bodyAlignment,
+            design.fontFamily or '',
+            design.accentColor or '',
+            design.textColor or '',
+            design.backgroundColor or '',
+            bool(design.showLogo),
+            bool(design.showSeal),
+            bool(design.showSignatureLine),
+            design.customHeaderText or '',
+            design.customFooterText or '',
+        )
+
     for cert_type in types:
-        design_rows.append({
-            'certificate_type': cert_type,
-            'designs': get_certificate_designs(certificate_type=cert_type, school_id=school.id if school else None),
-        })
-    return render(request, 'certificateApp/design_library.html', {'design_rows': design_rows, 'school': school})
+        for design in get_certificate_designs(certificate_type=cert_type, school_id=school.id if school else None):
+            signature = build_design_signature(design)
+            entry = design_map.setdefault(signature, {
+                'design': design,
+                'sample_type': cert_type,
+                'certificate_types': [],
+                'certificate_type_names': [],
+                'purpose_tags': set(),
+            })
+            if cert_type.id not in [item.id for item in entry['certificate_types']]:
+                entry['certificate_types'].append(cert_type)
+                entry['certificate_type_names'].append(cert_type.name)
+            entry['purpose_tags'].update(infer_purpose_tags(cert_type, design))
+            if design.isCustom and not entry['design'].isCustom:
+                entry['design'] = design
+                entry['sample_type'] = cert_type
+
+    catalog_entries = []
+    for entry in design_map.values():
+        design = entry['design']
+        type_names = entry['certificate_type_names']
+        purpose_tags = sorted(entry['purpose_tags'])
+        support_preview = ', '.join(type_names[:3])
+        if len(type_names) > 3:
+            support_preview += f' +{len(type_names) - 3} more'
+
+        if design.designMode == 'image_overlay':
+            section_key = 'artwork'
+            section_title = 'Imported Artwork Bases'
+            section_copy = 'Photo, scan, or PDF-based certificate layouts that preserve artwork and place editable fields on top.'
+            scope_label = 'Artwork Base'
+        elif design.templateKey in {'hand_fill_form', 'prize_day_form'}:
+            section_key = 'forms'
+            section_title = 'Write-In Forms'
+            section_copy = 'Manual write-in and event-day certificate sheets built for fast practical issuing.'
+            scope_label = 'Write-In Form'
+        elif design.isCustom:
+            section_key = 'school'
+            section_title = 'School Originals'
+            section_copy = 'School-specific designs shaped around local identity, ceremony style, and institutional needs.'
+            scope_label = 'School Original'
+        else:
+            section_key = 'shared'
+            section_title = 'Shared Template Families'
+            section_copy = 'Reusable system design families surfaced once instead of repeated for every certificate type.'
+            scope_label = 'Shared Family'
+
+        catalog_entries.append(SimpleNamespace(
+            section_key=section_key,
+            section_title=section_title,
+            section_copy=section_copy,
+            design=design,
+            sample_type=entry['sample_type'],
+            certificate_types=entry['certificate_types'],
+            certificate_type_names=type_names,
+            certificate_type_count=len(type_names),
+            support_preview=support_preview,
+            purpose_tags=purpose_tags or ['general'],
+            purpose_label=' / '.join(tag.title() for tag in (purpose_tags or ['general'])[:2]),
+            scope_label=scope_label,
+        ))
+
+    section_order = ['school', 'artwork', 'forms', 'shared']
+    section_map = {key: [] for key in section_order}
+    for entry in catalog_entries:
+        section_map[entry.section_key].append(entry)
+
+    design_sections = []
+    for key in section_order:
+        rows = sorted(section_map[key], key=lambda item: ((0 if item.design.isCustom else 1), item.design.name.lower()))
+        if not rows:
+            continue
+        design_sections.append(SimpleNamespace(
+            key=key,
+            title=rows[0].section_title,
+            copy=rows[0].section_copy,
+            entries=rows,
+        ))
+
+    return render(request, 'certificateApp/design_library.html', {
+        'design_sections': design_sections,
+        'unique_design_count': len(catalog_entries),
+        'school': school,
+    })
 
 
 @login_required

@@ -500,6 +500,63 @@
             font-size: 0.78rem;
         }
 
+        .design-purpose-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.38rem;
+            margin: 0 0 0.72rem;
+        }
+
+        .design-purpose-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.26rem 0.54rem;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.05);
+            border: 1px solid var(--design-library-border);
+            color: var(--app-muted);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        .design-purpose-pill[data-purpose="sports"] {
+            background: rgba(15, 118, 110, 0.12);
+            border-color: rgba(15, 118, 110, 0.22);
+            color: #0f766e;
+        }
+
+        .design-purpose-pill[data-purpose="festival"] {
+            background: rgba(147, 51, 234, 0.12);
+            border-color: rgba(147, 51, 234, 0.2);
+            color: #9333ea;
+        }
+
+        .design-purpose-pill[data-purpose="staff"] {
+            background: rgba(71, 85, 105, 0.12);
+            border-color: rgba(71, 85, 105, 0.2);
+            color: #475569;
+        }
+
+        .design-purpose-pill[data-purpose="merit"] {
+            background: rgba(180, 83, 9, 0.12);
+            border-color: rgba(180, 83, 9, 0.2);
+            color: #b45309;
+        }
+
+        .design-purpose-pill[data-purpose="records"] {
+            background: rgba(37, 99, 235, 0.12);
+            border-color: rgba(37, 99, 235, 0.2);
+            color: #2563eb;
+        }
+
+        .design-purpose-pill[data-purpose="general"] {
+            background: rgba(15, 23, 42, 0.06);
+            border-color: rgba(148, 163, 184, 0.2);
+            color: #475569;
+        }
+
         .design-type-pill {
             display: inline-flex;
             align-items: center;
@@ -580,6 +637,42 @@
             color: #bfdbfe;
         }
 
+        html[data-theme="dark"] .design-purpose-pill[data-purpose="sports"] {
+            background: rgba(15, 118, 110, 0.2);
+            border-color: rgba(45, 212, 191, 0.22);
+            color: #99f6e4;
+        }
+
+        html[data-theme="dark"] .design-purpose-pill[data-purpose="festival"] {
+            background: rgba(147, 51, 234, 0.2);
+            border-color: rgba(196, 181, 253, 0.2);
+            color: #ddd6fe;
+        }
+
+        html[data-theme="dark"] .design-purpose-pill[data-purpose="staff"] {
+            background: rgba(71, 85, 105, 0.24);
+            border-color: rgba(148, 163, 184, 0.2);
+            color: #cbd5e1;
+        }
+
+        html[data-theme="dark"] .design-purpose-pill[data-purpose="merit"] {
+            background: rgba(180, 83, 9, 0.2);
+            border-color: rgba(251, 191, 36, 0.18);
+            color: #fde68a;
+        }
+
+        html[data-theme="dark"] .design-purpose-pill[data-purpose="records"] {
+            background: rgba(37, 99, 235, 0.2);
+            border-color: rgba(147, 197, 253, 0.18);
+            color: #bfdbfe;
+        }
+
+        html[data-theme="dark"] .design-purpose-pill[data-purpose="general"] {
+            background: rgba(15, 23, 42, 0.52);
+            border-color: rgba(148, 163, 184, 0.18);
+            color: #cbd5e1;
+        }
+
         html[data-theme="dark"] .design-library-filter-btn {
             background: rgba(15, 23, 42, 0.62);
             color: #e2e8f0;
@@ -626,7 +719,7 @@
     <div class="ui left aligned basic grid design-library-wrap">
         <div class="sixteen wide column">
             <div class="ui pointing secondary menu">
-                <div class="item active" data-tab="user">Design Detail</div>
+                <div class="item active" data-tab="user">Design Library</div>
                 <div style="margin-left:auto;">
                     <a class="ui mini green button" href="{% url 'certificateApp:create_design' %}">
                         <i class="paint brush icon"></i>
@@ -642,8 +735,8 @@
                     <i class="paint brush icon"></i>
                     Design Library
                 </div>
-                <h2>Browse certificate templates by their visual character, not just by name</h2>
-                <p>This gallery gives each design a compact paper preview so you can compare layout, color, proportion, and tone before opening the full detail page or using it in the generator.</p>
+                <h2>Certificate Design Library</h2>
+                <p>Browse certificate designs by layout, paper size, orientation, and supported certificate use.</p>
                 <div class="design-library-toolbar">
                     <div class="field design-library-search">
                         <label class="design-library-search-label">Search Designs</label>
@@ -660,38 +753,45 @@
                             <button type="button" class="design-library-filter-btn active" data-library-filter="all">All</button>
                             <button type="button" class="design-library-filter-btn" data-library-filter="system">System</button>
                             <button type="button" class="design-library-filter-btn" data-library-filter="custom">Custom</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="sports">Sports</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="festival">Festival</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="staff">Staff</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="merit">Merit</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="records">Records</button>
                             <button type="button" class="design-library-filter-btn" data-library-filter="portrait">Portrait</button>
                             <button type="button" class="design-library-filter-btn" data-library-filter="landscape">Landscape</button>
                             <button type="button" class="design-library-filter-btn" id="designLibraryClearFilters">Clear</button>
                         </div>
                         <div class="design-library-chip-row">
-                            <div class="design-library-chip"><i class="images outline icon"></i> Small live previews</div>
-                            <div class="design-library-chip"><i class="certificate icon"></i> Grouped by certificate type</div>
-                            <div class="design-library-chip"><i class="palette icon"></i> System + custom layouts</div>
-                            <div class="design-library-chip"><i class="search icon"></i><span id="designLibraryCount">All designs</span></div>
+                            <div class="design-library-chip"><i class="images outline icon"></i> Unique layouts</div>
+                            <div class="design-library-chip"><i class="certificate icon"></i> Supported certificate types</div>
+                            <div class="design-library-chip"><i class="palette icon"></i> School and shared designs</div>
+                            <div class="design-library-chip"><i class="search icon"></i><span id="designLibraryCount">{{ unique_design_count }} designs</span></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        {% for row in design_rows %}
+        {% for section in design_sections %}
             <div class="sixteen wide column">
-                <section class="design-library-group" data-design-group="{{ row.certificate_type.name|lower }}">
+                <section class="design-library-group" data-design-group="{{ section.title|lower }}">
                     <div class="design-library-group-head">
                         <div>
-                            <h3>{{ row.certificate_type.name }}</h3>
-                            <p>{{ row.certificate_type.description|default:'Visual variants available for this certificate family.' }}</p>
+                            <h3>{{ section.title }}</h3>
+                            <p>{{ section.copy }}</p>
                         </div>
-                        <div class="design-library-group-meta">{{ row.designs|length }} design{{ row.designs|length|pluralize }}</div>
+                        <div class="design-library-group-meta">{{ section.entries|length }} unique design{{ section.entries|length|pluralize }}</div>
                     </div>
 
                     <div class="design-library-grid">
-                        {% for design in row.designs %}
+                        {% for entry in section.entries %}
+                            {% with design=entry.design certificate_type=entry.sample_type %}
                             <article class="design-library-card"
-                                     data-search-text="{{ row.certificate_type.name|lower }} {{ design.name|lower }} {{ design.get_templateKey_display|lower }} {{ design.get_pageSize_display|lower }} {{ design.get_orientation_display|lower }} {{ design.get_borderStyle_display|lower }} {% if design.isCustom %}custom{% else %}system{% endif %}"
+                                     data-search-text="{{ section.title|lower }} {{ certificate_type.name|lower }} {{ entry.support_preview|lower }} {{ design.name|lower }} {{ design.get_templateKey_display|lower }} {{ design.get_pageSize_display|lower }} {{ design.get_orientation_display|lower }} {{ design.get_borderStyle_display|lower }} {% if design.isCustom %}custom school original{% else %}system shared family{% endif %}"
                                      data-filter-type="{% if design.isCustom %}custom{% else %}system{% endif %}"
-                                     data-filter-orientation="{{ design.orientation|lower }}">
+                                     data-filter-orientation="{{ design.orientation|lower }}"
+                                     data-filter-purpose="{{ entry.purpose_tags|join:' ' }}">
                                 <div class="design-preview-stage">
                                     <div class="design-preview-paper {% if design.orientation == 'landscape' %}landscape{% endif %} {% if design.borderStyle == 'ribbon' %}design-preview-ribbon{% endif %} {% if design.templateKey == 'hand_fill_form' or design.templateKey == 'prize_day_form' %}form-sheet{% endif %}"
                                          style="
@@ -709,10 +809,10 @@
                                                 {% endif %};
                                              --preview-accent: {{ design.accentColor|default:'#1d4ed8' }};
                                              font-family: {{ design.fontFamily|default:'Georgia' }};
-                                         ">
+                                        ">
                                         {% if design.templateKey == 'hand_fill_form' or design.templateKey == 'prize_day_form' %}
                                         <div class="design-form-preview">
-                                            <div class="design-form-title" style="color: {{ design.accentColor|default:'#1d4ed8' }};">{{ row.certificate_type.defaultTitle|default:row.certificate_type.name }}</div>
+                                            <div class="design-form-title" style="color: {{ design.accentColor|default:'#1d4ed8' }};">{{ certificate_type.defaultTitle|default:certificate_type.name }}</div>
                                             <div class="design-form-lines">
                                                 <div class="design-form-row">
                                                     <span>This is to certify that</span>
@@ -765,13 +865,13 @@
                                                     </div>
                                                 </div>
                                                 <div class="design-preview-title" style="color: {{ design.accentColor|default:'#1d4ed8' }}; text-align: {{ design.titleAlignment|default:'center' }};">
-                                                    {{ row.certificate_type.defaultTitle|default:row.certificate_type.name }}
+                                                    {{ certificate_type.defaultTitle|default:certificate_type.name }}
                                                 </div>
                                                 <div class="design-preview-subtitle" style="text-align: {{ design.titleAlignment|default:'center' }};">
-                                                    {{ row.certificate_type.defaultSubtitle|default:'Presented with care' }}
+                                                    {{ certificate_type.defaultSubtitle|default:'Presented with care' }}
                                                 </div>
                                                 <div class="design-preview-body" style="text-align: {{ design.bodyAlignment|default:'center' }};">
-                                                    {{ row.certificate_type.defaultBodyTemplate|default:'This certificate is issued as per school record.'|truncatechars:110 }}
+                                                    {{ certificate_type.defaultBodyTemplate|default:'This certificate is issued as per school record.'|truncatechars:110 }}
                                                 </div>
                                                 <div class="design-preview-meta">
                                                     <div>No. CERT-001</div>
@@ -796,11 +896,17 @@
                                     <div class="design-card-head">
                                         <div>
                                             <h4>{{ design.name }}</h4>
-                                            <p>{{ design.get_templateKey_display }}</p>
+                                            <p>{{ entry.scope_label }} · {{ design.get_templateKey_display }}{% if entry.purpose_label %} · {{ entry.purpose_label }}{% endif %}</p>
                                         </div>
                                         <div class="design-type-pill">
-                                            {% if design.isCustom %}Custom{% else %}System{% endif %}
+                                            {{ entry.certificate_type_count }} certificate type{{ entry.certificate_type_count|pluralize }}
                                         </div>
+                                    </div>
+
+                                    <div class="design-purpose-row">
+                                        {% for purpose_tag in entry.purpose_tags %}
+                                            <span class="design-purpose-pill" data-purpose="{{ purpose_tag }}">{{ purpose_tag }}</span>
+                                        {% endfor %}
                                     </div>
 
                                     <div class="design-meta-grid">
@@ -834,6 +940,7 @@
                                     </div>
                                 </div>
                             </article>
+                            {% endwith %}
                         {% empty %}
                             <div class="ui message">No designs available.</div>
                         {% endfor %}
@@ -913,10 +1020,12 @@
                         const haystack = card.getAttribute('data-search-text') || '';
                         const typeFilter = card.getAttribute('data-filter-type') || '';
                         const orientationFilter = card.getAttribute('data-filter-orientation') || '';
+                        const purposeFilter = card.getAttribute('data-filter-purpose') || '';
                         const matchesQuery = !query || haystack.indexOf(query) !== -1;
                         const matchesFilter = activeFilter === 'all'
                             || typeFilter === activeFilter
-                            || orientationFilter === activeFilter;
+                            || orientationFilter === activeFilter
+                            || purposeFilter.split(/\s+/).includes(activeFilter);
                         const matches = matchesQuery && matchesFilter;
                         card.classList.toggle('is-hidden', !matches);
                         if (matches) {

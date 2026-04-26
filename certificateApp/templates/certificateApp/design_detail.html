@@ -142,6 +142,18 @@
         .design-preview-stage {
             padding: 1.1rem;
             background: var(--design-detail-stage);
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-gutter: stable both-edges;
+        }
+
+        .design-preview-stage .certificate-sheet {
+            flex: 0 0 auto;
+        }
+
+        .design-preview-stage .certificate-sheet.certificate-sheet--fixed-canvas {
+            min-width: var(--certificate-content-width-mm);
         }
 
         .design-preview-paper {
@@ -526,6 +538,10 @@
             .design-preview-paper {
                 min-height: 540px;
             }
+
+            .design-preview-stage {
+                padding-bottom: 1.35rem;
+            }
         }
     </style>
 {% endblock %}
@@ -550,7 +566,7 @@
                     Design Profile
                 </div>
                 <h2>{{ design.name }}</h2>
-                <p>{{ design.certificateTypeID.name }} design with a {{ design.get_templateKey_display|lower }} visual direction, tuned for {{ design.get_pageSize_display }} {{ design.get_orientation_display|lower }} output.</p>
+                <p>{{ design.certificateTypeID.name }} design in {{ design.get_pageSize_display }} {{ design.get_orientation_display|lower }} format with the {{ design.get_templateKey_display|lower }} template.</p>
                 <div class="design-detail-toolbar">
                     <div class="design-detail-chip-row">
                         <div class="design-detail-chip"><span class="dot"></span>{{ design.accentColor|default:'#1d4ed8' }}</div>
@@ -575,7 +591,7 @@
             <section class="design-detail-panel">
                 <div class="design-detail-panel-head">
                     <h3>Live Design Preview</h3>
-                    <p>A larger paper preview so layout, spacing, and certificate tone are easier to evaluate before using the design in production.</p>
+                    <p>Preview the certificate layout, spacing, and page fit before using this design.</p>
                 </div>
                 <div class="design-preview-stage">
                     {% include 'certificateApp/partials/certificate_document.html' with issue=detail_preview_context.issue certificate_type=detail_preview_context.certificate_type design=detail_preview_context.design render_mode=detail_preview_context.render_mode design_font_stack=detail_preview_context.design_font_stack title=detail_preview_context.title subtitle=detail_preview_context.subtitle recipient_name=detail_preview_context.recipient_name recipient_subtitle=detail_preview_context.recipient_subtitle rendered_body=detail_preview_context.rendered_body rendered_footer=detail_preview_context.rendered_footer page_size_css=detail_preview_context.page_size_css margin_top=detail_preview_context.margin_top margin_right=detail_preview_context.margin_right margin_bottom=detail_preview_context.margin_bottom margin_left=detail_preview_context.margin_left page_width_mm=detail_preview_context.page_width_mm page_height_mm=detail_preview_context.page_height_mm content_width_mm=detail_preview_context.content_width_mm content_height_mm=detail_preview_context.content_height_mm scope_data=detail_preview_context.scope_data resolved_overlay_items=detail_preview_context.resolved_overlay_items is_image_overlay=detail_preview_context.is_image_overlay %}
@@ -587,7 +603,7 @@
             <section class="design-detail-panel">
                 <div class="design-detail-panel-head">
                     <h3>Design Details</h3>
-                    <p>Everything important about this template, grouped for quick evaluation.</p>
+                    <p>Template settings and page details for this design.</p>
                 </div>
                 <div class="design-detail-body">
                     <div class="design-meta-grid">
@@ -653,7 +669,7 @@
                     </div>
 
                     <div class="design-detail-note">
-                        This profile is meant to help you judge whether the design is best for formal school records, ceremonial certificates, or fast operational issue flows before generating documents from it.
+                        Review this design before using it in certificate generation.
                     </div>
                 </div>
             </section>

@@ -29,13 +29,12 @@ SYSTEM_CERTIFICATE_TYPES = [
         'recipientCategory': 'student',
         'description': 'Confirms that the student is currently enrolled in the school.',
         'defaultTitle': 'Bonafide Certificate',
-        'defaultSubtitle': 'This is to certify that',
+        'defaultSubtitle': 'Official Student Verification',
         'defaultBodyTemplate': (
-            'This is to certify that ${student_name}, child of ${father_name}, '
-            'is a bona fide student of ${school_name} studying in ${class_name} '
-            'during the academic session ${session_year}.'
+            'This is to certify that the above-named student is enrolled at ${school_name} and is studying in ${class_name} '
+            'during the academic session ${session_year}. This certificate is issued upon request for official and lawful use.'
         ),
-        'defaultFooterText': 'Issued on ${issue_date} at the request of the student/guardian.',
+        'defaultFooterText': 'Issued on ${issue_date} at the request of the student or guardian for official submission.',
     },
     {
         'slug': 'character-certificate',
@@ -43,11 +42,10 @@ SYSTEM_CERTIFICATE_TYPES = [
         'recipientCategory': 'student',
         'description': 'States the conduct and behavior of the student.',
         'defaultTitle': 'Character Certificate',
-        'defaultSubtitle': 'This is to certify that',
+        'defaultSubtitle': 'Conduct and Character Record',
         'defaultBodyTemplate': (
-            '${student_name}, student of class ${class_name} of ${school_name}, '
-            'has maintained good conduct and behavior during the session ${session_year}. '
-            'We wish ${student_pronoun_object} every success.'
+            'This is to certify that the above-named student has maintained good conduct, disciplined behavior, and satisfactory character '
+            'at ${school_name} during the session ${session_year}. We wish ${student_pronoun_object} continued success in all future endeavors.'
         ),
         'defaultFooterText': 'Principal / Authorized Signatory',
     },
@@ -59,11 +57,10 @@ SYSTEM_CERTIFICATE_TYPES = [
         'defaultTitle': 'Transfer Certificate',
         'defaultSubtitle': 'Official School Record',
         'defaultBodyTemplate': (
-            'This is to certify that ${student_name}, admission no. ${admission_no}, '
-            'studied in ${class_name} and is hereby transferred from ${school_name}. '
-            'The student leaves with effect from ${issue_date}.'
+            'As per the school record, admission no. ${admission_no} studied in ${class_name} and is hereby granted transfer from ${school_name}. '
+            'The student stands relieved from the rolls of the institution with effect from ${issue_date}.'
         ),
-        'defaultFooterText': 'All dues and record obligations are subject to verification.',
+        'defaultFooterText': 'Issue of this certificate remains subject to clearance of dues and verification of school records.',
     },
     {
         'slug': 'fee-paid-certificate',
@@ -71,12 +68,11 @@ SYSTEM_CERTIFICATE_TYPES = [
         'recipientCategory': 'student',
         'description': 'Acknowledges fee payment status for a student.',
         'defaultTitle': 'Fee Paid Certificate',
-        'defaultSubtitle': 'Payment Acknowledgement',
+        'defaultSubtitle': 'School Fee Payment Confirmation',
         'defaultBodyTemplate': (
-            'This is to certify that ${student_name} of ${class_name} has paid the required '
-            'school fee for the session ${session_year} as per school records.'
+            'This is to certify that the required school fee for the session ${session_year} has been paid as per the records maintained by ${school_name}.'
         ),
-        'defaultFooterText': 'For detailed transactions, refer to the finance ledger.',
+        'defaultFooterText': 'For transaction-wise detail and receipt reference, kindly consult the school finance ledger.',
     },
     {
         'slug': 'participation-certificate',
@@ -84,10 +80,10 @@ SYSTEM_CERTIFICATE_TYPES = [
         'recipientCategory': 'student',
         'description': 'Recognizes participation in an event or school activity.',
         'defaultTitle': 'Certificate of Participation',
-        'defaultSubtitle': 'Presented with appreciation to',
+        'defaultSubtitle': 'Presented With Appreciation',
         'defaultBodyTemplate': (
-            'This certificate is proudly presented to ${student_name} for active participation '
-            'in school activities during session ${session_year} at ${school_name}.'
+            'This certificate is awarded in recognition of active participation in school activities during session ${session_year} at ${school_name}. '
+            'The institution records its appreciation for the enthusiasm, sincerity, and involvement shown throughout the event.'
         ),
         'defaultFooterText': 'With appreciation and best wishes.',
     },
@@ -97,11 +93,10 @@ SYSTEM_CERTIFICATE_TYPES = [
         'recipientCategory': 'teacher',
         'description': 'Certifies service history for a teacher or staff member.',
         'defaultTitle': 'Experience Certificate',
-        'defaultSubtitle': 'This is to certify that',
+        'defaultSubtitle': 'Service Verification Record',
         'defaultBodyTemplate': (
-            '${teacher_name} worked with ${school_name} as ${designation} during session '
-            '${session_year}. ${teacher_pronoun_subject_cap} performed assigned duties '
-            'with sincerity and professionalism.'
+            'This is to certify that the above-named staff member served at ${school_name} as ${designation} during session '
+            '${session_year}. ${teacher_pronoun_subject_cap} discharged assigned duties with sincerity, dedication, and professional conduct.'
         ),
         'defaultFooterText': 'Issued upon request for official purposes.',
     },
@@ -198,6 +193,342 @@ SYSTEM_DESIGNS = [
         'textColor': '#111827',
         'backgroundColor': '#f8fafc',
         'customHeaderText': 'School Certificate',
+    },
+    {
+        'slug': 'emerald-ledger',
+        'name': 'Emerald Ledger',
+        'templateKey': 'ledger_grid',
+        'pageSize': 'A4',
+        'orientation': 'portrait',
+        'titleAlignment': 'left',
+        'bodyAlignment': 'left',
+        'borderStyle': 'single',
+        'fontFamily': 'Trebuchet MS',
+        'accentColor': '#047857',
+        'textColor': '#1f2937',
+        'backgroundColor': '#f3fbf7',
+        'customHeaderText': 'Academic Ledger',
+        'customFooterText': 'Structured for finance, transfer, and record-heavy certificates.',
+    },
+    {
+        'slug': 'midnight-laurel',
+        'name': 'Midnight Laurel',
+        'templateKey': 'laurel_frame',
+        'pageSize': 'A4',
+        'orientation': 'portrait',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'double',
+        'fontFamily': 'Georgia',
+        'accentColor': '#1e3a8a',
+        'textColor': '#172554',
+        'backgroundColor': '#f8fbff',
+        'customHeaderText': 'Honor Roll Citation',
+        'customFooterText': 'Reserved for distinction, rank, and excellence certificates.',
+    },
+    {
+        'slug': 'sunrise-merit',
+        'name': 'Sunrise Merit',
+        'templateKey': 'ribbon_banner',
+        'pageSize': 'A4',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'ribbon',
+        'fontFamily': 'Palatino',
+        'accentColor': '#c2410c',
+        'textColor': '#7c2d12',
+        'backgroundColor': '#fff7ed',
+        'customHeaderText': 'Merit Recognition',
+        'customFooterText': 'Suitable for merit, cultural, and school event certificates.',
+    },
+    {
+        'slug': 'slate-editorial',
+        'name': 'Slate Editorial',
+        'templateKey': 'editorial_grid',
+        'pageSize': 'A4',
+        'orientation': 'portrait',
+        'titleAlignment': 'left',
+        'bodyAlignment': 'left',
+        'borderStyle': 'none',
+        'fontFamily': 'Arial',
+        'accentColor': '#334155',
+        'textColor': '#0f172a',
+        'backgroundColor': '#f8fafc',
+        'customHeaderText': 'Institutional Brief',
+        'customFooterText': 'Editorial-style spacing for concise official certificates.',
+    },
+    {
+        'slug': 'ivory-ribbon',
+        'name': 'Ivory Ribbon',
+        'templateKey': 'ribbon_banner',
+        'pageSize': 'LETTER',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'ribbon',
+        'fontFamily': 'Palatino',
+        'accentColor': '#9a3412',
+        'textColor': '#431407',
+        'backgroundColor': '#fffbeb',
+        'customHeaderText': 'Commendation Series',
+        'customFooterText': 'Suitable for achievement and school function certificates.',
+    },
+    {
+        'slug': 'cobalt-panel',
+        'name': 'Cobalt Panel',
+        'templateKey': 'split_panel',
+        'pageSize': 'A4',
+        'orientation': 'landscape',
+        'titleAlignment': 'left',
+        'bodyAlignment': 'left',
+        'borderStyle': 'single',
+        'fontFamily': 'Trebuchet MS',
+        'accentColor': '#1d4ed8',
+        'textColor': '#1e293b',
+        'backgroundColor': '#f5f9ff',
+        'customHeaderText': 'Professional Issue Desk',
+        'customFooterText': 'Strong horizontal layout for staff, experience, and service certificates.',
+    },
+    {
+        'slug': 'rose-archive',
+        'name': 'Rose Archive',
+        'templateKey': 'crest_band',
+        'pageSize': 'A5',
+        'orientation': 'portrait',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'single',
+        'fontFamily': 'Georgia',
+        'accentColor': '#be185d',
+        'textColor': '#831843',
+        'backgroundColor': '#fff7fb',
+        'customHeaderText': 'Archive Copy',
+        'customFooterText': 'Compact premium layout for small-format issue certificates.',
+    },
+    {
+        'slug': 'olive-scholar',
+        'name': 'Olive Scholar',
+        'templateKey': 'classic_formal',
+        'pageSize': 'A4',
+        'orientation': 'portrait',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'double',
+        'fontFamily': 'Times New Roman',
+        'accentColor': '#4d7c0f',
+        'textColor': '#365314',
+        'backgroundColor': '#f7fee7',
+        'customHeaderText': 'Scholastic Register',
+        'customFooterText': 'Suitable for bonafide and academic standing certificates.',
+    },
+    {
+        'slug': 'pearl-citation',
+        'name': 'Pearl Citation',
+        'templateKey': 'royal_arc',
+        'pageSize': 'A4',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'ornate',
+        'fontFamily': 'Palatino',
+        'accentColor': '#7c3aed',
+        'textColor': '#4c1d95',
+        'backgroundColor': '#faf5ff',
+        'customHeaderText': 'Citation Gallery',
+        'customFooterText': 'Suitable for formal recognition and appreciation certificates.',
+    },
+    {
+        'slug': 'graphite-column',
+        'name': 'Graphite Column',
+        'templateKey': 'editorial_grid',
+        'pageSize': 'LETTER',
+        'orientation': 'portrait',
+        'titleAlignment': 'left',
+        'bodyAlignment': 'left',
+        'borderStyle': 'none',
+        'fontFamily': 'Arial',
+        'accentColor': '#111827',
+        'textColor': '#111827',
+        'backgroundColor': '#fcfcfd',
+        'customHeaderText': 'Formal Registry',
+        'customFooterText': 'Suitable for formal institutional and administrative certificates.',
+    },
+    {
+        'slug': 'teal-horizon',
+        'name': 'Teal Horizon',
+        'templateKey': 'ribbon_banner',
+        'pageSize': 'LETTER',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'ribbon',
+        'fontFamily': 'Palatino',
+        'accentColor': '#0f766e',
+        'textColor': '#134e4a',
+        'backgroundColor': '#f0fdfa',
+        'customHeaderText': 'Celebration Horizon',
+        'customFooterText': 'Suitable for participation and school activity certificates.',
+    },
+    {
+        'slug': 'amber-broadcast',
+        'name': 'Amber Broadcast',
+        'templateKey': 'split_panel',
+        'pageSize': 'A5',
+        'orientation': 'landscape',
+        'titleAlignment': 'left',
+        'bodyAlignment': 'left',
+        'borderStyle': 'single',
+        'fontFamily': 'Trebuchet MS',
+        'accentColor': '#d97706',
+        'textColor': '#78350f',
+        'backgroundColor': '#fffbeb',
+        'customHeaderText': 'Quick Recognition',
+        'customFooterText': 'Suitable for club, event, and short-format certificates.',
+    },
+    {
+        'slug': 'sports-meet-stripe',
+        'name': 'Sports Meet Stripe',
+        'templateKey': 'split_panel',
+        'pageSize': 'LETTER',
+        'orientation': 'landscape',
+        'titleAlignment': 'left',
+        'bodyAlignment': 'left',
+        'borderStyle': 'single',
+        'fontFamily': 'Trebuchet MS',
+        'accentColor': '#0f766e',
+        'textColor': '#134e4a',
+        'backgroundColor': '#f0fdfa',
+        'customHeaderText': 'Annual Sports Meet',
+        'customFooterText': 'Suitable for sports meet, award, and team certificates.',
+    },
+    {
+        'slug': 'board-merit-frame',
+        'name': 'Board Merit Frame',
+        'templateKey': 'laurel_frame',
+        'pageSize': 'A4',
+        'orientation': 'portrait',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'double',
+        'fontFamily': 'Georgia',
+        'accentColor': '#7c2d12',
+        'textColor': '#431407',
+        'backgroundColor': '#fffbf5',
+        'customHeaderText': 'Board Merit Citation',
+        'customFooterText': 'Suitable for board merit and examination distinction certificates.',
+    },
+    {
+        'slug': 'festival-banner',
+        'name': 'Festival Banner',
+        'templateKey': 'ribbon_banner',
+        'pageSize': 'A4',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'ribbon',
+        'fontFamily': 'Palatino',
+        'accentColor': '#9333ea',
+        'textColor': '#581c87',
+        'backgroundColor': '#faf5ff',
+        'customHeaderText': 'Cultural Festival Honors',
+        'customFooterText': 'Suitable for cultural, music, and festival certificates.',
+    },
+    {
+        'slug': 'staff-service-ledger',
+        'name': 'Staff Service Ledger',
+        'templateKey': 'ledger_grid',
+        'pageSize': 'A4',
+        'orientation': 'portrait',
+        'titleAlignment': 'left',
+        'bodyAlignment': 'left',
+        'borderStyle': 'single',
+        'fontFamily': 'Arial',
+        'accentColor': '#475569',
+        'textColor': '#1e293b',
+        'backgroundColor': '#f8fafc',
+        'customHeaderText': 'Service Verification Desk',
+        'customFooterText': 'Suitable for staff service and employment record certificates.',
+    },
+    {
+        'slug': 'science-fair-citation',
+        'name': 'Science Fair Citation',
+        'templateKey': 'royal_arc',
+        'pageSize': 'LETTER',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'ornate',
+        'fontFamily': 'Palatino',
+        'accentColor': '#2563eb',
+        'textColor': '#1e3a8a',
+        'backgroundColor': '#eff6ff',
+        'customHeaderText': 'Innovation Showcase',
+        'customFooterText': 'Suitable for fairs, exhibitions, and innovation award certificates.',
+    },
+    {
+        'slug': 'attendance-column',
+        'name': 'Attendance Column',
+        'templateKey': 'editorial_grid',
+        'pageSize': 'A5',
+        'orientation': 'portrait',
+        'titleAlignment': 'left',
+        'bodyAlignment': 'left',
+        'borderStyle': 'none',
+        'fontFamily': 'Arial',
+        'accentColor': '#0f172a',
+        'textColor': '#1f2937',
+        'backgroundColor': '#ffffff',
+        'customHeaderText': 'Attendance & Record Slip',
+        'customFooterText': 'Suitable for attendance and routine school record certificates.',
+    },
+    {
+        'slug': 'house-championship-plaque',
+        'name': 'House Championship Plaque',
+        'templateKey': 'award_plaque',
+        'pageSize': 'A4',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'double',
+        'fontFamily': 'Times New Roman',
+        'accentColor': '#b91c1c',
+        'textColor': '#7f1d1d',
+        'backgroundColor': '#fef2f2',
+        'customHeaderText': 'House Championship Honors',
+        'customFooterText': 'Suitable for championship and inter-house award certificates.',
+    },
+    {
+        'slug': 'principal-honors-note',
+        'name': 'Principal Honors Note',
+        'templateKey': 'crest_band',
+        'pageSize': 'LETTER',
+        'orientation': 'portrait',
+        'titleAlignment': 'left',
+        'bodyAlignment': 'left',
+        'borderStyle': 'single',
+        'fontFamily': 'Trebuchet MS',
+        'accentColor': '#1d4ed8',
+        'textColor': '#0f172a',
+        'backgroundColor': '#f8fbff',
+        'customHeaderText': 'Principal Honors Desk',
+        'customFooterText': 'Suitable for principal appreciation and honors certificates.',
+    },
+    {
+        'slug': 'community-service-scroll',
+        'name': 'Community Service Scroll',
+        'templateKey': 'ribbon_banner',
+        'pageSize': 'A4',
+        'orientation': 'portrait',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'ribbon',
+        'fontFamily': 'Palatino',
+        'accentColor': '#0f766e',
+        'textColor': '#115e59',
+        'backgroundColor': '#f0fdfa',
+        'customHeaderText': 'Service & Outreach Commendation',
+        'customFooterText': 'Suitable for outreach, service, and volunteer recognition certificates.',
     },
     {
         'slug': 'hand-fill-form',
@@ -546,8 +877,20 @@ def ensure_system_certificate_defaults(*, school_id=None, user_obj=None):
         )
         if created:
             changed = True
+        else:
+            changed_fields = []
+            for field_name, field_value in type_data.items():
+                if getattr(cert_type, field_name) != field_value:
+                    setattr(cert_type, field_name, field_value)
+                    changed_fields.append(field_name)
+            if changed_fields:
+                cert_type.lastEditedBy = _user_label(user_obj)
+                cert_type.updatedByUserID = user_obj
+                changed_fields.extend(['lastEditedBy', 'updatedByUserID', 'lastUpdatedOn'])
+                cert_type.save(update_fields=changed_fields)
+                changed = True
         for design_data in SYSTEM_DESIGNS:
-            CertificateDesign.objects.get_or_create(
+            design_obj, created = CertificateDesign.objects.get_or_create(
                 certificateTypeID=cert_type,
                 schoolID_id=school_id,
                 slug=design_data['slug'],
@@ -559,6 +902,19 @@ def ensure_system_certificate_defaults(*, school_id=None, user_obj=None):
                     'updatedByUserID': user_obj,
                 },
             )
+            if not created:
+                changed_fields = []
+                for field_name, field_value in design_data.items():
+                    if field_name == 'slug':
+                        continue
+                    if getattr(design_obj, field_name) != field_value:
+                        setattr(design_obj, field_name, field_value)
+                        changed_fields.append(field_name)
+                if changed_fields:
+                    design_obj.lastEditedBy = _user_label(user_obj)
+                    design_obj.updatedByUserID = user_obj
+                    changed_fields.extend(['lastEditedBy', 'updatedByUserID', 'lastUpdatedOn'])
+                    design_obj.save(update_fields=changed_fields)
     return changed
 
 

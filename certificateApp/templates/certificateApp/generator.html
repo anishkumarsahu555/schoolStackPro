@@ -1785,24 +1785,24 @@
                         <div>
                             <div class="generator-kicker">
                                 <i class="file alternate outline icon"></i>
-                                {% if preselected_design %}Selected Design Issue{% else %}Generator Studio{% endif %}
+                                {% if preselected_design %}Selected Template Issue{% else %}Generator Studio{% endif %}
                             </div>
-                            <h2 id="generatorHeroTitle">{% if preselected_design %}Configure the selected certificate template{% else %}Compose a certificate with full control over tone, structure, and final output{% endif %}</h2>
-                            <p id="generatorHeroCopy">{% if preselected_design %}This workspace is pinned to the {{ preselected_design.name }} template. Add only the issue-specific content while the selected layout, paper setup, and visual styling remain locked to this template.{% else %}This workspace is built for precision. Choose the certificate model, pick a design language, tune the copy, and watch the live paper stage respond before generating the final document.{% endif %}</p>
+                            <h2 id="generatorHeroTitle">{% if preselected_design %}Configure the selected certificate template{% else %}Create a certificate{% endif %}</h2>
+                            <p id="generatorHeroCopy">{% if preselected_design %}This workspace uses the {{ preselected_design.name }} template. Enter the issue-specific content while the selected layout and page setup remain fixed.{% else %}Select the certificate type, choose a design, enter the content, and review the live preview before generating the certificate.{% endif %}</p>
                             <div class="generator-toolbar">
                                 <div class="generator-chip"><span class="dot" id="heroAccentDot"></span><span id="heroDesignName">{% if preselected_design %}{{ preselected_design.name }}{% else %}Select a design{% endif %}</span></div>
                                 <div class="generator-chip"><i class="layer group icon"></i><span id="heroRecipientCategory">{% if preselected_type %}{{ preselected_type.recipientCategory|title }}{% else %}Recipient type pending{% endif %}</span></div>
-                                <div class="generator-chip" id="generatorHeroModeChip"><i class="columns icon"></i><span>Molecular control across title, copy, and finish</span></div>
+                                <div class="generator-chip" id="generatorHeroModeChip"><i class="columns icon"></i><span>{% if preselected_design %}Template locked for issue-specific content{% else %}Edit certificate content and preview{% endif %}</span></div>
                             </div>
                         </div>
                         <div class="generator-hero-side">
                             <div class="generator-hero-stat">
                                 <strong>Workflow</strong>
-                                <span>Design-aware issue flow with exact preview rendering</span>
+                                <span>Certificate issue form with live preview</span>
                             </div>
                             <div class="generator-hero-stat">
                                 <strong>Output</strong>
-                                <span>Browser preview, Chromium PDF, and print-safe export</span>
+                                <span>Browser preview, PDF download, and print output</span>
                             </div>
                         </div>
                     </div>
@@ -1812,7 +1812,7 @@
                     {% if preselected_design %}
                         <div class="generator-simple-context">
                             <strong>{{ preselected_design.name }}</strong>
-                            <p>This template is already chosen for the issue flow. Fill the recipient and certificate text that belongs inside it, and the exact preview will stay anchored to this template’s structure.</p>
+                            <p>This template is already selected. Enter the recipient and certificate text for this issue.</p>
                             <div class="generator-simple-chip-row">
                                 <div class="generator-chip"><span class="dot" style="background: {{ preselected_design.accentColor|default:'#1d4ed8' }};"></span><span>{{ preselected_type.name|default:'Certificate' }}</span></div>
                                 <div class="generator-chip"><i class="file alternate outline icon"></i><span>{{ preselected_design.pageSize }} {{ preselected_design.orientation|title }}</span></div>
@@ -1835,7 +1835,7 @@
                         <div class="generator-section" id="generatorModelSection">
                             <div class="generator-section-head">
                                 <div><h4 id="generatorModelTitle">{% if preselected_design %}Template Context{% else %}Certificate Model{% endif %}</h4></div>
-                                <p id="generatorModelCopy">{% if preselected_design %}The certificate type, template family, and paper setup are already fixed from the selected template. Use this section only for issue-specific values that belong inside that layout.{% else %}Start with the certificate type. The generator will load compatible designs, default copy, and recipient rules from that template family.{% endif %}</p>
+                                <p id="generatorModelCopy">{% if preselected_design %}The certificate type and template are already selected. Enter the date and recipient for this certificate.{% else %}Select the certificate type first. Matching designs, default text, and recipient options will load automatically.{% endif %}</p>
                             </div>
                             {% if not preselected_design %}
                                 <div class="field required generator-type-field">
@@ -1871,8 +1871,8 @@
                         {% if not preselected_design %}
                         <div class="generator-section" id="generatorDesignSection">
                             <div class="generator-section-head">
-                                <div><h4>Design Language</h4></div>
-                                <p>Pick the visual shell for the certificate. Each card carries its own size, orientation, and accent behavior.</p>
+                                <div><h4>Design</h4></div>
+                                <p>Select the certificate design and review its page size and orientation.</p>
                             </div>
                             <div class="generator-design-lock" id="generatorDesignLock">
                                 <div class="generator-design-lock-copy">
@@ -1904,7 +1904,7 @@
                         <div class="generator-section" id="generatorContentSection">
                             <div class="generator-section-head">
                                 <div><h4 id="generatorContentTitle">{% if preselected_design %}Template Content{% else %}Content Composition{% endif %}</h4></div>
-                                <p id="generatorContentCopy">{% if preselected_design %}Fill the variable content that this template expects. Static design choices such as layout, typography, border treatment, and paper remain locked to the selected template.{% else %}Tune the exact message that will be rendered. Leave a field empty to fall back to the certificate type’s default copy.{% endif %}</p>
+                                <p id="generatorContentCopy">{% if preselected_design %}Enter only the text that changes for this certificate. The selected template layout remains unchanged.{% else %}Enter the certificate text. Leave a field empty to use the default certificate type text.{% endif %}</p>
                             </div>
 
                             <div class="two fields">
@@ -1931,7 +1931,7 @@
 
                         <div class="generator-actions">
                             <div class="generator-actions-note">
-                                Use the live preview on the right to validate structure, tone, and visual hierarchy before generating. After the preview opens, you can print to PDF from the browser for a clean final copy.
+                                Review the live preview before generating the certificate. You can print or save it as PDF after it opens.
                                 <div class="generator-issue-summary" id="generatorIssueSummary">
                                     <strong>Generating With</strong>
                                     <span id="generatorIssueSummaryText">Selected design will appear here.</span>
@@ -2008,8 +2008,8 @@
                     </div>
 
                     <div class="generator-dimensions" id="previewDimensions">
-                        <span><strong>{% if preselected_design %}Selected Design Ready{% else %}Live Stage Ready{% endif %}</strong></span>
-                        <span>{% if preselected_design %}The exact preview stays tied to the selected certificate design.{% else %}Choose a certificate type to load the matching paper setup.{% endif %}</span>
+                        <span><strong>{% if preselected_design %}Selected Template Ready{% else %}Live Stage Ready{% endif %}</strong></span>
+                        <span>{% if preselected_design %}The exact preview stays tied to the selected template while you fill issue-specific values.{% else %}Choose a certificate type to load the matching paper setup.{% endif %}</span>
                     </div>
                 </div>
             </div>
@@ -2366,7 +2366,7 @@
 
             if (isDesignSpecificMode && designRows.length) {
                 $generatorDesignLockTitle.text('Using design: ' + designRows[0].name);
-                $generatorDesignLockCopy.text('This generator session is pinned to the selected design, so the live stage and issue flow stay design-specific.');
+                $generatorDesignLockCopy.text('This generator session is pinned to the selected design.');
             }
 
             if (!designRows.length) {
@@ -2425,7 +2425,7 @@
                         '<div class="generator-design-preview-meta"><span>No. CERT-001</span><span>Issued today</span></div>' +
                     '</div>' +
                     '<div class="generator-design-preview-footer">' +
-                        '<div>' + escapeHtml((design.isCustom ? 'Custom-tailored issue flow' : 'System design preset').slice(0, 28)) + (design.showSeal ? '<div class="generator-preview-seal" style="margin-top:0.45rem;">Verified</div>' : '') + '</div>' +
+                        '<div>' + escapeHtml((design.isCustom ? 'Custom school design' : 'System certificate design').slice(0, 28)) + (design.showSeal ? '<div class="generator-preview-seal" style="margin-top:0.45rem;">Verified</div>' : '') + '</div>' +
                         '<div class="generator-design-preview-sign">' + (design.showSignatureLine ? '<div class="generator-design-preview-sign-line"></div>' : '') + '<div>Sign</div></div>' +
                     '</div>';
                 return (
@@ -2447,7 +2447,7 @@
                                 '<div><h5>' + design.name + '</h5><p>' + prettyLabel(design.templateKey) + '</p></div>' +
                             '</div>' +
                         '</div>' +
-                        '<p>' + (design.isCustom ? 'Custom-tailored layout for school-specific needs.' : 'Built-in preset for fast and consistent issue flow.') + '</p>' +
+                        '<p>' + (design.isCustom ? 'Custom certificate design for this school.' : 'Built-in certificate design.') + '</p>' +
                         '<div class="generator-design-meta">' +
                             '<span><i class="file alternate outline icon"></i>' + design.pageSize + '</span>' +
                             '<span><i class="exchange alternate icon"></i>' + prettyLabel(design.orientation) + '</span>' +
@@ -2631,21 +2631,21 @@
 
             if (isDesignSpecificMode && selectedDesign) {
                 $generatorHeroTitle.text('Configure the selected certificate template');
-                $generatorHeroCopy.text('This workspace is pinned to the ' + selectedDesign.name + ' template. Add the issue-specific content while the layout, paper setup, and styling remain locked to this template.');
-                $generatorHeroModeChip.html('<i class="paint brush icon"></i><span>Template-specific issue flow</span>');
+                $generatorHeroCopy.text('This workspace uses the ' + selectedDesign.name + ' template. Enter the issue-specific content while the selected layout and page setup remain fixed.');
+                $generatorHeroModeChip.html('<i class="paint brush icon"></i><span>Template locked for issue-specific content</span>');
                 $generatorModelTitle.text('Template Context');
-                $generatorModelCopy.text('The certificate type, ' + templateLabel.toLowerCase() + ' template family, and ' + paperSetup + ' paper setup are already fixed here. Use this section only for issue-specific values that belong inside that layout.');
+                $generatorModelCopy.text('The certificate type and template are already selected. Enter the date and recipient for this certificate.');
                 $generatorContentTitle.text('Template Content');
-                $generatorContentCopy.text('Fill the variable content that this template expects. Static design choices such as layout, typography, border treatment, and paper remain locked to the selected template.');
+                $generatorContentCopy.text('Enter only the text that changes for this certificate. The selected template layout remains unchanged.');
                 $generatorDesignSection.addClass('is-hidden');
             } else {
-                $generatorHeroTitle.text('Compose a certificate with full control over tone, structure, and final output');
-                $generatorHeroCopy.text('This workspace is built for precision. Choose the certificate model, pick a design language, tune the copy, and watch the live paper stage respond before generating the final document.');
-                $generatorHeroModeChip.html('<i class="columns icon"></i><span>Molecular control across title, copy, and finish</span>');
+                $generatorHeroTitle.text('Create a certificate');
+                $generatorHeroCopy.text('Select the certificate type, choose a design, enter the content, and review the live preview before generating the certificate.');
+                $generatorHeroModeChip.html('<i class="columns icon"></i><span>Edit certificate content and preview</span>');
                 $generatorModelTitle.text('Certificate Model');
-                $generatorModelCopy.text('Start with the certificate type. The generator will load compatible designs, default copy, and recipient rules from that template family.');
+                $generatorModelCopy.text('Select the certificate type first. Matching designs, default text, and recipient options will load automatically.');
                 $generatorContentTitle.text('Content Composition');
-                $generatorContentCopy.text('Tune the exact message that will be rendered. Leave a field empty to fall back to the certificate type’s default copy.');
+                $generatorContentCopy.text('Enter the certificate text. Leave a field empty to use the default certificate type text.');
                 $generatorDesignSection.removeClass('is-hidden');
             }
         }
