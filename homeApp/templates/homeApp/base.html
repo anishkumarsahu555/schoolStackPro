@@ -469,34 +469,147 @@
     color: var(--app-brand);
 }
 
-.nav-section {
-        padding: 10px 10px 6px;
-    font-size: 12px;
-    font-weight: bold;
+.sidebar-search-wrap {
+    padding: 0 12px 12px;
+}
+
+.sidebar-search-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--app-border);
+    border-radius: 12px;
+    background: var(--app-bg);
+    color: var(--app-muted);
+    transition: border-color .22s ease, box-shadow .22s ease, background .22s ease;
+}
+
+.sidebar-search-field:focus-within {
+    border-color: var(--app-brand);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+    background: var(--app-surface);
+}
+
+.sidebar-search-field i.icon {
+    margin: 0;
+    font-size: 14px;
+    color: var(--app-muted);
+}
+
+.sidebar-quick-filter {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
     color: var(--app-text);
-    text-transform: uppercase;
-    letter-spacing: .05em;
+    font-size: 13px;
+}
+
+.sidebar-quick-filter::placeholder {
+    color: var(--app-muted);
+}
+
+.nav-group {
+    padding: 0 8px;
+    margin-bottom: 4px;
+}
+
+.nav-group.is-hidden {
+    display: none;
+}
+
+.nav-section {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 12px;
+    border: 0;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--app-text);
+    letter-spacing: 0;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 12px;
+    transition: background .24s ease, color .24s ease, box-shadow .24s ease, transform .24s ease;
+}
+
+.nav-section:hover {
+    background: var(--app-hover);
+    transform: translateY(-1px);
+}
+
+.nav-section-main {
+    min-width: 0;
+}
+
+.nav-section-main > span:last-child {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-section-chevron {
+    margin: 0 !important;
+    font-size: 12px !important;
+    color: var(--app-muted);
+    flex-shrink: 0;
+    transition: transform .28s cubic-bezier(.22, 1, .36, 1), color .24s ease;
+}
+
+.nav-group.has-active .nav-section {
+    background: var(--app-active);
+    color: var(--app-brand);
+    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.12);
+}
+
+.nav-group.is-open .nav-section-chevron {
+    transform: rotate(180deg);
+}
+
+.nav-group.has-active .nav-section-chevron {
+    color: var(--app-brand);
+}
+
+
+.nav-group-links {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height .34s cubic-bezier(.22, 1, .36, 1), opacity .22s ease;
+    will-change: max-height;
+}
+
+.nav-group.is-open .nav-group-links {
+    opacity: 1;
 }
 
 .nav-item {
     display: flex;
     align-items: center;
-    padding: 10px 10px;
+    padding: 10px 12px 10px 18px;
     color: var(--app-text);
     font-size: 12px;
     text-decoration: none;
     border-left: 3px solid transparent;
-    transition: background .2s ease;
+    border-radius: 10px;
+    transition: background .2s ease, color .2s ease, transform .2s ease;
 }
 
 .nav-item i {
     margin-right: 16px;
     font-size: 15px;
     color: var(--app-muted);
+    transition: color .2s ease;
 }
 
 .nav-item:hover {
     background: var(--app-hover);
+    transform: translateX(2px);
 }
 
 .nav-item.active {
@@ -2868,7 +2981,7 @@
         <i class="calendar check outline icon"></i>
         <span>Attend</span>
     </a>
-    <a class="student-nav-item {% if request.resolver_match.url_name == 'teacher_assigned_subjects' or request.resolver_match.url_name == 'teacher_exam_timetable' or request.resolver_match.url_name == 'teacher_add_marks' or request.resolver_match.url_name == 'teacher_marks_details' or request.resolver_match.url_name == 'teacher_progress_report_cards' %}active{% endif %}" href="{% url 'teacherApp:teacher_assigned_subjects' %}">
+    <a class="student-nav-item {% if request.resolver_match.url_name == 'teacher_assigned_subjects' or request.resolver_match.url_name == 'teacher_subject_notes' or request.resolver_match.url_name == 'teacher_exam_timetable' or request.resolver_match.url_name == 'teacher_add_marks' or request.resolver_match.url_name == 'teacher_marks_details' or request.resolver_match.url_name == 'teacher_progress_report_cards' %}active{% endif %}" href="{% url 'teacherApp:teacher_assigned_subjects' %}">
         <i class="graduation cap icon"></i>
         <span>Study</span>
     </a>
@@ -3074,6 +3187,132 @@
         syncSidebarMode();
         syncTeacherMobileClass();
         enforceDesktopScroll();
+    })();
+
+    (function initSidebarQuickFilterAndGroups() {
+        var sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+
+        var quickFilter = sidebar.querySelector('.sidebar-quick-filter');
+        var groups = Array.prototype.slice.call(sidebar.querySelectorAll('.nav-group'));
+        if (!groups.length) return;
+
+        function matchesCurrentPath(link) {
+            if (!link || !link.href) return false;
+            try {
+                var linkUrl = new URL(link.href, window.location.origin);
+                if (link.classList.contains('active')) return true;
+                return linkUrl.pathname === window.location.pathname;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function setGroupState(group, open) {
+            var toggle = group.querySelector('.nav-section');
+            var panel = group.querySelector('.nav-group-links');
+            if (!toggle || !panel) return;
+            group.classList.toggle('is-open', open);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            panel.style.maxHeight = open ? panel.scrollHeight + 'px' : '0px';
+            panel.style.opacity = open ? '1' : '0';
+        }
+
+        function syncActiveGroupMarkers() {
+            groups.forEach(function (group) {
+                var hasActiveChild = Array.prototype.some.call(group.querySelectorAll('.nav-item'), matchesCurrentPath);
+                group.classList.toggle('has-active', hasActiveChild);
+            });
+        }
+
+        function closeOtherGroups(activeGroup) {
+            groups.forEach(function (group) {
+                if (group !== activeGroup && !group.classList.contains('is-filter-open')) {
+                    setGroupState(group, false);
+                }
+            });
+        }
+
+        function refreshOpenHeights() {
+            groups.forEach(function (group) {
+                if (group.classList.contains('is-open')) {
+                    var panel = group.querySelector('.nav-group-links');
+                    if (panel) {
+                        panel.style.maxHeight = panel.scrollHeight + 'px';
+                    }
+                }
+            });
+        }
+
+        function openInitialGroup() {
+            var activeGroup = groups.find(function (group) {
+                return Array.prototype.some.call(group.querySelectorAll('.nav-item'), matchesCurrentPath);
+            }) || groups[0];
+
+            groups.forEach(function (group) {
+                setGroupState(group, group === activeGroup);
+            });
+            syncActiveGroupMarkers();
+        }
+
+        groups.forEach(function (group) {
+            var toggle = group.querySelector('.nav-section');
+            if (!toggle) return;
+
+            toggle.addEventListener('click', function () {
+                if (quickFilter && quickFilter.value.trim()) return;
+                var willOpen = !group.classList.contains('is-open');
+                closeOtherGroups(group);
+                setGroupState(group, willOpen);
+            });
+        });
+
+        if (quickFilter) {
+            quickFilter.addEventListener('input', function () {
+                var query = quickFilter.value.trim().toLowerCase();
+
+                groups.forEach(function (group) {
+                    var label = (group.querySelector('.nav-section span') || {}).textContent || '';
+                    var items = Array.prototype.slice.call(group.querySelectorAll('.nav-item'));
+                    var hasQuery = query.length > 0;
+                    var groupMatches = label.toLowerCase().indexOf(query) !== -1;
+                    var visibleCount = 0;
+
+                    items.forEach(function (item) {
+                        var text = item.textContent.toLowerCase();
+                        var matched = !hasQuery || groupMatches || text.indexOf(query) !== -1;
+                        item.style.display = matched ? '' : 'none';
+                        if (matched) visibleCount += 1;
+                    });
+
+                    var shouldShowGroup = !hasQuery || groupMatches || visibleCount > 0;
+                    group.classList.toggle('is-hidden', !shouldShowGroup);
+                    group.classList.toggle('is-filter-open', hasQuery && shouldShowGroup);
+
+                    if (hasQuery) {
+                        setGroupState(group, shouldShowGroup);
+                    }
+                });
+
+                if (!query) {
+                    groups.forEach(function (group) {
+                        group.classList.remove('is-hidden', 'is-filter-open');
+                        Array.prototype.forEach.call(group.querySelectorAll('.nav-item'), function (item) {
+                            item.style.display = '';
+                        });
+                    });
+                    openInitialGroup();
+                }
+
+                syncActiveGroupMarkers();
+                requestAnimationFrame(refreshOpenHeights);
+            });
+        }
+
+        window.addEventListener('resize', refreshOpenHeights);
+        openInitialGroup();
+        syncActiveGroupMarkers();
+        requestAnimationFrame(refreshOpenHeights);
     })();
 
     (function initMobilePullToRefresh() {

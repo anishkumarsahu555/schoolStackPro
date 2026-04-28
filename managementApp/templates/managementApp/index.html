@@ -2,248 +2,370 @@
 
 {% block sidebar %}
 
-    <!-- BRAND -->
     <div class="sidenav-header">
         <span class="app-name">School Admin</span>
     </div>
 
-    <!-- GENERAL -->
-    <div class="nav-section">General</div>
-    <a class="nav-item {% if request.resolver_match.url_name == 'admin_home' %}active{% endif %}"
-       href="{% url 'managementApp:admin_home' %}">
-        <i class="tachometer alternate icon"></i>
-        <span>Dashboard</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'school_detail' %}active{% endif %}"
-       href="{% url 'managementApp:school_detail' %}">
-        <i class="school icon"></i>
-        <span>School Details</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'manage_session_import' %}active{% endif %}"
-       href="{% url 'managementApp:manage_session_import' %}">
-        <i class="copy outline icon"></i>
-        <span>Session Import</span>
-    </a>
+    <div class="sidebar-search-wrap">
+        <label class="sidebar-search-field" for="sidebarQuickFilter">
+            <i class="search icon"></i>
+            <input
+                id="sidebarQuickFilter"
+                class="sidebar-quick-filter"
+                type="search"
+                placeholder="Search menu..."
+                autocomplete="off"
+                spellcheck="false">
+        </label>
+    </div>
 
-    <!-- CLASSES -->
-    <div class="nav-section">Classes</div>
-    <a class="nav-item" href="{% url 'managementApp:manage_class' %}">
-        <i class="chalkboard icon"></i>
-        <span>Manage Classes</span>
-    </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>General</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'admin_home' %}active{% endif %}"
+               href="{% url 'managementApp:admin_home' %}">
+                <i class="tachometer alternate icon"></i>
+                <span>Dashboard</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'school_detail' %}active{% endif %}"
+               href="{% url 'managementApp:school_detail' %}">
+                <i class="school icon"></i>
+                <span>School Details</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_session_import' %}active{% endif %}"
+               href="{% url 'managementApp:manage_session_import' %}">
+                <i class="copy outline icon"></i>
+                <span>Session Import</span>
+            </a>
+        </div>
+    </div>
 
-    <!-- TEACHERS -->
-    <div class="nav-section">Teachers</div>
-    <a class="nav-item" href="{% url 'managementApp:add_teacher' %}">
-        <i class="chalkboard teacher icon"></i>
-        <span>Add Teacher</span>
-    </a>
-    <a class="nav-item" href="{% url 'managementApp:teacher_list' %}">
-        <i class="list alternate outline icon"></i>
-        <span>Teacher List</span>
-    </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Classes</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item" href="{% url 'managementApp:manage_class' %}">
+                <i class="chalkboard icon"></i>
+                <span>Manage Classes</span>
+            </a>
+        </div>
+    </div>
 
-    <!-- SUBJECTS -->
-    <div class="nav-section">Subjects</div>
-    <a class="nav-item" href="{% url 'managementApp:manage_subjects' %}">
-        <i class="book icon"></i>
-        <span>Add Subjects</span>
-    </a>
-    <a class="nav-item" href="{% url 'managementApp:assign_subjects_to_class' %}">
-        <i class="linkify icon"></i>
-        <span>Assign to Class</span>
-    </a>
-    <a class="nav-item" href="{% url 'managementApp:assign_subjects_to_teacher' %}">
-        <i class="linkify icon"></i>
-        <span>Assign to Teacher</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'manage_subject_notes' %}active{% endif %}" href="{% url 'managementApp:manage_subject_notes' %}">
-        <i class="sticky note outline icon"></i>
-        <span>Subject Notes</span>
-    </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Teachers</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item" href="{% url 'managementApp:add_teacher' %}">
+                <i class="chalkboard teacher icon"></i>
+                <span>Add Teacher</span>
+            </a>
+            <a class="nav-item" href="{% url 'managementApp:teacher_list' %}">
+                <i class="list alternate outline icon"></i>
+                <span>Teacher List</span>
+            </a>
+        </div>
+    </div>
 
-    <!-- STUDENTS -->
-    <div class="nav-section">Students</div>
-    <a class="nav-item" href="{% url 'managementApp:add_student' %}">
-        <i class="users icon"></i>
-        <span>Add Student</span>
-    </a>
-    <a class="nav-item" href="{% url 'managementApp:student_list' %}">
-        <i class="list alternate outline icon"></i>
-        <span>Student List</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'student_id_cards' or request.resolver_match.url_name == 'student_id_card_detail' %}active{% endif %}" href="{% url 'managementApp:student_id_cards' %}">
-        <i class="id card outline icon"></i>
-        <span>Student ID Cards</span>
-    </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Subjects</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item" href="{% url 'managementApp:manage_subjects' %}">
+                <i class="book icon"></i>
+                <span>Add Subjects</span>
+            </a>
+            <a class="nav-item" href="{% url 'managementApp:assign_subjects_to_class' %}">
+                <i class="linkify icon"></i>
+                <span>Assign to Class</span>
+            </a>
+            <a class="nav-item" href="{% url 'managementApp:assign_subjects_to_teacher' %}">
+                <i class="linkify icon"></i>
+                <span>Assign to Teacher</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_subject_notes' %}active{% endif %}" href="{% url 'managementApp:manage_subject_notes' %}">
+                <i class="sticky note outline icon"></i>
+                <span>Subject Notes</span>
+            </a>
+        </div>
+    </div>
 
-    <div class="nav-section">Certificates</div>
-    <a class="nav-item {% if request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'certificateApp:dashboard' %}">
-        <i class="certificate icon"></i>
-        <span>Certificate Dashboard</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'design_library' %}active{% endif %}" href="{% url 'certificateApp:design_library' %}">
-        <i class="paint brush icon"></i>
-        <span>Design Library</span>
-    </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Students</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item" href="{% url 'managementApp:add_student' %}">
+                <i class="users icon"></i>
+                <span>Add Student</span>
+            </a>
+            <a class="nav-item" href="{% url 'managementApp:student_list' %}">
+                <i class="list alternate outline icon"></i>
+                <span>Student List</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'student_id_cards' or request.resolver_match.url_name == 'student_id_card_detail' %}active{% endif %}" href="{% url 'managementApp:student_id_cards' %}">
+                <i class="id card outline icon"></i>
+                <span>Student ID Cards</span>
+            </a>
+        </div>
+    </div>
 
-    <!-- PARENTS -->
-    <div class="nav-section">Parents</div>
-    <a class="nav-item" href="{% url 'managementApp:manage_parents' %}">
-        <i class="users icon"></i>
-        <span>Parents List</span>
-    </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Certificates</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'certificateApp:dashboard' %}">
+                <i class="certificate icon"></i>
+                <span>Certificate Dashboard</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'design_library' %}active{% endif %}" href="{% url 'certificateApp:design_library' %}">
+                <i class="paint brush icon"></i>
+                <span>Design Library</span>
+            </a>
+        </div>
+    </div>
 
-    <!-- ATTENDANCE -->
-    <div class="nav-section">Attendance</div>
-    <a class="nav-item" href="{% url 'managementApp:student_attendance' %}">
-        <i class="tasks icon"></i>
-        <span>Add Student Attendance</span>
-    </a>
-    <a class="nav-item" href="{% url 'managementApp:student_attendance_history' %}">
-        <i class="list alternate outline icon"></i>
-        <span>Student Attendance History</span>
-    </a>
-    <a class="nav-item" href="{% url 'managementApp:staff_attendance' %}">
-        <i class="tasks icon"></i>
-        <span>Add Staff Attendance</span>
-    </a>
-    <a class="nav-item" href="{% url 'managementApp:staff_attendance_history' %}">
-        <i class="list alternate outline icon"></i>
-        <span>Staff Attendance History</span>
-    </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Parents</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item" href="{% url 'managementApp:manage_parents' %}">
+                <i class="users icon"></i>
+                <span>Parents List</span>
+            </a>
+        </div>
+    </div>
 
-    <!-- FEES -->
-    <div class="nav-section">Fees</div>
-    <a class="nav-item" href="{% url 'managementApp:student_fee' %}">
-        <i class="hand holding usd icon"></i>
-        <span>Add Fees</span>
-    </a>
-    <a class="nav-item" href="{% url 'managementApp:student_fee_details' %}">
-        <i class="list alternate outline icon"></i>
-        <span>Fee Details</span>
-    </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Attendance</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item" href="{% url 'managementApp:student_attendance' %}">
+                <i class="tasks icon"></i>
+                <span>Add Student Attendance</span>
+            </a>
+            <a class="nav-item" href="{% url 'managementApp:student_attendance_history' %}">
+                <i class="list alternate outline icon"></i>
+                <span>Student Attendance History</span>
+            </a>
+            <a class="nav-item" href="{% url 'managementApp:staff_attendance' %}">
+                <i class="tasks icon"></i>
+                <span>Add Staff Attendance</span>
+            </a>
+            <a class="nav-item" href="{% url 'managementApp:staff_attendance_history' %}">
+                <i class="list alternate outline icon"></i>
+                <span>Staff Attendance History</span>
+            </a>
+        </div>
+    </div>
 
-    <!-- FINANCE -->
-    <div class="nav-section">Finance &amp; Accounts</div>
-    <a class="nav-item {% if request.resolver_match.url_name == 'finance_dashboard' %}active{% endif %}" href="{% url 'managementApp:finance_dashboard' %}">
-        <i class="chart bar icon"></i>
-        <span>Finance Dashboard</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'manage_receipts' %}active{% endif %}" href="{% url 'managementApp:manage_receipts' %}">
-        <i class="receipt icon"></i>
-        <span>Receipts</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'finance_reports' %}active{% endif %}" href="{% url 'managementApp:finance_reports' %}">
-        <i class="chart pie icon"></i>
-        <span>Finance Reports</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'finance_controls' %}active{% endif %}" href="{% url 'managementApp:finance_controls' %}">
-        <i class="shield alternate icon"></i>
-        <span>Finance Controls</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'finance_settings' %}active{% endif %}" href="{% url 'managementApp:finance_settings' %}">
-        <i class="cogs icon"></i>
-        <span>Finance Settings</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'finance_audit_trail' %}active{% endif %}" href="{% url 'managementApp:finance_audit_trail' %}">
-        <i class="stream icon"></i>
-        <span>Audit Trail</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'finance_reconciliation' %}active{% endif %}" href="{% url 'managementApp:finance_reconciliation' %}">
-        <i class="tasks icon"></i>
-        <span>Reconciliation</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'manage_student_charges' %}active{% endif %}" href="{% url 'managementApp:manage_student_charges' %}">
-        <i class="file invoice dollar icon"></i>
-        <span>Student Charges</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'manage_fee_heads' %}active{% endif %}" href="{% url 'managementApp:manage_fee_heads' %}">
-        <i class="tags icon"></i>
-        <span>Fee Heads</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'student_finance_ledger' %}active{% endif %}" href="{% url 'managementApp:student_finance_ledger' %}">
-        <i class="book icon"></i>
-        <span>Student Ledger</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'finance_payroll' %}active{% endif %}" href="{% url 'managementApp:finance_payroll' %}">
-        <i class="money check alternate icon"></i>
-        <span>Payroll</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'manage_vendors' %}active{% endif %}" href="{% url 'managementApp:manage_vendors' %}">
-        <i class="truck icon"></i>
-        <span>Vendors</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'vendor_payables' %}active{% endif %}" href="{% url 'managementApp:vendor_payables' %}">
-        <i class="handshake outline icon"></i>
-        <span>Vendor Payables</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'vendor_statement' %}active{% endif %}" href="{% url 'managementApp:vendor_statement' %}">
-        <i class="book open icon"></i>
-        <span>Vendor Statement</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'manage_expense_vouchers' %}active{% endif %}" href="{% url 'managementApp:manage_expense_vouchers' %}">
-        <i class="file alternate outline icon"></i>
-        <span>Expense Vouchers</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'cash_bank_book' %}active{% endif %}" href="{% url 'managementApp:cash_bank_book' %}">
-        <i class="wallet icon"></i>
-        <span>Cash & Bank Book</span>
-    </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Fees</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item" href="{% url 'managementApp:student_fee' %}">
+                <i class="hand holding usd icon"></i>
+                <span>Add Fees</span>
+            </a>
+            <a class="nav-item" href="{% url 'managementApp:student_fee_details' %}">
+                <i class="list alternate outline icon"></i>
+                <span>Fee Details</span>
+            </a>
+        </div>
+    </div>
 
-    <!-- EXAMS -->
-    <div class="nav-section">Exams</div>
-    <a class="nav-item" href="{% url 'managementApp:manage_exams' %}">
-        <i class="clipboard outline icon"></i>
-        <span>Add Exam</span>
-    </a>
-    <a class="nav-item" href="{% url 'managementApp:assign_exams_to_class' %}">
-        <i class="linkify icon"></i>
-        <span>Assign Exam to Class</span>
-    </a>
-    <a class="nav-item" href="{% url 'managementApp:manage_exam_timetable' %}">
-        <i class="calendar alternate outline icon"></i>
-        <span>Exam Time Table</span>
-    </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Finance &amp; Accounts</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'finance_dashboard' %}active{% endif %}" href="{% url 'managementApp:finance_dashboard' %}">
+                <i class="chart bar icon"></i>
+                <span>Finance Dashboard</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_receipts' %}active{% endif %}" href="{% url 'managementApp:manage_receipts' %}">
+                <i class="receipt icon"></i>
+                <span>Receipts</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'finance_reports' %}active{% endif %}" href="{% url 'managementApp:finance_reports' %}">
+                <i class="chart pie icon"></i>
+                <span>Finance Reports</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'finance_controls' %}active{% endif %}" href="{% url 'managementApp:finance_controls' %}">
+                <i class="shield alternate icon"></i>
+                <span>Finance Controls</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'finance_settings' %}active{% endif %}" href="{% url 'managementApp:finance_settings' %}">
+                <i class="cogs icon"></i>
+                <span>Finance Settings</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'finance_audit_trail' %}active{% endif %}" href="{% url 'managementApp:finance_audit_trail' %}">
+                <i class="stream icon"></i>
+                <span>Audit Trail</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'finance_reconciliation' %}active{% endif %}" href="{% url 'managementApp:finance_reconciliation' %}">
+                <i class="tasks icon"></i>
+                <span>Reconciliation</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_student_charges' %}active{% endif %}" href="{% url 'managementApp:manage_student_charges' %}">
+                <i class="file invoice dollar icon"></i>
+                <span>Student Charges</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_fee_heads' %}active{% endif %}" href="{% url 'managementApp:manage_fee_heads' %}">
+                <i class="tags icon"></i>
+                <span>Fee Heads</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'student_finance_ledger' %}active{% endif %}" href="{% url 'managementApp:student_finance_ledger' %}">
+                <i class="book icon"></i>
+                <span>Student Ledger</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'finance_payroll' %}active{% endif %}" href="{% url 'managementApp:finance_payroll' %}">
+                <i class="money check alternate icon"></i>
+                <span>Payroll</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_vendors' %}active{% endif %}" href="{% url 'managementApp:manage_vendors' %}">
+                <i class="truck icon"></i>
+                <span>Vendors</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'vendor_payables' %}active{% endif %}" href="{% url 'managementApp:vendor_payables' %}">
+                <i class="handshake outline icon"></i>
+                <span>Vendor Payables</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'vendor_statement' %}active{% endif %}" href="{% url 'managementApp:vendor_statement' %}">
+                <i class="book open icon"></i>
+                <span>Vendor Statement</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_expense_vouchers' %}active{% endif %}" href="{% url 'managementApp:manage_expense_vouchers' %}">
+                <i class="file alternate outline icon"></i>
+                <span>Expense Vouchers</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'cash_bank_book' %}active{% endif %}" href="{% url 'managementApp:cash_bank_book' %}">
+                <i class="wallet icon"></i>
+                <span>Cash &amp; Bank Book</span>
+            </a>
+        </div>
+    </div>
 
-    <!-- MARKS -->
-    <div class="nav-section">Marks</div>
-    <a class="nav-item" href="{% url 'managementApp:student_marks' %}">
-        <i class="edit outline icon"></i>
-        <span>Add Marks</span>
-    </a>
-    <a class="nav-item" href="{% url 'managementApp:exam_marks_details' %}">
-        <i class="list alternate outline icon"></i>
-        <span>Marks Details</span>
-    </a>
-    <a class="nav-item" href="{% url 'managementApp:progress_report_cards' %}">
-        <i class="chart bar outline icon"></i>
-        <span>Progress Report Cards</span>
-    </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Exams</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item" href="{% url 'managementApp:manage_exams' %}">
+                <i class="clipboard outline icon"></i>
+                <span>Add Exam</span>
+            </a>
+            <a class="nav-item" href="{% url 'managementApp:assign_exams_to_class' %}">
+                <i class="linkify icon"></i>
+                <span>Assign Exam to Class</span>
+            </a>
+            <a class="nav-item" href="{% url 'managementApp:manage_exam_timetable' %}">
+                <i class="calendar alternate outline icon"></i>
+                <span>Exam Time Table</span>
+            </a>
+        </div>
+    </div>
 
-    <!-- EVENTS -->
-    <div class="nav-section">Events</div>
-    <a class="nav-item {% if request.resolver_match.url_name == 'manage_event_type' %}active{% endif %}" href="{% url 'managementApp:manage_event_type' %}">
-        <i class="tags icon"></i>
-        <span>Manage Event Type</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'manage_event' %}active{% endif %}" href="{% url 'managementApp:manage_event' %}">
-        <i class="calendar plus outline icon"></i>
-        <span>Manage Event</span>
-    </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Marks</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item" href="{% url 'managementApp:student_marks' %}">
+                <i class="edit outline icon"></i>
+                <span>Add Marks</span>
+            </a>
+            <a class="nav-item" href="{% url 'managementApp:exam_marks_details' %}">
+                <i class="list alternate outline icon"></i>
+                <span>Marks Details</span>
+            </a>
+            <a class="nav-item" href="{% url 'managementApp:progress_report_cards' %}">
+                <i class="chart bar outline icon"></i>
+                <span>Progress Report Cards</span>
+            </a>
+        </div>
+    </div>
 
-    <div class="nav-section">Leave</div>
-    <a class="nav-item {% if request.resolver_match.url_name == 'manage_leave_types' %}active{% endif %}" href="{% url 'managementApp:manage_leave_types' %}">
-        <i class="tags icon"></i>
-        <span>Manage Leave Types</span>
-    </a>
-    <a class="nav-item {% if request.resolver_match.url_name == 'manage_leave_applications' %}active{% endif %}" href="{% url 'managementApp:manage_leave_applications' %}">
-        <i class="calendar check outline icon"></i>
-        <span>Leave Applications</span>
-    </a>
-    {% comment %} <a class="nav-item" href="#">
-        <i class="list alternate outline icon"></i>
-        <span>Events List</span>
-    </a> {% endcomment %}
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Events</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_event_type' %}active{% endif %}" href="{% url 'managementApp:manage_event_type' %}">
+                <i class="tags icon"></i>
+                <span>Manage Event Type</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_event' %}active{% endif %}" href="{% url 'managementApp:manage_event' %}">
+                <i class="calendar plus outline icon"></i>
+                <span>Manage Event</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Leave</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_leave_types' %}active{% endif %}" href="{% url 'managementApp:manage_leave_types' %}">
+                <i class="tags icon"></i>
+                <span>Manage Leave Types</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_leave_applications' %}active{% endif %}" href="{% url 'managementApp:manage_leave_applications' %}">
+                <i class="calendar check outline icon"></i>
+                <span>Leave Applications</span>
+            </a>
+        </div>
+    </div>
 
 {% endblock %}

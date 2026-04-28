@@ -1,96 +1,180 @@
 {% extends 'homeApp/base.html' %}
 
 {% block sidebar %}
-        <div class="sidenav-header">
-            <span class="app-name">Teacher Panel</span>
-        </div>
+    <div class="sidenav-header">
+        <span class="app-name">Teacher Panel</span>
+    </div>
 
-        <div class="nav-section">General</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_home' or request.resolver_match.url_name == 'teacher_root' %}active{% endif %}"
-           href="{% url 'teacherApp:teacher_home' %}">
-            <i class="tachometer alternate icon"></i>
-            <span>Dashboard</span>
-        </a>
-        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_school_detail' %}active{% endif %}"
-           href="{% url 'teacherApp:teacher_school_detail' %}">
-            <i class="school icon"></i>
-            <span>School Details</span>
-        </a>
+    <div class="sidebar-search-wrap">
+        <label class="sidebar-search-field" for="sidebarQuickFilter">
+            <i class="search icon"></i>
+            <input
+                id="sidebarQuickFilter"
+                class="sidebar-quick-filter"
+                type="search"
+                placeholder="Search menu..."
+                autocomplete="off"
+                spellcheck="false">
+        </label>
+    </div>
 
-        <div class="nav-section">Students</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_students_list' or request.resolver_match.url_name == 'teacher_student_detail' %}active{% endif %}"
-           href="{% url 'teacherApp:teacher_students_list' %}">
-            <i class="users icon"></i>
-            <span>Students List</span>
-        </a>
-
-        {% if request.session.is_class_teacher %}
-            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_assigned_class' %}active{% endif %}"
-               href="{% url 'teacherApp:teacher_assigned_class' %}">
-                <i class="users icon"></i>
-                <span>Assigned Class</span>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>General</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_home' or request.resolver_match.url_name == 'teacher_root' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_home' %}">
+                <i class="tachometer alternate icon"></i>
+                <span>Dashboard</span>
             </a>
-        {% endif %}
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_school_detail' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_school_detail' %}">
+                <i class="school icon"></i>
+                <span>School Details</span>
+            </a>
+        </div>
+    </div>
 
-        <div class="nav-section">Subjects</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_assigned_subjects' %}active{% endif %}"
-           href="{% url 'teacherApp:teacher_assigned_subjects' %}">
-            <i class="book icon"></i>
-            <span>Assigned Subjects</span>
-        </a>
-        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_subject_notes' %}active{% endif %}"
-           href="{% url 'teacherApp:teacher_subject_notes' %}">
-            <i class="sticky note outline icon"></i>
-            <span>Subject Notes</span>
-        </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Students</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_students_list' or request.resolver_match.url_name == 'teacher_student_detail' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_students_list' %}">
+                <i class="users icon"></i>
+                <span>Students List</span>
+            </a>
+            {% if request.session.is_class_teacher %}
+                <a class="nav-item {% if request.resolver_match.url_name == 'teacher_assigned_class' %}active{% endif %}"
+                   href="{% url 'teacherApp:teacher_assigned_class' %}">
+                    <i class="users icon"></i>
+                    <span>Assigned Class</span>
+                </a>
+            {% endif %}
+        </div>
+    </div>
 
-        <div class="nav-section">Attendance</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_student_attendance' %}active{% endif %}"
-           href="{% url 'teacherApp:teacher_student_attendance' %}">
-            <i class="tasks icon"></i>
-            <span>Student Attendance</span>
-        </a>
-        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_attendance_history' %}active{% endif %}"
-           href="{% url 'teacherApp:teacher_attendance_history' %}">
-            <i class="calendar check outline icon"></i>
-            <span>My Attendance</span>
-        </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Subjects</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_assigned_subjects' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_assigned_subjects' %}">
+                <i class="book icon"></i>
+                <span>Assigned Subjects</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_subject_notes' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_subject_notes' %}">
+                <i class="sticky note outline icon"></i>
+                <span>Subject Notes</span>
+            </a>
+        </div>
+    </div>
 
-        <div class="nav-section">Exams</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_exam_timetable' %}active{% endif %}"
-           href="{% url 'teacherApp:teacher_exam_timetable' %}">
-            <i class="calendar alternate outline icon"></i>
-            <span>Exam Time Table</span>
-        </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Attendance</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_student_attendance' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_student_attendance' %}">
+                <i class="tasks icon"></i>
+                <span>Student Attendance</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_attendance_history' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_attendance_history' %}">
+                <i class="calendar check outline icon"></i>
+                <span>My Attendance</span>
+            </a>
+        </div>
+    </div>
 
-        <div class="nav-section">Marks</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_add_marks' %}active{% endif %}"
-           href="{% url 'teacherApp:teacher_add_marks' %}">
-            <i class="edit outline icon"></i>
-            <span>Add Marks</span>
-        </a>
-        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_marks_details' %}active{% endif %}"
-           href="{% url 'teacherApp:teacher_marks_details' %}">
-            <i class="list alternate outline icon"></i>
-            <span>Marks Details</span>
-        </a>
-        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_progress_report_cards' %}active{% endif %}"
-           href="{% url 'teacherApp:teacher_progress_report_cards' %}">
-            <i class="chart bar outline icon"></i>
-            <span>Progress Report Cards</span>
-        </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Exams</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_exam_timetable' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_exam_timetable' %}">
+                <i class="calendar alternate outline icon"></i>
+                <span>Exam Time Table</span>
+            </a>
+        </div>
+    </div>
 
-        <div class="nav-section">Events</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_manage_event' %}active{% endif %}"
-           href="{% url 'teacherApp:teacher_manage_event' %}">
-            <i class="calendar plus outline icon"></i>
-            <span>Events List</span>
-        </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Marks</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_add_marks' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_add_marks' %}">
+                <i class="edit outline icon"></i>
+                <span>Add Marks</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_marks_details' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_marks_details' %}">
+                <i class="list alternate outline icon"></i>
+                <span>Marks Details</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_progress_report_cards' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_progress_report_cards' %}">
+                <i class="chart bar outline icon"></i>
+                <span>Progress Report Cards</span>
+            </a>
+        </div>
+    </div>
 
-        <div class="nav-section">Leave</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_leave_applications' %}active{% endif %}"
-           href="{% url 'teacherApp:teacher_leave_applications' %}">
-            <i class="calendar check outline icon"></i>
-            <span>My Leave Applications</span>
-        </a>
-    {% endblock %}
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Events</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_manage_event' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_manage_event' %}">
+                <i class="calendar plus outline icon"></i>
+                <span>Events List</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Leave</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_leave_applications' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_leave_applications' %}">
+                <i class="calendar check outline icon"></i>
+                <span>My Leave Applications</span>
+            </a>
+        </div>
+    </div>
+{% endblock %}

@@ -1,78 +1,163 @@
 {% extends 'homeApp/base.html' %}
 
 {% block sidebar %}
-        <div class="sidenav-header">
-            <span class="app-name">Student Panel</span>
+    <div class="sidenav-header">
+        <span class="app-name">Student Panel</span>
+    </div>
+
+    <div class="sidebar-search-wrap">
+        <label class="sidebar-search-field" for="sidebarQuickFilter">
+            <i class="search icon"></i>
+            <input
+                id="sidebarQuickFilter"
+                class="sidebar-quick-filter"
+                type="search"
+                placeholder="Search menu..."
+                autocomplete="off"
+                spellcheck="false">
+        </label>
+    </div>
+
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>General</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'student_home' or request.resolver_match.url_name == 'student_root' %}active{% endif %}"
+               href="{% url 'studentApp:student_home' %}">
+                <i class="tachometer alternate icon"></i>
+                <span>Dashboard</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'student_school_detail' %}active{% endif %}"
+               href="{% url 'studentApp:student_school_detail' %}">
+                <i class="school icon"></i>
+                <span>School Details</span>
+            </a>
         </div>
+    </div>
 
-        <div class="nav-section">General</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'student_home' or request.resolver_match.url_name == 'student_root' %}active{% endif %}"
-           href="{% url 'studentApp:student_home' %}">
-            <i class="tachometer alternate icon"></i>
-            <span>Dashboard</span>
-        </a>
-        <a class="nav-item {% if request.resolver_match.url_name == 'student_school_detail' %}active{% endif %}"
-           href="{% url 'studentApp:student_school_detail' %}">
-            <i class="school icon"></i>
-            <span>School Details</span>
-        </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Profile</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'student_my_details' %}active{% endif %}"
+               href="{% url 'studentApp:student_my_details' %}">
+                <i class="id card outline icon"></i>
+                <span>My Details</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'student_id_card' %}active{% endif %}"
+               href="{% url 'studentApp:student_id_card' %}">
+                <i class="address card outline icon"></i>
+                <span>My ID Card</span>
+            </a>
+        </div>
+    </div>
 
-        <div class="nav-section">Profile</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'student_my_details' %}active{% endif %}"
-           href="{% url 'studentApp:student_my_details' %}">
-            <i class="id card outline icon"></i>
-            <span>My Details</span>
-        </a>
-        <a class="nav-item {% if request.resolver_match.url_name == 'student_id_card' %}active{% endif %}"
-           href="{% url 'studentApp:student_id_card' %}">
-            <i class="address card outline icon"></i>
-            <span>My ID Card</span>
-        </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Attendance</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'attendance_history' %}active{% endif %}"
+               href="{% url 'studentApp:attendance_history' %}">
+                <i class="calendar check outline icon"></i>
+                <span>Attendance History</span>
+            </a>
+        </div>
+    </div>
 
-        <div class="nav-section">Attendance</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'attendance_history' %}active{% endif %}"
-           href="{% url 'studentApp:attendance_history' %}">
-            <i class="calendar check outline icon"></i>
-            <span>Attendance History</span>
-        </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Fees</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'fee_detail' %}active{% endif %}"
+               href="{% url 'studentApp:fee_detail' %}">
+                <i class="money bill alternate outline icon"></i>
+                <span>Fee Details</span>
+            </a>
+        </div>
+    </div>
 
-        <div class="nav-section">Fees</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'fee_detail' %}active{% endif %}"
-           href="{% url 'studentApp:fee_detail' %}">
-            <i class="money bill alternate outline icon"></i>
-            <span>Fee Details</span>
-        </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Exams</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'student_exam_details' %}active{% endif %}"
+               href="{% url 'studentApp:student_exam_details' %}">
+                <i class="clipboard outline icon"></i>
+                <span>Exam Time Table</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'student_progress_report_cards' %}active{% endif %}"
+               href="{% url 'studentApp:student_progress_report_cards' %}">
+                <i class="chart bar outline icon"></i>
+                <span>Progress Report Cards</span>
+            </a>
+        </div>
+    </div>
 
-        <div class="nav-section">Exams</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'student_exam_details' %}active{% endif %}"
-           href="{% url 'studentApp:student_exam_details' %}">
-            <i class="clipboard outline icon"></i>
-            <span>Exam Time Table</span>
-        </a>
-        <a class="nav-item {% if request.resolver_match.url_name == 'student_progress_report_cards' %}active{% endif %}"
-           href="{% url 'studentApp:student_progress_report_cards' %}">
-            <i class="chart bar outline icon"></i>
-            <span>Progress Report Cards</span>
-        </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Notes</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'student_subject_notes' %}active{% endif %}"
+               href="{% url 'studentApp:student_subject_notes' %}">
+                <i class="sticky note outline icon"></i>
+                <span>Subject Notes</span>
+            </a>
+        </div>
+    </div>
 
-        <div class="nav-section">Notes</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'student_subject_notes' %}active{% endif %}"
-           href="{% url 'studentApp:student_subject_notes' %}">
-            <i class="sticky note outline icon"></i>
-            <span>Subject Notes</span>
-        </a>
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Events</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'student_events' %}active{% endif %}"
+               href="{% url 'studentApp:student_events' %}">
+                <i class="calendar alternate outline icon"></i>
+                <span>Events</span>
+            </a>
+        </div>
+    </div>
 
-        <div class="nav-section">Events</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'student_events' %}active{% endif %}"
-           href="{% url 'studentApp:student_events' %}">
-            <i class="calendar alternate outline icon"></i>
-            <span>Events</span>
-        </a>
-
-        <div class="nav-section">Leave</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'student_leave_applications' %}active{% endif %}"
-           href="{% url 'studentApp:student_leave_applications' %}">
-            <i class="calendar check outline icon"></i>
-            <span>My Leave Applications</span>
-        </a>
-    {% endblock %}
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Leave</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'student_leave_applications' %}active{% endif %}"
+               href="{% url 'studentApp:student_leave_applications' %}">
+                <i class="calendar check outline icon"></i>
+                <span>My Leave Applications</span>
+            </a>
+        </div>
+    </div>
+{% endblock %}
