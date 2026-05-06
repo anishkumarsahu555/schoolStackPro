@@ -4,6 +4,7 @@ from datetime import date
 from typing import Optional
 
 from homeApp.models import SchoolDetail, SchoolOwner
+from homeApp.owner_access import school_owner_q
 
 
 DEFAULT_EXPIRED_MESSAGE = "Activation expired. Please contact the administrator to renew your school license."
@@ -25,9 +26,9 @@ def resolve_school_for_request(request) -> Optional[SchoolDetail]:
     owner = SchoolOwner.objects.filter(userID_id=request.user.id, isDeleted=False).order_by("-datetime").first()
     if owner:
         school = SchoolDetail.objects.select_related("ownerID").filter(
-            ownerID=owner,
+            school_owner_q(owner),
             isDeleted=False,
-        ).order_by("-datetime").first()
+        ).distinct().order_by("-datetime").first()
         if school:
             return school
 

@@ -1,4 +1,5 @@
 from homeApp.models import SchoolDetail, SchoolOwner, SchoolSession
+from homeApp.owner_access import school_owner_user_q
 from managementApp.models import TeacherDetail, Student
 
 
@@ -22,9 +23,9 @@ def get_school_branding(request):
     user = getattr(request, "user", None)
     if not school_id and user and user.is_authenticated:
         school_id = SchoolDetail.objects.filter(
-            ownerID__userID_id=user.id,
+            school_owner_user_q(user.id),
             isDeleted=False,
-        ).values_list("id", flat=True).first()
+        ).distinct().values_list("id", flat=True).first()
 
     if not school_id and user and user.is_authenticated:
         school_id = TeacherDetail.objects.filter(

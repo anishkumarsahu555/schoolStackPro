@@ -4,6 +4,7 @@ import json
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
+from django.core.exceptions import ValidationError
 from django.db import transaction, IntegrityError, connection
 from django.db.models import Q, Prefetch, Sum, DecimalField, Value
 from django.db.models.functions import Coalesce
@@ -34,6 +35,7 @@ from financeApp.models import (
     StudentCharge,
 )
 from homeApp.models import SchoolDetail, SchoolSession
+from homeApp.owner_access import school_owner_user_q
 from homeApp.session_utils import get_session_month_sequence
 from homeApp.push_service import send_event_push_notifications
 from financeApp.services import (
@@ -863,7 +865,7 @@ def get_school_detail_api(request):
         if school_id:
             school = SchoolDetail.objects.filter(pk=school_id, isDeleted=False).first()
         if not school:
-            school = SchoolDetail.objects.filter(ownerID__userID_id=request.user.id, isDeleted=False).order_by('-datetime').first()
+            school = SchoolDetail.objects.filter(school_owner_user_q(request.user.id), isDeleted=False).distinct().order_by('-datetime').first()
         if not school:
             return ErrorResponse('School detail not found.').to_json_response()
 
@@ -904,7 +906,7 @@ def update_school_detail_api(request):
         if school_id:
             school = SchoolDetail.objects.filter(pk=school_id, isDeleted=False).first()
         if not school:
-            school = SchoolDetail.objects.filter(ownerID__userID_id=request.user.id, isDeleted=False).order_by('-datetime').first()
+            school = SchoolDetail.objects.filter(school_owner_user_q(request.user.id), isDeleted=False).distinct().order_by('-datetime').first()
         if not school:
             return ErrorResponse('School detail not found.').to_json_response()
 
