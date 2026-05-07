@@ -45,6 +45,7 @@ class SchoolOwnerAdmin(AllFieldsAdmin):
 class SchoolDetailAdmin(AllFieldsAdmin):
     search_fields = ('=id', 'schoolName', 'name', 'email', 'phoneNumber', 'city', 'state')
     list_filter = ('activationEnabled', 'isDeleted')
+    filter_horizontal = ('owners',)
     readonly_fields = ('id', 'datetime', 'lastUpdatedOn', 'license_status_badge', 'license_summary')
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 4, 'cols': 100})},
@@ -60,6 +61,8 @@ class SchoolDetailAdmin(AllFieldsAdmin):
             'activationEnabled', 'activationStartDate', 'activationEndDate', 'activationMessage',
         ]
         general_fields = [field for field in fields if field not in activation_fields]
+        if 'owners' not in general_fields:
+            general_fields.append('owners')
         return (
             ('School Profile', {'fields': ['id'] + general_fields + ['datetime', 'lastUpdatedOn']}),
             ('License Control', {'fields': activation_fields + ['license_status_badge', 'license_summary']}),

@@ -248,7 +248,7 @@
                     } else {
                         $('body').toast({
                             class: 'warning',
-                            message: 'Incorrect username or password.'
+                            message: response.detail || 'Incorrect username or password.'
                         });
                     }
                 },

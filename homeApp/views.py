@@ -11,6 +11,7 @@ from io import BytesIO
 
 from homeApp.branding import get_school_branding
 from homeApp.models import SchoolOwner, SchoolDetail
+from homeApp.owner_access import school_owner_q
 from homeApp.utils import init_session, get_all_session_list, custom_login_required, login_required
 from managementApp.models import TeacherDetail, Student
 from utils.custom_decorators import check_groups
@@ -78,11 +79,16 @@ def post_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            get_all_session_list(request)
-            init_session(request)
             groups = set(user.groups.values_list('name', flat=True))
 
             if 'Admin' in groups or 'Owner' in groups:
+                if not init_session(request):
+                    logout(request)
+                    return JsonResponse({
+                        'message': 'fail',
+                        'detail': 'No active school session is assigned to this owner account.',
+                    }, safe=False)
+                get_all_session_list(request)
                 return JsonResponse({'message': 'success', 'data': '/home/'}, safe=False)
             elif 'Teaching' in groups:
                 return JsonResponse({'message': 'success', 'data': '/teacher/home/'}, safe=False)
@@ -172,7 +178,7 @@ def profile_page(request):
             ]
     else:
         owner = SchoolOwner.objects.filter(userID_id=user.id, isDeleted=False).order_by('-datetime').first()
-        school = SchoolDetail.objects.filter(ownerID=owner, isDeleted=False).order_by('-datetime').first() if owner else None
+        school = SchoolDetail.objects.filter(school_owner_q(owner), isDeleted=False).distinct().order_by('-datetime').first() if owner else None
         if owner:
             profile_name = owner.name or profile_name
             profile_email = owner.email or profile_email
