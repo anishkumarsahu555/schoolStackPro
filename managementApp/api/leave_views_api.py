@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -8,7 +9,7 @@ from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
-from managementApp.leave_utils import add_leave_log, sync_leave_to_attendance
+from managementApp.leave_utils import add_leave_log, leave_duration_label, normalize_quota_days, revert_leave_attendance_sync, sync_leave_to_attendance
 from managementApp.models import LeaveApplication, LeaveType
 from utils.custom_decorators import check_groups
 from utils.custom_response import ErrorResponse, SuccessResponse
@@ -38,6 +39,16 @@ def _status_badge(status_value):
     return f'<span class="ui tiny {color} label">{escape(label)}</span>'
 
 
+def _parse_quota_days(raw_value):
+    raw_value = (raw_value or '').strip()
+    if not raw_value:
+        return None
+    try:
+        return normalize_quota_days(Decimal(raw_value))
+    except (InvalidOperation, ValueError):
+        raise ValueError('Quota must be a valid number.')
+
+
 @login_required
 def get_leave_type_list_api(request):
     session_id, _ = _session_payload(request)
@@ -60,6 +71,7 @@ def get_leave_type_list_api(request):
         'Code': row.code or '',
         'ApplicableFor': row.applicableFor,
         'RequiresApproval': row.requiresApproval,
+        'QuotaDays': str(row.quotaDays) if row.quotaDays else '',
     } for row in queryset]
     return SuccessResponse('Leave types loaded successfully.', data=data).to_json_response()
 
@@ -67,7 +79,7 @@ def get_leave_type_list_api(request):
 @method_decorator(login_required, name='dispatch')
 @method_decorator(check_groups('Admin', 'Owner'), name='dispatch')
 class LeaveTypeListJson(BaseDatatableView):
-    order_columns = ['name', 'code', 'applicableFor', 'requiresApproval', 'isActive', 'lastEditedBy', 'lastUpdatedOn', 'id']
+    order_columns = ['name', 'code', 'applicableFor', 'quotaDays', 'requiresApproval', 'isActive', 'lastEditedBy', 'lastUpdatedOn', 'id']
 
     def get_initial_queryset(self):
         session_id, _ = _session_payload(self.request)
@@ -83,6 +95,7 @@ class LeaveTypeListJson(BaseDatatableView):
                 Q(name__icontains=search)
                 | Q(code__icontains=search)
                 | Q(applicableFor__icontains=search)
+                | Q(quotaDays__icontains=search)
                 | Q(lastEditedBy__icontains=search)
                 | Q(lastUpdatedOn__icontains=search)
             )
@@ -103,6 +116,7 @@ class LeaveTypeListJson(BaseDatatableView):
                 escape(item.name),
                 escape(item.code or 'N/A'),
                 escape(item.get_applicableFor_display()),
+                escape(item.quotaDays if item.quotaDays else 'Unlimited'),
                 f'<span class="ui tiny {"green" if item.requiresApproval else "grey"} label">{"Yes" if item.requiresApproval else "No"}</span>',
                 f'<span class="ui tiny {"green" if item.isActive else "red"} label">{"Active" if item.isActive else "Inactive"}</span>',
                 escape(item.lastEditedBy or 'N/A'),
@@ -124,6 +138,7 @@ def add_leave_type_api(request):
         name = (request.POST.get('name') or '').strip()
         code = (request.POST.get('code') or '').strip()
         applicable_for = (request.POST.get('applicableFor') or 'both').strip().lower()
+        quota_days = _parse_quota_days(request.POST.get('quotaDays'))
         requires_approval = (request.POST.get('requiresApproval') or 'true').strip().lower() == 'true'
         is_active = (request.POST.get('isActive') or 'true').strip().lower() == 'true'
 
@@ -143,6 +158,7 @@ def add_leave_type_api(request):
             name=name,
             code=code or None,
             applicableFor=applicable_for,
+            quotaDays=quota_days,
             requiresApproval=requires_approval,
             isActive=is_active,
             sessionID_id=session_id,
@@ -151,6 +167,8 @@ def add_leave_type_api(request):
             updatedByUserID_id=request.user.id,
         )
         return SuccessResponse('Leave type added successfully.', extra={'color': 'green'}).to_json_response()
+    except ValueError as exc:
+        return ErrorResponse(str(exc), extra={'color': 'red'}).to_json_response()
     except Exception as exc:
         logger.error(f'Error in add_leave_type_api: {exc}')
         return ErrorResponse('Unable to add leave type.', extra={'color': 'red'}).to_json_response()
@@ -172,6 +190,7 @@ def get_leave_type_detail(request):
             'name': obj.name,
             'code': obj.code or '',
             'applicableFor': obj.applicableFor,
+            'quotaDays': str(obj.quotaDays) if obj.quotaDays else '',
             'requiresApproval': obj.requiresApproval,
             'isActive': obj.isActive,
         }
@@ -193,6 +212,7 @@ def update_leave_type_api(request):
         name = (request.POST.get('name') or '').strip()
         code = (request.POST.get('code') or '').strip()
         applicable_for = (request.POST.get('applicableFor') or 'both').strip().lower()
+        quota_days = _parse_quota_days(request.POST.get('quotaDays'))
         requires_approval = (request.POST.get('requiresApproval') or 'true').strip().lower() == 'true'
         is_active = (request.POST.get('isActive') or 'true').strip().lower() == 'true'
 
@@ -213,6 +233,7 @@ def update_leave_type_api(request):
         obj.name = name
         obj.code = code or None
         obj.applicableFor = applicable_for
+        obj.quotaDays = quota_days
         obj.requiresApproval = requires_approval
         obj.isActive = is_active
         obj.lastEditedBy = _editor_name(request.user)
@@ -220,6 +241,8 @@ def update_leave_type_api(request):
         obj.save()
 
         return SuccessResponse('Leave type updated successfully.', extra={'color': 'green'}).to_json_response()
+    except ValueError as exc:
+        return ErrorResponse(str(exc), extra={'color': 'red'}).to_json_response()
     except Exception as exc:
         logger.error(f'Error in update_leave_type_api: {exc}')
         return ErrorResponse('Unable to update leave type.', extra={'color': 'red'}).to_json_response()
@@ -256,6 +279,7 @@ class LeaveApplicationListJson(BaseDatatableView):
         'startDate',
         'endDate',
         'totalDays',
+        'durationType',
         'status',
         'id',
         'reason',
@@ -314,6 +338,8 @@ class LeaveApplicationListJson(BaseDatatableView):
                     f'<button class="ui mini green button" onclick="reviewLeave({item.pk},\'approved\')">Approve</button>'
                     f'<button class="ui mini red button" onclick="reviewLeave({item.pk},\'rejected\')">Reject</button>'
                 )
+            elif item.status == 'approved':
+                action = f'<button class="ui mini orange button" onclick="reviewLeave({item.pk},\'cancelled\')">Revoke</button>'
 
             rows.append([
                 escape(item.get_applicantRole_display()),
@@ -322,6 +348,7 @@ class LeaveApplicationListJson(BaseDatatableView):
                 escape(item.startDate.strftime('%d-%m-%Y') if item.startDate else 'N/A'),
                 escape(item.endDate.strftime('%d-%m-%Y') if item.endDate else 'N/A'),
                 escape(item.totalDays or 0),
+                escape(leave_duration_label(item.durationType)),
                 _status_badge(item.status),
                 attachment,
                 escape(item.reason or ''),
@@ -345,7 +372,7 @@ def review_leave_application_api(request):
         leave_id = request.POST.get('id')
         status_value = (request.POST.get('status') or '').strip().lower()
         remark = (request.POST.get('remark') or '').strip()
-        if status_value not in {'approved', 'rejected'}:
+        if status_value not in {'approved', 'rejected', 'cancelled'}:
             return ErrorResponse('Invalid review action.', extra={'color': 'red'}).to_json_response()
 
         leave_obj = LeaveApplication.objects.select_related('leaveTypeID').get(
@@ -354,7 +381,8 @@ def review_leave_application_api(request):
             sessionID_id=session_id,
         )
         if leave_obj.status != 'pending':
-            return ErrorResponse('Only pending requests can be reviewed.', extra={'color': 'orange'}).to_json_response()
+            if not (leave_obj.status == 'approved' and status_value == 'cancelled'):
+                return ErrorResponse('Only pending requests can be reviewed.', extra={'color': 'orange'}).to_json_response()
 
         leave_obj.status = status_value
         leave_obj.actionRemark = remark
@@ -376,6 +404,8 @@ def review_leave_application_api(request):
 
         if status_value == 'approved':
             sync_leave_to_attendance(leave_obj)
+        elif status_value == 'cancelled':
+            revert_leave_attendance_sync(leave_obj)
 
         return SuccessResponse(f'Leave {status_value} successfully.', extra={'color': 'green'}).to_json_response()
     except Exception as exc:

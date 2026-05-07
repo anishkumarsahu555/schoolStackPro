@@ -92,6 +92,7 @@
         .calendar-legend-dot.present { background: #1f8a4f; }
         .calendar-legend-dot.absent { background: #b32929; }
         .calendar-legend-dot.leave { background: #916315; }
+        .calendar-legend-dot.holiday { background: #0f766e; }
 
         .calendar-grid {
             display: grid;
@@ -157,6 +158,12 @@
             border-color: rgba(242, 189, 92, .34);
         }
 
+        .calendar-status.holiday {
+            background: rgba(20, 184, 166, .14);
+            color: #0f766e;
+            border-color: rgba(20, 184, 166, .3);
+        }
+
         .calendar-status.none {
             background: rgba(140, 154, 177, .12);
             color: #5d6c84;
@@ -209,6 +216,12 @@
             background: rgba(242, 189, 92, .18);
             color: #916315;
             border-color: rgba(242, 189, 92, .34);
+        }
+
+        .att-chip.holiday {
+            background: rgba(20, 184, 166, .14);
+            color: #0f766e;
+            border-color: rgba(20, 184, 166, .3);
         }
 
         .att-reason {
@@ -286,7 +299,9 @@
                 <div class="att-card"><div class="att-label">Present</div><div class="att-value" id="presentCount">0</div></div>
                 <div class="att-card"><div class="att-label">Absent</div><div class="att-value" id="absentCount">0</div></div>
                 <div class="att-card"><div class="att-label">Leave</div><div class="att-value" id="leaveCount">0</div></div>
+                <div class="att-card"><div class="att-label">Holiday</div><div class="att-value" id="holidayCount">0</div></div>
                 <div class="att-card"><div class="att-label">Working Days</div><div class="att-value" id="workingCount">0</div></div>
+                <div class="att-card"><div class="att-label">Recorded Days</div><div class="att-value" id="recordedCount">0</div></div>
                 <div class="att-card"><div class="att-label">Percentage</div><div class="att-value" id="percentageValue">0%</div></div>
             </div>
 
@@ -297,6 +312,7 @@
                         <span class="calendar-legend-dot present"></span>Present
                         <span class="calendar-legend-dot absent"></span>Absent
                         <span class="calendar-legend-dot leave"></span>Leave
+                        <span class="calendar-legend-dot holiday"></span>Holiday
                     </div>
                 </div>
                 <div class="calendar-grid" id="calendarGridWrap"></div>
@@ -388,7 +404,7 @@
                 let titleText = '';
                 if (entry) {
                     statusClass = entry.status || 'absent';
-                    statusText = statusClass === 'present' ? 'Present' : (statusClass === 'leave' ? 'Leave' : 'Absent');
+                    statusText = statusClass === 'present' ? 'Present' : (statusClass === 'leave' ? 'Leave' : (statusClass === 'holiday' ? 'Holiday' : 'Absent'));
                     if (entry.reason) titleText = ' title="' + safeHtml(entry.reason) + '"';
                 }
                 html += '<div class="calendar-day ' + (inMonth ? '' : 'outside') + '">';
@@ -405,7 +421,9 @@
             $('#presentCount').text(data.present || 0);
             $('#absentCount').text(data.absent || 0);
             $('#leaveCount').text(data.leave || 0);
+            $('#holidayCount').text(data.holiday || 0);
             $('#workingCount').text(data.working || 0);
+            $('#recordedCount').text(data.recorded || data.working || 0);
             $('#percentageValue').text((data.percentage || 0) + '%');
 
             const rows = Array.isArray(data.rows) ? data.rows : [];
@@ -420,7 +438,7 @@
 
             rows.forEach(function (row) {
                 const status = row.status || 'absent';
-                const chipLabel = status === 'present' ? 'Present' : (status === 'leave' ? 'Leave' : 'Absent');
+                const chipLabel = status === 'present' ? 'Present' : (status === 'leave' ? 'Leave' : (status === 'holiday' ? 'Holiday' : 'Absent'));
                 const html = '' +
                     '<div class="att-row">' +
                     '<div class="att-row-top">' +

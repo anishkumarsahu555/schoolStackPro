@@ -421,8 +421,22 @@ class ExamTimeTable(models.Model):
 
 
 class StudentAttendance(models.Model):
+    ATTENDANCE_STATUS_CHOICES = (
+        ('present', 'Present'),
+        ('absent', 'Absent'),
+        ('leave', 'Leave'),
+        ('holiday', 'Holiday'),
+    )
+
     isPresent = models.BooleanField(default=False)
     isHoliday = models.BooleanField(default=False)
+    attendanceStatus = models.CharField(
+        max_length=20,
+        choices=ATTENDANCE_STATUS_CHOICES,
+        blank=True,
+        null=True,
+        db_index=True,
+    )
     bySubject = models.BooleanField(default=False)
     studentID = models.ForeignKey(Student, blank=True, null=True, on_delete=models.CASCADE)
     standardID = models.ForeignKey(Standard, blank=True, null=True, on_delete=models.CASCADE)
@@ -431,6 +445,20 @@ class StudentAttendance(models.Model):
     schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
     attendanceDate = models.DateTimeField(blank=True, null=True)
     absentReason = models.CharField(max_length=500, blank=True, null=True, default='')
+    leaveDurationType = models.CharField(max_length=20, blank=True, null=True)
+    sourceLeaveApplication = models.ForeignKey('LeaveApplication', blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+    leaveSyncCreatedAttendance = models.BooleanField(default=False)
+    leaveSyncPreviousIsPresent = models.BooleanField(blank=True, null=True)
+    leaveSyncPreviousAbsentReason = models.CharField(max_length=500, blank=True, null=True)
+    leaveSyncPreviousAttendanceStatus = models.CharField(max_length=20, blank=True, null=True)
+    leaveSyncPreviousLeaveDurationType = models.CharField(max_length=20, blank=True, null=True)
+    sourceHoliday = models.ForeignKey('SchoolHoliday', blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+    holidaySyncCreatedAttendance = models.BooleanField(default=False)
+    holidaySyncPreviousIsPresent = models.BooleanField(blank=True, null=True)
+    holidaySyncPreviousIsHoliday = models.BooleanField(blank=True, null=True)
+    holidaySyncPreviousAbsentReason = models.CharField(max_length=500, blank=True, null=True)
+    holidaySyncPreviousAttendanceStatus = models.CharField(max_length=20, blank=True, null=True)
+    holidaySyncPreviousLeaveDurationType = models.CharField(max_length=20, blank=True, null=True)
     datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
@@ -442,17 +470,47 @@ class StudentAttendance(models.Model):
         indexes = [
             models.Index(fields=['sessionID', 'studentID', 'isDeleted', 'isHoliday'], name='sa_sess_stu_del_hol_idx'),
             models.Index(fields=['sessionID', 'standardID', 'isDeleted', 'attendanceDate'], name='sa_sess_std_dt_idx'),
+            models.Index(fields=['sourceLeaveApplication', 'isDeleted'], name='sa_leave_src_del_idx'),
+            models.Index(fields=['sourceHoliday', 'isDeleted'], name='sa_holiday_src_del_idx'),
         ]
 
 
 class TeacherAttendance(models.Model):
+    ATTENDANCE_STATUS_CHOICES = (
+        ('present', 'Present'),
+        ('absent', 'Absent'),
+        ('leave', 'Leave'),
+        ('holiday', 'Holiday'),
+    )
+
     isPresent = models.BooleanField(default=False)
     isHoliday = models.BooleanField(default=False)
+    attendanceStatus = models.CharField(
+        max_length=20,
+        choices=ATTENDANCE_STATUS_CHOICES,
+        blank=True,
+        null=True,
+        db_index=True,
+    )
     teacherID = models.ForeignKey(TeacherDetail, blank=True, null=True, on_delete=models.CASCADE)
     sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
     schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
     attendanceDate = models.DateTimeField(blank=True, null=True)
     absentReason = models.CharField(max_length=500, blank=True, null=True, default='')
+    leaveDurationType = models.CharField(max_length=20, blank=True, null=True)
+    sourceLeaveApplication = models.ForeignKey('LeaveApplication', blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+    leaveSyncCreatedAttendance = models.BooleanField(default=False)
+    leaveSyncPreviousIsPresent = models.BooleanField(blank=True, null=True)
+    leaveSyncPreviousAbsentReason = models.CharField(max_length=500, blank=True, null=True)
+    leaveSyncPreviousAttendanceStatus = models.CharField(max_length=20, blank=True, null=True)
+    leaveSyncPreviousLeaveDurationType = models.CharField(max_length=20, blank=True, null=True)
+    sourceHoliday = models.ForeignKey('SchoolHoliday', blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+    holidaySyncCreatedAttendance = models.BooleanField(default=False)
+    holidaySyncPreviousIsPresent = models.BooleanField(blank=True, null=True)
+    holidaySyncPreviousIsHoliday = models.BooleanField(blank=True, null=True)
+    holidaySyncPreviousAbsentReason = models.CharField(max_length=500, blank=True, null=True)
+    holidaySyncPreviousAttendanceStatus = models.CharField(max_length=20, blank=True, null=True)
+    holidaySyncPreviousLeaveDurationType = models.CharField(max_length=20, blank=True, null=True)
     datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
     lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
     isDeleted = models.BooleanField(default=False)
@@ -463,6 +521,48 @@ class TeacherAttendance(models.Model):
         verbose_name_plural = 'q) Teacher Attendance'
         indexes = [
             models.Index(fields=['sessionID', 'teacherID', 'isDeleted', 'attendanceDate'], name='ta_sess_tchr_dt_idx'),
+            models.Index(fields=['sourceLeaveApplication', 'isDeleted'], name='ta_leave_src_del_idx'),
+            models.Index(fields=['sourceHoliday', 'isDeleted'], name='ta_holiday_src_del_idx'),
+        ]
+
+
+class SchoolHoliday(models.Model):
+    APPLIES_TO_CHOICES = (
+        ('both', 'Students & Teachers'),
+        ('students', 'Students Only'),
+        ('teachers', 'Teachers Only'),
+    )
+    HOLIDAY_TYPE_CHOICES = (
+        ('general', 'General'),
+        ('festival', 'Festival'),
+        ('national', 'National'),
+        ('exam_break', 'Exam Break'),
+        ('emergency', 'Emergency'),
+        ('other', 'Other'),
+    )
+
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    title = models.CharField(max_length=500, blank=True, null=True)
+    holidayType = models.CharField(max_length=50, choices=HOLIDAY_TYPE_CHOICES, default='general')
+    appliesTo = models.CharField(max_length=50, choices=APPLIES_TO_CHOICES, default='both')
+    startDate = models.DateField(blank=True, null=True)
+    endDate = models.DateField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True, default='')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+    isDeleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.title or 'Holiday'
+
+    class Meta:
+        verbose_name_plural = 'r) School Holidays'
+        indexes = [
+            models.Index(fields=['sessionID', 'isDeleted', 'startDate'], name='hol_sess_del_start_idx'),
+            models.Index(fields=['sessionID', 'isDeleted', 'appliesTo'], name='hol_sess_del_applies_idx'),
         ]
 
 
@@ -1020,6 +1120,7 @@ class LeaveType(models.Model):
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=50, blank=True, null=True)
     applicableFor = models.CharField(max_length=20, choices=APPLICABLE_FOR_CHOICES, default='both')
+    quotaDays = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     requiresApproval = models.BooleanField(default=True)
     isActive = models.BooleanField(default=True)
     datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
@@ -1046,6 +1147,11 @@ class LeaveApplication(models.Model):
         ('rejected', 'Rejected'),
         ('cancelled', 'Cancelled'),
     )
+    DURATION_CHOICES = (
+        ('full_day', 'Full Day'),
+        ('first_half', 'First Half'),
+        ('second_half', 'Second Half'),
+    )
 
     schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
     sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
@@ -1056,7 +1162,8 @@ class LeaveApplication(models.Model):
     applicantRole = models.CharField(max_length=20, choices=ROLE_CHOICES)
     startDate = models.DateField()
     endDate = models.DateField()
-    totalDays = models.PositiveIntegerField(default=1)
+    durationType = models.CharField(max_length=20, choices=DURATION_CHOICES, default='full_day')
+    totalDays = models.DecimalField(max_digits=5, decimal_places=1, default=1)
     reason = models.TextField(blank=True, null=True)
     attachment = models.FileField(upload_to=UPLOAD_TO_PATTERNS, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')

@@ -39,6 +39,7 @@ urlpatterns = [
     path('student_attendance_history/', student_attendance_history, name='student_attendance_history'),
     path('staff_attendance/', staff_attendance, name='staff_attendance'),
     path('staff_attendance_history/', staff_attendance_history, name='staff_attendance_history'),
+    path('manage_holidays/', manage_holidays, name='manage_holidays'),
 
     # Fee
     path('student_fee/', student_fee, name='student_fee'),

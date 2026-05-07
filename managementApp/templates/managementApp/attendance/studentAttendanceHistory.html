@@ -116,7 +116,10 @@
                                         <th>RollNo.</th>
                                         <th>Present Count</th>
                                         <th>Absent Count</th>
+                                        <th>Leave Count</th>
+                                        <th>Holiday Count</th>
                                         <th>Working Days</th>
+                                        <th>Recorded Days</th>
                                         <th>Percentage (%)</th>
                                     </tr>
                                     </thead>
@@ -202,6 +205,7 @@
                                     <thead>
                                     <tr>
                                         <th>Date</th>
+                                        <th>Status</th>
                                         <th>IsPresent</th>
                                         <th>IsAbsent</th>
                                         <th>Reason</th>
@@ -405,7 +409,7 @@
                     {#$('#AttendanceTableDiv').css('display', 'none');#}
                 } else {
                     {#$('#AttendanceTableDiv').css('display', 'block');#}
-                    byStudentTab.ajax.url('{% url 'managementAppAPI:StudentAttendanceHistoryByDateRangeAndStudentJson' %}?ByStudentSubject=' + ByStudentSubject + '&ByStudentStartDate=' + ByStudentStartDate + '&ByStudentEndDate=' + ByStudentEndDate+ '&ByStudentStudent=' + ByStudentStudent).load();
+                    byStudentTab.ajax.url('{% url 'managementAppAPI:StudentAttendanceHistoryByDateRangeAndStudentJson' %}?ByStudentStandard=' + ByStudentStandard + '&ByStudentSubject=' + ByStudentSubject + '&ByStudentStartDate=' + ByStudentStartDate + '&ByStudentEndDate=' + ByStudentEndDate+ '&ByStudentStudent=' + ByStudentStudent).load();
 
 
                 }
@@ -429,7 +433,7 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [1, 2, 3, 4]
+                    columns: [1, 2, 3, 4, 5, 6, 7, 8, 9]
                 }
             }
                 {% comment %}      , {
@@ -445,8 +449,11 @@
                 {"name": "roll", "targets": 2, "orderable": true},
                 {"name": "PresentCount", "targets": 3, "orderable": false},
                 {"name": "AbsentCount", "targets": 4, "orderable": false},
-                {"name": "total", "targets": 5, "orderable": false},
-                {"name": "action", "targets": 6, "orderable": false}
+                {"name": "LeaveCount", "targets": 5, "orderable": false},
+                {"name": "HolidayCount", "targets": 6, "orderable": false},
+                {"name": "workingDays", "targets": 7, "orderable": false},
+                {"name": "recordedDays", "targets": 8, "orderable": false},
+                {"name": "percentage", "targets": 9, "orderable": false}
             ],
             aaSorting: [[2, 'asc']],
             "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
@@ -468,7 +475,7 @@
                 buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5]
+                    columns: [0, 1, 2, 3, 4, 5, 6]
                 }
             }
                 {% comment %}      , {
@@ -480,11 +487,12 @@
             ],
             "columnDefs": [
                 {"name": "attendanceDate", "targets": 0, "orderable": true},
-                {"name": "isPresent", "targets": 1, "orderable": true},
+                {"name": "attendanceStatus", "targets": 1, "orderable": true},
                 {"name": "isPresent", "targets": 2, "orderable": true},
-                {"name": "absentReason", "targets": 3, "orderable": true},
-                {"name": "lastEditedBy", "targets": 4, "orderable": true},
-                {"name": "lastUpdatedOn", "targets": 5, "orderable": true},
+                {"name": "isPresent", "targets": 3, "orderable": true},
+                {"name": "absentReason", "targets": 4, "orderable": true},
+                {"name": "lastEditedBy", "targets": 5, "orderable": true},
+                {"name": "lastUpdatedOn", "targets": 6, "orderable": true},
             ],
             aaSorting: [[0, 'asc']],
             "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],

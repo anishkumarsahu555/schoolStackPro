@@ -11,8 +11,13 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from managementApp.leave_utils import (
     add_leave_log,
     calculate_total_days,
+    get_leave_balance,
     has_overlapping_leave,
+    leave_duration_label,
+    normalize_leave_duration,
     sync_leave_to_attendance,
+    validate_leave_balance,
+    validate_leave_duration_dates,
 )
 from managementApp.models import LeaveApplication, LeaveType, TeacherDetail
 from utils.custom_decorators import check_groups
@@ -69,11 +74,23 @@ def get_teacher_leave_type_list_api(request):
         applicableFor__in=['both', 'teacher'],
     ).order_by('name')
 
-    data = [{
-        'ID': row.pk,
-        'Name': row.name,
-        'Code': row.code or '',
-    } for row in queryset]
+    data = []
+    for row in queryset:
+        balance = get_leave_balance(
+            leave_type=row,
+            session_id=session_id,
+            role='teacher',
+            teacher_id=teacher.id,
+        )
+        data.append({
+            'ID': row.pk,
+            'Name': row.name,
+            'Code': row.code or '',
+            'QuotaDays': str(balance['quota']) if balance['limited'] else '',
+            'UsedDays': str(balance['used']) if balance['limited'] else '',
+            'AvailableDays': str(max(balance['available'], 0)) if balance['limited'] else '',
+            'IsLimited': balance['limited'],
+        })
     return SuccessResponse('Leave types loaded successfully.', data=data).to_json_response()
 
 
@@ -85,6 +102,7 @@ class TeacherLeaveApplicationListJson(BaseDatatableView):
         'startDate',
         'endDate',
         'totalDays',
+        'durationType',
         'status',
         'id',
         'reason',
@@ -133,6 +151,7 @@ class TeacherLeaveApplicationListJson(BaseDatatableView):
                 escape(item.startDate.strftime('%d-%m-%Y') if item.startDate else 'N/A'),
                 escape(item.endDate.strftime('%d-%m-%Y') if item.endDate else 'N/A'),
                 escape(item.totalDays or 0),
+                escape(leave_duration_label(item.durationType)),
                 _status_badge(item.status),
                 attachment,
                 escape(item.reason or ''),
@@ -163,6 +182,7 @@ def get_teacher_leave_detail_api(request):
             'leaveTypeID': leave.leaveTypeID_id,
             'startDate': leave.startDate.strftime('%d/%m/%Y') if leave.startDate else '',
             'endDate': leave.endDate.strftime('%d/%m/%Y') if leave.endDate else '',
+            'durationType': normalize_leave_duration(leave.durationType),
             'reason': leave.reason or '',
         }).to_json_response()
     except Exception:
@@ -183,11 +203,13 @@ def teacher_apply_leave_api(request):
         leave_type_id = request.POST.get('leaveTypeID')
         start_date = _parse_date((request.POST.get('startDate') or '').strip())
         end_date = _parse_date((request.POST.get('endDate') or '').strip())
+        duration_type = normalize_leave_duration(request.POST.get('durationType'))
         reason = (request.POST.get('reason') or '').strip()
         attachment = request.FILES.get('attachment')
 
         if end_date < start_date:
             return ErrorResponse('End date cannot be before start date.', extra={'color': 'red'}).to_json_response()
+        validate_leave_duration_dates(start_date, end_date, duration_type)
         if not leave_type_id:
             return ErrorResponse('Leave type is required.', extra={'color': 'red'}).to_json_response()
 
@@ -207,8 +229,18 @@ def teacher_apply_leave_api(request):
             start_date=start_date,
             end_date=end_date,
             teacher_id=teacher.id,
+            duration_type=duration_type,
         ):
             return ErrorResponse('Overlapping leave request already exists.', extra={'color': 'orange'}).to_json_response()
+
+        total_days = calculate_total_days(start_date, end_date, duration_type)
+        validate_leave_balance(
+            leave_type=leave_type,
+            requested_days=total_days,
+            session_id=session_id,
+            role='teacher',
+            teacher_id=teacher.id,
+        )
 
         status_value = 'pending' if leave_type.requiresApproval else 'approved'
         leave = LeaveApplication.objects.create(
@@ -218,7 +250,8 @@ def teacher_apply_leave_api(request):
             applicantRole='teacher',
             startDate=start_date,
             endDate=end_date,
-            totalDays=calculate_total_days(start_date, end_date),
+            durationType=duration_type,
+            totalDays=total_days,
             reason=reason,
             attachment=attachment,
             status=status_value,
@@ -264,6 +297,7 @@ def teacher_update_leave_api(request):
         leave_type_id = request.POST.get('leaveTypeID')
         start_date = _parse_date((request.POST.get('startDate') or '').strip())
         end_date = _parse_date((request.POST.get('endDate') or '').strip())
+        duration_type = normalize_leave_duration(request.POST.get('durationType'))
         reason = (request.POST.get('reason') or '').strip()
         attachment = request.FILES.get('attachment')
 
@@ -288,6 +322,7 @@ def teacher_update_leave_api(request):
             return ErrorResponse('Invalid leave type selected.', extra={'color': 'red'}).to_json_response()
         if end_date < start_date:
             return ErrorResponse('End date cannot be before start date.', extra={'color': 'red'}).to_json_response()
+        validate_leave_duration_dates(start_date, end_date, duration_type)
 
         if has_overlapping_leave(
             session_id=session_id,
@@ -296,13 +331,25 @@ def teacher_update_leave_api(request):
             end_date=end_date,
             teacher_id=teacher.id,
             exclude_id=leave.id,
+            duration_type=duration_type,
         ):
             return ErrorResponse('Overlapping leave request already exists.', extra={'color': 'orange'}).to_json_response()
+
+        total_days = calculate_total_days(start_date, end_date, duration_type)
+        validate_leave_balance(
+            leave_type=leave_type,
+            requested_days=total_days,
+            session_id=session_id,
+            role='teacher',
+            teacher_id=teacher.id,
+            exclude_id=leave.id,
+        )
 
         leave.leaveTypeID = leave_type
         leave.startDate = start_date
         leave.endDate = end_date
-        leave.totalDays = calculate_total_days(start_date, end_date)
+        leave.durationType = duration_type
+        leave.totalDays = total_days
         leave.reason = reason
         if attachment:
             leave.attachment = attachment

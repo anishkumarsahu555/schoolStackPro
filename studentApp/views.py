@@ -312,6 +312,24 @@ def student_events(request):
 
 @login_required
 @check_groups('Student')
+def student_holiday_list(request):
+    _, current_session_id = _bootstrap_student_context(request)
+    holidays = SchoolHoliday.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        appliesTo__in=['both', 'students'],
+    ).order_by('-startDate', '-datetime') if current_session_id else SchoolHoliday.objects.none()
+
+    return render(request, 'shared/holiday_list.html', {
+        'base_template': 'studentApp/index.html',
+        'page_title': 'Holiday List',
+        'app_scope': 'student',
+        'holidays': holidays,
+    })
+
+
+@login_required
+@check_groups('Student')
 def student_subject_notes(request):
     student, current_session_id = _bootstrap_student_context(request)
     notes = []
