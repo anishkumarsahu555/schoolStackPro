@@ -222,6 +222,12 @@
         <span>Manage Event</span>
     </a>
 
+    <div class="nav-section">Holidays</div>
+    <a class="nav-item {% if request.resolver_match.url_name == 'manage_holidays' %}active{% endif %}" href="{% url 'managementApp:manage_holidays' %}">
+        <i class="calendar alternate outline icon"></i>
+        <span>Holiday List</span>
+    </a>
+
     <div class="nav-section">Leave</div>
     <a class="nav-item {% if request.resolver_match.url_name == 'manage_leave_types' %}active{% endif %}" href="{% url 'managementApp:manage_leave_types' %}">
         <i class="tags icon"></i>

@@ -683,6 +683,14 @@ def staff_attendance_history(request):
     return render(request, 'managementApp/attendance/staffAttendanceHistory.html', context)
 
 
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_holidays(request):
+    context = {
+    }
+    return render(request, 'managementApp/holidays/manage_holidays.html', context)
+
+
 # student Fee --------------------------------------------------
 @login_required
 @check_groups('Admin', 'Owner')

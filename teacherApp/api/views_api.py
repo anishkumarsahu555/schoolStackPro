@@ -34,6 +34,12 @@ from managementApp.models import (
     ProgressReport,
 )
 from managementApp.reporting import build_report_cards_for_student, upsert_progress_report_snapshot
+from managementApp.leave_utils import (
+    ATTENDANCE_STATUS_HOLIDAY,
+    ATTENDANCE_STATUS_LEAVE,
+    attendance_status_from_values,
+    attendance_status_priority,
+)
 from teacherApp.models import SubjectNote, SubjectNoteVersion
 from managementApp.signals import pre_save_with_user
 from utils.conts import MONTHS_LIST
@@ -52,16 +58,16 @@ def _avatar_image_html(image_field):
 
 
 def _teacher_daily_status_priority(status):
-    ranking = {'absent': 1, 'leave': 2, 'present': 3}
-    return ranking.get(status, 0)
+    return attendance_status_priority(status)
 
 
-def _teacher_status_from_row(is_present, reason):
-    if is_present:
-        return 'present'
-    if (reason or '').strip().lower().startswith('approved leave'):
-        return 'leave'
-    return 'absent'
+def _teacher_status_from_row(is_present, reason, attendance_status=None, is_holiday=False):
+    return attendance_status_from_values(
+        is_present=is_present,
+        absent_reason=reason,
+        is_holiday=is_holiday or attendance_status == ATTENDANCE_STATUS_HOLIDAY,
+        attendance_status=attendance_status,
+    )
 
 
 def _compact_fee_month(month_value, year_value):
@@ -2009,13 +2015,13 @@ def teacher_self_attendance_history_api(request):
     ).order_by('-datetime').first()
     if not teacher:
         return JsonResponse({'success': True, 'data': {
-            'present': 0, 'absent': 0, 'leave': 0, 'working': 0, 'percentage': 0, 'rows': []
+            'present': 0, 'absent': 0, 'leave': 0, 'holiday': 0, 'working': 0, 'recorded': 0, 'percentage': 0, 'rows': []
         }}, safe=False)
 
     current_session_id = request.session.get('current_session', {}).get('Id') or teacher.sessionID_id
     if not current_session_id:
         return JsonResponse({'success': True, 'data': {
-            'present': 0, 'absent': 0, 'leave': 0, 'working': 0, 'percentage': 0, 'rows': []
+            'present': 0, 'absent': 0, 'leave': 0, 'holiday': 0, 'working': 0, 'recorded': 0, 'percentage': 0, 'rows': []
         }}, safe=False)
 
     start_raw = (request.GET.get('startDate') or '').strip()
@@ -2057,18 +2063,18 @@ def teacher_self_attendance_history_api(request):
                     isPresent=False,
                     isDeleted=False,
                     absentReason=leave_reason,
+                    attendanceStatus=ATTENDANCE_STATUS_LEAVE,
                 )
                 pre_save_with_user.send(sender=TeacherAttendance, instance=instance, user=request.user.pk)
             day += timedelta(days=1)
 
     attendance_rows = TeacherAttendance.objects.filter(
         isDeleted=False,
-        isHoliday=False,
         sessionID_id=current_session_id,
         teacherID_id=teacher.id,
         attendanceDate__date__gte=start_date,
         attendanceDate__date__lte=end_date,
-    ).values('attendanceDate', 'isPresent', 'absentReason').order_by('attendanceDate')
+    ).values('attendanceDate', 'isPresent', 'absentReason', 'attendanceStatus', 'isHoliday').order_by('attendanceDate')
 
     day_map = {}
     for row in attendance_rows:
@@ -2076,7 +2082,7 @@ def teacher_self_attendance_history_api(request):
         if not attendance_dt:
             continue
         day_key = attendance_dt.date()
-        status = _teacher_status_from_row(row.get('isPresent'), row.get('absentReason'))
+        status = _teacher_status_from_row(row.get('isPresent'), row.get('absentReason'), row.get('attendanceStatus'), row.get('isHoliday'))
         reason = row.get('absentReason') or ''
         prev = day_map.get(day_key)
         if not prev or _teacher_daily_status_priority(status) >= _teacher_daily_status_priority(prev['status']):
@@ -2085,7 +2091,9 @@ def teacher_self_attendance_history_api(request):
     present = sum(1 for v in day_map.values() if v['status'] == 'present')
     leave = sum(1 for v in day_map.values() if v['status'] == 'leave')
     absent = sum(1 for v in day_map.values() if v['status'] == 'absent')
+    holiday = sum(1 for v in day_map.values() if v['status'] == ATTENDANCE_STATUS_HOLIDAY)
     working = present + absent + leave
+    recorded = working + holiday
     percentage = round((present * 100.0 / working), 2) if working else 0
 
     data_rows = []
@@ -2097,6 +2105,7 @@ def teacher_self_attendance_history_api(request):
             'present': 'Yes' if status == 'present' else 'No',
             'absent': 'Yes' if status == 'absent' else 'No',
             'leave': 'Yes' if status == 'leave' else 'No',
+            'holiday': 'Yes' if status == ATTENDANCE_STATUS_HOLIDAY else 'No',
             'reason': reason or '',
             'status': status,
         })
@@ -2107,7 +2116,9 @@ def teacher_self_attendance_history_api(request):
             'present': present,
             'absent': absent,
             'leave': leave,
+            'holiday': holiday,
             'working': working,
+            'recorded': recorded,
             'percentage': percentage,
             'rows': data_rows,
         }

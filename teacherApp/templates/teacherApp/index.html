@@ -56,6 +56,13 @@
             <span>My Attendance</span>
         </a>
 
+        <div class="nav-section">Holidays</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'teacher_holiday_list' %}active{% endif %}"
+           href="{% url 'teacherApp:teacher_holiday_list' %}">
+            <i class="calendar alternate outline icon"></i>
+            <span>Holiday List</span>
+        </a>
+
         <div class="nav-section">Exams</div>
         <a class="nav-item {% if request.resolver_match.url_name == 'teacher_exam_timetable' %}active{% endif %}"
            href="{% url 'teacherApp:teacher_exam_timetable' %}">

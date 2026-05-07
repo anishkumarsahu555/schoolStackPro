@@ -18,6 +18,7 @@ from managementApp.models import (
     AssignExamToClass,
     AssignSubjectsToClass,
     MarkOfStudentsByExam,
+    SchoolHoliday,
 )
 from managementApp.reporting import build_report_cards_for_student
 from teacherApp.models import SubjectNote
@@ -344,6 +345,25 @@ def teacher_manage_event(request):
     return render(request, 'teacherApp/events_list.html', {
         'is_class_teacher': is_class_teacher,
         'events': events,
+    })
+
+
+@login_required
+@check_groups('Teaching')
+def teacher_holiday_list(request):
+    _, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
+    holidays = SchoolHoliday.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        appliesTo__in=['both', 'teachers'],
+    ).order_by('-startDate', '-datetime') if current_session_id else SchoolHoliday.objects.none()
+
+    return render(request, 'shared/holiday_list.html', {
+        'base_template': 'teacherApp/index.html',
+        'page_title': 'Holiday List',
+        'app_scope': 'teacher',
+        'holidays': holidays,
+        'is_class_teacher': is_class_teacher,
     })
 
 

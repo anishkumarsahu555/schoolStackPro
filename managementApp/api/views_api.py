@@ -65,7 +65,19 @@ from managementApp.models import *
 from managementApp.reporting import build_report_cards_for_student, upsert_progress_report_snapshot
 from managementApp.services.session_rollover import preview_session_import, run_session_import
 from managementApp.signals import pre_save_with_user
-from managementApp.leave_utils import approved_leave_for_date, approved_leave_map_for_date
+from managementApp.leave_utils import (
+    ATTENDANCE_STATUS_ABSENT,
+    ATTENDANCE_STATUS_HOLIDAY,
+    ATTENDANCE_STATUS_LEAVE,
+    apply_attendance_status,
+    approved_leave_for_date,
+    approved_leave_map_for_date,
+    attendance_status_from_values,
+    leave_application_note,
+    leave_duration_label,
+    pending_leave_map_for_date,
+)
+from managementApp.holiday_utils import holiday_for_date, holiday_note, resync_holiday_to_attendance, revert_holiday_attendance_sync
 from teacherApp.models import SubjectNote, SubjectNoteVersion
 from utils.conts import MONTHS_LIST
 from utils.get_school_detail import get_school_id
@@ -3464,8 +3476,199 @@ def get_exam_list_by_class_api(request):
 
 # Attendance ------------------------------------------------------------------
 
+def _student_attendance_datatable_row(item, *, pending_leave=None):
+    if item.studentID and item.studentID.photo:
+        images = _avatar_image_html(item.studentID.photo)
+    else:
+        images = _avatar_image_html(None)
+
+    action = '''<button class="ui mini primary button" onclick="pushAttendance({})">
+  Save
+</button>'''.format(item.pk)
+
+    status = attendance_status_from_values(
+        is_present=item.isPresent,
+        absent_reason=item.absentReason,
+        is_holiday=item.isHoliday,
+        attendance_status=item.attendanceStatus,
+    )
+
+    status_chip = '<span class="ui tiny grey label">Absent</span>'
+    if status == 'present':
+        status_chip = '<span class="ui tiny green label">Present</span>'
+    elif status == ATTENDANCE_STATUS_LEAVE:
+        duration_text = leave_duration_label(item.leaveDurationType)
+        status_chip = f'<span class="ui tiny blue label">Approved Leave</span><div class="ui tiny basic blue label" style="margin-top:3px;">{escape(duration_text)}</div>'
+    elif status == ATTENDANCE_STATUS_HOLIDAY:
+        status_chip = '<span class="ui tiny teal label">Holiday</span>'
+    elif pending_leave:
+        duration_text = leave_duration_label(pending_leave.durationType)
+        leave_name = pending_leave.leaveTypeID.name if pending_leave.leaveTypeID else 'Leave'
+        status_chip = f'<span class="ui tiny orange label">Pending Leave</span><div class="ui tiny basic orange label" style="margin-top:3px;">{escape(leave_name)} - {escape(duration_text)}</div>'
+
+    is_approved_leave = status == ATTENDANCE_STATUS_LEAVE
+    is_holiday = status == ATTENDANCE_STATUS_HOLIDAY
+    disabled_attr = ' disabled data-leave-locked="true"' if is_approved_leave else ''
+    if is_holiday:
+        disabled_attr = ' disabled data-holiday-locked="true"'
+    if item.isPresent:
+        is_present = '''
+            <div class="ui checkbox">
+  <input type="checkbox" name="isPresent{}" id="isPresent{}" checked{}>
+  <label>Mark as Present</label>
+</div>
+            '''.format(item.pk, item.pk, disabled_attr)
+    else:
+        is_present = '''
+                            <div class="ui checkbox">
+                  <input type="checkbox" name="isPresent{}" id="isPresent{}"{}>
+                  <label>Mark as Present</label>
+                </div>
+                            '''.format(item.pk, item.pk, disabled_attr)
+
+    reason = '''<div class="ui tiny input fluid">
+  <input type="text" placeholder="Reason for Absent" name="reason{}" id="reason{}" value = "{}"{}>
+</div>
+            '''.format(item.pk, item.pk, escape(item.absentReason or ''), disabled_attr)
+
+    if is_approved_leave:
+        action = '<span class="ui tiny blue label">Protected</span>'
+    elif is_holiday:
+        action = '<span class="ui tiny teal label">Holiday</span>'
+
+    return [
+        images,
+        escape(item.studentID.name),
+        escape(item.studentID.roll or 'N/A'),
+        status_chip,
+        is_present,
+        reason,
+        escape(item.lastEditedBy or 'N/A'),
+        escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
+        action,
+    ]
+
+
+def _student_attendance_status_priority(status):
+    ranking = {
+        ATTENDANCE_STATUS_ABSENT: 1,
+        ATTENDANCE_STATUS_LEAVE: 2,
+        'present': 3,
+        ATTENDANCE_STATUS_HOLIDAY: 4,
+    }
+    return ranking.get(status, 0)
+
+
+def _student_attendance_status_for_row(row):
+    return attendance_status_from_values(
+        is_present=row.isPresent,
+        absent_reason=row.absentReason,
+        is_holiday=row.isHoliday,
+        attendance_status=row.attendanceStatus,
+    )
+
+
+def _student_attendance_day_map(qs):
+    day_map = {}
+    for row in qs:
+        if not row.attendanceDate:
+            continue
+        day_key = row.attendanceDate.date()
+        status = _student_attendance_status_for_row(row)
+        previous = day_map.get(day_key)
+        if (
+            not previous
+            or _student_attendance_status_priority(status) > _student_attendance_status_priority(previous['status'])
+            or (
+                _student_attendance_status_priority(status) == _student_attendance_status_priority(previous['status'])
+                and row.id < previous['row'].id
+            )
+        ):
+            day_map[day_key] = {'status': status, 'row': row}
+    return day_map
+
+
 class TakeStudentAttendanceByClassJson(BaseDatatableView):
-    order_columns = ['studentID.photo', 'studentID.name', 'studentID.roll', 'isPresent', 'absentReason', 'lastEditedBy', 'lastUpdatedOn']
+    order_columns = ['studentID.photo', 'studentID.name', 'studentID.roll', 'attendanceStatus', 'isPresent', 'absentReason', 'lastEditedBy', 'lastUpdatedOn']
+
+    def _get_or_create_student_attendance(self, *, student, attendance_date, standard_id, session_id, leave_obj=None,
+                                          holiday_obj=None,
+                                          subject_id=None, by_subject=False):
+        queryset = StudentAttendance.objects.filter(
+            isDeleted=False,
+            studentID_id=student.id,
+            attendanceDate__date=attendance_date.date(),
+            standardID_id=standard_id,
+            bySubject=by_subject,
+            sessionID_id=session_id,
+        )
+        if by_subject:
+            queryset = queryset.filter(subjectID_id=subject_id)
+        else:
+            queryset = queryset.filter(subjectID__isnull=True)
+
+        attendance_obj = queryset.order_by('id').first()
+        if attendance_obj:
+            return attendance_obj
+
+        leave_reason = leave_application_note(leave_obj) if leave_obj else ''
+        holiday_reason = holiday_note(holiday_obj) if holiday_obj else ''
+        attendance_obj = StudentAttendance.objects.create(
+            studentID_id=student.id,
+            attendanceDate=attendance_date,
+            subjectID_id=subject_id if by_subject else None,
+            standardID_id=standard_id,
+            sessionID_id=session_id,
+            schoolID_id=student.schoolID_id,
+            isPresent=False,
+            bySubject=by_subject,
+            isHoliday=bool(holiday_obj),
+            absentReason=holiday_reason or leave_reason,
+            attendanceStatus=ATTENDANCE_STATUS_HOLIDAY if holiday_obj else (ATTENDANCE_STATUS_LEAVE if leave_obj else ATTENDANCE_STATUS_ABSENT),
+            leaveDurationType=None if holiday_obj else (leave_obj.durationType if leave_obj else None),
+            sourceHoliday=holiday_obj,
+            holidaySyncCreatedAttendance=bool(holiday_obj),
+            sourceLeaveApplication=leave_obj,
+            leaveSyncCreatedAttendance=bool(leave_obj and not holiday_obj),
+        )
+        pre_save_with_user.send(sender=StudentAttendance, instance=attendance_obj, user=self.request.user.pk)
+        return attendance_obj
+
+    def _apply_approved_leave_to_attendance(self, attendance_obj, leave_obj):
+        if not leave_obj:
+            return
+        if attendance_obj.isHoliday or attendance_obj.attendanceStatus == ATTENDANCE_STATUS_HOLIDAY:
+            return
+        leave_reason = leave_application_note(leave_obj)
+        if attendance_obj.isPresent or not attendance_obj.absentReason or attendance_obj.attendanceStatus != ATTENDANCE_STATUS_LEAVE:
+            apply_attendance_status(
+                attendance_obj,
+                is_present=False,
+                absent_reason=leave_reason,
+                attendance_status=ATTENDANCE_STATUS_LEAVE,
+            )
+            attendance_obj.leaveDurationType = leave_obj.durationType
+            attendance_obj.sourceLeaveApplication = leave_obj
+            pre_save_with_user.send(sender=StudentAttendance, instance=attendance_obj, user=self.request.user.pk)
+            attendance_obj.save()
+
+    def _apply_holiday_to_attendance(self, attendance_obj, holiday_obj):
+        if not holiday_obj:
+            return
+        if attendance_obj.sourceHoliday_id != holiday_obj.id:
+            attendance_obj.holidaySyncPreviousIsPresent = attendance_obj.isPresent
+            attendance_obj.holidaySyncPreviousIsHoliday = attendance_obj.isHoliday
+            attendance_obj.holidaySyncPreviousAbsentReason = attendance_obj.absentReason
+            attendance_obj.holidaySyncPreviousAttendanceStatus = attendance_obj.attendanceStatus
+            attendance_obj.holidaySyncPreviousLeaveDurationType = attendance_obj.leaveDurationType
+        attendance_obj.isPresent = False
+        attendance_obj.isHoliday = True
+        attendance_obj.attendanceStatus = ATTENDANCE_STATUS_HOLIDAY
+        attendance_obj.absentReason = holiday_note(holiday_obj)
+        attendance_obj.leaveDurationType = None
+        attendance_obj.sourceHoliday = holiday_obj
+        pre_save_with_user.send(sender=StudentAttendance, instance=attendance_obj, user=self.request.user.pk)
+        attendance_obj.save()
 
     @transaction.atomic
     def get_initial_queryset(self):
@@ -3485,32 +3688,39 @@ class TakeStudentAttendanceByClassJson(BaseDatatableView):
                     date_value=aDate.date(),
                     ids=[s.id for s in students]
                 )
+                pending_leave_map = pending_leave_map_for_date(
+                    session_id=self.request.session["current_session"]["Id"],
+                    role='student',
+                    date_value=aDate.date(),
+                    ids=[s.id for s in students]
+                )
+                self.pending_leave_map = pending_leave_map
+                holiday_obj = holiday_for_date(
+                    session_id=self.request.session["current_session"]["Id"],
+                    target_date=aDate.date(),
+                    applies_to='students',
+                )
+                attendance_ids = []
                 for s in students:
-                    leave_obj = leave_map.get(s.id)
-                    leave_reason = ''
-                    if leave_obj:
-                        leave_reason = f"Approved Leave: {leave_obj.leaveTypeID.name if leave_obj.leaveTypeID else 'Leave'}"
-                    try:
-                        attendance_obj = StudentAttendance.objects.get(studentID_id=s.id, attendanceDate__icontains=aDate,
-                                                                       standardID_id=int(standard), bySubject=False,
-                                                                       sessionID_id=self.request.session["current_session"]["Id"])
-                        if leave_reason and (attendance_obj.isPresent or not attendance_obj.absentReason):
-                            attendance_obj.isPresent = False
-                            attendance_obj.absentReason = leave_reason
-                            pre_save_with_user.send(sender=StudentAttendance, instance=attendance_obj, user=self.request.user.pk)
-                            attendance_obj.save()
-
-                    except:
-                        instance = StudentAttendance.objects.create(studentID_id=s.id, attendanceDate=aDate,
-                                                                    standardID_id=int(standard), isPresent=False,
-                                                                    bySubject=False, absentReason=leave_reason)
-                        pre_save_with_user.send(sender=StudentAttendance, instance=instance, user=self.request.user.pk)
+                    leave_obj = None if holiday_obj else leave_map.get(s.id)
+                    attendance_obj = self._get_or_create_student_attendance(
+                        student=s,
+                        attendance_date=aDate,
+                        standard_id=int(standard),
+                        session_id=self.request.session["current_session"]["Id"],
+                        leave_obj=leave_obj,
+                        holiday_obj=holiday_obj,
+                        by_subject=False,
+                    )
+                    self._apply_holiday_to_attendance(attendance_obj, holiday_obj)
+                    self._apply_approved_leave_to_attendance(attendance_obj, leave_obj)
+                    attendance_ids.append(attendance_obj.id)
 
                 return StudentAttendance.objects.select_related().filter(isDeleted__exact=False, bySubject=False,
                                                                          sessionID_id=
                                                                          self.request.session["current_session"][
-                                                                             "Id"], attendanceDate__icontains=aDate,
-                                                                         standardID_id=int(standard))
+                                                                             "Id"], pk__in=attendance_ids,
+                                                                         standardID_id=int(standard)).order_by('studentID__roll', 'id')
             elif mode == "BySubject":
                 subjects = self.request.GET.get("subjects")
 
@@ -3529,36 +3739,40 @@ class TakeStudentAttendanceByClassJson(BaseDatatableView):
                         date_value=sDate.date(),
                         ids=[s.id for s in students]
                     )
+                    pending_leave_map = pending_leave_map_for_date(
+                        session_id=self.request.session["current_session"]["Id"],
+                        role='student',
+                        date_value=sDate.date(),
+                        ids=[s.id for s in students]
+                    )
+                    self.pending_leave_map = pending_leave_map
+                    holiday_obj = holiday_for_date(
+                        session_id=self.request.session["current_session"]["Id"],
+                        target_date=sDate.date(),
+                        applies_to='students',
+                    )
+                    attendance_ids = []
                     for s in students:
-                        leave_obj = leave_map.get(s.id)
-                        leave_reason = ''
-                        if leave_obj:
-                            leave_reason = f"Approved Leave: {leave_obj.leaveTypeID.name if leave_obj.leaveTypeID else 'Leave'}"
-                        try:
-                            attendance_obj = StudentAttendance.objects.get(studentID_id=s.id, attendanceDate__icontains=sDate,
-                                                                           standardID_id=obj.standardID_id, bySubject=True,
-                                                                           subjectID_id=obj.subjectID_id,
-                                                                           sessionID_id=self.request.session["current_session"]["Id"])
-                            if leave_reason and (attendance_obj.isPresent or not attendance_obj.absentReason):
-                                attendance_obj.isPresent = False
-                                attendance_obj.absentReason = leave_reason
-                                pre_save_with_user.send(sender=StudentAttendance, instance=attendance_obj,
-                                                        user=self.request.user.pk)
-                                attendance_obj.save()
-                        except:
-                            instance = StudentAttendance.objects.create(studentID_id=s.id, attendanceDate=sDate,
-                                                                        subjectID_id=obj.subjectID_id,
-                                                                        standardID_id=obj.standardID_id,
-                                                                        isPresent=False, bySubject=True,
-                                                                        absentReason=leave_reason)
-                            pre_save_with_user.send(sender=StudentAttendance, instance=instance,
-                                                    user=self.request.user.pk)
+                        leave_obj = None if holiday_obj else leave_map.get(s.id)
+                        attendance_obj = self._get_or_create_student_attendance(
+                            student=s,
+                            attendance_date=sDate,
+                            standard_id=obj.standardID_id,
+                            session_id=self.request.session["current_session"]["Id"],
+                            leave_obj=leave_obj,
+                            holiday_obj=holiday_obj,
+                            subject_id=obj.subjectID_id,
+                            by_subject=True,
+                        )
+                        self._apply_holiday_to_attendance(attendance_obj, holiday_obj)
+                        self._apply_approved_leave_to_attendance(attendance_obj, leave_obj)
+                        attendance_ids.append(attendance_obj.id)
                     return StudentAttendance.objects.select_related().filter(isDeleted__exact=False, bySubject=True,
                                                                              sessionID_id=
                                                                              self.request.session["current_session"][
-                                                                                 "Id"], attendanceDate__icontains=sDate,
+                                                                                 "Id"], pk__in=attendance_ids,
                                                                              subjectID_id=obj.subjectID_id,
-                                                                             standardID_id=obj.standardID_id)
+                                                                             standardID_id=obj.standardID_id).order_by('studentID__roll', 'id')
                 except:
                     return StudentAttendance.objects.none()
             else:
@@ -3580,45 +3794,19 @@ class TakeStudentAttendanceByClassJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            if item.studentID and item.studentID.photo:
-                images = _avatar_image_html(item.studentID.photo)
-            else:
-                images = _avatar_image_html(None)
-
-            action = '''<button class="ui mini primary button" onclick="pushAttendance({})">
-  Save
-</button>'''.format(item.pk),
-            if item.isPresent:
-                is_present = '''
-            <div class="ui checkbox">
-  <input type="checkbox" name="isPresent{}" id="isPresent{}" checked >
-  <label>Mark as Present</label>
-</div>
-            '''.format(item.pk, item.pk)
-            else:
-                is_present = '''
-                            <div class="ui checkbox">
-                  <input type="checkbox" name="isPresent{}" id="isPresent{}" >
-                  <label>Mark as Present</label>
-                </div>
-                            '''.format(item.pk, item.pk)
-
-            reason = '''<div class="ui tiny input fluid">
-  <input type="text" placeholder="Reason for Absent" name="reason{}" id="reason{}" value = "{}">
-</div>
-            '''.format(item.pk, item.pk, item.absentReason)
-
-            json_data.append([
-                images,
-                escape(item.studentID.name),
-                escape(item.studentID.roll or 'N/A'),
-                is_present,
-                reason,
-                escape(item.lastEditedBy or 'N/A'),
-                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
-                action,
-
-            ])
+            pending_leave = None
+            if item.studentID_id and item.attendanceDate:
+                pending_map = getattr(self, 'pending_leave_map', None)
+                if pending_map is not None:
+                    pending_leave = pending_map.get(item.studentID_id)
+                elif status != ATTENDANCE_STATUS_LEAVE:
+                    pending_leave = pending_leave_map_for_date(
+                        session_id=item.sessionID_id,
+                        role='student',
+                        date_value=item.attendanceDate.date(),
+                        ids=[item.studentID_id],
+                    ).get(item.studentID_id)
+            json_data.append(_student_attendance_datatable_row(item, pending_leave=pending_leave))
 
         return json_data
 
@@ -3633,6 +3821,10 @@ def add_student_attendance_by_class(request):
         reason = request.POST.get("reason")
         try:
             instance = StudentAttendance.objects.select_related('studentID').get(pk=int(id))
+            if instance.isHoliday or instance.attendanceStatus == ATTENDANCE_STATUS_HOLIDAY:
+                return _api_response(
+                    {'status': 'error', 'message': 'Cannot update attendance on a holiday.', 'color': 'orange'},
+                    safe=False)
             if isPresent == 'true':
                 isPresent = True
             else:
@@ -3648,12 +3840,17 @@ def add_student_attendance_by_class(request):
                     return _api_response(
                         {'status': 'error', 'message': 'Cannot mark present on approved leave date.', 'color': 'orange'},
                         safe=False)
-            instance.isPresent = isPresent
-            instance.absentReason = reason
+            apply_attendance_status(instance, is_present=isPresent, absent_reason=reason)
             pre_save_with_user.send(sender=StudentAttendance, instance=instance, user=request.user.pk)
             instance.save()
+            instance.refresh_from_db()
             return _api_response(
-                {'status': 'success', 'message': 'Attendance added successfully.', 'color': 'success'},
+                {
+                    'status': 'success',
+                    'message': 'Attendance added successfully.',
+                    'color': 'success',
+                    'data': {'row': _student_attendance_datatable_row(instance)},
+                },
                 safe=False)
         except:
 
@@ -3697,6 +3894,9 @@ def add_student_attendance_bulk_by_class(request):
         except StudentAttendance.DoesNotExist:
             continue
 
+        if instance.isHoliday or instance.attendanceStatus == ATTENDANCE_STATUS_HOLIDAY:
+            continue
+
         if is_present:
             leave_obj = approved_leave_for_date(
                 session_id=instance.sessionID_id,
@@ -3708,8 +3908,7 @@ def add_student_attendance_bulk_by_class(request):
                 blocked_students.append(instance.studentID.name if instance.studentID else f'ID {attendance_id}')
                 continue
 
-        instance.isPresent = is_present
-        instance.absentReason = '' if is_present else reason
+        apply_attendance_status(instance, is_present=is_present, absent_reason='' if is_present else reason)
         pre_save_with_user.send(sender=StudentAttendance, instance=instance, user=request.user.pk)
         instance.save()
         updated_count += 1
@@ -3805,40 +4004,41 @@ class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
         dateRangeEndDate = self.request.GET.get("dateRangeEndDate")
         dateRangeStartDate = datetime.strptime(dateRangeStartDate, '%d/%m/%Y')
         dateRangeEndDate = datetime.strptime(dateRangeEndDate, '%d/%m/%Y')
+        start_date = dateRangeStartDate.date()
+        end_date = dateRangeEndDate.date()
         json_data = []
         for item in qs:
             images = _avatar_image_html(item.photo)
+            attendance_filter = {
+                'studentID_id': item.id,
+                'isDeleted': False,
+                'attendanceDate__date__gte': start_date,
+                'attendanceDate__date__lte': end_date,
+                'standardID_id': int(dateRangeStandard),
+                'sessionID_id': self.request.session["current_session"]["Id"],
+            }
             if dateRangeSubject == "all":
-                present_count = StudentAttendance.objects.filter(studentID_id=item.id, isPresent=True, bySubject=False,
-                                                                 isHoliday=False,
-                                                                 attendanceDate__range=[dateRangeStartDate,
-                                                                                        dateRangeEndDate + timedelta(
-                                                                                            days=1)],
-                                                                 standardID_id=int(dateRangeStandard)).count()
-                absent_count = StudentAttendance.objects.filter(studentID_id=item.id, isPresent=False, bySubject=False,
-                                                                isHoliday=False,
-                                                                attendanceDate__range=[dateRangeStartDate,
-                                                                                       dateRangeEndDate + timedelta(
-                                                                                           days=1)],
-                                                                standardID_id=int(dateRangeStandard)).count()
-
+                attendance_qs = StudentAttendance.objects.filter(
+                    bySubject=False,
+                    **attendance_filter,
+                ).order_by('attendanceDate', 'id')
             else:
-                present_count = StudentAttendance.objects.filter(studentID_id=item.id, isPresent=True, bySubject=True,
-                                                                 subjectID_id=int(dateRangeSubject),
-                                                                 isHoliday=False,
-                                                                 attendanceDate__range=[dateRangeStartDate,
-                                                                                        dateRangeEndDate + timedelta(
-                                                                                            days=1)],
-                                                                 standardID_id=int(dateRangeStandard)).count()
-                absent_count = StudentAttendance.objects.filter(studentID_id=item.id, isPresent=False, bySubject=True,
-                                                                isHoliday=False, subjectID_id=int(dateRangeSubject),
-                                                                attendanceDate__range=[dateRangeStartDate,
-                                                                                       dateRangeEndDate + timedelta(
-                                                                                           days=1)],
-                                                                standardID_id=int(dateRangeStandard)).count()
+                attendance_qs = StudentAttendance.objects.filter(
+                    Q(bySubject=True, subjectID_id=int(dateRangeSubject))
+                    | Q(bySubject=False, attendanceStatus__in=[ATTENDANCE_STATUS_LEAVE, ATTENDANCE_STATUS_HOLIDAY]),
+                    **attendance_filter,
+                ).order_by('attendanceDate', 'id')
 
-            if present_count + absent_count != 0:
-                percentage = present_count / (present_count + absent_count) * 100
+            day_map = _student_attendance_day_map(attendance_qs)
+            present_count = sum(1 for data in day_map.values() if data['status'] == 'present')
+            leave_count = sum(1 for data in day_map.values() if data['status'] == ATTENDANCE_STATUS_LEAVE)
+            absent_count = sum(1 for data in day_map.values() if data['status'] == ATTENDANCE_STATUS_ABSENT)
+            holiday_count = sum(1 for data in day_map.values() if data['status'] == ATTENDANCE_STATUS_HOLIDAY)
+            working_days = present_count + absent_count + leave_count
+            recorded_days = working_days + holiday_count
+
+            if working_days != 0:
+                percentage = present_count / working_days * 100
             else:
                 # Handle the case when the denominator is zero
                 percentage = 0
@@ -3859,7 +4059,10 @@ class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
                 roll_value,
                 present_count,
                 absent_count,
-                present_count + absent_count,
+                leave_count,
+                holiday_count,
+                working_days,
+                recorded_days,
                 round(percentage, 2)
 
             ])
@@ -3868,36 +4071,38 @@ class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
 
 
 class StudentAttendanceHistoryByDateRangeAndStudentJson(BaseDatatableView):
-    order_columns = ['attendanceDate', 'isPresent', 'isPresent', 'absentReason', 'lastEditedBy', 'lastUpdatedOn']
+    order_columns = ['attendanceDate', 'attendanceStatus', 'isPresent', 'isPresent', 'absentReason', 'lastEditedBy', 'lastUpdatedOn']
 
     @transaction.atomic
     def get_initial_queryset(self):
         try:
+            ByStudentStandard = self.request.GET.get("ByStudentStandard")
             ByStudentSubject = self.request.GET.get("ByStudentSubject")
             ByStudentStudent = self.request.GET.get("ByStudentStudent")
             ByStudentStartDate = self.request.GET.get("ByStudentStartDate")
             ByStudentEndDate = self.request.GET.get("ByStudentEndDate")
             ByStudentStartDate = datetime.strptime(ByStudentStartDate, '%d/%m/%Y')
             ByStudentEndDate = datetime.strptime(ByStudentEndDate, '%d/%m/%Y')
+            base_filter = {
+                'isDeleted__exact': False,
+                'studentID_id': int(ByStudentStudent),
+                'attendanceDate__date__gte': ByStudentStartDate.date(),
+                'attendanceDate__date__lte': ByStudentEndDate.date(),
+                'sessionID_id': self.request.session["current_session"]["Id"],
+            }
+            if ByStudentStandard:
+                base_filter['standardID_id'] = int(ByStudentStandard)
             if ByStudentSubject == "all":
-                return StudentAttendance.objects.select_related().filter(isDeleted__exact=False, isHoliday=False,
-                                                                         studentID_id=int(ByStudentStudent),
-                                                                         attendanceDate__range=[ByStudentStartDate,
-                                                                                                ByStudentEndDate + timedelta(
-                                                                                                    days=1)],
-                                                                         sessionID_id=
-                                                                         self.request.session["current_session"][
-                                                                             "Id"]).order_by('attendanceDate')
+                return StudentAttendance.objects.select_related().filter(
+                    bySubject=False,
+                    **base_filter,
+                ).order_by('attendanceDate', 'id')
             else:
-                return StudentAttendance.objects.select_related().filter(isDeleted__exact=False, isHoliday=False,
-                                                                         subjectID_id=int(ByStudentSubject),
-                                                                         studentID_id=int(ByStudentStudent),
-                                                                         attendanceDate__range=[ByStudentStartDate,
-                                                                                                ByStudentEndDate + timedelta(
-                                                                                                    days=1)],
-                                                                         sessionID_id=
-                                                                         self.request.session["current_session"][
-                                                                             "Id"]).order_by('attendanceDate')
+                return StudentAttendance.objects.select_related().filter(
+                    Q(bySubject=True, subjectID_id=int(ByStudentSubject))
+                    | Q(bySubject=False, attendanceStatus__in=[ATTENDANCE_STATUS_LEAVE, ATTENDANCE_STATUS_HOLIDAY]),
+                    **base_filter,
+                ).order_by('attendanceDate', 'id')
 
 
         except:
@@ -3916,19 +4121,34 @@ class StudentAttendanceHistoryByDateRangeAndStudentJson(BaseDatatableView):
 
     def prepare_results(self, qs):
         json_data = []
-        for item in qs:
-            if item.isPresent == True:
+        day_map = _student_attendance_day_map(qs)
+        for day_key in sorted(day_map.keys()):
+            item = day_map[day_key]['row']
+            status = day_map[day_key]['status']
+            status_label = 'Present'
+            if status == 'present':
                 Present = 'Yes'
                 Absent = 'No'
-            else:
+                reason = item.absentReason or ''
+            elif status == ATTENDANCE_STATUS_HOLIDAY:
+                status_label = 'Holiday'
                 Present = 'No'
-                Absent = 'Yes'
+                Absent = 'No'
+                reason = item.absentReason or 'Holiday'
+            else:
+                status_label = 'Leave' if status == ATTENDANCE_STATUS_LEAVE else 'Absent'
+                Present = 'No'
+                Absent = 'No' if status == ATTENDANCE_STATUS_LEAVE else 'Yes'
+                reason = item.absentReason or ''
+                if status == ATTENDANCE_STATUS_LEAVE and item.leaveDurationType:
+                    reason = f'{reason} - {leave_duration_label(item.leaveDurationType)}' if reason else leave_duration_label(item.leaveDurationType)
 
             json_data.append([
-                escape(item.attendanceDate.strftime('%d-%m-%Y')),
+                escape(day_key.strftime('%d-%m-%Y')),
+                escape(status_label),
                 escape(Present),
                 escape(Absent),
-                escape(item.absentReason),
+                escape(reason),
                 escape(item.lastEditedBy or 'N/A'),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
 
@@ -3937,9 +4157,146 @@ class StudentAttendanceHistoryByDateRangeAndStudentJson(BaseDatatableView):
         return json_data
 
 
+def _staff_attendance_datatable_row(item, *, pending_leave=None):
+    images = _avatar_image_html(item.teacherID.photo if item.teacherID else None)
+    action = '''<button class="ui mini primary button" onclick="pushAttendance({})">
+  Save
+</button>'''.format(item.pk)
+
+    status = attendance_status_from_values(
+        is_present=item.isPresent,
+        absent_reason=item.absentReason,
+        is_holiday=item.isHoliday,
+        attendance_status=item.attendanceStatus,
+    )
+
+    status_chip = '<span class="ui tiny grey label">Absent</span>'
+    if status == 'present':
+        status_chip = '<span class="ui tiny green label">Present</span>'
+    elif status == ATTENDANCE_STATUS_LEAVE:
+        duration_text = leave_duration_label(item.leaveDurationType)
+        status_chip = f'<span class="ui tiny blue label">Approved Leave</span><div class="ui tiny basic blue label" style="margin-top:3px;">{escape(duration_text)}</div>'
+    elif status == ATTENDANCE_STATUS_HOLIDAY:
+        status_chip = '<span class="ui tiny teal label">Holiday</span>'
+    elif pending_leave:
+        duration_text = leave_duration_label(pending_leave.durationType)
+        leave_name = pending_leave.leaveTypeID.name if pending_leave.leaveTypeID else 'Leave'
+        status_chip = f'<span class="ui tiny orange label">Pending Leave</span><div class="ui tiny basic orange label" style="margin-top:3px;">{escape(leave_name)} - {escape(duration_text)}</div>'
+
+    is_approved_leave = status == ATTENDANCE_STATUS_LEAVE
+    is_holiday = status == ATTENDANCE_STATUS_HOLIDAY
+    disabled_attr = ' disabled data-leave-locked="true"' if is_approved_leave else ''
+    if is_holiday:
+        disabled_attr = ' disabled data-holiday-locked="true"'
+    if item.isPresent:
+        is_present = '''
+            <div class="ui checkbox">
+  <input type="checkbox" name="isPresent{}" id="isPresent{}" checked{}>
+  <label>Mark as Present</label>
+</div>
+            '''.format(item.pk, item.pk, disabled_attr)
+    else:
+        is_present = '''
+                            <div class="ui checkbox">
+                  <input type="checkbox" name="isPresent{}" id="isPresent{}"{}>
+                  <label>Mark as Present</label>
+                </div>
+                            '''.format(item.pk, item.pk, disabled_attr)
+
+    reason = '''<div class="ui tiny input fluid">
+  <input type="text" placeholder="Reason for Absent" name="reason{}" id="reason{}" value = "{}"{}>
+</div>
+            '''.format(item.pk, item.pk, escape(item.absentReason or ''), disabled_attr)
+
+    if is_approved_leave:
+        action = '<span class="ui tiny blue label">Protected</span>'
+    elif is_holiday:
+        action = '<span class="ui tiny teal label">Holiday</span>'
+
+    return [
+        images,
+        escape(item.teacherID.name if item.teacherID else 'N/A'),
+        escape(item.teacherID.staffType if item.teacherID else 'N/A'),
+        escape(item.teacherID.employeeCode if item.teacherID and item.teacherID.employeeCode else 'N/A'),
+        status_chip,
+        is_present,
+        reason,
+        escape(item.lastEditedBy or 'N/A'),
+        escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
+        action,
+    ]
+
+
 class TakeTeacherAttendanceJson(BaseDatatableView):
-    order_columns = ['teacherID.photo', 'teacherID.name', 'teacherID.staffType', 'teacherID.employeeCode', 'isPresent',
+    order_columns = ['teacherID.photo', 'teacherID.name', 'teacherID.staffType', 'teacherID.employeeCode', 'attendanceStatus', 'isPresent',
                      'absentReason', 'lastEditedBy', 'lastUpdatedOn']
+
+    def _get_or_create_teacher_attendance(self, *, teacher, attendance_date, session_id, leave_obj=None, holiday_obj=None):
+        attendance_obj = TeacherAttendance.objects.filter(
+            isDeleted=False,
+            sessionID_id=session_id,
+            teacherID_id=teacher.id,
+            attendanceDate__date=attendance_date.date(),
+        ).order_by('id').first()
+        if attendance_obj:
+            return attendance_obj
+
+        leave_reason = leave_application_note(leave_obj) if leave_obj else ''
+        holiday_reason = holiday_note(holiday_obj) if holiday_obj else ''
+        attendance_obj = TeacherAttendance.objects.create(
+            attendanceDate=attendance_date,
+            isDeleted=False,
+            teacherID_id=teacher.id,
+            sessionID_id=session_id,
+            schoolID_id=teacher.schoolID_id,
+            isPresent=False,
+            isHoliday=bool(holiday_obj),
+            absentReason=holiday_reason or leave_reason,
+            attendanceStatus=ATTENDANCE_STATUS_HOLIDAY if holiday_obj else (ATTENDANCE_STATUS_LEAVE if leave_obj else ATTENDANCE_STATUS_ABSENT),
+            leaveDurationType=None if holiday_obj else (leave_obj.durationType if leave_obj else None),
+            sourceHoliday=holiday_obj,
+            holidaySyncCreatedAttendance=bool(holiday_obj),
+            sourceLeaveApplication=leave_obj,
+            leaveSyncCreatedAttendance=bool(leave_obj and not holiday_obj),
+        )
+        pre_save_with_user.send(sender=TeacherAttendance, instance=attendance_obj, user=self.request.user.pk)
+        return attendance_obj
+
+    def _apply_approved_leave_to_attendance(self, attendance_obj, leave_obj):
+        if not leave_obj:
+            return
+        if attendance_obj.isHoliday or attendance_obj.attendanceStatus == ATTENDANCE_STATUS_HOLIDAY:
+            return
+        leave_reason = leave_application_note(leave_obj)
+        if attendance_obj.isPresent or not attendance_obj.absentReason or attendance_obj.attendanceStatus != ATTENDANCE_STATUS_LEAVE:
+            apply_attendance_status(
+                attendance_obj,
+                is_present=False,
+                absent_reason=leave_reason,
+                attendance_status=ATTENDANCE_STATUS_LEAVE,
+            )
+            attendance_obj.leaveDurationType = leave_obj.durationType
+            attendance_obj.sourceLeaveApplication = leave_obj
+            pre_save_with_user.send(sender=TeacherAttendance, instance=attendance_obj, user=self.request.user.pk)
+            attendance_obj.save()
+
+    def _apply_holiday_to_attendance(self, attendance_obj, holiday_obj):
+        if not holiday_obj:
+            return
+        if attendance_obj.sourceHoliday_id != holiday_obj.id:
+            attendance_obj.holidaySyncPreviousIsPresent = attendance_obj.isPresent
+            attendance_obj.holidaySyncPreviousIsHoliday = attendance_obj.isHoliday
+            attendance_obj.holidaySyncPreviousAbsentReason = attendance_obj.absentReason
+            attendance_obj.holidaySyncPreviousAttendanceStatus = attendance_obj.attendanceStatus
+            attendance_obj.holidaySyncPreviousLeaveDurationType = attendance_obj.leaveDurationType
+        attendance_obj.isPresent = False
+        attendance_obj.isHoliday = True
+        attendance_obj.attendanceStatus = ATTENDANCE_STATUS_HOLIDAY
+        attendance_obj.absentReason = holiday_note(holiday_obj)
+        attendance_obj.leaveDurationType = None
+        attendance_obj.sourceHoliday = holiday_obj
+        pre_save_with_user.send(sender=TeacherAttendance, instance=attendance_obj, user=self.request.user.pk)
+        attendance_obj.save()
 
     @transaction.atomic
     def get_initial_queryset(self):
@@ -3956,30 +4313,37 @@ class TakeTeacherAttendanceJson(BaseDatatableView):
                 date_value=aDate.date(),
                 ids=[s.id for s in teachers]
             )
+            pending_leave_map = pending_leave_map_for_date(
+                session_id=self.request.session["current_session"]["Id"],
+                role='teacher',
+                date_value=aDate.date(),
+                ids=[s.id for s in teachers]
+            )
+            self.pending_leave_map = pending_leave_map
+            holiday_obj = holiday_for_date(
+                session_id=self.request.session["current_session"]["Id"],
+                target_date=aDate.date(),
+                applies_to='teachers',
+            )
+            attendance_ids = []
             for s in teachers:
-                leave_obj = leave_map.get(s.id)
-                leave_reason = ''
-                if leave_obj:
-                    leave_reason = f"Approved Leave: {leave_obj.leaveTypeID.name if leave_obj.leaveTypeID else 'Leave'}"
-                try:
-                    attendance_obj = TeacherAttendance.objects.get(attendanceDate__icontains=aDate, isDeleted=False, teacherID_id=s.id,
-                                                                   sessionID_id=self.request.session["current_session"]["Id"])
-                    if leave_reason and (attendance_obj.isPresent or not attendance_obj.absentReason):
-                        attendance_obj.isPresent = False
-                        attendance_obj.absentReason = leave_reason
-                        pre_save_with_user.send(sender=TeacherAttendance, instance=attendance_obj, user=self.request.user.pk)
-                        attendance_obj.save()
-
-                except:
-                    instance = TeacherAttendance.objects.create(attendanceDate=aDate, isDeleted=False,
-                                                                teacherID_id=s.id, absentReason=leave_reason)
-                    pre_save_with_user.send(sender=TeacherAttendance, instance=instance, user=self.request.user.pk)
+                leave_obj = None if holiday_obj else leave_map.get(s.id)
+                attendance_obj = self._get_or_create_teacher_attendance(
+                    teacher=s,
+                    attendance_date=aDate,
+                    session_id=self.request.session["current_session"]["Id"],
+                    leave_obj=leave_obj,
+                    holiday_obj=holiday_obj,
+                )
+                self._apply_holiday_to_attendance(attendance_obj, holiday_obj)
+                self._apply_approved_leave_to_attendance(attendance_obj, leave_obj)
+                attendance_ids.append(attendance_obj.id)
 
             return TeacherAttendance.objects.select_related().filter(isDeleted__exact=False,
-                                                                     attendanceDate__icontains=aDate, isDeleted=False,
+                                                                     pk__in=attendance_ids,
                                                                      sessionID_id=
                                                                      self.request.session["current_session"][
-                                                                         "Id"])
+                                                                         "Id"]).order_by('teacherID__name', 'id')
 
         except:
             return TeacherAttendance.objects.none()
@@ -4000,43 +4364,19 @@ class TakeTeacherAttendanceJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            images = _avatar_image_html(item.teacherID.photo)
-
-            action = '''<button class="ui mini primary button" onclick="pushAttendance({})">
-  Save
-</button>'''.format(item.pk),
-            if item.isPresent:
-                is_present = '''
-            <div class="ui checkbox">
-  <input type="checkbox" name="isPresent{}" id="isPresent{}" checked >
-  <label>Mark as Present</label>
-</div>
-            '''.format(item.pk, item.pk)
-            else:
-                is_present = '''
-                            <div class="ui checkbox">
-                  <input type="checkbox" name="isPresent{}" id="isPresent{}" >
-                  <label>Mark as Present</label>
-                </div>
-                            '''.format(item.pk, item.pk)
-
-            reason = '''<div class="ui tiny input fluid">
-  <input type="text" placeholder="Reason for Absent" name="reason{}" id="reason{}" value = "{}">
-</div>
-            '''.format(item.pk, item.pk, item.absentReason)
-
-            json_data.append([
-                images,
-                escape(item.teacherID.name),
-                escape(item.teacherID.staffType),
-                escape(item.teacherID.employeeCode or 'N/A'),
-                is_present,
-                reason,
-                escape(item.lastEditedBy or 'N/A'),
-                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
-                action,
-
-            ])
+            pending_leave = None
+            if item.teacherID_id and item.attendanceDate:
+                pending_map = getattr(self, 'pending_leave_map', None)
+                if pending_map is not None:
+                    pending_leave = pending_map.get(item.teacherID_id)
+                else:
+                    pending_leave = pending_leave_map_for_date(
+                        session_id=item.sessionID_id,
+                        role='teacher',
+                        date_value=item.attendanceDate.date(),
+                        ids=[item.teacherID_id],
+                    ).get(item.teacherID_id)
+            json_data.append(_staff_attendance_datatable_row(item, pending_leave=pending_leave))
 
         return json_data
 
@@ -4051,6 +4391,10 @@ def add_staff_attendance_api(request):
         reason = request.POST.get("reason")
         try:
             instance = TeacherAttendance.objects.select_related('teacherID').get(pk=int(id))
+            if instance.isHoliday or instance.attendanceStatus == ATTENDANCE_STATUS_HOLIDAY:
+                return _api_response(
+                    {'status': 'error', 'message': 'Cannot update attendance on a holiday.', 'color': 'orange'},
+                    safe=False)
             if isPresent == 'true':
                 isPresent = True
             else:
@@ -4066,12 +4410,17 @@ def add_staff_attendance_api(request):
                     return _api_response(
                         {'status': 'error', 'message': 'Cannot mark present on approved leave date.', 'color': 'orange'},
                         safe=False)
-            instance.isPresent = isPresent
-            instance.absentReason = reason
+            apply_attendance_status(instance, is_present=isPresent, absent_reason=reason)
             pre_save_with_user.send(sender=TeacherAttendance, instance=instance, user=request.user.pk)
             instance.save()
+            instance.refresh_from_db()
             return _api_response(
-                {'status': 'success', 'message': 'Attendance added successfully.', 'color': 'success'},
+                {
+                    'status': 'success',
+                    'message': 'Attendance added successfully.',
+                    'color': 'success',
+                    'data': {'row': _staff_attendance_datatable_row(instance)},
+                },
                 safe=False)
         except:
 
@@ -4115,6 +4464,9 @@ def add_staff_attendance_bulk_api(request):
         except TeacherAttendance.DoesNotExist:
             continue
 
+        if instance.isHoliday or instance.attendanceStatus == ATTENDANCE_STATUS_HOLIDAY:
+            continue
+
         if is_present:
             leave_obj = approved_leave_for_date(
                 session_id=instance.sessionID_id,
@@ -4126,8 +4478,7 @@ def add_staff_attendance_bulk_api(request):
                 blocked_staff.append(instance.teacherID.name if instance.teacherID else f'ID {attendance_id}')
                 continue
 
-        instance.isPresent = is_present
-        instance.absentReason = '' if is_present else reason
+        apply_attendance_status(instance, is_present=is_present, absent_reason='' if is_present else reason)
         pre_save_with_user.send(sender=TeacherAttendance, instance=instance, user=request.user.pk)
         instance.save()
         updated_count += 1
@@ -4185,30 +4536,47 @@ class StaffAttendanceHistoryByDateRangeJson(BaseDatatableView):
             dateRangeEndDate = self.request.GET.get("dateRangeEndDate")
             dateRangeStartDate = datetime.strptime(dateRangeStartDate, '%d/%m/%Y')
             dateRangeEndDate = datetime.strptime(dateRangeEndDate, '%d/%m/%Y')
+            start_date = dateRangeStartDate.date()
+            end_date = dateRangeEndDate.date()
 
             for item in qs:
                 images = _avatar_image_html(item.photo)
                 attendance_qs = TeacherAttendance.objects.filter(
                     teacherID_id=item.id,
-                    isHoliday=False,
                     isDeleted=False,
                     sessionID_id=self.request.session["current_session"]["Id"],
-                    attendanceDate__range=[dateRangeStartDate, dateRangeEndDate + timedelta(days=1)],
-                )
-                leave_count = _count_approved_teacher_leave_days(
-                    session_id=self.request.session["current_session"]["Id"],
-                    teacher_id=item.id,
-                    start_date=dateRangeStartDate.date(),
-                    end_date=dateRangeEndDate.date(),
-                )
-                present_count = attendance_qs.filter(isPresent=True).count()
-                absent_count = attendance_qs.filter(isPresent=False).exclude(
-                    absentReason__istartswith='Approved Leave'
-                ).count()
-                total_days = present_count + absent_count + leave_count
+                    attendanceDate__date__gte=start_date,
+                    attendanceDate__date__lte=end_date,
+                ).order_by('attendanceDate', 'id')
 
-                if total_days != 0:
-                    percentage = present_count / total_days * 100
+                day_map = _student_attendance_day_map(attendance_qs)
+                approved_leaves = LeaveApplication.objects.select_related('leaveTypeID').filter(
+                    isDeleted=False,
+                    sessionID_id=self.request.session["current_session"]["Id"],
+                    applicantRole='teacher',
+                    teacherID_id=item.id,
+                    status='approved',
+                    startDate__lte=end_date,
+                    endDate__gte=start_date,
+                )
+                for leave in approved_leaves:
+                    day = max(start_date, leave.startDate)
+                    end_day = min(end_date, leave.endDate)
+                    while day <= end_day:
+                        existing = day_map.get(day)
+                        if not existing or _student_attendance_status_priority(existing['status']) < _student_attendance_status_priority(ATTENDANCE_STATUS_LEAVE):
+                            day_map[day] = {'status': ATTENDANCE_STATUS_LEAVE, 'row': None}
+                        day += timedelta(days=1)
+
+                present_count = sum(1 for data in day_map.values() if data['status'] == 'present')
+                leave_count = sum(1 for data in day_map.values() if data['status'] == ATTENDANCE_STATUS_LEAVE)
+                absent_count = sum(1 for data in day_map.values() if data['status'] == ATTENDANCE_STATUS_ABSENT)
+                holiday_count = sum(1 for data in day_map.values() if data['status'] == ATTENDANCE_STATUS_HOLIDAY)
+                working_days = present_count + absent_count + leave_count
+                recorded_days = working_days + holiday_count
+
+                if working_days != 0:
+                    percentage = present_count / working_days * 100
                 else:
                     # Handle the case when the denominator is zero
                     percentage = 0
@@ -4221,7 +4589,9 @@ class StaffAttendanceHistoryByDateRangeJson(BaseDatatableView):
                     present_count,
                     absent_count,
                     leave_count,
-                    total_days,
+                    holiday_count,
+                    working_days,
+                    recorded_days,
                     round(percentage, 2)
 
                 ])
@@ -4232,7 +4602,7 @@ class StaffAttendanceHistoryByDateRangeJson(BaseDatatableView):
 
 
 class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
-    order_columns = ['attendanceDate', 'isPresent', 'isPresent', 'isPresent', 'absentReason', 'lastEditedBy', 'lastUpdatedOn']
+    order_columns = ['attendanceDate', 'attendanceStatus', 'isPresent', 'isPresent', 'isPresent', 'absentReason', 'lastEditedBy', 'lastUpdatedOn']
 
     @transaction.atomic
     def get_initial_queryset(self):
@@ -4260,8 +4630,7 @@ class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
                 endDate__gte=ByStudentStartDate.date(),
             )
             for leave in approved_leaves:
-                leave_type_name = leave.leaveTypeID.name if leave.leaveTypeID else 'Leave'
-                leave_reason = f'Approved Leave: {leave_type_name}'
+                leave_reason = leave_application_note(leave)
                 day = max(ByStudentStartDate.date(), leave.startDate)
                 end_day = min(ByStudentEndDate.date(), leave.endDate)
                 while day <= end_day:
@@ -4279,15 +4648,18 @@ class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
                             teacherID_id=teacher_id,
                             isPresent=False,
                             absentReason=leave_reason,
+                            attendanceStatus=ATTENDANCE_STATUS_LEAVE,
+                            leaveDurationType=leave.durationType,
+                            sourceLeaveApplication=leave,
+                            leaveSyncCreatedAttendance=True,
                         )
                         pre_save_with_user.send(sender=TeacherAttendance, instance=instance, user=self.request.user.pk)
                     day += timedelta(days=1)
 
-            return TeacherAttendance.objects.select_related().filter(isDeleted__exact=False, isHoliday=False,
+            return TeacherAttendance.objects.select_related().filter(isDeleted__exact=False,
                                                                      teacherID_id=teacher_id,
-                                                                     attendanceDate__range=[ByStudentStartDate,
-                                                                                            ByStudentEndDate + timedelta(
-                                                                                                days=1)],
+                                                                     attendanceDate__date__gte=ByStudentStartDate.date(),
+                                                                     attendanceDate__date__lte=ByStudentEndDate.date(),
                                                                      sessionID_id=
                                                                      session_id).order_by('attendanceDate')
 
@@ -4308,27 +4680,42 @@ class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
 
     def prepare_results(self, qs):
         json_data = []
-        for item in qs:
-            is_leave = (item.absentReason or '').strip().lower().startswith('approved leave')
-            if item.isPresent is True:
+        day_map = _student_attendance_day_map(qs)
+        for day_key in sorted(day_map.keys()):
+            item = day_map[day_key]['row']
+            status = day_map[day_key]['status']
+            status_label = 'Present'
+            if status == 'present':
                 Present = 'Yes'
                 Absent = 'No'
                 Leave = 'No'
-            else:
+                reason = item.absentReason or ''
+            elif status == ATTENDANCE_STATUS_HOLIDAY:
+                status_label = 'Holiday'
                 Present = 'No'
-                if is_leave:
+                Absent = 'No'
+                Leave = 'No'
+                reason = item.absentReason or 'Holiday'
+            else:
+                status_label = 'Leave' if status == ATTENDANCE_STATUS_LEAVE else 'Absent'
+                Present = 'No'
+                if status == ATTENDANCE_STATUS_LEAVE:
                     Absent = 'No'
                     Leave = 'Yes'
                 else:
                     Absent = 'Yes'
                     Leave = 'No'
+                reason = item.absentReason or ''
+                if status == ATTENDANCE_STATUS_LEAVE and item.leaveDurationType:
+                    reason = f'{reason} - {leave_duration_label(item.leaveDurationType)}' if reason else leave_duration_label(item.leaveDurationType)
 
             json_data.append([
-                escape(item.attendanceDate.strftime('%d-%m-%Y')),
+                escape(day_key.strftime('%d-%m-%Y')),
+                escape(status_label),
                 escape(Present),
                 escape(Absent),
                 escape(Leave),
-                escape(item.absentReason),
+                escape(reason),
                 escape(item.lastEditedBy or 'N/A'),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
 
@@ -10282,6 +10669,208 @@ def update_event_type_api(request):
     except Exception as e:
         logger.error(f'Error in update_event_type_api: {e}')
         return ErrorResponse('Failed to update event type.', extra={'color': 'red'}).to_json_response()
+
+
+def _parse_holiday_date(value, label):
+    value = (value or '').strip()
+    if not value:
+        raise ValueError(f'{label} is required.')
+    return datetime.strptime(value, '%d/%m/%Y').date()
+
+
+def _holiday_payload_from_request(request):
+    post_data = request.POST.dict()
+    title = (post_data.get('title') or '').strip()
+    holiday_type = (post_data.get('holiday_type') or '').strip()
+    applies_to = (post_data.get('applies_to') or '').strip()
+    start_date = _parse_holiday_date(post_data.get('start_date'), 'Start date')
+    end_date = _parse_holiday_date(post_data.get('end_date'), 'End date')
+    description = (post_data.get('description') or '').strip()
+
+    valid_types = {choice[0] for choice in SchoolHoliday.HOLIDAY_TYPE_CHOICES}
+    valid_applies_to = {choice[0] for choice in SchoolHoliday.APPLIES_TO_CHOICES}
+    if not title or not holiday_type or not applies_to:
+        raise ValueError('Title, holiday type and applies to are required.')
+    if holiday_type not in valid_types:
+        raise ValueError('Invalid holiday type selected.')
+    if applies_to not in valid_applies_to:
+        raise ValueError('Invalid applies to selected.')
+    if end_date < start_date:
+        raise ValueError('End date cannot be before start date.')
+
+    return {
+        'title': title,
+        'holidayType': holiday_type,
+        'appliesTo': applies_to,
+        'startDate': start_date,
+        'endDate': end_date,
+        'description': description,
+    }
+
+
+class HolidayListJson(BaseDatatableView):
+    order_columns = ['title', 'holidayType', 'appliesTo', 'startDate', 'endDate', 'description', 'lastEditedBy', 'lastUpdatedOn']
+
+    def get_initial_queryset(self):
+        return SchoolHoliday.objects.filter(
+            isDeleted=False,
+            sessionID_id=self.request.session['current_session']['Id'],
+        )
+
+    def filter_queryset(self, qs):
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(title__icontains=search)
+                | Q(holidayType__icontains=search)
+                | Q(appliesTo__icontains=search)
+                | Q(startDate__icontains=search)
+                | Q(endDate__icontains=search)
+                | Q(description__icontains=search)
+                | Q(lastEditedBy__icontains=search)
+                | Q(lastUpdatedOn__icontains=search)
+            )
+        return qs
+
+    def prepare_results(self, qs):
+        json_data = []
+        for item in qs:
+            action = '''
+              <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
+                <i class="pen icon"></i>
+              </button>
+              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
+                <i class="trash alternate icon"></i>
+              </button></td>'''.format(item.pk, item.pk)
+            json_data.append([
+                escape(item.title or 'N/A'),
+                escape(item.get_holidayType_display()),
+                escape(item.get_appliesTo_display()),
+                escape(item.startDate.strftime('%d-%m-%Y') if item.startDate else 'N/A'),
+                escape(item.endDate.strftime('%d-%m-%Y') if item.endDate else 'N/A'),
+                escape(item.description or ''),
+                escape(item.lastEditedBy or 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
+                action,
+            ])
+        return json_data
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def add_holiday_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Invalid request method.', extra={'color': 'red'}).to_json_response()
+
+    try:
+        payload = _holiday_payload_from_request(request)
+        duplicate = SchoolHoliday.objects.filter(
+            isDeleted=False,
+            sessionID_id=request.session['current_session']['Id'],
+            title__iexact=payload['title'],
+            startDate=payload['startDate'],
+            endDate=payload['endDate'],
+            appliesTo=payload['appliesTo'],
+        ).exists()
+        if duplicate:
+            return ErrorResponse('Holiday already exists for the same date range and audience.', extra={'color': 'orange'}).to_json_response()
+
+        obj = SchoolHoliday(**payload)
+        pre_save_with_user.send(sender=SchoolHoliday, instance=obj, user=request.user.pk)
+        resync_holiday_to_attendance(obj, user_id=request.user.pk)
+        return SuccessResponse('Holiday added and attendance marked successfully.', extra={'color': 'success'}).to_json_response()
+    except ValueError as e:
+        return ErrorResponse(str(e), extra={'color': 'red'}).to_json_response()
+    except Exception as e:
+        logger.error(f'Error in add_holiday_api: {e}')
+        return ErrorResponse('Failed to add holiday.', extra={'color': 'red'}).to_json_response()
+
+
+@login_required
+def get_holiday_detail(request):
+    try:
+        obj = SchoolHoliday.objects.get(
+            pk=request.GET.get('id'),
+            isDeleted=False,
+            sessionID_id=request.session['current_session']['Id'],
+        )
+        data = {
+            'ID': obj.pk,
+            'title': obj.title or '',
+            'holidayType': obj.holidayType or '',
+            'appliesTo': obj.appliesTo or '',
+            'startDate': obj.startDate.strftime('%d/%m/%Y') if obj.startDate else '',
+            'endDate': obj.endDate.strftime('%d/%m/%Y') if obj.endDate else '',
+            'description': obj.description or '',
+        }
+        return SuccessResponse('Holiday detail fetched successfully.', data=data, extra={'color': 'success'}).to_json_response()
+    except Exception as e:
+        logger.error(f'Error in get_holiday_detail: {e}')
+        return ErrorResponse('Error in fetching holiday details.', extra={'color': 'red'}).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def update_holiday_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Invalid request method.', extra={'color': 'red'}).to_json_response()
+
+    try:
+        edit_id = request.POST.get('editID')
+        if not edit_id:
+            return ErrorResponse('Holiday id is required.', extra={'color': 'red'}).to_json_response()
+
+        payload = _holiday_payload_from_request(request)
+        obj = SchoolHoliday.objects.get(
+            pk=int(edit_id),
+            isDeleted=False,
+            sessionID_id=request.session['current_session']['Id'],
+        )
+        duplicate = SchoolHoliday.objects.filter(
+            isDeleted=False,
+            sessionID_id=request.session['current_session']['Id'],
+            title__iexact=payload['title'],
+            startDate=payload['startDate'],
+            endDate=payload['endDate'],
+            appliesTo=payload['appliesTo'],
+        ).exclude(pk=obj.pk).exists()
+        if duplicate:
+            return ErrorResponse('Another holiday already exists for the same date range and audience.', extra={'color': 'orange'}).to_json_response()
+
+        for field, value in payload.items():
+            setattr(obj, field, value)
+        pre_save_with_user.send(sender=SchoolHoliday, instance=obj, user=request.user.pk)
+        resync_holiday_to_attendance(obj, user_id=request.user.pk)
+        return SuccessResponse('Holiday updated and attendance refreshed successfully.', extra={'color': 'success'}).to_json_response()
+    except ValueError as e:
+        return ErrorResponse(str(e), extra={'color': 'red'}).to_json_response()
+    except Exception as e:
+        logger.error(f'Error in update_holiday_api: {e}')
+        return ErrorResponse('Failed to update holiday.', extra={'color': 'red'}).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def delete_holiday(request):
+    if request.method != 'POST':
+        return ErrorResponse('Invalid request method.', extra={'color': 'red'}).to_json_response()
+
+    try:
+        obj = SchoolHoliday.objects.get(
+            pk=int(request.POST.get('dataID')),
+            isDeleted=False,
+            sessionID_id=request.session['current_session']['Id'],
+        )
+        revert_holiday_attendance_sync(obj, user_id=request.user.pk)
+        obj.isDeleted = True
+        pre_save_with_user.send(sender=SchoolHoliday, instance=obj, user=request.user.pk)
+        return SuccessResponse('Holiday deleted and attendance reverted successfully.', extra={'color': 'success'}).to_json_response()
+    except Exception as e:
+        logger.error(f'Error in delete_holiday: {e}')
+        return ErrorResponse('Error in deleting holiday.', extra={'color': 'red'}).to_json_response()
 
 
 @transaction.atomic

@@ -1383,6 +1383,10 @@
                 <div class="student-mobile-icon-wrap"><i class="calendar alternate outline icon"></i></div>
                 <div class="student-mobile-tile-label">My Attendance</div>
             </a>
+            <a class="student-mobile-tile" data-cat="study" href="{% url 'studentApp:student_holiday_list' %}">
+                <div class="student-mobile-icon-wrap"><i class="calendar outline icon"></i></div>
+                <div class="student-mobile-tile-label">Holiday List</div>
+            </a>
             <a class="student-mobile-tile" data-cat="account" href="{% url 'studentApp:fee_detail' %}">
                 <div class="student-mobile-icon-wrap"><i class="credit card outline icon"></i></div>
                 <div class="student-mobile-tile-label">Fee Details</div>
@@ -1589,6 +1593,9 @@
                 </a>
                 <a class="student-feature-item" href="{% url 'studentApp:attendance_history' %}">
                     <i class="calendar check outline icon"></i><span>Attendance History</span>
+                </a>
+                <a class="student-feature-item" href="{% url 'studentApp:student_holiday_list' %}">
+                    <i class="calendar outline icon"></i><span>Holiday List</span>
                 </a>
                 <a class="student-feature-item" href="{% url 'studentApp:fee_detail' %}">
                     <i class="money bill alternate outline icon"></i><span>Fee Details</span>

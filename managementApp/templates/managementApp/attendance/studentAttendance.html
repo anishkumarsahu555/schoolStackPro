@@ -213,6 +213,7 @@
                                 <th>Photo</th>
                                 <th>StudentName</th>
                                 <th>RollNo.</th>
+                                <th>Status</th>
                                 <th>IsPresent</th>
                                 <th>Reason for Absent</th>
                                 <th>EditedBy</th>
@@ -426,7 +427,7 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [1, 2, 3, 4, 5, 6]
+                    columns: [1, 2, 3, 4, 5, 6, 7]
                 }
             }
                 {% comment %}      , {
@@ -440,11 +441,12 @@
                 {"name": "studentID.photo", "targets": 0, "orderable": true},
                 {"name": "studentID.name", "targets": 1, "orderable": true},
                 {"name": "studentID.roll", "targets": 2, "orderable": true},
-                {"name": "isPresent", "targets": 3, "orderable": true},
-                {"name": "absentReason", "targets": 4, "orderable": true},
-                {"name": "lastEditedBy", "targets": 5, "orderable": true},
-                {"name": "lastUpdatedOn", "targets": 6, "orderable": true},
-                {"name": "action", "targets": 7, "orderable": false}
+                {"name": "attendanceStatus", "targets": 3, "orderable": true},
+                {"name": "isPresent", "targets": 4, "orderable": true},
+                {"name": "absentReason", "targets": 5, "orderable": true},
+                {"name": "lastEditedBy", "targets": 6, "orderable": true},
+                {"name": "lastUpdatedOn", "targets": 7, "orderable": true},
+                {"name": "action", "targets": 8, "orderable": false}
             ],
             aaSorting: [[2, 'desc']],
             "lengthMenu": [[100, 125, 150, 200, -1], [100, 125, 150, 200, "All"]],
@@ -471,6 +473,7 @@
         }
 
         function pushAttendance(id) {
+            const tableRow = subjectTab.row($('#isPresent' + id).closest('tr'));
             let isPresent = $('#isPresent'+id).prop('checked');
             let reason = $('#reason'+id).val();
               let data = new FormData();
@@ -489,9 +492,23 @@
                     success: function (response) {
                         if (response.success) {
                             addSuccessNotification(response.message, response.color);
-                            {#subjectTab.ajax.reload(null, false);#}
+                            if (response.data && response.data.row) {
+                                const rowData = response.data.row;
+                                const rowNode = $(tableRow.node());
+                                tableRow.data(rowData);
+                                rowNode.children('td').each(function (index) {
+                                    if (typeof rowData[index] !== 'undefined') {
+                                        $(this).html(rowData[index]);
+                                    }
+                                });
+                            } else {
+                                const statusCell = $('#isPresent' + id).closest('tr').children('td').eq(3);
+                                statusCell.html(isPresent
+                                    ? '<span class="ui tiny green label">Present</span>'
+                                    : '<span class="ui tiny grey label">Absent</span>');
+                            }
                         } else {
-                            addErrorNotification();
+                            addErrorNotification(response.message || 'Unable to save attendance.');
 
                         }
 
@@ -510,6 +527,7 @@
         function collectVisibleAttendanceEntries() {
             const entries = [];
             $('input[id^="isPresent"]').each(function () {
+                if ($(this).prop('disabled')) return;
                 const id = String($(this).attr('id')).replace('isPresent', '');
                 if (!id) return;
                 entries.push({
@@ -523,10 +541,11 @@
 
         function markAllAttendance(isPresent) {
             $('input[id^="isPresent"]').each(function () {
+                if ($(this).prop('disabled')) return;
                 $(this).prop('checked', isPresent);
             });
             if (isPresent) {
-                $('input[id^="reason"]').val('');
+                $('input[id^="reason"]').not(':disabled').val('');
             }
         }
 

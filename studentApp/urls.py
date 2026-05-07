@@ -18,6 +18,7 @@ urlpatterns = [
     path('progress-report-cards/', student_progress_report_cards, name='student_progress_report_cards'),
     path('subject-notes/', student_subject_notes, name='student_subject_notes'),
     path('events/', student_events, name='student_events'),
+    path('holidays/', student_holiday_list, name='student_holiday_list'),
     path('leave-applications/', student_leave_applications, name='student_leave_applications'),
 
 ]

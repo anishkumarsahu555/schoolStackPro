@@ -407,7 +407,15 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="three wide field">
+                        <div class="two wide required field">
+                            <label>Duration</label>
+                            <select class="ui dropdown" id="durationType">
+                                <option value="full_day">Full Day</option>
+                                <option value="first_half">First Half</option>
+                                <option value="second_half">Second Half</option>
+                            </select>
+                        </div>
+                        <div class="two wide field">
                             <label>Attachment</label>
                             <input type="file" id="attachment">
                         </div>
@@ -430,6 +438,7 @@
                         <th>Start Date</th>
                         <th>End Date</th>
                         <th>Total Days</th>
+                        <th>Duration</th>
                         <th>Status</th>
                         <th>Attachment</th>
                         <th>Reason</th>
@@ -473,6 +482,7 @@
                                     <div class="leave-meta">
                                         <div><b>Date:</b> {{ leave.startDate|date:"d M Y" }} to {{ leave.endDate|date:"d M Y" }}</div>
                                         <div><b>Total Days:</b> {{ leave.totalDays|default:"-" }}</div>
+                                        <div><b>Duration:</b> {{ leave.get_durationType_display|default:"Full Day" }}</div>
                                         <div><b>Applied On:</b> {{ leave.datetime|date:"d M Y, h:i A" }}</div>
                                         <div><b>Attachment:</b> {% if leave.attachment %}<a href="{{ leave.attachment.url }}" target="_blank" rel="noopener">View</a>{% else %}-{% endif %}</div>
                                         <div><b>Remark:</b> {{ leave.actionRemark|default:"-" }}</div>
@@ -581,12 +591,13 @@
                         {name: 'startDate', targets: 1},
                         {name: 'endDate', targets: 2},
                         {name: 'totalDays', targets: 3},
-                        {name: 'status', targets: 4},
-                        {name: 'attachment', targets: 5, orderable: false},
-                        {name: 'reason', targets: 6, orderable: false},
-                        {name: 'actionRemark', targets: 7, orderable: false},
-                        {name: 'datetime', targets: 8},
-                        {name: 'action', targets: 9, orderable: false}
+                        {name: 'durationType', targets: 4},
+                        {name: 'status', targets: 5},
+                        {name: 'attachment', targets: 6, orderable: false},
+                        {name: 'reason', targets: 7, orderable: false},
+                        {name: 'actionRemark', targets: 8, orderable: false},
+                        {name: 'datetime', targets: 9},
+                        {name: 'action', targets: 10, orderable: false}
                     ]
                 });
             }
@@ -610,7 +621,8 @@
                 if (!res.success) return;
                 let html = '<option value="">Select Leave Type</option>';
                 (res.data || []).forEach(function (row) {
-                    html += '<option value="' + row.ID + '">' + row.Name + '</option>';
+                    let balanceText = row.IsLimited ? ' (Available: ' + row.AvailableDays + '/' + row.QuotaDays + ')' : '';
+                    html += '<option value="' + row.ID + '">' + row.Name + balanceText + '</option>';
                 });
                 $('#leaveTypeID').html(html).dropdown('refresh');
             });
@@ -623,6 +635,7 @@
             fd.append('leaveTypeID', $('#leaveTypeID').val());
             fd.append('startDate', $('#startDate').val());
             fd.append('endDate', $('#endDate').val());
+            fd.append('durationType', $('#durationType').val());
             fd.append('reason', $('#reason').val());
             if ($('#attachment')[0].files.length) fd.append('attachment', $('#attachment')[0].files[0]);
             return fd;
@@ -668,6 +681,7 @@
                 $('#leaveTypeID').dropdown('set selected', String(res.data.leaveTypeID));
                 $('#startDate').val(res.data.startDate);
                 $('#endDate').val(res.data.endDate);
+                $('#durationType').dropdown('set selected', res.data.durationType || 'full_day');
                 $('#reason').val(res.data.reason);
                 $('#addBtn').addClass('is-hidden');
                 $('#updateBtn').addClass('is-active');
@@ -741,6 +755,7 @@
             $('#leaveForm')[0].reset();
             $('#editID').val('');
             $('#leaveTypeID').dropdown('clear');
+            $('#durationType').dropdown('set selected', 'full_day');
             $('#addBtn').removeClass('is-hidden');
             $('#updateBtn').removeClass('is-active');
         }

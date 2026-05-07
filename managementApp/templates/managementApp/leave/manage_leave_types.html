@@ -45,11 +45,11 @@
                 <form class="ui tiny form" id="leaveTypeForm">{% csrf_token %}
                     <input type="hidden" id="editID">
                     <div class="fields">
-                        <div class="five wide required field">
+                        <div class="three wide required field">
                             <label>Name</label>
                             <input type="text" id="name" placeholder="Ex: Sick Leave">
                         </div>
-                        <div class="three wide field">
+                        <div class="two wide field">
                             <label>Code</label>
                             <input type="text" id="code" placeholder="SL">
                         </div>
@@ -60,6 +60,10 @@
                                 <option value="teacher">Teacher</option>
                                 <option value="student">Student</option>
                             </select>
+                        </div>
+                        <div class="two wide field">
+                            <label>Quota</label>
+                            <input type="number" min="0" step="0.5" id="quotaDays" placeholder="Unlimited">
                         </div>
                         <div class="two wide field">
                             <label>Need Approval</label>
@@ -75,7 +79,7 @@
                                 <option value="false">No</option>
                             </select>
                         </div>
-                        <div class="three wide field" style="padding-top: 1.9rem;">
+                        <div class="two wide field" style="padding-top: 1.9rem;">
                             <div class="leave-action-group">
                                 <button type="button" class="ui mini green button" id="addBtn" onclick="submitLeaveType()"><i class="plus icon"></i>Add</button>
                                 <button type="button" class="ui mini orange button" id="updateBtn" onclick="updateLeaveType()" style="display:none;"><i class="redo icon"></i>Update</button>
@@ -94,6 +98,7 @@
                         <th>Name</th>
                         <th>Code</th>
                         <th>Applicable For</th>
+                        <th>Quota</th>
                         <th>Need Approval</th>
                         <th>Status</th>
                         <th>EditedBy</th>
@@ -134,7 +139,7 @@
                 buttons: [
                     {
                         extend: 'excel',
-                        exportOptions: {columns: [0, 1, 2, 3, 4, 5, 6]}
+                        exportOptions: {columns: [0, 1, 2, 3, 4, 5, 6, 7]}
                     }
                 ],
                 ajax: "{% url 'managementAppAPI:LeaveTypeListJson' %}",
@@ -142,11 +147,12 @@
                     {name: 'name', targets: 0},
                     {name: 'code', targets: 1},
                     {name: 'applicableFor', targets: 2},
-                    {name: 'requiresApproval', targets: 3},
-                    {name: 'isActive', targets: 4},
-                    {name: 'lastEditedBy', targets: 5},
-                    {name: 'lastUpdatedOn', targets: 6},
-                    {name: 'action', targets: 7, orderable: false}
+                    {name: 'quotaDays', targets: 3},
+                    {name: 'requiresApproval', targets: 4},
+                    {name: 'isActive', targets: 5},
+                    {name: 'lastEditedBy', targets: 6},
+                    {name: 'lastUpdatedOn', targets: 7},
+                    {name: 'action', targets: 8, orderable: false}
                 ]
             });
         });
@@ -188,6 +194,7 @@
             fd.append('name', ($('#name').val() || '').trim());
             fd.append('code', $('#code').val());
             fd.append('applicableFor', $('#applicableFor').val());
+            fd.append('quotaDays', $('#quotaDays').val());
             fd.append('requiresApproval', $('#requiresApproval').val());
             fd.append('isActive', $('#isActive').val());
             return fd;
@@ -231,6 +238,7 @@
                 $('#name').val(res.data.name);
                 $('#code').val(res.data.code);
                 $('#applicableFor').dropdown('set selected', res.data.applicableFor);
+                $('#quotaDays').val(res.data.quotaDays || '');
                 $('#requiresApproval').dropdown('set selected', String(res.data.requiresApproval));
                 $('#isActive').dropdown('set selected', String(res.data.isActive));
                 $('#addBtn').hide();
@@ -301,6 +309,7 @@
             $('#applicableFor').dropdown('set selected', 'both');
             $('#requiresApproval').dropdown('set selected', 'true');
             $('#isActive').dropdown('set selected', 'true');
+            $('#quotaDays').val('');
             $('#editID').val('');
             $('#addBtn').show();
             $('#updateBtn').hide();

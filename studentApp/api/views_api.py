@@ -10,6 +10,12 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from homeApp.models import SchoolSession
 from homeApp.session_utils import get_session_month_sequence
+from managementApp.leave_utils import (
+    ATTENDANCE_STATUS_HOLIDAY,
+    ATTENDANCE_STATUS_LEAVE,
+    attendance_status_from_values,
+    attendance_status_priority,
+)
 from managementApp.models import *
 from managementApp.signals import pre_save_with_user
 from studentApp.data_utils import StudentData
@@ -61,7 +67,6 @@ def _attendance_base_queryset(request):
         return StudentAttendance.objects.none()
     return StudentAttendance.objects.filter(
         isDeleted=False,
-        isHoliday=False,
         studentID_id=student_id,
         sessionID_id=current_session_id,
     )
@@ -155,23 +160,23 @@ def _backfill_student_leave_attendance(request, *, student_id, class_id, session
                     isPresent=False,
                     bySubject=False,
                     absentReason=leave_reason,
+                    attendanceStatus=ATTENDANCE_STATUS_LEAVE,
                 )
                 pre_save_with_user.send(sender=StudentAttendance, instance=instance, user=request.user.pk)
             day += timedelta(days=1)
 
 
-def _status_from_attendance_row(is_present, reason):
-    if is_present:
-        return 'present'
-    if (reason or '').strip().lower().startswith('approved leave'):
-        return 'leave'
-    return 'absent'
+def _status_from_attendance_row(is_present, reason, attendance_status=None, is_holiday=False):
+    return attendance_status_from_values(
+        is_present=is_present,
+        absent_reason=reason,
+        is_holiday=is_holiday or attendance_status == ATTENDANCE_STATUS_HOLIDAY,
+        attendance_status=attendance_status,
+    )
 
 
 def _status_priority(status):
-    # Higher number wins when multiple rows exist on same date
-    ranking = {'absent': 1, 'leave': 2, 'present': 3}
-    return ranking.get(status, 0)
+    return attendance_status_priority(status)
 
 
 # Class ------------------
@@ -235,7 +240,6 @@ class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
 
             base_qs = StudentAttendance.objects.select_related().filter(
                 isDeleted__exact=False,
-                isHoliday=False,
                 studentID_id=student_id,
                 attendanceDate__range=[ByStudentStartDate, ByStudentEndDate + timedelta(days=1)],
                 sessionID_id=session_id,
@@ -244,7 +248,8 @@ class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
                 return base_qs.filter(bySubject=False).order_by('attendanceDate')
             else:
                 return base_qs.filter(
-                    Q(subjectID_id=int(ByStudentSubject)) | Q(absentReason__istartswith='Approved Leave')
+                    Q(subjectID_id=int(ByStudentSubject))
+                    | Q(bySubject=False, attendanceStatus__in=[ATTENDANCE_STATUS_LEAVE, ATTENDANCE_STATUS_HOLIDAY])
                 ).order_by('attendanceDate')
 
 
@@ -269,7 +274,7 @@ class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
             if not item.attendanceDate:
                 continue
             day_key = item.attendanceDate.date()
-            status = _status_from_attendance_row(item.isPresent, item.absentReason)
+            status = _status_from_attendance_row(item.isPresent, item.absentReason, item.attendanceStatus, item.isHoliday)
             reason = item.absentReason or ''
             previous = day_map.get(day_key)
             if not previous or _status_priority(status) >= _status_priority(previous['status']):
@@ -283,6 +288,8 @@ class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
                 present, absent = 'Yes', 'No'
             elif status == 'leave':
                 present, absent = 'No', 'No'
+            elif status == ATTENDANCE_STATUS_HOLIDAY:
+                present, absent = 'No', 'No'
             else:
                 present, absent = 'No', 'Yes'
 
@@ -291,6 +298,7 @@ class StudentAttendanceHistoryByDateRangeJson(BaseDatatableView):
                 escape(present),
                 escape(absent),
                 escape(reason),
+                escape(status),
             ])
 
         return json_data
@@ -328,17 +336,17 @@ def StudentAttendanceMonthWiseSummaryApi(request):
         else:
             qs = qs.filter(
                 Q(bySubject=True, subjectID_id=int(by_subject))
-                | Q(bySubject=False, absentReason__istartswith='Approved Leave')
+                | Q(bySubject=False, attendanceStatus__in=[ATTENDANCE_STATUS_LEAVE, ATTENDANCE_STATUS_HOLIDAY])
             )
 
         # Deduplicate by day before month aggregation to prevent inflated counts.
         day_map = {}
-        for row in qs.values('attendanceDate', 'isPresent', 'absentReason'):
+        for row in qs.values('attendanceDate', 'isPresent', 'absentReason', 'attendanceStatus', 'isHoliday'):
             attendance_dt = row.get('attendanceDate')
             if not attendance_dt:
                 continue
             day_key = attendance_dt.date()
-            status = _status_from_attendance_row(row.get('isPresent'), row.get('absentReason'))
+            status = _status_from_attendance_row(row.get('isPresent'), row.get('absentReason'), row.get('attendanceStatus'), row.get('isHoliday'))
             prev = day_map.get(day_key)
             if not prev or _status_priority(status) >= _status_priority(prev):
                 day_map[day_key] = status
@@ -347,7 +355,7 @@ def StudentAttendanceMonthWiseSummaryApi(request):
         for day_key, status in day_map.items():
             month_key = (day_key.year, day_key.month)
             if month_key not in month_agg:
-                month_agg[month_key] = {'present': 0, 'absent': 0, 'leave': 0}
+                month_agg[month_key] = {'present': 0, 'absent': 0, 'leave': 0, 'holiday': 0}
             month_agg[month_key][status] += 1
 
         data = []
@@ -357,6 +365,7 @@ def StudentAttendanceMonthWiseSummaryApi(request):
             present = month_agg[month_key]['present']
             absent = month_agg[month_key]['absent']
             leave = month_agg[month_key]['leave']
+            holiday = month_agg[month_key]['holiday']
             total_working = present + absent + leave
             percentage = round((present * 100.0 / total_working), 2) if total_working else 0
             data.append({
@@ -365,6 +374,8 @@ def StudentAttendanceMonthWiseSummaryApi(request):
                 'present': present,
                 'absent': absent,
                 'leave': leave,
+                'holiday': holiday,
+                'recorded': total_working + holiday,
                 'percentage': percentage,
             })
 
@@ -417,36 +428,48 @@ def StudentAttendanceSubjectWiseSummaryApi(request):
             attendanceDate__range=[start_date, end_date + timedelta(days=1)]
         )
         if by_subject != "all":
-            qs = qs.filter(Q(subjectID_id=int(by_subject)) | Q(absentReason__istartswith='Approved Leave'))
+            qs = qs.filter(
+                Q(subjectID_id=int(by_subject))
+                | Q(bySubject=False, attendanceStatus__in=[ATTENDANCE_STATUS_LEAVE, ATTENDANCE_STATUS_HOLIDAY])
+            )
 
         rows = (
-            qs.values('subjectID__name')
-            .annotate(
-                total=Count('id'),
-                present=Count('id', filter=Q(isPresent=True)),
-                leave=Count('id', filter=Q(isPresent=False, absentReason__istartswith='Approved Leave')),
-                absent=Count('id', filter=Q(isPresent=False)),
-            )
-            .order_by('subjectID__name')
+            qs.values('subjectID__name', 'attendanceDate', 'isPresent', 'absentReason', 'attendanceStatus', 'isHoliday')
+            .order_by('subjectID__name', 'attendanceDate', 'id')
         )
 
-        data = []
+        subject_map = {}
         for row in rows:
-            total = row.get('total') or 0
-            present = row.get('present') or 0
-            leave = row.get('leave') or 0
-            absent = max((row.get('absent') or 0) - leave, 0)
-            total_working = present + absent + leave
-            percentage = round((present * 100.0 / total_working), 2) if total_working else 0
+            attendance_dt = row.get('attendanceDate')
+            if not attendance_dt:
+                continue
+            status = _status_from_attendance_row(row.get('isPresent'), row.get('absentReason'), row.get('attendanceStatus'), row.get('isHoliday'))
             subject_name = row.get('subjectID__name')
             if not subject_name:
-                subject_name = 'Approved Leave'
+                subject_name = 'School-wide'
+            subject_map.setdefault(subject_name, {})
+            day_key = attendance_dt.date()
+            prev = subject_map[subject_name].get(day_key)
+            if not prev or _status_priority(status) >= _status_priority(prev):
+                subject_map[subject_name][day_key] = status
+
+        data = []
+        for subject_name in sorted(subject_map.keys()):
+            statuses = subject_map[subject_name].values()
+            present = sum(1 for status in statuses if status == 'present')
+            leave = sum(1 for status in statuses if status == ATTENDANCE_STATUS_LEAVE)
+            holiday = sum(1 for status in statuses if status == ATTENDANCE_STATUS_HOLIDAY)
+            absent = sum(1 for status in statuses if status == 'absent')
+            total_working = present + absent + leave
+            percentage = round((present * 100.0 / total_working), 2) if total_working else 0
             data.append({
                 'subject': subject_name,
                 'total': total_working,
                 'present': present,
                 'absent': absent,
                 'leave': leave,
+                'holiday': holiday,
+                'recorded': total_working + holiday,
                 'percentage': percentage,
             })
 

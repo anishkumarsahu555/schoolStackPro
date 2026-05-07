@@ -36,6 +36,13 @@
             <span>Attendance History</span>
         </a>
 
+        <div class="nav-section">Holidays</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'student_holiday_list' %}active{% endif %}"
+           href="{% url 'studentApp:student_holiday_list' %}">
+            <i class="calendar alternate outline icon"></i>
+            <span>Holiday List</span>
+        </a>
+
         <div class="nav-section">Fees</div>
         <a class="nav-item {% if request.resolver_match.url_name == 'fee_detail' %}active{% endif %}"
            href="{% url 'studentApp:fee_detail' %}">
