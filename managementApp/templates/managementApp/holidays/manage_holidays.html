@@ -1,0 +1,393 @@
+{% extends base_template|default:'managementApp/index.html' %}
+{% load static %}
+{% block title %}
+    <title>Manage Holidays</title>
+{% endblock %}
+{% block css %}
+{% endblock %}
+{% block body %}
+
+    <style>
+        #HolidayTable_length {
+            left: 20px;
+            position: absolute;
+        }
+
+        #HolidayTable_filter {
+            float: right;
+        }
+
+        .dt-buttons {
+            position: absolute;
+            left: 174px;
+        }
+
+        input[type=search] {
+            width: 100px !important;
+        }
+    </style>
+
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div style="cursor: pointer;" class="item active" data-tab="holiday">Manage Holidays</div>
+            </div>
+            <div class="ui tab active" data-tab="holiday">
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="calendar alternate outline icon"></i>
+                        Add/Edit Holiday
+                    </h4>
+                    <form class="ui tiny form" id="addForm">{% csrf_token %}
+                        <input type="hidden" id="editID">
+
+                        <div class="six fields">
+                            <div class="field required">
+                                <label>Holiday Title</label>
+                                <input type="text" name="title" id="title" placeholder="Holiday Title">
+                            </div>
+
+                            <div class="field required">
+                                <label>Holiday Type</label>
+                                <select class="ui search dropdown" id="holiday_type">
+                                    <option value="">Select Type</option>
+                                    <option value="general">General</option>
+                                    <option value="festival">Festival</option>
+                                    <option value="national">National</option>
+                                    <option value="exam_break">Exam Break</option>
+                                    <option value="emergency">Emergency</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="field required">
+                                <label>Applies To</label>
+                                <select class="ui search dropdown" id="applies_to">
+                                    <option value="">Select Audience</option>
+                                    <option value="both">Students &amp; Teachers</option>
+                                    <option value="students">Students Only</option>
+                                    <option value="teachers">Teachers Only</option>
+                                </select>
+                            </div>
+
+                            <div class="field required">
+                                <label>Start Date</label>
+                                <div class="ui calendar" id="start_dateCal">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" placeholder="Start Date" id="start_date">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field required">
+                                <label>End Date</label>
+                                <div class="ui calendar" id="end_dateCal">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" placeholder="End Date" id="end_date">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field" style="padding-top: 2em;">
+                                <button type="button" id="saveBtn" class="ui mini green button saveBtn" onclick="addData()">
+                                    <i class="icon plus square"></i>
+                                    Add
+                                </button>
+                                <button style="display: none" type="button" id="saveBtnUpdate" onclick="editData()" class="ui mini orange button saveBtnUpdate">
+                                    <i class="icon redo"></i>
+                                    Update
+                                </button>
+                                <button style="display: none" class="ui right labeled icon button green saveBtnLoad">
+                                    Saving ...
+                                    <i class="checkmark icon"></i>
+                                </button>
+                                <button class="ui mini red button" type="button" onclick="clearAndReset()">
+                                    <i class="icon times circle"></i>
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="one fields">
+                            <div class="field">
+                                <label>Description</label>
+                                <input type="text" name="description" id="description" placeholder="Description">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="row" style="padding-left: 5px; padding-right: 5px">
+                    <div class="wide">
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                               id="HolidayTable"
+                               style="margin-top: 5px;width: 100%">
+                            <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Applies To</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Description</th>
+                                <th>EditedBy</th>
+                                <th>UpdatedOn</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="ui basic modal custom" id="deleteDataModal">
+                    <div class="ui icon header">
+                        <i class="trash alternate icon red"></i>
+                        Holiday Details will be Deleted
+                    </div>
+                    <div class="content">
+                        <p style="text-align: center">The holiday will be deleted and synced attendance rows will be reverted, are you sure?</p>
+                    </div>
+                    <div class="actions">
+                        <div class="ui red basic cancel inverted button">
+                            <i class="remove icon"></i>
+                            No
+                        </div>
+                        <input type="hidden" id="dataID">
+                        <div class="ui green ok inverted button" onclick="deleteData()">
+                            <i class="checkmark icon"></i>
+                            Yes
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let holidayTab;
+
+        $(function () {
+            $('.ui.dropdown').dropdown();
+
+            $('#start_dateCal').calendar({
+                monthFirst: false,
+                type: 'date',
+                formatter: {
+                    date: function (date) {
+                        if (!date) return '';
+                        return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                    }
+                }
+            });
+
+            $('#end_dateCal').calendar({
+                monthFirst: false,
+                type: 'date',
+                formatter: {
+                    date: function (date) {
+                        if (!date) return '';
+                        return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                    }
+                }
+            });
+
+            holidayTab = $('#HolidayTable').DataTable({
+                dom: 'Blfrtip',
+                scrollY: '350px',
+                scrollX: true,
+                stateSave: true,
+                fixedColumns: {
+                    left: 1,
+                    right: 1
+                },
+                buttons: [{
+                    extend: 'excel',
+                    exportOptions: {columns: [0, 1, 2, 3, 4, 5, 6, 7]}
+                }],
+                columnDefs: [
+                    {name: 'title', targets: 0, orderable: true},
+                    {name: 'holidayType', targets: 1, orderable: true},
+                    {name: 'appliesTo', targets: 2, orderable: true},
+                    {name: 'startDate', targets: 3, orderable: true},
+                    {name: 'endDate', targets: 4, orderable: true},
+                    {name: 'description', targets: 5, orderable: true},
+                    {name: 'lastEditedBy', targets: 6, orderable: true},
+                    {name: 'lastUpdatedOn', targets: 7, orderable: true},
+                    {name: 'action', targets: 8, orderable: false}
+                ],
+                aaSorting: [[3, 'asc']],
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                pageLength: 10,
+                processing: true,
+                serverSide: true,
+                ajax: "{% url 'managementAppAPI:HolidayListJson' %}"
+            });
+        });
+
+        function buildHolidayPayload() {
+            let data = new FormData();
+            data.append('title', $('#title').val());
+            data.append('holiday_type', $('#holiday_type').val());
+            data.append('applies_to', $('#applies_to').val());
+            data.append('start_date', $('#start_date').val());
+            data.append('end_date', $('#end_date').val());
+            data.append('description', $('#description').val());
+            data.append('editID', $('#editID').val());
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+            return data;
+        }
+
+        function validateHolidayForm() {
+            let requiredIds = ['title', 'holiday_type', 'applies_to', 'start_date', 'end_date'];
+            let hasError = false;
+            $('.field').removeClass('error');
+            requiredIds.forEach(function (id) {
+                if (!$('#' + id).val()) {
+                    $('#' + id).closest('.field').addClass('error');
+                    hasError = true;
+                }
+            });
+            return !hasError;
+        }
+
+        function addData() {
+            showLoading();
+            if (!validateHolidayForm()) {
+                requiredFieldError();
+                hideLoading();
+                return;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:add_holiday_api' %}",
+                data: buildHolidayPayload(),
+                contentType: false,
+                processData: false,
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        clearAndReset();
+                        holidayTab.ajax.reload(null, false);
+                        hideLoading(false);
+                    } else {
+                        addErrorNotification(response.message, response.color || 'red');
+                        hideLoading(true);
+                    }
+                },
+                error: function () {
+                    addErrorNotification('An error occurred !');
+                    hideLoading(true);
+                }
+            });
+        }
+
+        function editData() {
+            showLoading();
+            if (!validateHolidayForm()) {
+                requiredFieldError();
+                hideLoading();
+                return;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:update_holiday_api' %}",
+                data: buildHolidayPayload(),
+                contentType: false,
+                processData: false,
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        clearAndReset();
+                        holidayTab.ajax.reload(null, false);
+                        hideLoading(false);
+                    } else {
+                        addErrorNotification(response.message, response.color || 'red');
+                        hideLoading(true);
+                    }
+                },
+                error: function () {
+                    addErrorNotification('An error occurred !');
+                    hideLoading(true);
+                }
+            });
+        }
+
+        function clearAndReset() {
+            myOwnReset();
+            $('#saveBtn').css('display', '');
+            $('#saveBtnUpdate').css('display', 'none');
+            $('#holiday_type').dropdown('clear');
+            $('#applies_to').dropdown('clear');
+            if (typeof currentLoadingMode !== 'undefined') {
+                currentLoadingMode = 'save';
+            }
+        }
+
+        function GetDataDetails(id) {
+            $('#saveBtn').css('display', 'none');
+            $('#saveBtnUpdate').css('display', '');
+            $.ajax({
+                type: 'get',
+                data: {id: id},
+                url: "{% url 'managementAppAPI:get_holiday_detail' %}",
+                success: function (response) {
+                    if (response.success) {
+                        $('#title').val(response.data.title);
+                        $('#holiday_type').dropdown('set selected', String(response.data.holidayType));
+                        $('#applies_to').dropdown('set selected', String(response.data.appliesTo));
+                        $('#start_date').val(response.data.startDate);
+                        $('#end_date').val(response.data.endDate);
+                        $('#description').val(response.data.description);
+                        $('#editID').val(response.data.ID);
+                    } else {
+                        addErrorNotification(response.message || 'Unable to load holiday detail.', response.color || 'red');
+                    }
+                },
+                error: function (xhr) {
+                    addErrorNotification('Unable to load holiday detail.', (xhr.responseJSON && xhr.responseJSON.color) || 'red');
+                }
+            });
+        }
+
+        function delData(id) {
+            $('#dataID').val(id);
+            $('#deleteDataModal').modal('show');
+        }
+
+        function deleteData() {
+            let data = new FormData();
+            data.append('dataID', $('#dataID').val());
+            data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+            $.ajax({
+                url: "{% url 'managementAppAPI:delete_holiday' %}",
+                type: 'post',
+                data: data,
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        holidayTab.ajax.reload(null, false);
+                        $('#deleteDataModal').modal('toggle');
+                    } else {
+                        addErrorNotification(response.message || 'Unable to delete holiday.', response.color || 'red');
+                    }
+                },
+                error: function (xhr) {
+                    addErrorNotification('Unable to delete holiday.', (xhr.responseJSON && xhr.responseJSON.color) || 'red');
+                }
+            });
+        }
+    </script>
+{% endblock %}

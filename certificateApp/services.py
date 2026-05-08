@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import re
+import secrets
 from decimal import Decimal
 from string import Template
 from types import SimpleNamespace
@@ -10,16 +11,19 @@ from urllib.parse import unquote, urlparse
 
 from django.conf import settings
 from django.contrib.staticfiles import finders
+from django.db import transaction
 from django.db.models import Q
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import slugify
 from playwright.sync_api import sync_playwright
 
 from homeApp.models import SchoolDetail, SchoolSession
 from managementApp.models import Parent, Student, TeacherDetail
 
-from .models import CertificateDesign, CertificateIssue, CertificateType
+from .models import CertificateDesign, CertificateIssue, CertificateSequence, CertificateType
+from .qr import qr_svg_data_uri
 
 
 SYSTEM_CERTIFICATE_TYPES = [
@@ -766,8 +770,18 @@ def _text_x_for_align(text, x_left, width, font_size, align='left'):
     return x_left + max(0, (width - estimated_width) / 2.0)
 
 
-def build_issue_pdf(issue):
-    context = build_issue_context(issue)
+def render_certificate_document(context, *, request=None):
+    return render_to_string('certificateApp/partials/certificate_document.html', context, request=request)
+
+
+def render_issue_document(issue, *, request=None, render_mode='preview'):
+    context = build_issue_context(issue, request=request)
+    context['render_mode'] = render_mode
+    return render_certificate_document(context, request=request)
+
+
+def build_issue_pdf(issue, *, request=None):
+    context = build_issue_context(issue, request=request)
     context['render_mode'] = 'print'
     context['is_pdf_export'] = True
     html = render_to_string('certificateApp/issue_browser_pdf.html', context)
@@ -926,13 +940,15 @@ def get_certificate_types(*, school_id=None):
     ).order_by('name')
 
 
-def get_certificate_designs(*, certificate_type, school_id=None):
-    return CertificateDesign.objects.filter(
+def get_certificate_designs(*, certificate_type, school_id=None, include_inactive=False):
+    queryset = CertificateDesign.objects.filter(
         Q(schoolID_id=school_id) | Q(schoolID__isnull=True),
         certificateTypeID=certificate_type,
         isDeleted=False,
-        isActive=True,
-    ).order_by('-isCustom', 'name')
+    )
+    if not include_inactive:
+        queryset = queryset.filter(isActive=True)
+    return queryset.order_by('-isCustom', 'status', 'name')
 
 
 def get_recipient_options(*, recipient_category, school_id=None, session_id=None):
@@ -1027,7 +1043,21 @@ def _pronouns_from_gender(value):
     return {'subject': 'they', 'object': 'them', 'subject_cap': 'They'}
 
 
-def build_issue_context(issue):
+def _absolute_uri(request, path):
+    if request:
+        return request.build_absolute_uri(path)
+    base_url = str(getattr(settings, 'PUBLIC_BASE_URL', '') or '').rstrip('/')
+    return f'{base_url}{path}' if base_url else path
+
+
+def build_verification_url(issue, *, request=None):
+    if not issue.verificationToken:
+        return ''
+    path = reverse('certificateApp:verify_certificate', kwargs={'token': issue.verificationToken})
+    return _absolute_uri(request, path)
+
+
+def build_issue_context(issue, *, request=None):
     school = issue.schoolID
     session_obj = issue.sessionID
     design = issue.certificateDesignID
@@ -1146,7 +1176,11 @@ def build_issue_context(issue):
         'content_width_mm': content_width_mm,
         'content_height_mm': content_height_mm,
         'scope_data': data,
+        'verification_url': build_verification_url(issue, request=request),
+        'verification_qr_data_uri': '',
     }
+    if context['verification_url']:
+        context['verification_qr_data_uri'] = qr_svg_data_uri(context['verification_url'])
     context['resolved_overlay_items'] = resolve_overlay_items(
         design=design,
         scope_data=data,
@@ -1369,15 +1403,45 @@ def build_generator_preview_context(*, request, certificate_type, design, recipi
     return context
 
 
-def generate_certificate_number(*, school_id=None, session_id=None):
-    issue_count = CertificateIssue.objects.filter(
-        schoolID_id=school_id,
-        sessionID_id=session_id,
-        issueDate=date.today(),
-        isDeleted=False,
-    ).count() + 1
-    date_segment = datetime.now().strftime('%Y%m%d')
-    return f'CERT-{school_id or 0}-{session_id or 0}-{date_segment}-{issue_count:04d}'
+def _sequence_prefix(*, certificate_type, session_obj=None):
+    type_segment = slugify(certificate_type.slug if certificate_type else 'certificate').replace('-', '').upper()[:8] or 'CERT'
+    session_segment = re.sub(r'[^0-9A-Za-z]', '', session_obj.sessionYear if session_obj else '')[:8]
+    if session_segment:
+        return f'{type_segment}-{session_segment}'
+    return f'{type_segment}-{datetime.now().strftime("%Y")}'
+
+
+def _new_verification_token():
+    token = secrets.token_urlsafe(24)
+    while CertificateIssue.objects.filter(verificationToken=token).exists():
+        token = secrets.token_urlsafe(24)
+    return token
+
+
+def generate_certificate_number(*, school=None, session_obj=None, certificate_type=None):
+    prefix = _sequence_prefix(certificate_type=certificate_type, session_obj=session_obj)
+    with transaction.atomic():
+        sequence, _ = CertificateSequence.objects.select_for_update().get_or_create(
+            schoolID=school,
+            sessionID=session_obj,
+            certificateTypeID=certificate_type,
+            prefix=prefix,
+            defaults={'currentValue': 0},
+        )
+        sequence.currentValue += 1
+        sequence.save(update_fields=['currentValue', 'lastUpdatedOn'])
+        return f'{prefix}-{sequence.currentValue:04d}'
+
+
+def preview_next_certificate_number(*, school=None, session_obj=None, certificate_type=None):
+    prefix = _sequence_prefix(certificate_type=certificate_type, session_obj=session_obj)
+    current_value = CertificateSequence.objects.filter(
+        schoolID=school,
+        sessionID=session_obj,
+        certificateTypeID=certificate_type,
+        prefix=prefix,
+    ).values_list('currentValue', flat=True).first() or 0
+    return f'{prefix}-{current_value + 1:04d}'
 
 
 def create_certificate_issue(*, request, certificate_type, design, recipient_id=None, issue_date=None, custom_title='', custom_subtitle='', custom_body_text='', custom_footer_text=''):
@@ -1390,9 +1454,11 @@ def create_certificate_issue(*, request, certificate_type, design, recipient_id=
         recipientCategory=certificate_type.recipientCategory,
         issueDate=issue_date or date.today(),
         certificateNumber=generate_certificate_number(
-            school_id=school.id if school else None,
-            session_id=session_obj.id if session_obj else None,
+            school=school,
+            session_obj=session_obj,
+            certificate_type=certificate_type,
         ),
+        verificationToken=_new_verification_token(),
         customTitle=custom_title or None,
         customSubtitle=custom_subtitle or None,
         customBodyText=custom_body_text or None,
@@ -1409,10 +1475,123 @@ def create_certificate_issue(*, request, certificate_type, design, recipient_id=
         issue.parentID = Parent.objects.filter(pk=recipient_id, isDeleted=False).first()
 
     issue.save()
-    issue.contextSnapshot = build_issue_context(issue).get('scope_data', {})
-    issue.htmlSnapshot = render_to_string('certificateApp/partials/certificate_document.html', build_issue_context(issue), request=request)
-    issue.save(update_fields=['contextSnapshot', 'htmlSnapshot', 'lastUpdatedOn'])
+    issue_context = build_issue_context(issue, request=request)
+    issue.contextSnapshot = issue_context.get('scope_data', {})
+    issue.issueData = issue_context.get('scope_data', {})
+    issue.designSnapshot = {
+        'id': design.id,
+        'name': design.name,
+        'slug': design.slug,
+        'designMode': design.designMode,
+        'templateKey': design.templateKey,
+        'pageSize': design.pageSize,
+        'orientation': design.orientation,
+        'designVersion': getattr(design, 'designVersion', 1),
+    }
+    issue.renderSnapshot = {
+        'title': issue_context.get('title', ''),
+        'subtitle': issue_context.get('subtitle', ''),
+        'recipient_name': issue_context.get('recipient_name', ''),
+        'recipient_subtitle': issue_context.get('recipient_subtitle', ''),
+        'verification_url': issue_context.get('verification_url', ''),
+    }
+    issue.htmlSnapshot = render_certificate_document(issue_context, request=request)
+    issue.save(update_fields=['contextSnapshot', 'issueData', 'designSnapshot', 'renderSnapshot', 'htmlSnapshot', 'lastUpdatedOn'])
     return issue
+
+
+def create_certificate_issues_bulk(*, request, certificate_type, design, recipient_ids=None, issue_date=None, custom_title='', custom_subtitle='', custom_body_text='', custom_footer_text=''):
+    cleaned_recipient_ids = []
+    for recipient_id in recipient_ids or []:
+        value = str(recipient_id or '').strip()
+        if value and value not in cleaned_recipient_ids:
+            cleaned_recipient_ids.append(value)
+
+    if certificate_type.recipientCategory == 'school':
+        cleaned_recipient_ids = [None]
+
+    issues = []
+    with transaction.atomic():
+        for recipient_id in cleaned_recipient_ids:
+            issue = create_certificate_issue(
+                request=request,
+                certificate_type=certificate_type,
+                design=design,
+                recipient_id=recipient_id,
+                issue_date=issue_date,
+                custom_title=custom_title,
+                custom_subtitle=custom_subtitle,
+                custom_body_text=custom_body_text,
+                custom_footer_text=custom_footer_text,
+            )
+            issues.append(issue)
+    return issues
+
+
+def cancel_certificate_issue(*, issue, request, reason=''):
+    if issue.issueStatus == 'cancelled':
+        return issue
+    issue.issueStatus = 'cancelled'
+    issue.cancelledOn = timezone.now()
+    issue.cancelledByUserID = request.user if getattr(request, 'user', None) and request.user.is_authenticated else None
+    issue.cancellationReason = (reason or '').strip() or 'Cancelled by authorized user.'
+    issue.lastEditedBy = _user_label(getattr(request, 'user', None))
+    issue.updatedByUserID = issue.cancelledByUserID
+    issue.save(update_fields=[
+        'issueStatus',
+        'cancelledOn',
+        'cancelledByUserID',
+        'cancellationReason',
+        'lastEditedBy',
+        'updatedByUserID',
+        'lastUpdatedOn',
+    ])
+    return issue
+
+
+def reissue_certificate_issue(*, issue, request, reason=''):
+    if issue.issueStatus == 'issued':
+        issue.issueStatus = 'reissued'
+        issue.cancelledOn = timezone.now()
+        issue.cancelledByUserID = request.user if getattr(request, 'user', None) and request.user.is_authenticated else None
+        issue.cancellationReason = (reason or '').strip() or 'Reissued with a new certificate number.'
+        issue.lastEditedBy = _user_label(getattr(request, 'user', None))
+        issue.updatedByUserID = issue.cancelledByUserID
+        issue.save(update_fields=[
+            'issueStatus',
+            'cancelledOn',
+            'cancelledByUserID',
+            'cancellationReason',
+            'lastEditedBy',
+            'updatedByUserID',
+            'lastUpdatedOn',
+        ])
+    recipient_id = None
+    if issue.recipientCategory == 'student':
+        recipient_id = issue.studentID_id
+    elif issue.recipientCategory in {'teacher', 'staff'}:
+        recipient_id = issue.teacherID_id
+    elif issue.recipientCategory == 'parent':
+        recipient_id = issue.parentID_id
+    new_issue = create_certificate_issue(
+        request=request,
+        certificate_type=issue.certificateTypeID,
+        design=issue.certificateDesignID,
+        recipient_id=recipient_id,
+        issue_date=date.today(),
+        custom_title=issue.customTitle or '',
+        custom_subtitle=issue.customSubtitle or '',
+        custom_body_text=issue.customBodyText or '',
+        custom_footer_text=issue.customFooterText or '',
+    )
+    new_issue.reissuedFromIssueID = issue
+    new_issue.issuePayload = {
+        **(new_issue.issuePayload or {}),
+        'reissue_reason': (reason or '').strip(),
+        'reissued_from_certificate_number': issue.certificateNumber,
+    }
+    new_issue.save(update_fields=['reissuedFromIssueID', 'issuePayload', 'lastUpdatedOn'])
+    return new_issue
 
 
 def build_preview_urls(issue):
@@ -1420,12 +1599,16 @@ def build_preview_urls(issue):
         'preview_url': reverse('certificateApp:issue_preview', kwargs={'issue_id': issue.id}),
         'print_url': reverse('certificateApp:issue_print', kwargs={'issue_id': issue.id}),
         'download_url': reverse('certificateApp:issue_download_pdf', kwargs={'issue_id': issue.id}),
+        'verify_url': reverse('certificateApp:verify_certificate', kwargs={'token': issue.verificationToken}) if issue.verificationToken else '',
     }
 
 
 def create_custom_design(*, request, certificate_type, cleaned_data):
     school, _ = get_request_scope(request)
-    name = cleaned_data['name'].strip()
+    name = cleaned_data['name'].strip() or 'Untitled Certificate Design'
+    status = cleaned_data.get('status') or 'published'
+    if status not in {'draft', 'published'}:
+        status = 'published'
     return CertificateDesign.objects.create(
         certificateTypeID=certificate_type,
         schoolID=school,
@@ -1460,8 +1643,160 @@ def create_custom_design(*, request, certificate_type, cleaned_data):
         showLogo=bool(cleaned_data.get('show_logo')),
         showSignatureLine=bool(cleaned_data.get('show_signature_line')),
         showSeal=bool(cleaned_data.get('show_seal')),
-        isActive=True,
+        isDraft=status == 'draft',
+        status=status,
+        isActive=status == 'published',
         isCustom=True,
         lastEditedBy=_user_label(request.user),
         updatedByUserID=request.user,
     )
+
+
+def validate_design_for_publish(*, cleaned_data, existing_design=None):
+    errors = []
+    name = (cleaned_data.get('name') or '').strip()
+    if not name:
+        errors.append('Design name is required before publishing.')
+
+    for field_name, label in [
+        ('accent_color', 'Accent color'),
+        ('text_color', 'Text color'),
+        ('background_color', 'Background color'),
+    ]:
+        value = str(cleaned_data.get(field_name) or '').strip()
+        if not re.match(r'^#[0-9a-fA-F]{6}$', value):
+            errors.append(f'{label} must be a valid hex color.')
+
+    if cleaned_data.get('page_size') == 'CUSTOM':
+        try:
+            width = Decimal(str(cleaned_data.get('page_width_mm') or '0'))
+            height = Decimal(str(cleaned_data.get('page_height_mm') or '0'))
+        except Exception:
+            width = height = Decimal('0')
+        if width < Decimal('80') or height < Decimal('80'):
+            errors.append('Custom paper size must include width and height of at least 80mm.')
+
+    for field_name, label in [
+        ('margin_top_mm', 'Top margin'),
+        ('margin_right_mm', 'Right margin'),
+        ('margin_bottom_mm', 'Bottom margin'),
+        ('margin_left_mm', 'Left margin'),
+    ]:
+        try:
+            value = Decimal(str(cleaned_data.get(field_name) or '0'))
+        except Exception:
+            value = Decimal('-1')
+        if value < 0 or value > 60:
+            errors.append(f'{label} must be between 0mm and 60mm.')
+
+    if cleaned_data.get('design_mode') == 'image_overlay':
+        overlay_items = normalize_overlay_schema(cleaned_data.get('overlay_schema') or [])
+        has_background = bool(cleaned_data.get('background_image') or (existing_design and existing_design.backgroundImage))
+        if not has_background:
+            errors.append('Image overlay designs need a background artwork before publishing.')
+        if not overlay_items:
+            errors.append('Image overlay designs need at least one overlay field before publishing.')
+
+    return errors
+
+
+def update_custom_design(*, request, design, certificate_type, cleaned_data):
+    status = cleaned_data.get('status') or 'published'
+    if status not in {'draft', 'published'}:
+        status = 'published'
+
+    design.certificateTypeID = certificate_type
+    design.name = cleaned_data['name'].strip() or 'Untitled Certificate Design'
+    design.designMode = cleaned_data.get('design_mode') or 'html'
+    design.pageSize = cleaned_data['page_size']
+    design.orientation = cleaned_data['orientation']
+    design.pageWidthMm = cleaned_data.get('page_width_mm') or None
+    design.pageHeightMm = cleaned_data.get('page_height_mm') or None
+    design.marginTopMm = cleaned_data.get('margin_top_mm') or Decimal('12')
+    design.marginRightMm = cleaned_data.get('margin_right_mm') or Decimal('12')
+    design.marginBottomMm = cleaned_data.get('margin_bottom_mm') or Decimal('12')
+    design.marginLeftMm = cleaned_data.get('margin_left_mm') or Decimal('12')
+    design.titleAlignment = cleaned_data.get('title_alignment') or 'center'
+    design.bodyAlignment = cleaned_data.get('body_alignment') or 'center'
+    design.borderStyle = cleaned_data.get('border_style') or 'single'
+    design.fontFamily = cleaned_data.get('font_family') or 'Georgia'
+    design.accentColor = cleaned_data.get('accent_color') or '#1d4ed8'
+    design.textColor = cleaned_data.get('text_color') or '#1f2937'
+    design.backgroundColor = cleaned_data.get('background_color') or '#ffffff'
+    if cleaned_data.get('background_image'):
+        design.backgroundImage = cleaned_data.get('background_image')
+    design.customHeaderText = cleaned_data.get('custom_header_text') or None
+    design.customFooterText = cleaned_data.get('custom_footer_text') or None
+    design.customCss = cleaned_data.get('custom_css') or None
+    design.overlaySchema = normalize_overlay_schema(cleaned_data.get('overlay_schema') or [])
+    design.showLogo = bool(cleaned_data.get('show_logo'))
+    design.showSignatureLine = bool(cleaned_data.get('show_signature_line'))
+    design.showSeal = bool(cleaned_data.get('show_seal'))
+    design.isDraft = status == 'draft'
+    design.status = status
+    design.isActive = status == 'published'
+    design.isCustom = True
+    design.isSystem = False
+    design.designVersion = int(design.designVersion or 1) + 1
+    design.lastEditedBy = _user_label(request.user)
+    design.updatedByUserID = request.user
+    design.save()
+    return design
+
+
+def duplicate_certificate_design(*, request, source_design, name=None, save_as_draft=True):
+    school, _ = get_request_scope(request)
+    source_name = name or f'{source_design.name} Copy'
+    status = 'draft' if save_as_draft else 'published'
+    duplicated = CertificateDesign.objects.create(
+        certificateTypeID=source_design.certificateTypeID,
+        schoolID=school,
+        name=source_name,
+        slug=_unique_design_slug(
+            certificate_type=source_design.certificateTypeID,
+            school_id=school.id if school else None,
+            base_name=source_name,
+        ),
+        designMode=source_design.designMode,
+        templateKey=source_design.templateKey,
+        pageSize=source_design.pageSize,
+        orientation=source_design.orientation,
+        pageWidthMm=source_design.pageWidthMm,
+        pageHeightMm=source_design.pageHeightMm,
+        marginTopMm=source_design.marginTopMm,
+        marginRightMm=source_design.marginRightMm,
+        marginBottomMm=source_design.marginBottomMm,
+        marginLeftMm=source_design.marginLeftMm,
+        titleAlignment=source_design.titleAlignment,
+        bodyAlignment=source_design.bodyAlignment,
+        borderStyle=source_design.borderStyle,
+        fontFamily=source_design.fontFamily,
+        accentColor=source_design.accentColor,
+        textColor=source_design.textColor,
+        backgroundColor=source_design.backgroundColor,
+        backgroundImage=source_design.backgroundImage,
+        assetConfig=source_design.assetConfig or {},
+        layoutConfig=source_design.layoutConfig or {},
+        themeConfig=source_design.themeConfig or {},
+        designSchema=source_design.designSchema or {},
+        designJson=source_design.designJson or {},
+        mergeSchema=source_design.mergeSchema or [],
+        basedOnDesignID=source_design,
+        designVersion=max(1, int(source_design.designVersion or 1)),
+        customHeaderText=source_design.customHeaderText,
+        customFooterText=source_design.customFooterText,
+        customCss=source_design.customCss,
+        overlaySchema=source_design.overlaySchema or [],
+        showLogo=source_design.showLogo,
+        showSignatureLine=source_design.showSignatureLine,
+        showSeal=source_design.showSeal,
+        isDraft=status == 'draft',
+        isDefaultForType=False,
+        isActive=status == 'published',
+        status=status,
+        isSystem=False,
+        isCustom=True,
+        lastEditedBy=_user_label(request.user),
+        updatedByUserID=request.user,
+    )
+    return duplicated

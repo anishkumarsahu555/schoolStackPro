@@ -81,6 +81,10 @@
             background: #916315;
         }
 
+        .calendar-legend-dot.holiday {
+            background: #0f766e;
+        }
+
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -154,6 +158,12 @@
             border-color: rgba(242, 189, 92, 0.34);
         }
 
+        .calendar-status.holiday {
+            background: rgba(20, 184, 166, 0.14);
+            color: #0f766e;
+            border-color: rgba(20, 184, 166, 0.3);
+        }
+
         .calendar-status.none {
             background: rgba(140, 154, 177, 0.12);
             color: #5d6c84;
@@ -210,6 +220,12 @@
             background: rgba(242, 189, 92, 0.18);
             color: #916315;
             border-color: rgba(242, 189, 92, 0.34);
+        }
+
+        .attendance-chip.holiday {
+            background: rgba(20, 184, 166, 0.14);
+            color: #0f766e;
+            border-color: rgba(20, 184, 166, 0.3);
         }
 
         .attendance-header-row {
@@ -408,6 +424,13 @@
             background: rgba(245, 186, 88, 0.2) !important;
             color: #ffd68a !important;
             border-color: rgba(245, 186, 88, 0.45) !important;
+        }
+
+        html[data-theme="dark"] body.student-mobile-route .calendar-status.holiday,
+        html[data-theme="dark"] body.student-mobile-route .attendance-chip.holiday {
+            background: rgba(20, 184, 166, 0.2) !important;
+            color: #5eead4 !important;
+            border-color: rgba(20, 184, 166, 0.45) !important;
         }
 
         @media (max-width: 767px) {
@@ -636,7 +659,8 @@
                 const isPresent = (row[1] || '').toLowerCase() === 'yes';
                 statusByDate[key] = {
                     present: isPresent,
-                    reason: row[3] || ''
+                    reason: row[3] || '',
+                    status: row[4] || ''
                 };
             });
 
@@ -667,7 +691,7 @@
                 html += '<div class="calendar-month">';
                 html += '<div class="calendar-month-head">';
                 html += '<h4 class="calendar-month-title">' + safeHtml(monthLabelByKey(mk)) + '</h4>';
-                html += '<div class="calendar-legend"><span class="calendar-legend-dot present"></span>Present <span class="calendar-legend-dot absent"></span>Absent <span class="calendar-legend-dot leave"></span>Leave</div>';
+                html += '<div class="calendar-legend"><span class="calendar-legend-dot present"></span>Present <span class="calendar-legend-dot absent"></span>Absent <span class="calendar-legend-dot leave"></span>Leave <span class="calendar-legend-dot holiday"></span>Holiday</div>';
                 html += '</div>';
                 html += '<div class="calendar-grid">';
 
@@ -679,9 +703,11 @@
                     const key = formatDateKey(d);
                     const inMonth = d.getMonth() === monthIndex;
                     const entry = statusByDate[key];
-                    const isLeave = entry && !entry.present && String(entry.reason || '').toLowerCase().indexOf('approved leave') === 0;
-                    const statusClass = entry ? (entry.present ? 'present' : (isLeave ? 'leave' : 'absent')) : 'none';
-                    const statusText = entry ? (entry.present ? 'Present' : (isLeave ? 'Leave' : 'Absent')) : 'No Class';
+                    const statusValue = entry && entry.status ? String(entry.status).toLowerCase() : '';
+                    const isHoliday = statusValue === 'holiday';
+                    const isLeave = statusValue === 'leave' || (entry && !entry.present && String(entry.reason || '').toLowerCase().indexOf('approved leave') === 0);
+                    const statusClass = entry ? (entry.present ? 'present' : (isHoliday ? 'holiday' : (isLeave ? 'leave' : 'absent'))) : 'none';
+                    const statusText = entry ? (entry.present ? 'Present' : (isHoliday ? 'Holiday' : (isLeave ? 'Leave' : 'Absent'))) : 'No Class';
                     const titleText = entry && entry.reason ? (' title="' + safeHtml(entry.reason) + '"') : '';
                     html += '<div class="calendar-day ' + (inMonth ? '' : 'outside') + '">';
                     html += '<div class="calendar-day-num">' + d.getDate() + '</div>';
@@ -728,9 +754,11 @@
                     renderAttendanceCalendar(rows);
                     const cards = rows.map(function (row) {
                         const isPresent = (row[1] || '').toLowerCase() === 'yes';
-                        const isLeave = !isPresent && String(row[3] || '').toLowerCase().indexOf('approved leave') === 0;
-                        const chipClass = isPresent ? 'present' : (isLeave ? 'leave' : 'absent');
-                        const chipText = isPresent ? 'Present' : (isLeave ? 'Leave' : 'Absent');
+                        const statusValue = String(row[4] || '').toLowerCase();
+                        const isHoliday = statusValue === 'holiday';
+                        const isLeave = statusValue === 'leave' || (!isPresent && String(row[3] || '').toLowerCase().indexOf('approved leave') === 0);
+                        const chipClass = isPresent ? 'present' : (isHoliday ? 'holiday' : (isLeave ? 'leave' : 'absent'));
+                        const chipText = isPresent ? 'Present' : (isHoliday ? 'Holiday' : (isLeave ? 'Leave' : 'Absent'));
                         return '' +
                             '<div class="attendance-card">' +
                             '<div class="attendance-header-row">' +
@@ -738,7 +766,7 @@
                             '<span class="attendance-chip ' + chipClass + '">' + chipText + '</span>' +
                             '</div>' +
                             '<div class="attendance-card-meta">' +
-                            '<div><b>Absent Reason:</b> ' + safeHtml(row[3] || 'N/A') + '</div>' +
+                            '<div><b>Reason:</b> ' + safeHtml(row[3] || 'N/A') + '</div>' +
                             '</div>' +
                             '</div>';
                     });
@@ -772,6 +800,8 @@
                             '<div><b>Present:</b> ' + safeHtml(row.present) + '</div>' +
                             '<div><b>Absent:</b> ' + safeHtml(row.absent) + '</div>' +
                             '<div><b>Leave:</b> ' + safeHtml(row.leave || 0) + '</div>' +
+                            '<div><b>Holiday:</b> ' + safeHtml(row.holiday || 0) + '</div>' +
+                            '<div><b>Recorded Days:</b> ' + safeHtml(row.recorded || row.total || 0) + '</div>' +
                             '</div>' +
                             '</div>';
                     });
@@ -805,6 +835,8 @@
                             '<div><b>Present:</b> ' + safeHtml(row.present) + '</div>' +
                             '<div><b>Absent:</b> ' + safeHtml(row.absent) + '</div>' +
                             '<div><b>Leave:</b> ' + safeHtml(row.leave || 0) + '</div>' +
+                            '<div><b>Holiday:</b> ' + safeHtml(row.holiday || 0) + '</div>' +
+                            '<div><b>Recorded Days:</b> ' + safeHtml(row.recorded || row.total || 0) + '</div>' +
                             '</div>' +
                             '</div>';
                     });

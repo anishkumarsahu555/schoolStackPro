@@ -1132,6 +1132,10 @@
                                 <div class="student-mobile-icon-wrap"><i class="calendar check outline icon"></i></div>
                                 <div class="student-mobile-tile-label">My Attendance</div>
                             </a>
+                            <a class="student-mobile-tile" data-cat="teaching" href="{% url 'teacherApp:teacher_holiday_list' %}">
+                                <div class="student-mobile-icon-wrap"><i class="calendar outline icon"></i></div>
+                                <div class="student-mobile-tile-label">Holiday List</div>
+                            </a>
                             <a class="student-mobile-tile" data-cat="teaching" href="{% url 'teacherApp:teacher_exam_timetable' %}">
                                 <div class="student-mobile-icon-wrap"><i class="calendar alternate outline icon"></i></div>
                                 <div class="student-mobile-tile-label">Exam Time Table</div>
@@ -1248,6 +1252,10 @@
                                     </a>
                                     <a class="student-mobile-row" href="{% url 'teacherApp:teacher_manage_event' %}">
                                         <div class="student-mobile-row-title">Manage Events</div>
+                                        <div class="student-mobile-row-meta"><span>Open module</span><span><i class="angle right icon"></i></span></div>
+                                    </a>
+                                    <a class="student-mobile-row" href="{% url 'teacherApp:teacher_holiday_list' %}">
+                                        <div class="student-mobile-row-title">Holiday List</div>
                                         <div class="student-mobile-row-meta"><span>Open module</span><span><i class="angle right icon"></i></span></div>
                                     </a>
                                 </div>
@@ -1426,6 +1434,9 @@
                                 </a>
                                 <a class="item" href="{% url 'teacherApp:teacher_student_attendance' %}">
                                     <i class="tasks icon"></i> Take Attendance
+                                </a>
+                                <a class="item" href="{% url 'teacherApp:teacher_holiday_list' %}">
+                                    <i class="calendar outline icon"></i> Holiday List
                                 </a>
                                 <a class="item" href="{% url 'teacherApp:teacher_add_marks' %}">
                                     <i class="edit outline icon"></i> Add Marks

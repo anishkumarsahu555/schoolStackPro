@@ -23,6 +23,34 @@
         input[type=search] {
             width: 140px !important;
         }
+
+        .duplicate-certificate-panel {
+            border-left: 4px solid #dc2626 !important;
+        }
+
+        .duplicate-certificate-group {
+            margin-top: 0.8rem;
+            border: 1px solid rgba(220, 38, 38, 0.16);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .duplicate-certificate-group-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            padding: 0.75rem 0.9rem;
+            background: rgba(254, 242, 242, 0.9);
+        }
+
+        .duplicate-certificate-group-head strong {
+            color: #991b1b;
+        }
+
+        .duplicate-certificate-group-body {
+            padding: 0.75rem 0.9rem;
+        }
     </style>
 {% endblock %}
 
@@ -43,8 +71,8 @@
                 </div>
             </div>
 
-            <div class="ui tab active" data-tab="user">
-                <div class="ui three stackable cards">
+                <div class="ui tab active" data-tab="user">
+                    <div class="ui three stackable cards">
                     <div class="card">
                         <div class="content">
                             <div class="header">{{ certificate_types_count }}</div>
@@ -68,6 +96,64 @@
                     </div>
                 </div>
 
+                {% if duplicate_certificate_groups %}
+                    <div class="ui segment duplicate-certificate-panel">
+                        <h4 class="ui header">
+                            <i class="exclamation triangle red icon"></i>
+                            <div class="content">
+                                Duplicate Certificate Numbers
+                                <div class="sub header">{{ duplicate_certificate_count }} certificate records share duplicate numbers in this school/session.</div>
+                            </div>
+                        </h4>
+                        {% for group in duplicate_certificate_groups %}
+                            <div class="duplicate-certificate-group">
+                                <div class="duplicate-certificate-group-head">
+                                    <strong>{{ group.certificate_number }}</strong>
+                                    <span class="ui red mini label">{{ group.issue_count }} records</span>
+                                </div>
+                                <div class="duplicate-certificate-group-body">
+                                    <table class="ui very compact celled table">
+                                        <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Type</th>
+                                            <th>Recipient</th>
+                                            <th>Date</th>
+                                            <th>Preview</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for issue in group.issues %}
+                                            <tr>
+                                                <td>{{ issue.id }}</td>
+                                                <td>{{ issue.certificateTypeID.name }}</td>
+                                                <td>
+                                                    {% if issue.studentID %}
+                                                        {{ issue.studentID.name|default:'Student' }}
+                                                    {% elif issue.teacherID %}
+                                                        {{ issue.teacherID.name|default:'Teacher' }}
+                                                    {% elif issue.parentID %}
+                                                        {{ issue.parentID.fatherName|default:'Parent' }}
+                                                    {% else %}
+                                                        School
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ issue.issueDate|date:'d-m-Y' }}</td>
+                                                <td>
+                                                    <a class="ui mini blue icon button" href="{% url 'certificateApp:issue_preview' issue.id %}" data-tooltip="Open Preview" data-position="left center" data-inverted="">
+                                                        <i class="eye icon"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
                 <div class="ui segment">
                     <h4 class="ui header">Certificate Issue Register</h4>
                     <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="certificateIssueTable" style="width:100%;">
@@ -78,6 +164,7 @@
                             <th>Recipient</th>
                             <th>Design</th>
                             <th>Date</th>
+                            <th>Status</th>
                             <th>Preview</th>
                         </tr>
                         </thead>
@@ -100,6 +187,11 @@
                                 <td>{{ issue.certificateDesignID.name|default:'Default Design' }}</td>
                                 <td>{{ issue.issueDate|date:'d-m-Y' }}</td>
                                 <td>
+                                    <span class="ui mini {% if issue.issueStatus == 'issued' %}green{% elif issue.issueStatus == 'cancelled' %}red{% elif issue.issueStatus == 'reissued' %}orange{% else %}grey{% endif %} label">
+                                        {{ issue.issueStatus|default:'issued'|title }}
+                                    </span>
+                                </td>
+                                <td>
                                     <a class="ui mini blue icon button" href="{% url 'certificateApp:issue_preview' issue.id %}" data-tooltip="Open Preview" data-position="left center" data-inverted="">
                                         <i class="eye icon"></i>
                                     </a>
@@ -107,7 +199,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="6">No certificates generated yet.</td>
+                                <td colspan="7">No certificates generated yet.</td>
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -130,7 +222,7 @@
             buttons: [{
                 extend: 'excel',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4]
+                    columns: [0, 1, 2, 3, 4, 5]
                 }
             }],
             columnDefs: [
@@ -139,7 +231,8 @@
                 {name: 'recipient', targets: 2, orderable: true},
                 {name: 'design', targets: 3, orderable: true},
                 {name: 'issueDate', targets: 4, orderable: true},
-                {name: 'preview', targets: 5, orderable: false}
+                {name: 'status', targets: 5, orderable: true},
+                {name: 'preview', targets: 6, orderable: false}
             ],
             aaSorting: [[4, 'desc']]
         });

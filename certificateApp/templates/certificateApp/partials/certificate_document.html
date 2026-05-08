@@ -637,6 +637,29 @@
         text-align: left;
     }
 
+    .certificate-meta-strip.has-verification-qr {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+    }
+
+    .certificate-verification-qr {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.2rem;
+        color: #4b5563;
+        font-size: 0.62rem;
+        line-height: 1.1;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .certificate-verification-qr img {
+        width: 22mm;
+        height: 22mm;
+        display: block;
+    }
+
     .certificate-sheet.template-ceremonial_gold .certificate-meta-strip,
     .certificate-sheet.template-academic_seal .certificate-meta-strip,
     .certificate-sheet.template-laurel_frame .certificate-meta-strip,
@@ -1086,7 +1109,7 @@
             </div>
         </div>
 
-        {% include 'certificateApp/partials/certificate_standard_content.html' with title=title subtitle=subtitle recipient_name=recipient_name recipient_subtitle=recipient_subtitle rendered_body=rendered_body certificate_number=issue.certificateNumber issue_date_label=issue.issueDate|date:'d-m-Y' rendered_footer=rendered_footer show_seal=design.showSeal seal_label='Verified by '|add:issue.schoolID.schoolName|default:'School' show_signature_line=design.showSignatureLine custom_footer_text=design.customFooterText %}
+        {% include 'certificateApp/partials/certificate_standard_content.html' with title=title subtitle=subtitle recipient_name=recipient_name recipient_subtitle=recipient_subtitle rendered_body=rendered_body certificate_number=issue.certificateNumber issue_date_label=issue.issueDate|date:'d-m-Y' rendered_footer=rendered_footer show_seal=design.showSeal seal_label='Verified by '|add:issue.schoolID.schoolName|default:'School' show_signature_line=design.showSignatureLine custom_footer_text=design.customFooterText verification_qr_data_uri=verification_qr_data_uri %}
     </div>
     {% endif %}
     {% endif %}

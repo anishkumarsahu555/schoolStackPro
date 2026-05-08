@@ -11,9 +11,15 @@ homeApp/migrations/*.py
 managementApp/migrations/*.py
 !managementApp/migrations/0011_remove_ledgerentry_accountid_and_more.py
 !managementApp/migrations/0015_coscholasticarea_coscholasticgrade_examcomponenttype_and_more.py
+!managementApp/migrations/0022_attendance_status.py
+!managementApp/migrations/0023_reversible_leave_attendance_sync.py
+!managementApp/migrations/0024_half_day_leave_support.py
+!managementApp/migrations/0025_leave_type_quota_days.py
+!managementApp/migrations/0026_studentattendance_holidaysynccreatedattendance_and_more.py
 .vscode/
 logs/
 db.sqlite3
 .vscode
 private_key.pem
 public_key.pem
+managementApp/migrations/0025_leave_type_quota_days.py

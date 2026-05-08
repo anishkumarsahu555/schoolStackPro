@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Verify Certificate {{ issue.certificateNumber }}</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f3f4f6;
+            color: #111827;
+        }
+        .verify-shell {
+            width: min(920px, calc(100% - 32px));
+            margin: 32px auto;
+        }
+        .verify-panel {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+        }
+        .verify-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .verify-status.valid {
+            color: #065f46;
+            background: #d1fae5;
+        }
+        .verify-status.invalid {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+        h1 {
+            margin: 18px 0 8px;
+            font-size: 28px;
+            line-height: 1.2;
+        }
+        .verify-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 24px;
+        }
+        .verify-item {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 12px;
+        }
+        .verify-label {
+            color: #6b7280;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .verify-value {
+            margin-top: 5px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .verify-preview {
+            margin-top: 28px;
+            overflow: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f9fafb;
+            padding: 16px;
+        }
+        @media (max-width: 720px) {
+            .verify-grid {
+                grid-template-columns: 1fr;
+            }
+            .verify-panel {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="verify-shell">
+        <section class="verify-panel">
+            {% if is_valid_certificate %}
+                <div class="verify-status valid">Verified Certificate</div>
+            {% else %}
+                <div class="verify-status invalid">Not Currently Valid</div>
+            {% endif %}
+            <h1>{{ title }}</h1>
+            <p>Issued by {{ issue.schoolID.schoolName|default:'School' }}.</p>
+
+            <div class="verify-grid">
+                <div class="verify-item">
+                    <div class="verify-label">Certificate No.</div>
+                    <div class="verify-value">{{ issue.certificateNumber }}</div>
+                </div>
+                <div class="verify-item">
+                    <div class="verify-label">Issue Date</div>
+                    <div class="verify-value">{{ issue.issueDate|date:'d-m-Y' }}</div>
+                </div>
+                <div class="verify-item">
+                    <div class="verify-label">Recipient</div>
+                    <div class="verify-value">{{ recipient_name }}</div>
+                </div>
+                <div class="verify-item">
+                    <div class="verify-label">Certificate Type</div>
+                    <div class="verify-value">{{ certificate_type.name }}</div>
+                </div>
+                <div class="verify-item">
+                    <div class="verify-label">Session</div>
+                    <div class="verify-value">{{ issue.sessionID.sessionYear|default:'N/A' }}</div>
+                </div>
+                <div class="verify-item">
+                    <div class="verify-label">Status</div>
+                    <div class="verify-value">{{ issue.issueStatus|title }}</div>
+                </div>
+            </div>
+
+            <div class="verify-preview">
+                {% include 'certificateApp/partials/certificate_document.html' %}
+            </div>
+        </section>
+    </main>
+</body>
+</html>

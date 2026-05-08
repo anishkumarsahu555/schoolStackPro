@@ -110,6 +110,11 @@ urlpatterns = [
          name='StaffAttendanceHistoryByDateRangeJson'),
     path('StaffAttendanceHistoryByDateRangeAndStaffJson', StaffAttendanceHistoryByDateRangeAndStaffJson.as_view(),
          name='StaffAttendanceHistoryByDateRangeAndStaffJson'),
+    path('HolidayListJson', HolidayListJson.as_view(), name='HolidayListJson'),
+    path('add_holiday_api', add_holiday_api, name='add_holiday_api'),
+    path('get_holiday_detail', get_holiday_detail, name='get_holiday_detail'),
+    path('update_holiday_api', update_holiday_api, name='update_holiday_api'),
+    path('delete_holiday', delete_holiday, name='delete_holiday'),
 
     # user Fee
     path('FeeByStudentJson', FeeByStudentJson.as_view(), name='FeeByStudentJson'),

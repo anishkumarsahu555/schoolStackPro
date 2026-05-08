@@ -29,6 +29,7 @@ class SchoolOwner(models.Model):
 
 class SchoolDetail(models.Model):
     ownerID = models.ForeignKey(SchoolOwner, blank=True, null=True, on_delete=models.CASCADE)
+    owners = models.ManyToManyField(SchoolOwner, blank=True, related_name='owned_schools')
     schoolName = models.CharField(max_length=500, blank=True, null=True)
     name = models.CharField(max_length=500, blank=True, null=True)
     logo = StdImageField(upload_to=UPLOAD_TO_PATTERNS,

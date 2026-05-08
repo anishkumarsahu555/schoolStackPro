@@ -1,7 +1,7 @@
     {% extends 'managementApp/index.html' %}
 
 {% block title %}
-    <title>Create Certificate Design</title>
+    <title>{% if is_editing_design %}Edit{% else %}Create{% endif %} Certificate Design</title>
 {% endblock %}
 
 {% block css %}
@@ -1689,6 +1689,16 @@
                         </button>
                     </div>
                 </div>
+                {% if validation_errors %}
+                    <div class="ui negative message">
+                        <div class="header">Publish checks need attention</div>
+                        <ul class="list">
+                            {% for error in validation_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
                 <form class="ui tiny form certificate-builder-form" id="certificateDesignForm" method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="studio-section-stack">
@@ -2047,11 +2057,15 @@ The student has shown admirable commitment and deserves this certificate of appr
                     </div>
 
                     <div class="certificate-form-actions">
-                        <div class="certificate-form-note">Tip: choose a clean border and restrained accent for official records like transfer or bonafide certificates, and save stronger decorative styles for participation or achievement documents.</div>
+                        <div class="certificate-form-note">{% if is_editing_design %}Editing {{ design.name }}. Draft saves can stay incomplete; publish runs validation before the design appears in the generator.{% else %}Tip: choose a clean border and restrained accent for official records like transfer or bonafide certificates, and save stronger decorative styles for participation or achievement documents.{% endif %}</div>
                         <div>
-                            <button type="submit" class="ui mini green button">
+                            <button type="submit" name="save_action" value="draft" class="ui mini basic button">
+                                <i class="save outline icon"></i>
+                                Save Draft
+                            </button>
+                            <button type="submit" name="save_action" value="publish" class="ui mini green button">
                                 <i class="save icon"></i>
-                                Save Design
+                                Publish Design
                             </button>
                         </div>
                     </div>
@@ -2181,6 +2195,7 @@ The student has shown admirable commitment and deserves this certificate of appr
     <script>
         $('.ui.dropdown').dropdown();
         $('.ui.checkbox').checkbox();
+        const initialDesignData = {{ initial_design_json|default:'{}'|safe }};
 
         const sizeMap = {
             A4: {w: 210, h: 297},
@@ -3657,14 +3672,74 @@ The student has shown admirable commitment and deserves this certificate of appr
             setDesignModeUI($(this).val());
             schedulePreview();
         });
-        addOverlayPreset('school_name');
-        addOverlayPreset('title');
-        addOverlayPreset('student_name');
-        addOverlayPreset('body');
-        addOverlayPreset('issue_date');
-        addOverlayPreset('certificate_no');
+        function setCheckboxValue(selector, value) {
+            const $field = $(selector);
+            $field.prop('checked', !!value);
+            $field.closest('.ui.checkbox').checkbox(value ? 'set checked' : 'set unchecked');
+        }
+
+        function normalizeOverlaySchema(rawValue) {
+            if (!rawValue) {
+                return [];
+            }
+            if (Array.isArray(rawValue)) {
+                return rawValue;
+            }
+            try {
+                const parsed = JSON.parse(rawValue);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (_error) {
+                return [];
+            }
+        }
+
+        function applyInitialDesignData() {
+            if (!initialDesignData || !Object.keys(initialDesignData).length) {
+                addOverlayPreset('school_name');
+                addOverlayPreset('title');
+                addOverlayPreset('student_name');
+                addOverlayPreset('body');
+                addOverlayPreset('issue_date');
+                addOverlayPreset('certificate_no');
+                applyPreset('formal');
+                return;
+            }
+            const data = initialDesignData;
+            $('#certificate_type_id').dropdown('set selected', String(data.certificate_type_id || data.certificateTypeID_id || ''));
+            $('#design_name').val(data.name || '');
+            $('#page_size').dropdown('set selected', data.page_size || 'A4');
+            $('#design_mode').dropdown('set selected', data.design_mode || 'html');
+            $('#orientation').dropdown('set selected', data.orientation || 'portrait');
+            $('#page_width_mm').val(data.page_width_mm || '');
+            $('#page_height_mm').val(data.page_height_mm || '');
+            $('#font_family').val(data.font_family || 'Georgia');
+            $('#title_alignment').dropdown('set selected', data.title_alignment || 'center');
+            $('#body_alignment').dropdown('set selected', data.body_alignment || 'center');
+            ['top', 'right', 'bottom', 'left'].forEach(function (side) {
+                const fieldId = 'margin_' + side + '_mm';
+                const value = data[fieldId] || 12;
+                $('#' + fieldId).val(value);
+                $('[data-margin-target="' + fieldId + '"]').val(value);
+            });
+            $('#custom_header_text').val(data.custom_header_text || '');
+            $('#custom_footer_text').val(data.custom_footer_text || '');
+            $('#accent_color').val(data.accent_color || '#1d4ed8');
+            $('#text_color').val(data.text_color || '#1f2937');
+            $('#background_color').val(data.background_color || '#ffffff');
+            $('#border_style').dropdown('set selected', data.border_style || 'single');
+            $('#custom_css').val(data.custom_css || '');
+            setCheckboxValue('#show_logo', data.show_logo !== false);
+            setCheckboxValue('#show_signature_line', data.show_signature_line !== false);
+            setCheckboxValue('#show_seal', data.show_seal !== false);
+            overlaySchema = normalizeOverlaySchema(data.overlay_schema || []);
+            syncOverlaySchemaField();
+            renderOverlayFields();
+            setDesignModeUI(data.design_mode || 'html');
+            schedulePreview();
+        }
+
+        applyInitialDesignData();
         updateGridToggleUI();
-        applyPreset('formal');
         updateSmartCustomizeSummary();
         updateAdvancedTuningToggle();
         restoreStudioMapState();

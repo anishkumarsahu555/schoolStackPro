@@ -14,6 +14,12 @@
                         <i class="print icon"></i>
                         Print
                     </a>
+                    {% if preview_urls.verify_url %}
+                        <a class="ui mini button" href="{{ preview_urls.verify_url }}" target="_blank">
+                            <i class="check circle outline icon"></i>
+                            Verify
+                        </a>
+                    {% endif %}
                     <a class="ui mini blue button" href="{{ preview_urls.download_url }}">
                         <i class="download icon"></i>
                         Download PDF
@@ -23,6 +29,68 @@
                         Generate Another
                     </a>
                 </div>
+            </div>
+            <div class="ui segment">
+                <div class="ui {% if issue.issueStatus == 'issued' %}green{% elif issue.issueStatus == 'cancelled' %}red{% elif issue.issueStatus == 'reissued' %}orange{% else %}grey{% endif %} ribbon label">
+                    {{ issue.issueStatus|default:'issued'|title }}
+                </div>
+                <div style="margin-top:1rem;">
+                    <strong>{{ issue.certificateNumber }}</strong>
+                    {% if issue.reissuedFromIssueID %}
+                        <span class="ui mini label">Reissued from {{ issue.reissuedFromIssueID.certificateNumber }}</span>
+                    {% endif %}
+                    {% if issue.cancelledOn %}
+                        <div style="margin-top:0.45rem;color:#6b7280;">
+                            Updated on {{ issue.cancelledOn|date:'d-m-Y H:i' }}
+                            {% if issue.cancelledByUserID %}by {{ issue.cancelledByUserID.username }}{% endif %}
+                        </div>
+                    {% endif %}
+                    {% if issue.cancellationReason %}
+                        <div class="ui message" style="margin-top:0.75rem;">{{ issue.cancellationReason }}</div>
+                    {% endif %}
+                    {% if replacement_issues %}
+                        <div style="margin-top:0.75rem;">
+                            <strong>Replacement certificate{{ replacement_issues|length|pluralize }}:</strong>
+                            {% for replacement in replacement_issues %}
+                                <a class="ui mini blue label" href="{% url 'certificateApp:issue_preview' replacement.id %}">
+                                    {{ replacement.certificateNumber }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if issue.issueStatus == 'issued' %}
+                    <div class="ui divider"></div>
+                    <div class="ui two column stackable grid">
+                        <div class="column">
+                            <form class="ui tiny form" method="post" action="{% url 'certificateApp:issue_cancel' issue.id %}">
+                                {% csrf_token %}
+                                <div class="field">
+                                    <label>Cancel / Revoke Reason</label>
+                                    <input type="text" name="cancellation_reason" placeholder="Wrong recipient, incorrect details, duplicate issue...">
+                                </div>
+                                <button type="submit" class="ui mini red button">
+                                    <i class="ban icon"></i>
+                                    Cancel Certificate
+                                </button>
+                            </form>
+                        </div>
+                        <div class="column">
+                            <form class="ui tiny form" method="post" action="{% url 'certificateApp:issue_reissue' issue.id %}">
+                                {% csrf_token %}
+                                <div class="field">
+                                    <label>Reissue Reason</label>
+                                    <input type="text" name="reissue_reason" placeholder="Correcting details and issuing a replacement...">
+                                </div>
+                                <button type="submit" class="ui mini orange button">
+                                    <i class="redo icon"></i>
+                                    Reissue Certificate
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
             <div class="ui segment" style="overflow:auto;">
                 {% include 'certificateApp/partials/certificate_document.html' %}

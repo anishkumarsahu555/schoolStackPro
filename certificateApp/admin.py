@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import CertificateDesign, CertificateIssue, CertificateType
+from .models import CertificateDesign, CertificateIssue, CertificateSequence, CertificateType
 
 
 @admin.register(CertificateType)
@@ -19,7 +19,13 @@ class CertificateDesignAdmin(admin.ModelAdmin):
 
 @admin.register(CertificateIssue)
 class CertificateIssueAdmin(admin.ModelAdmin):
-    list_display = ('certificateNumber', 'certificateTypeID', 'recipientCategory', 'issueDate', 'schoolID')
-    list_filter = ('recipientCategory', 'issueDate')
-    search_fields = ('certificateNumber',)
+    list_display = ('certificateNumber', 'certificateTypeID', 'recipientCategory', 'issueDate', 'issueStatus', 'schoolID')
+    list_filter = ('recipientCategory', 'issueDate', 'issueStatus')
+    search_fields = ('certificateNumber', 'verificationToken')
 
+
+@admin.register(CertificateSequence)
+class CertificateSequenceAdmin(admin.ModelAdmin):
+    list_display = ('prefix', 'currentValue', 'certificateTypeID', 'sessionID', 'schoolID')
+    list_filter = ('schoolID', 'sessionID')
+    search_fields = ('prefix',)

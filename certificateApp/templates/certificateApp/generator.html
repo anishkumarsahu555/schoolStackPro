@@ -1608,6 +1608,58 @@
             line-height: 1.45;
         }
 
+        .generator-bulk-panel {
+            display: none;
+            margin-top: 0.75rem;
+            padding: 0.85rem;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-radius: 8px;
+            background: rgba(248, 250, 252, 0.78);
+        }
+
+        .generator-bulk-panel.is-visible {
+            display: block;
+        }
+
+        html[data-theme="dark"] .generator-bulk-panel {
+            background: rgba(15, 23, 42, 0.54);
+        }
+
+        .generator-bulk-result {
+            display: none;
+            margin-top: 0.75rem;
+            padding: 0.85rem;
+            border: 1px solid rgba(34, 197, 94, 0.26);
+            border-radius: 8px;
+            background: rgba(240, 253, 244, 0.86);
+        }
+
+        .generator-bulk-result.is-visible {
+            display: block;
+        }
+
+        .generator-bulk-result h5 {
+            margin: 0 0 0.55rem;
+        }
+
+        .generator-bulk-result-list {
+            max-height: 190px;
+            overflow: auto;
+        }
+
+        .generator-bulk-result-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.45rem 0;
+            border-top: 1px solid rgba(34, 197, 94, 0.18);
+        }
+
+        .generator-bulk-result-row:first-child {
+            border-top: 0;
+        }
+
         .generator-actions-buttons {
             display: flex;
             align-items: center;
@@ -1866,6 +1918,20 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="field" id="bulkIssueToggleWrap">
+                                <div class="ui toggle checkbox" id="bulkIssueToggle">
+                                    <input type="checkbox" id="bulkIssueMode">
+                                    <label>Bulk issue to multiple recipients</label>
+                                </div>
+                            </div>
+                            <div class="generator-bulk-panel" id="bulkRecipientPanel">
+                                <div class="field">
+                                    <label>Bulk Recipients</label>
+                                    <select class="ui fluid search multiple dropdown" id="bulkRecipientIds" name="recipient_ids[]" multiple>
+                                    </select>
+                                </div>
+                                <small>The live preview uses the single recipient above. Bulk generation creates one numbered, verifiable certificate for each selected recipient.</small>
+                            </div>
                         </div>
 
                         {% if not preselected_design %}
@@ -1938,11 +2004,15 @@
                                     <small id="generatorIssueSummaryMeta">Template family and paper setup will appear here.</small>
                                 </div>
                                 <div class="generator-action-status" id="generatorActionStatus">{% if preselected_design %}Select the recipient and review the exact preview before generating.{% else %}Choose a certificate type to begin.{% endif %}</div>
+                                <div class="generator-bulk-result" id="bulkIssueResult">
+                                    <h5 id="bulkIssueResultTitle">Bulk certificates generated</h5>
+                                    <div class="generator-bulk-result-list" id="bulkIssueResultList"></div>
+                                </div>
                             </div>
                             <div class="generator-actions-buttons">
                                 <button type="button" id="saveBtn" class="ui mini green button saveBtn" onclick="generateCertificate()">
                                     <i class="icon plus square"></i>
-                                    Generate
+                                    <span class="save-label">Generate</span>
                                 </button>
                                 <button type="button" class="ui mini red button" onclick="clearCertificateForm()">
                                     <i class="icon times circle"></i>
@@ -2103,6 +2173,13 @@
         const generatorMetaCache = {};
         const $certificateType = $('#certificateType');
         const $recipientId = $('#recipientId');
+        const $bulkIssueMode = $('#bulkIssueMode');
+        const $bulkIssueToggleWrap = $('#bulkIssueToggleWrap');
+        const $bulkRecipientPanel = $('#bulkRecipientPanel');
+        const $bulkRecipientIds = $('#bulkRecipientIds');
+        const $bulkIssueResult = $('#bulkIssueResult');
+        const $bulkIssueResultTitle = $('#bulkIssueResultTitle');
+        const $bulkIssueResultList = $('#bulkIssueResultList');
         const $certificateDesign = $('#certificateDesign');
         const $selectedDesignIdInput = $('#selectedDesignIdInput');
         const $designCardGrid = $('#designCardGrid');
@@ -2137,6 +2214,23 @@
         const $generatorDesignLock = $('#generatorDesignLock');
         const $generatorDesignLockTitle = $('#generatorDesignLockTitle');
         const $generatorDesignLockCopy = $('#generatorDesignLockCopy');
+
+        $('#bulkIssueToggle').checkbox({
+            onChecked: function () {
+                $bulkRecipientPanel.addClass('is-visible');
+                $bulkIssueResult.removeClass('is-visible');
+                updateGeneratorStatus();
+            },
+            onUnchecked: function () {
+                $bulkRecipientPanel.removeClass('is-visible');
+                $bulkIssueResult.removeClass('is-visible');
+                updateGeneratorStatus();
+            }
+        });
+
+        function isBulkMode() {
+            return $bulkIssueMode.is(':checked') && generatorMeta.recipientCategory !== 'school';
+        }
 
         function getValue(id, fallback='') {
             return ($('#' + id).val() || fallback).trim();
@@ -2300,6 +2394,11 @@
             }
             $recipientId.dropdown('clear');
             $recipientId.html('<option value="">Select recipient</option>').dropdown('refresh');
+            $bulkRecipientIds.dropdown('clear');
+            $bulkRecipientIds.html('').dropdown('refresh');
+            $('#bulkIssueToggle').checkbox('set unchecked');
+            $bulkRecipientPanel.removeClass('is-visible');
+            $bulkIssueResult.removeClass('is-visible');
             $certificateDesign.html('<option value="">Select design</option>');
             $designCardGrid.html(
                 '<div class="generator-design-card"><h5>No design loaded</h5><p>Select a certificate type to view matching presets and custom layouts.</p></div>'
@@ -2492,25 +2591,28 @@
             const recipientLabel = $recipientId.find('option:selected').text();
             const hasType = !!$certificateType.val();
             const hasDesign = !!(selectedDesign && ($certificateDesign.val() || $selectedDesignIdInput.val()));
-            const hasRecipient = recipientVisible ? !!$recipientId.val() : true;
+            const bulkMode = isBulkMode();
+            const bulkCount = ($bulkRecipientIds.val() || []).length;
+            const hasRecipient = bulkMode ? bulkCount > 0 : (recipientVisible ? !!$recipientId.val() : true);
             const ready = hasType && hasDesign && hasRecipient;
 
             $saveBtn.prop('disabled', !ready).toggleClass('disabled', !ready);
+            $saveBtn.find('.save-label').text(bulkMode ? 'Generate Bulk' : 'Generate');
 
             if (isDesignSpecificMode) {
                 if (!hasRecipient) {
-                    $generatorActionStatus.text('Select a recipient for this certificate design before generating.');
+                    $generatorActionStatus.text(bulkMode ? 'Select one or more bulk recipients before generating.' : 'Select a recipient for this certificate design before generating.');
                 } else {
-                    $generatorActionStatus.text('Everything is ready. Review the fixed design preview and generate the certificate.');
+                    $generatorActionStatus.text(bulkMode ? ('Ready to generate ' + bulkCount + ' certificates with the selected design.') : 'Everything is ready. Review the fixed design preview and generate the certificate.');
                 }
             } else if (!hasType) {
                 $generatorActionStatus.text('Choose a certificate type to begin.');
             } else if (!hasDesign) {
                 $generatorActionStatus.text('Pick a design to activate the certificate stage and export setup.');
             } else if (!hasRecipient) {
-                $generatorActionStatus.text('Select a recipient before generating the final certificate.');
+                $generatorActionStatus.text(bulkMode ? 'Select one or more bulk recipients before generating certificates.' : 'Select a recipient before generating the final certificate.');
             } else {
-                $generatorActionStatus.text('Everything is in place. Generate the certificate when the live stage looks right.');
+                $generatorActionStatus.text(bulkMode ? ('Everything is in place. Generate ' + bulkCount + ' certificates when the live stage looks right.') : 'Everything is in place. Generate the certificate when the live stage looks right.');
             }
         }
 
@@ -2736,11 +2838,17 @@
                 return '<option value="' + item.id + '">' + item.label + '</option>';
             });
             $recipientId.html('<option value="">Select recipient</option>' + recipients.join('')).dropdown('refresh');
+            $bulkRecipientIds.html(recipients.join('')).dropdown('clear').dropdown('refresh');
+            $bulkIssueResult.removeClass('is-visible');
 
             if (generatorMeta.recipientCategory === 'school') {
                 $recipientFieldWrap.hide();
+                $bulkIssueToggleWrap.hide();
+                $('#bulkIssueToggle').checkbox('set unchecked');
+                $bulkRecipientPanel.removeClass('is-visible');
             } else {
                 $recipientFieldWrap.show();
+                $bulkIssueToggleWrap.show();
             }
 
             const hiddenOptions = (generatorMeta.designs || []).map(function (design) {
@@ -2844,17 +2952,67 @@
 
         $('#certificateGeneratorForm').on('input change', 'input, textarea, select', schedulePreview);
         $recipientId.on('change', schedulePreview);
+        $bulkRecipientIds.on('change', updateGeneratorStatus);
+
+        function renderBulkIssueResult(issues) {
+            const rows = (issues || []).map(function (issue) {
+                return '<div class="generator-bulk-result-row">' +
+                    '<strong>' + escapeHtml(issue.certificateNumber || 'Certificate') + '</strong>' +
+                    '<span>' +
+                        '<a class="ui mini basic button" target="_blank" href="' + escapeHtml(issue.preview_url || '#') + '">Preview</a>' +
+                        '<a class="ui mini basic button" target="_blank" href="' + escapeHtml(issue.download_url || '#') + '">PDF</a>' +
+                    '</span>' +
+                '</div>';
+            });
+            $bulkIssueResultTitle.text((issues || []).length + ' certificates generated');
+            $bulkIssueResultList.html(rows.join(''));
+            $bulkIssueResult.addClass('is-visible');
+        }
 
         function generateCertificate() {
             const typeId = $('#certificateType').val();
             const designId = $selectedDesignIdInput.val() || $('#certificateDesign').val();
             const recipientVisible = $('#recipientFieldWrap').is(':visible');
             const recipientId = $('#recipientId').val();
+            const bulkMode = isBulkMode();
+            const bulkRecipientIds = $bulkRecipientIds.val() || [];
 
             showLoading();
-            if (!typeId || !designId || (recipientVisible && !recipientId)) {
+            if (!typeId || !designId || (bulkMode ? !bulkRecipientIds.length : (recipientVisible && !recipientId))) {
                 requiredFieldError();
                 hideLoading();
+                return;
+            }
+
+            if (bulkMode) {
+                const bulkData = $('#certificateGeneratorForm').serializeArray().filter(function (item) {
+                    return item.name !== 'recipient_id' && item.name !== 'recipient_ids[]' && item.name !== 'design_id';
+                });
+                bulkData.push({name: 'design_id', value: designId});
+                bulkRecipientIds.forEach(function (value) {
+                    bulkData.push({name: 'recipient_ids[]', value: value});
+                });
+                $.ajax({
+                    type: 'post',
+                    url: "{% url 'certificateAppAPI:create_certificate_issues_bulk_api' %}",
+                    data: $.param(bulkData),
+                    success: function (response) {
+                        if (response.success && response.data && response.data.issues) {
+                            renderBulkIssueResult(response.data.issues);
+                            addSuccessNotification(response.message || 'Certificates generated successfully.');
+                            hideLoading(false);
+                            updateGeneratorStatus();
+                            return;
+                        }
+                        addErrorNotification(response.message || 'Unable to generate bulk certificates.');
+                        hideLoading();
+                    },
+                    error: function (xhr) {
+                        const response = xhr.responseJSON || {};
+                        addErrorNotification(response.message || 'Unable to generate bulk certificates.');
+                        hideLoading();
+                    }
+                });
                 return;
             }
 

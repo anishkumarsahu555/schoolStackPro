@@ -151,6 +151,7 @@ class Command(BaseCommand):
             lastEditedBy="mock_data",
             isDeleted=False,
         )
+        school.owners.add(owner)
 
         current_session = SchoolSession.objects.create(
             schoolID=school,

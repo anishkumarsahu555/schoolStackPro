@@ -8,6 +8,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from financeApp.models import ExpenseCategory, ExpenseVoucher, FeeHead, FinanceAccount, FinanceApprovalRule, FinanceConfiguration, FinanceEntry, FinanceParty, FinancePeriod, PaymentReceipt, PayrollRun, StudentCharge
 from financeApp.services import bootstrap_expense_categories, bootstrap_school_finance, get_finance_configuration
 from homeApp.models import SchoolDetail, SchoolSession
+from homeApp.owner_access import school_owner_user_q
 from homeApp.session_utils import get_session_month_sequence
 from homeApp.utils import login_required
 from managementApp.models import *
@@ -75,9 +76,9 @@ def school_detail(request):
         school = SchoolDetail.objects.filter(pk=school_id, isDeleted=False).first()
     if not school:
         school = SchoolDetail.objects.filter(
-            ownerID__userID_id=request.user.id,
+            school_owner_user_q(request.user.id),
             isDeleted=False
-        ).order_by('-datetime').first()
+        ).distinct().order_by('-datetime').first()
 
     context = {
         'school': school,
@@ -680,6 +681,14 @@ def staff_attendance_history(request):
     context = {
     }
     return render(request, 'managementApp/attendance/staffAttendanceHistory.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_holidays(request):
+    context = {
+    }
+    return render(request, 'managementApp/holidays/manage_holidays.html', context)
 
 
 # student Fee --------------------------------------------------

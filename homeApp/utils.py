@@ -1,5 +1,6 @@
 from django.shortcuts import redirect
 from homeApp.models import SchoolSession
+from homeApp.owner_access import school_session_owner_user_q
 from homeApp.session_utils import build_current_session_payload, build_session_list_item
 from managementApp.models import *
 from utils.logger import logger
@@ -20,7 +21,14 @@ def init_session(request):
         if not request.user.is_authenticated:
             logger.error("User is not authenticated")
             return False
-        current = SchoolSession.objects.get(isCurrent__exact=True, isDeleted=False, schoolID__ownerID__userID_id=request.user.id)
+        current = SchoolSession.objects.filter(
+            school_session_owner_user_q(request.user.id),
+            isCurrent__exact=True,
+            isDeleted=False,
+        ).distinct().order_by('-datetime').first()
+        if not current:
+            logger.error("No active school session found for owner/admin user")
+            return False
         session_data = build_current_session_payload(current)
         request.session['current_session'] = session_data
         return True   
@@ -31,11 +39,13 @@ def init_session(request):
 
 def get_current_school_session(request):
     try:
-        current = SchoolSession.objects.get(
+        current = SchoolSession.objects.filter(
+            school_session_owner_user_q(request),
             isCurrent__exact=True,
             isDeleted=False,
-            schoolID__ownerID__userID_id=request,
-        )
+        ).distinct().order_by('-datetime').first()
+        if not current:
+            raise SchoolSession.DoesNotExist('No active school session found for this owner')
         return {'currentSessionYear': current.sessionYear, 'SessionID': current.pk, 'SchoolID': current.schoolID_id}
     except Exception:
         pass
@@ -84,7 +94,10 @@ def login_required(func):
 
 
 def get_all_session_list(request):
-    sessions_years = SchoolSession.objects.filter(isDeleted=False, schoolID__ownerID__userID_id=request.user.id).order_by('-datetime')
+    sessions_years = SchoolSession.objects.filter(
+        school_session_owner_user_q(request.user.id),
+        isDeleted=False,
+    ).distinct().order_by('-datetime')
     session_list = []
     for session in sessions_years:
         session_data = build_session_list_item(session)

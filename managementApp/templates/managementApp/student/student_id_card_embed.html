@@ -202,8 +202,8 @@
             <div class="line"><div class="k">Class :</div><div class="v">{{ instance.standardID.name|default:'N/A' }}{% if instance.standardID.section %} - {{ instance.standardID.section }}{% endif %}</div></div>
             <div class="line"><div class="k">Roll no.:</div><div class="v">{{ instance.roll|default:'N/A' }}</div></div>
             <div class="line father"><div class="k">Father's Name:</div><div class="v">{{ instance.parentID.fatherName|default:'N/A' }}</div></div>
+            <div class="line"><div class="k">Mother's Name:</div><div class="v">{{ instance.parentID.motherName|default:'N/A' }}</div></div>
             <div class="line"><div class="k">D.O.B :</div><div class="v">{{ instance.dob|date:'d-m-Y'|default:'N/A' }}</div></div>
-            <div class="line"><div class="k">Blood group :</div><div class="v">{{ instance.bloodGroup|default:'N/A' }}</div></div>
             <div class="line address"><div class="k">Address :</div><div class="v">{% firstof instance.presentAddress instance.permanentAddress instance.parentID.fatherAddress instance.parentID.motherAddress "N/A" %}</div></div>
             <div class="line"><div class="k">Contact No.:</div><div class="v">{{ instance.phoneNumber|default:instance.parentID.phoneNumber|default:'N/A' }}</div></div>
         </div>

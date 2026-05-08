@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from urllib.parse import urlencode
@@ -16,12 +16,18 @@ from .services import (
     build_issue_pdf,
     build_preview_urls,
     build_generator_preview_context,
+    cancel_certificate_issue,
     create_custom_design,
+    duplicate_certificate_design,
     ensure_system_certificate_defaults,
     get_certificate_designs,
     get_recipient_options,
     get_certificate_types,
     get_request_scope,
+    preview_next_certificate_number,
+    reissue_certificate_issue,
+    update_custom_design,
+    validate_design_for_publish,
 )
 
 
@@ -36,6 +42,26 @@ def dashboard(request):
         sessionID=session_obj,
         isDeleted=False,
     ).select_related('certificateTypeID', 'certificateDesignID').order_by('-issueDate', '-id')
+    duplicate_rows = list(
+        issues.values('certificateNumber')
+        .annotate(issue_count=Count('id'))
+        .filter(issue_count__gt=1)
+        .order_by('certificateNumber')
+    )
+    duplicate_numbers = [row['certificateNumber'] for row in duplicate_rows]
+    duplicate_issue_rows = list(
+        issues.filter(certificateNumber__in=duplicate_numbers)
+        .select_related('studentID', 'teacherID', 'parentID')
+        .order_by('certificateNumber', 'id')
+    )
+    duplicate_groups = []
+    for duplicate_row in duplicate_rows:
+        number = duplicate_row['certificateNumber']
+        duplicate_groups.append(SimpleNamespace(
+            certificate_number=number,
+            issue_count=duplicate_row['issue_count'],
+            issues=[issue for issue in duplicate_issue_rows if issue.certificateNumber == number],
+        ))
 
     context = {
         'certificate_types_count': get_certificate_types(school_id=school.id if school else None).count(),
@@ -43,6 +69,8 @@ def dashboard(request):
         'certificate_issues_count': issues.count(),
         'recent_issues': issues[:8],
         'all_issues': issues,
+        'duplicate_certificate_groups': duplicate_groups,
+        'duplicate_certificate_count': sum(row['issue_count'] for row in duplicate_rows),
         'school': school,
     }
     return render(request, 'certificateApp/dashboard.html', context)
@@ -105,7 +133,7 @@ def design_library(request):
         )
 
     for cert_type in types:
-        for design in get_certificate_designs(certificate_type=cert_type, school_id=school.id if school else None):
+        for design in get_certificate_designs(certificate_type=cert_type, school_id=school.id if school else None, include_inactive=True):
             signature = build_design_signature(design)
             entry = design_map.setdefault(signature, {
                 'design': design,
@@ -200,40 +228,127 @@ def create_design(request):
 
     if request.method == 'POST':
         certificate_type = get_object_or_404(CertificateType, pk=request.POST.get('certificate_type_id'), isDeleted=False)
-        design = create_custom_design(
-            request=request,
-            certificate_type=certificate_type,
-            cleaned_data={
-                'name': request.POST.get('name', ''),
-                'design_mode': request.POST.get('design_mode', 'html'),
-                'page_size': request.POST.get('page_size', 'A4'),
-                'orientation': request.POST.get('orientation', 'portrait'),
-                'page_width_mm': request.POST.get('page_width_mm') or None,
-                'page_height_mm': request.POST.get('page_height_mm') or None,
-                'margin_top_mm': request.POST.get('margin_top_mm') or 12,
-                'margin_right_mm': request.POST.get('margin_right_mm') or 12,
-                'margin_bottom_mm': request.POST.get('margin_bottom_mm') or 12,
-                'margin_left_mm': request.POST.get('margin_left_mm') or 12,
-                'title_alignment': request.POST.get('title_alignment', 'center'),
-                'body_alignment': request.POST.get('body_alignment', 'center'),
-                'border_style': request.POST.get('border_style', 'single'),
-                'font_family': request.POST.get('font_family', 'Georgia'),
-                'accent_color': request.POST.get('accent_color', '#1d4ed8'),
-                'text_color': request.POST.get('text_color', '#1f2937'),
-                'background_color': request.POST.get('background_color', '#ffffff'),
-                'background_image': request.FILES.get('background_image'),
-                'custom_header_text': request.POST.get('custom_header_text', ''),
-                'custom_footer_text': request.POST.get('custom_footer_text', ''),
-                'custom_css': request.POST.get('custom_css', ''),
-                'overlay_schema': request.POST.get('overlay_schema_json', '[]'),
-                'show_logo': request.POST.get('show_logo'),
-                'show_signature_line': request.POST.get('show_signature_line'),
-                'show_seal': request.POST.get('show_seal'),
-            },
-        )
+        cleaned_data = _design_cleaned_data(request)
+        validation_errors = validate_design_for_publish(cleaned_data=cleaned_data) if cleaned_data['status'] == 'published' else []
+        if validation_errors:
+            return render_design_form(request, types=types, school=school, validation_errors=validation_errors, posted_data=cleaned_data)
+        design = create_custom_design(request=request, certificate_type=certificate_type, cleaned_data=cleaned_data)
         return redirect('certificateApp:design_detail', design_id=design.id)
 
-    return render(request, 'certificateApp/create_design.html', {'certificate_types': types, 'school': school})
+    return render_design_form(request, types=types, school=school)
+
+
+def _design_cleaned_data(request):
+    return {
+        'name': request.POST.get('name', ''),
+        'design_mode': request.POST.get('design_mode', 'html'),
+        'page_size': request.POST.get('page_size', 'A4'),
+        'orientation': request.POST.get('orientation', 'portrait'),
+        'page_width_mm': request.POST.get('page_width_mm') or None,
+        'page_height_mm': request.POST.get('page_height_mm') or None,
+        'margin_top_mm': request.POST.get('margin_top_mm') or 12,
+        'margin_right_mm': request.POST.get('margin_right_mm') or 12,
+        'margin_bottom_mm': request.POST.get('margin_bottom_mm') or 12,
+        'margin_left_mm': request.POST.get('margin_left_mm') or 12,
+        'title_alignment': request.POST.get('title_alignment', 'center'),
+        'body_alignment': request.POST.get('body_alignment', 'center'),
+        'border_style': request.POST.get('border_style', 'single'),
+        'font_family': request.POST.get('font_family', 'Georgia'),
+        'accent_color': request.POST.get('accent_color', '#1d4ed8'),
+        'text_color': request.POST.get('text_color', '#1f2937'),
+        'background_color': request.POST.get('background_color', '#ffffff'),
+        'background_image': request.FILES.get('background_image'),
+        'custom_header_text': request.POST.get('custom_header_text', ''),
+        'custom_footer_text': request.POST.get('custom_footer_text', ''),
+        'custom_css': request.POST.get('custom_css', ''),
+        'overlay_schema': request.POST.get('overlay_schema_json', '[]'),
+        'show_logo': request.POST.get('show_logo'),
+        'show_signature_line': request.POST.get('show_signature_line'),
+        'show_seal': request.POST.get('show_seal'),
+        'status': 'draft' if request.POST.get('save_action') == 'draft' else 'published',
+    }
+
+
+def _design_initial_data(design=None, posted_data=None):
+    data = posted_data or {}
+    if design and not posted_data:
+        data = {
+            'certificate_type_id': design.certificateTypeID_id,
+            'name': design.name,
+            'design_mode': design.designMode,
+            'page_size': design.pageSize,
+            'orientation': design.orientation,
+            'page_width_mm': str(design.pageWidthMm or ''),
+            'page_height_mm': str(design.pageHeightMm or ''),
+            'margin_top_mm': str(design.marginTopMm or 12),
+            'margin_right_mm': str(design.marginRightMm or 12),
+            'margin_bottom_mm': str(design.marginBottomMm or 12),
+            'margin_left_mm': str(design.marginLeftMm or 12),
+            'title_alignment': design.titleAlignment,
+            'body_alignment': design.bodyAlignment,
+            'border_style': design.borderStyle,
+            'font_family': design.fontFamily or 'Georgia',
+            'accent_color': design.accentColor or '#1d4ed8',
+            'text_color': design.textColor or '#1f2937',
+            'background_color': design.backgroundColor or '#ffffff',
+            'custom_header_text': design.customHeaderText or '',
+            'custom_footer_text': design.customFooterText or '',
+            'custom_css': design.customCss or '',
+            'overlay_schema': design.overlaySchema or [],
+            'show_logo': design.showLogo,
+            'show_signature_line': design.showSignatureLine,
+            'show_seal': design.showSeal,
+        }
+    return data
+
+
+def render_design_form(request, *, types, school, design=None, validation_errors=None, posted_data=None):
+    return render(request, 'certificateApp/create_design.html', {
+        'certificate_types': types,
+        'school': school,
+        'design': design,
+        'is_editing_design': bool(design),
+        'validation_errors': validation_errors or [],
+        'initial_design_json': json.dumps(_design_initial_data(design=design, posted_data=posted_data), default=str),
+    })
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def edit_design(request, design_id):
+    school, _ = get_request_scope(request)
+    ensure_system_certificate_defaults(school_id=school.id if school else None, user_obj=request.user)
+    types = get_certificate_types(school_id=school.id if school else None)
+    design = get_object_or_404(CertificateDesign, pk=design_id, schoolID=school, isCustom=True, isDeleted=False)
+    if request.method == 'POST':
+        certificate_type = get_object_or_404(CertificateType, pk=request.POST.get('certificate_type_id'), isDeleted=False)
+        cleaned_data = _design_cleaned_data(request)
+        validation_errors = validate_design_for_publish(cleaned_data=cleaned_data, existing_design=design) if cleaned_data['status'] == 'published' else []
+        if validation_errors:
+            return render_design_form(request, types=types, school=school, design=design, validation_errors=validation_errors, posted_data=cleaned_data)
+        updated_design = update_custom_design(request=request, design=design, certificate_type=certificate_type, cleaned_data=cleaned_data)
+        return redirect('certificateApp:design_detail', design_id=updated_design.id)
+    return render_design_form(request, types=types, school=school, design=design)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def duplicate_design(request, design_id):
+    if request.method != 'POST':
+        return redirect('certificateApp:design_detail', design_id=design_id)
+    school, _ = get_request_scope(request)
+    source_design = get_object_or_404(
+        CertificateDesign.objects.select_related('certificateTypeID'),
+        Q(schoolID=school) | Q(schoolID__isnull=True),
+        pk=design_id,
+        isDeleted=False,
+    )
+    design = duplicate_certificate_design(
+        request=request,
+        source_design=source_design,
+        save_as_draft=request.POST.get('save_action') != 'publish',
+    )
+    return redirect('certificateApp:design_detail', design_id=design.id)
 
 
 @login_required
@@ -314,6 +429,11 @@ def generator(request):
             'defaultSubtitle': preselected_type.defaultSubtitle or '',
             'defaultBodyTemplate': preselected_type.defaultBodyTemplate or '',
             'defaultFooterText': preselected_type.defaultFooterText or '',
+            'nextCertificateNumber': preview_next_certificate_number(
+                school=school,
+                session_obj=session_obj,
+                certificate_type=preselected_type,
+            ),
             'designs': [
                 {
                     'id': design.id,
@@ -427,8 +547,9 @@ def issue_preview(request, issue_id):
         pk=issue_id,
         isDeleted=False,
     )
-    context = build_issue_context(issue)
+    context = build_issue_context(issue, request=request)
     context['preview_urls'] = build_preview_urls(issue)
+    context['replacement_issues'] = issue.reissuedIssues.filter(isDeleted=False).order_by('-id')
     return render(request, 'certificateApp/issue_preview.html', context)
 
 
@@ -442,7 +563,7 @@ def issue_print(request, issue_id):
         pk=issue_id,
         isDeleted=False,
     )
-    context = build_issue_context(issue)
+    context = build_issue_context(issue, request=request)
     context['render_mode'] = 'print'
     return render(request, 'certificateApp/issue_print.html', context)
 
@@ -451,6 +572,50 @@ def issue_print(request, issue_id):
 @check_groups('Admin', 'Owner')
 def issue_download_pdf(request, issue_id):
     issue = get_object_or_404(CertificateIssue, pk=issue_id, isDeleted=False)
-    response = HttpResponse(build_issue_pdf(issue), content_type='application/pdf')
+    response = HttpResponse(build_issue_pdf(issue, request=request), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{issue.certificateNumber}.pdf"'
     return response
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def issue_cancel(request, issue_id):
+    issue = get_object_or_404(CertificateIssue, pk=issue_id, isDeleted=False)
+    if request.method == 'POST':
+        cancel_certificate_issue(
+            issue=issue,
+            request=request,
+            reason=request.POST.get('cancellation_reason', ''),
+        )
+    return redirect('certificateApp:issue_preview', issue_id=issue.id)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def issue_reissue(request, issue_id):
+    issue = get_object_or_404(
+        CertificateIssue.objects.select_related('certificateTypeID', 'certificateDesignID'),
+        pk=issue_id,
+        isDeleted=False,
+    )
+    if request.method != 'POST':
+        return redirect('certificateApp:issue_preview', issue_id=issue.id)
+    new_issue = reissue_certificate_issue(
+        issue=issue,
+        request=request,
+        reason=request.POST.get('reissue_reason', ''),
+    )
+    return redirect('certificateApp:issue_preview', issue_id=new_issue.id)
+
+
+def verify_certificate(request, token):
+    issue = get_object_or_404(
+        CertificateIssue.objects.select_related(
+            'certificateTypeID', 'certificateDesignID', 'schoolID', 'sessionID', 'studentID', 'teacherID', 'parentID'
+        ),
+        verificationToken=token,
+        isDeleted=False,
+    )
+    context = build_issue_context(issue, request=request)
+    context['is_valid_certificate'] = issue.issueStatus == 'issued'
+    return render(request, 'certificateApp/verify_certificate.html', context)

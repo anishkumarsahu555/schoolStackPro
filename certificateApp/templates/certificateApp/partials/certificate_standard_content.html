@@ -10,7 +10,7 @@
 
 <div class="certificate-body{% if body_extra_class %} {{ body_extra_class }}{% endif %}"{% if body_id %} id="{{ body_id }}"{% endif %}>{{ rendered_body }}</div>
 
-<div class="certificate-meta-strip{% if meta_extra_class %} {{ meta_extra_class }}{% endif %}">
+<div class="certificate-meta-strip{% if verification_qr_data_uri %} has-verification-qr{% endif %}{% if meta_extra_class %} {{ meta_extra_class }}{% endif %}">
     <div>
         <strong>Certificate No.</strong><br>
         {% if certificate_number_id %}
@@ -19,6 +19,12 @@
             {{ certificate_number }}
         {% endif %}
     </div>
+    {% if verification_qr_data_uri %}
+        <div class="certificate-verification-qr">
+            <img src="{{ verification_qr_data_uri }}" alt="Certificate verification QR">
+            <span>Scan to verify</span>
+        </div>
+    {% endif %}
     <div class="certificate-meta-strip-right">
         <strong>Issued today</strong><br>
         {% if issue_date_id %}

@@ -201,6 +201,10 @@
             background: linear-gradient(180deg, var(--design-library-card), rgba(248,250,252,0.58));
         }
 
+        .design-library-group.is-hidden {
+            display: none;
+        }
+
         html[data-theme="dark"] .design-library-group {
             background: linear-gradient(180deg, rgba(15,23,42,0.56), rgba(17,24,39,0.4));
         }
@@ -570,6 +574,29 @@
             white-space: nowrap;
         }
 
+        .design-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.34rem;
+            padding: 0.3rem 0.56rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .design-status-pill.is-draft {
+            background: rgba(234, 88, 12, 0.12);
+            border: 1px solid rgba(234, 88, 12, 0.2);
+            color: #c2410c;
+        }
+
+        .design-status-pill.is-published {
+            background: rgba(22, 163, 74, 0.12);
+            border: 1px solid rgba(22, 163, 74, 0.2);
+            color: #15803d;
+        }
+
         .design-meta-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -635,6 +662,18 @@
         html[data-theme="dark"] .design-type-pill {
             background: rgba(37, 99, 235, 0.18);
             color: #bfdbfe;
+        }
+
+        html[data-theme="dark"] .design-status-pill.is-draft {
+            background: rgba(234, 88, 12, 0.2);
+            border-color: rgba(251, 146, 60, 0.22);
+            color: #fed7aa;
+        }
+
+        html[data-theme="dark"] .design-status-pill.is-published {
+            background: rgba(22, 163, 74, 0.2);
+            border-color: rgba(134, 239, 172, 0.2);
+            color: #bbf7d0;
         }
 
         html[data-theme="dark"] .design-purpose-pill[data-purpose="sports"] {
@@ -753,6 +792,8 @@
                             <button type="button" class="design-library-filter-btn active" data-library-filter="all">All</button>
                             <button type="button" class="design-library-filter-btn" data-library-filter="system">System</button>
                             <button type="button" class="design-library-filter-btn" data-library-filter="custom">Custom</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="draft">Drafts</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="published">Published</button>
                             <button type="button" class="design-library-filter-btn" data-library-filter="sports">Sports</button>
                             <button type="button" class="design-library-filter-btn" data-library-filter="festival">Festival</button>
                             <button type="button" class="design-library-filter-btn" data-library-filter="staff">Staff</button>
@@ -788,8 +829,9 @@
                         {% for entry in section.entries %}
                             {% with design=entry.design certificate_type=entry.sample_type %}
                             <article class="design-library-card"
-                                     data-search-text="{{ section.title|lower }} {{ certificate_type.name|lower }} {{ entry.support_preview|lower }} {{ design.name|lower }} {{ design.get_templateKey_display|lower }} {{ design.get_pageSize_display|lower }} {{ design.get_orientation_display|lower }} {{ design.get_borderStyle_display|lower }} {% if design.isCustom %}custom school original{% else %}system shared family{% endif %}"
+                                     data-search-text="{{ section.title|lower }} {{ certificate_type.name|lower }} {{ entry.support_preview|lower }} {{ design.name|lower }} {{ design.get_templateKey_display|lower }} {{ design.get_pageSize_display|lower }} {{ design.get_orientation_display|lower }} {{ design.get_borderStyle_display|lower }} {{ design.status|default:'published'|lower }} {% if design.isCustom %}custom school original{% else %}system shared family{% endif %}"
                                      data-filter-type="{% if design.isCustom %}custom{% else %}system{% endif %}"
+                                     data-filter-status="{{ design.status|default:'published'|lower }}"
                                      data-filter-orientation="{{ design.orientation|lower }}"
                                      data-filter-purpose="{{ entry.purpose_tags|join:' ' }}">
                                 <div class="design-preview-stage">
@@ -898,8 +940,14 @@
                                             <h4>{{ design.name }}</h4>
                                             <p>{{ entry.scope_label }} · {{ design.get_templateKey_display }}{% if entry.purpose_label %} · {{ entry.purpose_label }}{% endif %}</p>
                                         </div>
-                                        <div class="design-type-pill">
-                                            {{ entry.certificate_type_count }} certificate type{{ entry.certificate_type_count|pluralize }}
+                                        <div style="display:flex; gap:0.4rem; flex-wrap:wrap; justify-content:flex-end;">
+                                            <div class="design-status-pill {% if design.status == 'draft' %}is-draft{% else %}is-published{% endif %}">
+                                                <i class="{% if design.status == 'draft' %}pencil alternate{% else %}check circle outline{% endif %} icon"></i>
+                                                {% if design.status == 'draft' %}Draft{% else %}Published{% endif %}
+                                            </div>
+                                            <div class="design-type-pill">
+                                                {{ entry.certificate_type_count }} certificate type{{ entry.certificate_type_count|pluralize }}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -933,6 +981,19 @@
                                             <span class="dot" style="background: {{ design.accentColor|default:'#1d4ed8' }};"></span>
                                             {{ design.accentColor|default:'#1d4ed8' }}
                                         </div>
+                                        <form method="post" action="{% url 'certificateApp:duplicate_design' design.id %}" style="display:inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" name="save_action" value="draft" class="ui mini button">
+                                                <i class="copy outline icon"></i>
+                                                {% if design.isCustom %}Duplicate{% else %}Customize{% endif %}
+                                            </button>
+                                        </form>
+                                        {% if design.isCustom %}
+                                            <a class="ui mini orange button" href="{% url 'certificateApp:edit_design' design.id %}">
+                                                <i class="edit outline icon"></i>
+                                                {% if design.status == 'draft' %}Continue Draft{% else %}Edit{% endif %}
+                                            </a>
+                                        {% endif %}
                                         <a class="ui mini blue button" href="{% url 'certificateApp:design_detail' design.id %}">
                                             <i class="eye icon"></i>
                                             View
@@ -1019,11 +1080,13 @@
                     groupCards.forEach(function (card) {
                         const haystack = card.getAttribute('data-search-text') || '';
                         const typeFilter = card.getAttribute('data-filter-type') || '';
+                        const statusFilter = card.getAttribute('data-filter-status') || '';
                         const orientationFilter = card.getAttribute('data-filter-orientation') || '';
                         const purposeFilter = card.getAttribute('data-filter-purpose') || '';
                         const matchesQuery = !query || haystack.indexOf(query) !== -1;
                         const matchesFilter = activeFilter === 'all'
                             || typeFilter === activeFilter
+                            || statusFilter === activeFilter
                             || orientationFilter === activeFilter
                             || purposeFilter.split(/\s+/).includes(activeFilter);
                         const matches = matchesQuery && matchesFilter;

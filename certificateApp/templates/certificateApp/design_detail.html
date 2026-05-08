@@ -572,16 +572,32 @@
                         <div class="design-detail-chip"><span class="dot"></span>{{ design.accentColor|default:'#1d4ed8' }}</div>
                         <div class="design-detail-chip"><i class="file alternate outline icon"></i>{{ design.get_pageSize_display }} / {{ design.get_orientation_display }}</div>
                         <div class="design-detail-chip"><i class="certificate icon"></i>{% if design.isCustom %}Custom{% else %}System{% endif %}</div>
+                        <div class="design-detail-chip"><i class="{% if design.status == 'draft' %}edit outline{% else %}check circle outline{% endif %} icon"></i>{{ design.status|default:'published'|title }}</div>
                     </div>
                     <div>
                         <a class="ui mini button" href="{% url 'certificateApp:design_library' %}">
                             <i class="arrow left icon"></i>
                             Back To Library
                         </a>
-                        <a class="ui mini green button" href="{% url 'certificateApp:generator' %}?design={{ design.id }}">
-                            <i class="file alternate outline icon"></i>
-                            Use In Generator
-                        </a>
+                        {% if design.isActive %}
+                            <a class="ui mini green button" href="{% url 'certificateApp:generator' %}?design={{ design.id }}">
+                                <i class="file alternate outline icon"></i>
+                                Use In Generator
+                            </a>
+                        {% endif %}
+                        {% if design.isCustom %}
+                            <a class="ui mini orange button" href="{% url 'certificateApp:edit_design' design.id %}">
+                                <i class="edit outline icon"></i>
+                                Edit Design
+                            </a>
+                        {% endif %}
+                        <form method="post" action="{% url 'certificateApp:duplicate_design' design.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" name="save_action" value="draft" class="ui mini blue button">
+                                <i class="copy outline icon"></i>
+                                {% if design.isCustom %}Duplicate Draft{% else %}Customize Copy{% endif %}
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -624,6 +640,10 @@
                             <div class="value">{% if design.isCustom %}Custom{% else %}System{% endif %}</div>
                         </div>
                         <div class="design-meta-item">
+                            <div class="label">Status</div>
+                            <div class="value">{{ design.status|default:'published'|title }}</div>
+                        </div>
+                        <div class="design-meta-item">
                             <div class="label">Border Style</div>
                             <div class="value">{{ design.get_borderStyle_display }}</div>
                         </div>
@@ -658,10 +678,25 @@
                     </div>
 
                     <div class="design-detail-actions">
-                        <a class="ui mini green button" href="{% url 'certificateApp:generator' %}?design={{ design.id }}">
-                            <i class="file alternate outline icon"></i>
-                            Use In Generator
-                        </a>
+                        {% if design.isActive %}
+                            <a class="ui mini green button" href="{% url 'certificateApp:generator' %}?design={{ design.id }}">
+                                <i class="file alternate outline icon"></i>
+                                Use In Generator
+                            </a>
+                        {% endif %}
+                        {% if design.isCustom %}
+                            <a class="ui mini orange button" href="{% url 'certificateApp:edit_design' design.id %}">
+                                <i class="edit outline icon"></i>
+                                Edit Design
+                            </a>
+                        {% endif %}
+                        <form method="post" action="{% url 'certificateApp:duplicate_design' design.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" name="save_action" value="draft" class="ui mini blue button">
+                                <i class="copy outline icon"></i>
+                                {% if design.isCustom %}Duplicate As Draft{% else %}Customize As Draft{% endif %}
+                            </button>
+                        </form>
                         <a class="ui mini button" href="{% url 'certificateApp:create_design' %}">
                             <i class="paint brush icon"></i>
                             Create Another Design

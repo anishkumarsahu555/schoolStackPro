@@ -11,10 +11,12 @@ from certificateApp.models import CertificateDesign, CertificateType
 from certificateApp.services import (
     build_preview_urls,
     create_certificate_issue,
+    create_certificate_issues_bulk,
     ensure_system_certificate_defaults,
     get_certificate_designs,
     get_recipient_options,
     get_request_scope,
+    preview_next_certificate_number,
 )
 
 
@@ -38,6 +40,11 @@ def get_certificate_generator_meta_api(request):
             'defaultSubtitle': certificate_type.defaultSubtitle or '',
             'defaultBodyTemplate': certificate_type.defaultBodyTemplate or '',
             'defaultFooterText': certificate_type.defaultFooterText or '',
+            'nextCertificateNumber': preview_next_certificate_number(
+                school=school,
+                session_obj=session_obj,
+                certificate_type=certificate_type,
+            ),
             'designs': [
                 {
                     'id': design.id,
@@ -113,4 +120,61 @@ def create_certificate_issue_api(request):
     return SuccessResponse(
         'Certificate generated successfully.',
         data=build_preview_urls(issue),
+    ).to_json_response()
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def create_certificate_issues_bulk_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Invalid request method.', status_code=405).to_json_response()
+
+    certificate_type = get_object_or_404(CertificateType, pk=request.POST.get('certificate_type_id'), isDeleted=False)
+    design = get_object_or_404(
+        CertificateDesign,
+        pk=request.POST.get('design_id'),
+        certificateTypeID=certificate_type,
+        isDeleted=False,
+    )
+    issue_date_raw = request.POST.get('issue_date', '')
+    try:
+        issue_date = datetime.strptime(issue_date_raw, '%Y-%m-%d').date() if issue_date_raw else None
+    except ValueError:
+        return ErrorResponse('Issue date is invalid.', status_code=400).to_json_response()
+
+    recipient_ids = request.POST.getlist('recipient_ids[]') or request.POST.getlist('recipient_ids')
+    if certificate_type.recipientCategory != 'school' and not recipient_ids:
+        return ErrorResponse('Please select at least one recipient.', status_code=400).to_json_response()
+    if len(recipient_ids) > 200:
+        return ErrorResponse('You can generate up to 200 certificates at once.', status_code=400).to_json_response()
+
+    issues = create_certificate_issues_bulk(
+        request=request,
+        certificate_type=certificate_type,
+        design=design,
+        recipient_ids=recipient_ids,
+        issue_date=issue_date,
+        custom_title=request.POST.get('custom_title', ''),
+        custom_subtitle=request.POST.get('custom_subtitle', ''),
+        custom_body_text=request.POST.get('custom_body_text', ''),
+        custom_footer_text=request.POST.get('custom_footer_text', ''),
+    )
+    issue_rows = []
+    for issue in issues:
+        urls = build_preview_urls(issue)
+        issue_rows.append({
+            'id': issue.id,
+            'certificateNumber': issue.certificateNumber,
+            'preview_url': urls['preview_url'],
+            'print_url': urls['print_url'],
+            'download_url': urls['download_url'],
+            'verify_url': urls['verify_url'],
+        })
+    return SuccessResponse(
+        f'{len(issue_rows)} certificates generated successfully.',
+        data={
+            'issue_count': len(issue_rows),
+            'issues': issue_rows,
+            'preview_url': issue_rows[0]['preview_url'] if issue_rows else '',
+        },
     ).to_json_response()

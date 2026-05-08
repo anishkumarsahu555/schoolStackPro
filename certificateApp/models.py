@@ -122,6 +122,14 @@ class CertificateDesign(models.Model):
         blank=True,
         null=True,
     )
+    assetConfig = models.JSONField(default=dict, blank=True)
+    layoutConfig = models.JSONField(default=dict, blank=True)
+    themeConfig = models.JSONField(default=dict, blank=True)
+    designSchema = models.JSONField(default=dict, blank=True)
+    designJson = models.JSONField(default=dict, blank=True)
+    mergeSchema = models.JSONField(default=list, blank=True)
+    designVersion = models.PositiveIntegerField(default=1)
+    basedOnDesignID = models.ForeignKey('self', blank=True, null=True, on_delete=models.SET_NULL, related_name='derivedDesigns')
     customHeaderText = models.CharField(max_length=255, blank=True, null=True)
     customFooterText = models.CharField(max_length=500, blank=True, null=True)
     customCss = models.TextField(blank=True, null=True)
@@ -129,9 +137,16 @@ class CertificateDesign(models.Model):
     showLogo = models.BooleanField(default=True)
     showSignatureLine = models.BooleanField(default=True)
     showSeal = models.BooleanField(default=True)
+    isDraft = models.BooleanField(default=False)
+    isDefaultForType = models.BooleanField(default=False)
     isActive = models.BooleanField(default=True)
     isSystem = models.BooleanField(default=False)
     isCustom = models.BooleanField(default=False)
+    status = models.CharField(
+        max_length=20,
+        choices=(('draft', 'Draft'), ('published', 'Published'), ('archived', 'Archived')),
+        default='published',
+    )
     datetime = models.DateTimeField(auto_now_add=True)
     lastUpdatedOn = models.DateTimeField(auto_now=True)
     lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
@@ -143,6 +158,7 @@ class CertificateDesign(models.Model):
         indexes = [
             models.Index(fields=['schoolID', 'certificateTypeID', 'isDeleted'], name='cert_design_school_type_idx'),
             models.Index(fields=['isActive', 'isCustom'], name='cert_design_active_custom_idx'),
+            models.Index(fields=['schoolID', 'status', 'isDeleted'], name='cert_design_school_status_idx'),
         ]
         constraints = [
             models.UniqueConstraint(fields=['certificateTypeID', 'schoolID', 'slug'], name='cert_design_type_school_slug_uniq'),
@@ -165,10 +181,25 @@ class CertificateIssue(models.Model):
     parentID = models.ForeignKey(Parent, blank=True, null=True, on_delete=models.SET_NULL)
     issueDate = models.DateField()
     certificateNumber = models.CharField(max_length=120, db_index=True)
+    verificationToken = models.CharField(max_length=64, unique=True, db_index=True, blank=True, null=True)
     customTitle = models.CharField(max_length=200, blank=True, null=True)
     customSubtitle = models.CharField(max_length=255, blank=True, null=True)
     customBodyText = models.TextField(blank=True, null=True)
     customFooterText = models.TextField(blank=True, null=True)
+    draftName = models.CharField(max_length=200, blank=True, null=True)
+    issuePayload = models.JSONField(default=dict, blank=True)
+    issueData = models.JSONField(default=dict, blank=True)
+    issueStatus = models.CharField(
+        max_length=20,
+        choices=(('draft', 'Draft'), ('issued', 'Issued'), ('cancelled', 'Cancelled'), ('reissued', 'Reissued')),
+        default='issued',
+    )
+    cancelledOn = models.DateTimeField(blank=True, null=True)
+    cancelledByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+    cancellationReason = models.TextField(blank=True, null=True)
+    reissuedFromIssueID = models.ForeignKey('self', blank=True, null=True, on_delete=models.SET_NULL, related_name='reissuedIssues')
+    designSnapshot = models.JSONField(default=dict, blank=True)
+    renderSnapshot = models.JSONField(default=dict, blank=True)
     contextSnapshot = models.JSONField(default=dict, blank=True)
     htmlSnapshot = models.TextField(blank=True, null=True)
     datetime = models.DateTimeField(auto_now_add=True)
@@ -182,7 +213,33 @@ class CertificateIssue(models.Model):
         indexes = [
             models.Index(fields=['schoolID', 'sessionID', 'recipientCategory'], name='cert_issue_scope_idx'),
             models.Index(fields=['issueDate', 'isDeleted'], name='cert_issue_date_del_idx'),
+            models.Index(fields=['schoolID', 'issueStatus', 'issueDate'], name='cert_issue_school_status_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['schoolID', 'certificateNumber'], name='cert_issue_school_number_uniq'),
         ]
 
     def __str__(self):
         return self.certificateNumber
+
+
+class CertificateSequence(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    certificateTypeID = models.ForeignKey(CertificateType, blank=True, null=True, on_delete=models.CASCADE)
+    prefix = models.CharField(max_length=80)
+    currentValue = models.PositiveIntegerField(default=0)
+    datetime = models.DateTimeField(auto_now_add=True)
+    lastUpdatedOn = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Certificate Sequences'
+        indexes = [
+            models.Index(fields=['schoolID', 'sessionID'], name='cert_seq_school_session_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['schoolID', 'sessionID', 'certificateTypeID', 'prefix'], name='cert_seq_scope_prefix_uniq'),
+        ]
+
+    def __str__(self):
+        return f'{self.prefix}-{self.currentValue:04d}'

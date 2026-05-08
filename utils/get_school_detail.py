@@ -1,4 +1,5 @@
 from homeApp.models import SchoolDetail
+from homeApp.owner_access import school_owner_user_q
 from managementApp.models import TeacherDetail, Student
 from utils.logger import logger
 
@@ -17,7 +18,9 @@ def get_school_id(request):
             return student.schoolID_id
         except Student.DoesNotExist:
             try:
-                school = SchoolDetail.objects.get(ownerID__userID_id=user_id)
+                school = SchoolDetail.objects.filter(school_owner_user_q(user_id)).distinct().first()
+                if not school:
+                    return None
                 logger.info(f"School found: {school.schoolName}")
                 return school.id
             except SchoolDetail.DoesNotExist:
@@ -25,4 +28,3 @@ def get_school_id(request):
     except Exception as e:
         logger.error(f"Error getting school id: {e}")
         return None
-
