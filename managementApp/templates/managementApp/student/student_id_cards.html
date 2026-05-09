@@ -71,6 +71,7 @@
         <div class="sixteen wide column">
             <div class="ui pointing secondary menu">
                 <div style="cursor: pointer;" class="item active">Student ID Card Manager</div>
+                <a class="item" href="{% url 'managementApp:student_id_card_design' %}">Design Settings</a>
             </div>
 
             <div class="ui segment">
@@ -199,6 +200,10 @@
                 <div class="content" id="idCardPreviewContainer" style="padding: 0; min-height: 360px;">
                 </div>
                 <div class="actions">
+                    <div class="ui teal button" id="downloadPreviewJpegBtn" onclick="downloadCardInModalJpeg()">
+                        <i class="download icon"></i>
+                        Download JPEG
+                    </div>
                     <div class="ui button" onclick="printCardInModal()">
                         <i class="print icon"></i>
                         Print
@@ -213,6 +218,7 @@
 {% endblock %}
 
 {% block js %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
         let trackerTab;
 
@@ -432,6 +438,67 @@
             setTimeout(function () {
                 printWindow.print();
             }, 250);
+        }
+
+        function getPreviewCardFileName() {
+            function valueFromCard(fieldKey) {
+                const row = document.querySelector('#idCardPreviewContainer [data-preview-field="' + fieldKey + '"]');
+                const value = row ? row.querySelector('.v') : null;
+                return value ? value.textContent : '';
+            }
+
+            const studentName = valueFromCard('name') || $('#student option:selected').text() || 'student';
+            const className = valueFromCard('class') || 'class';
+            const roll = valueFromCard('roll') || 'roll';
+            const rawName = studentName + '-class-' + className + '-roll-' + roll + '-id-card';
+            const cleaned = String(rawName)
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '') || 'student-id-card';
+            return cleaned + '.jpg';
+        }
+
+        async function downloadCardInModalJpeg() {
+            const card = document.querySelector('#idCardPreviewContainer #student-id-card');
+            const button = document.getElementById('downloadPreviewJpegBtn');
+            if (!card) {
+                addErrorNotification('Unable to find ID card for export.');
+                return;
+            }
+            if (typeof html2canvas !== 'function') {
+                addErrorNotification('JPEG export library not loaded.');
+                return;
+            }
+
+            const previousHtml = button ? button.innerHTML : '';
+            if (button) {
+                button.classList.add('loading', 'disabled');
+            }
+
+            try {
+                const canvas = await html2canvas(card, {
+                    backgroundColor: '#ffffff',
+                    scale: Math.max(2, window.devicePixelRatio || 1),
+                    useCORS: true,
+                    allowTaint: false
+                });
+                const jpegData = canvas.toDataURL('image/jpeg', 0.95);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = jpegData;
+                downloadLink.download = getPreviewCardFileName();
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                addSuccessNotification('JPEG download started.');
+            } catch (error) {
+                addErrorNotification('Unable to generate JPEG. Please try again.');
+            } finally {
+                if (button) {
+                    button.classList.remove('loading', 'disabled');
+                    button.innerHTML = previousHtml;
+                }
+            }
         }
 
         function saveRecordTracker() {

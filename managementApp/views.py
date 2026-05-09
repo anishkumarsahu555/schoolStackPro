@@ -13,6 +13,15 @@ from homeApp.session_utils import get_session_month_sequence
 from homeApp.utils import login_required
 from managementApp.models import *
 from managementApp.reporting import build_report_cards_for_student
+from managementApp.services.id_cards import (
+    DEFAULT_FOOTER_CONFIG,
+    DEFAULT_HEADER_CONFIG,
+    DEFAULT_STYLE_CONFIG,
+    build_id_card_context,
+    get_or_create_active_id_card_design,
+    merged_config,
+    normalize_fields_config,
+)
 from managementApp.signals import pre_save_with_user
 from teacherApp.models import SubjectNote
 from utils.custom_decorators import check_groups
@@ -565,6 +574,40 @@ def student_id_cards(request):
 
 @login_required
 @check_groups('Admin', 'Owner')
+def student_id_card_design(request):
+    current_session = request.session.get('current_session', {})
+    school_id = current_session.get('SchoolID')
+    session_id = current_session.get('Id')
+    design = get_or_create_active_id_card_design(school_id, session_id)
+    sample_student = Student.objects.select_related('standardID', 'parentID', 'schoolID', 'sessionID').filter(
+        schoolID_id=school_id,
+        sessionID_id=session_id,
+        isDeleted=False,
+    ).order_by('name').first()
+    context = {
+        'design': design,
+        'id_card_design': design,
+        'id_card_header': merged_config(design.headerConfig, DEFAULT_HEADER_CONFIG),
+        'id_card_fields': normalize_fields_config(design.fieldsConfig),
+        'id_card_style': merged_config(design.styleConfig, DEFAULT_STYLE_CONFIG),
+        'id_card_footer': merged_config(design.footerConfig, DEFAULT_FOOTER_CONFIG),
+        'header_config_json': json.dumps(merged_config(design.headerConfig, DEFAULT_HEADER_CONFIG)),
+        'fields_config_json': json.dumps(normalize_fields_config(design.fieldsConfig)),
+        'style_config_json': json.dumps(merged_config(design.styleConfig, DEFAULT_STYLE_CONFIG)),
+        'footer_config_json': json.dumps(merged_config(design.footerConfig, DEFAULT_FOOTER_CONFIG)),
+        'preview_student': sample_student,
+    }
+    if sample_student:
+        context.update(build_id_card_context(sample_student, design=design))
+        context['instance'].name = 'Aman Sharma'
+        for field_row in context.get('field_rows', []):
+            if field_row.get('key') == 'name':
+                field_row['value'] = 'Aman Sharma'
+    return render(request, 'managementApp/student/student_id_card_design.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
 def student_id_card_detail(request, id=None):
     current_session_id = request.session['current_session']['Id']
     instance = get_object_or_404(
@@ -575,17 +618,8 @@ def student_id_card_detail(request, id=None):
     )
     embed_mode = request.GET.get('embed') == '1'
     partial_mode = request.GET.get('partial') == '1'
-    context = {
-        'instance': instance,
-        'school': instance.schoolID,
-        'school_name': (
-            (instance.schoolID.schoolName if instance.schoolID else '')
-            or (instance.schoolID.name if instance.schoolID else '')
-            or 'School Name'
-        ),
-        'valid_till_label': 'Upto 2026',
-        'embed_mode': embed_mode,
-    }
+    context = build_id_card_context(instance)
+    context['embed_mode'] = embed_mode
     if partial_mode:
         return render(request, 'managementApp/student/student_id_card_embed.html', context)
     return render(request, 'managementApp/student/student_id_card_detail.html', context)

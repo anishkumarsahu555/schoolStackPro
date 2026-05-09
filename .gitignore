@@ -16,6 +16,7 @@ managementApp/migrations/*.py
 !managementApp/migrations/0024_half_day_leave_support.py
 !managementApp/migrations/0025_leave_type_quota_days.py
 !managementApp/migrations/0026_studentattendance_holidaysynccreatedattendance_and_more.py
+!managementApp/migrations/0027_studentidcarddesign.py
 .vscode/
 logs/
 db.sqlite3

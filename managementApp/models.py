@@ -1108,6 +1108,36 @@ class StudentIdCardRecord(models.Model):
         ]
 
 
+class StudentIdCardDesign(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200, blank=True, null=True, default='Default ID Card Design')
+    isActive = models.BooleanField(default=True)
+    cardWidthMm = models.DecimalField(max_digits=5, decimal_places=1, default=54)
+    cardHeightMm = models.DecimalField(max_digits=5, decimal_places=1, default=86)
+    orientation = models.CharField(max_length=20, blank=True, null=True, default='portrait')
+    headerConfig = models.JSONField(default=dict, blank=True)
+    fieldsConfig = models.JSONField(default=list, blank=True)
+    styleConfig = models.JSONField(default=dict, blank=True)
+    footerConfig = models.JSONField(default=dict, blank=True)
+    principalSignature = models.ImageField(upload_to='id_card/principal_signatures/', blank=True, null=True)
+    backgroundImage = models.ImageField(upload_to='id_card/backgrounds/', blank=True, null=True)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    def __str__(self):
+        return self.name or 'Default ID Card Design'
+
+    class Meta:
+        verbose_name_plural = 'w1) Student ID Card Designs'
+        indexes = [
+            models.Index(fields=['sessionID', 'schoolID', 'isActive', 'isDeleted'], name='sid_design_active_idx'),
+        ]
+
+
 class LeaveType(models.Model):
     APPLICABLE_FOR_CHOICES = (
         ('both', 'Both'),

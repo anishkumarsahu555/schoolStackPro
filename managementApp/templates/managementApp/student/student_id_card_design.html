@@ -1,0 +1,1302 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>ID Card Design</title>
+{% endblock %}
+
+{% block body %}
+    <style>
+        .id-design-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 360px;
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .id-design-panel {
+            border: 1px solid var(--app-border, #dbe4ef);
+            background: var(--app-surface, #fff);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .id-design-panel h4 {
+            margin: 0 0 0.85rem;
+        }
+
+        .field-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.55rem;
+        }
+
+        .field-row {
+            border: 1px solid var(--app-border, #e2e8f0);
+            border-radius: 8px;
+            padding: 0.55rem;
+            display: grid;
+            grid-template-columns: 86px 1fr;
+            gap: 0.45rem;
+            align-items: center;
+            background: color-mix(in srgb, var(--app-surface, #fff) 94%, var(--app-hover, #f1f3f4));
+        }
+
+        .field-row .ui.input {
+            width: 100% !important;
+        }
+
+        .field-row .ui.checkbox label {
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .color-field input[type="color"] {
+            width: 100%;
+            height: 34px;
+            padding: 2px;
+        }
+
+        .id-preview-panel {
+            position: sticky;
+            top: 1rem;
+        }
+
+        .id-preview-panel .id-card-page {
+            background: transparent;
+        }
+
+        .signature-preview {
+            max-width: 160px;
+            max-height: 52px;
+            object-fit: contain;
+            display: block;
+            margin-top: 0.45rem;
+            border: 1px solid #dbe4ef;
+            border-radius: 6px;
+            padding: 4px;
+            background: #fff;
+        }
+
+        .signature-cropper {
+            display: none;
+            margin-top: 0.7rem;
+            border: 1px solid var(--app-border, #dbe4ef);
+            border-radius: 8px;
+            padding: 0.65rem;
+            background: color-mix(in srgb, var(--app-surface, #fff) 94%, var(--app-hover, #f1f3f4));
+        }
+
+        .signature-cropper.active {
+            display: block;
+        }
+
+        .signature-cropper canvas {
+            width: 100%;
+            max-width: 440px;
+            height: auto;
+            display: block;
+            border: 1px solid var(--app-border, #cbd5e1);
+            border-radius: 6px;
+            background:
+                linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
+                linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
+                linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+            cursor: crosshair;
+        }
+
+        .signature-crop-actions {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 0.55rem;
+        }
+
+        .signature-crop-actions .ui.checkbox {
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+        }
+
+        .signature-cleanup-controls {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.55rem;
+            margin-top: 0.55rem;
+        }
+
+        .signature-cleanup-controls label {
+            font-size: 11px !important;
+            font-weight: 700;
+        }
+
+        .signature-cleanup-controls input[type="range"] {
+            width: 100%;
+            accent-color: var(--app-brand, #1a73e8);
+        }
+
+        .signature-preview-box {
+            margin-top: 0.55rem;
+        }
+
+        .signature-preview-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.55rem;
+            margin-top: 0.55rem;
+        }
+
+        .signature-preview-box canvas {
+            cursor: default;
+        }
+
+        html[data-theme="dark"] .id-design-panel {
+            background: var(--app-surface) !important;
+            color: var(--app-text) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        html[data-theme="dark"] .id-design-panel .ui.header,
+        html[data-theme="dark"] .signature-cleanup-controls label,
+        html[data-theme="dark"] .signature-preview-box label,
+        html[data-theme="dark"] .field-row .ui.checkbox label {
+            color: var(--app-text) !important;
+        }
+
+        html[data-theme="dark"] .field-row,
+        html[data-theme="dark"] .signature-cropper {
+            background: var(--app-hover) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        html[data-theme="dark"] .signature-preview {
+            background: #ffffff !important;
+            border-color: var(--app-border) !important;
+        }
+
+        html[data-theme="dark"] .signature-cropper canvas {
+            border-color: var(--app-border) !important;
+            background:
+                linear-gradient(45deg, #374151 25%, transparent 25%),
+                linear-gradient(-45deg, #374151 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #374151 75%),
+                linear-gradient(-45deg, transparent 75%, #374151 75%),
+                #111827 !important;
+            background-size: 16px 16px !important;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0 !important;
+        }
+
+        html[data-theme="dark"] .id-preview-panel .ui.message {
+            background: var(--app-hover) !important;
+            color: var(--app-text) !important;
+            border-color: var(--app-border) !important;
+        }
+
+        @media (max-width: 991px) {
+            .id-design-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .id-preview-panel {
+                position: static;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .field-grid,
+            .color-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .field-row {
+                grid-template-columns: 1fr;
+            }
+
+            .signature-cleanup-controls,
+            .signature-preview-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <a class="item" href="{% url 'managementApp:student_id_cards' %}">Student ID Card Manager</a>
+                <div style="cursor: pointer;" class="item active">Design Settings</div>
+            </div>
+
+            <form class="ui tiny form" id="idCardDesignForm" enctype="multipart/form-data">{% csrf_token %}
+                <input type="hidden" id="fields_config" name="fields_config">
+
+                <div class="id-design-layout">
+                    <div>
+                        <div class="id-design-panel">
+                            <h4 class="ui header">Header</h4>
+                            <div class="two fields">
+                                <div class="field">
+                                    <label>Design Name</label>
+                                    <input type="text" name="design_name" value="{{ id_card_design.name|default:'Default ID Card Design' }}">
+                                </div>
+                                <div class="field">
+                                    <label>Header Layout</label>
+                                    <select class="ui dropdown" name="header_layout">
+                                        <option value="masthead" {% if id_card_header.layout != 'band' %}selected{% endif %}>School Masthead</option>
+                                        <option value="band" {% if id_card_header.layout == 'band' %}selected{% endif %}>Color Band</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="two fields">
+                                <div class="field">
+                                    <label>Card Title</label>
+                                    <input type="text" name="card_title" value="{{ id_card_header.title|default:'' }}" placeholder="Optional">
+                                </div>
+                                <div class="field">
+                                    <label>Subtitle</label>
+                                    <input type="text" name="card_subtitle" value="{{ id_card_header.subtitle|default:'' }}" placeholder="Optional">
+                                </div>
+                            </div>
+                            <div class="three fields">
+                                <div class="field">
+                                    <label>Address</label>
+                                    <input type="text" name="address_text" value="{{ id_card_header.addressText|default:school.address|default:'' }}" placeholder="School address">
+                                </div>
+                                <div class="field">
+                                    <label>School URL</label>
+                                    <input type="text" name="website_url" value="{{ id_card_header.websiteUrl|default:school.website|default:'' }}" placeholder="www.school.edu">
+                                </div>
+                                <div class="field">
+                                    <label>Phone Number</label>
+                                    <input type="text" name="phone_number" value="{{ id_card_header.phoneNumber|default:school.phoneNumber|default:'' }}" placeholder="Phone number">
+                                </div>
+                            </div>
+                            <div class="six fields">
+                                <div class="field">
+                                    <label>School Name Font</label>
+                                    <input type="number" name="school_name_font_size" min="9" max="24" step="0.5" value="{{ id_card_header.schoolNameFontSize|default:15 }}">
+                                </div>
+                                <div class="field">
+                                    <label>Logo Size</label>
+                                    <input type="number" name="logo_size_mm" min="0" max="12" step="0.1" value="{{ id_card_header.logoSizeMm|default:4.6 }}">
+                                </div>
+                                <div class="field">
+                                    <label>Address Font</label>
+                                    <input type="number" name="address_font_size" min="5" max="14" step="0.5" value="{{ id_card_header.addressFontSize|default:8.8 }}">
+                                </div>
+                                <div class="field">
+                                    <label>URL/Phone Font</label>
+                                    <input type="number" name="contact_font_size" min="5" max="14" step="0.5" value="{{ id_card_header.contactFontSize|default:8.3 }}">
+                                </div>
+                                <div class="field">
+                                    <label>Title Font</label>
+                                    <input type="number" name="title_font_size" min="5" max="16" step="0.5" value="{{ id_card_header.titleFontSize|default:9 }}">
+                                </div>
+                                <div class="field">
+                                    <label>Subtitle Font</label>
+                                    <input type="number" name="subtitle_font_size" min="5" max="14" step="0.5" value="{{ id_card_header.subtitleFontSize|default:7 }}">
+                                </div>
+                            </div>
+                            <div class="inline fields">
+                                <div class="field"><div class="ui checkbox"><input type="checkbox" name="show_logo" {% if id_card_header.showLogo %}checked{% endif %}><label>Logo</label></div></div>
+                                <div class="field"><div class="ui checkbox"><input type="checkbox" name="show_school_name" {% if id_card_header.showSchoolName %}checked{% endif %}><label>Name</label></div></div>
+                                <div class="field"><div class="ui checkbox"><input type="checkbox" name="show_address" {% if id_card_header.showAddress %}checked{% endif %}><label>Address</label></div></div>
+                                <div class="field"><div class="ui checkbox"><input type="checkbox" name="show_phone" {% if id_card_header.showPhone %}checked{% endif %}><label>Phone</label></div></div>
+                                <div class="field"><div class="ui checkbox"><input type="checkbox" name="show_website" {% if id_card_header.showWebsite %}checked{% endif %}><label>Website</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="id-design-panel">
+                            <h4 class="ui header">Fields</h4>
+                            <div class="field-grid" id="fieldConfigList"></div>
+                        </div>
+
+                        <div class="id-design-panel">
+                            <h4 class="ui header">Validity And Signature</h4>
+                            <div class="three fields">
+                                <div class="field">
+                                    <label>Validity Mode</label>
+                                    <select class="ui dropdown" name="validity_mode" id="validity_mode">
+                                        <option value="session_end" {% if id_card_footer.validityMode == 'session_end' %}selected{% endif %}>Session End</option>
+                                        <option value="custom_date" {% if id_card_footer.validityMode == 'custom_date' %}selected{% endif %}>Custom Date</option>
+                                        <option value="custom_text" {% if id_card_footer.validityMode == 'custom_text' %}selected{% endif %}>Custom Text</option>
+                                        <option value="hidden" {% if id_card_footer.validityMode == 'hidden' %}selected{% endif %}>Hidden</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label>Valid Till</label>
+                                    <div class="ui calendar" id="design_valid_till_cal">
+                                        <div class="ui input left icon">
+                                            <i class="calendar icon"></i>
+                                            <input type="text" name="valid_till" id="design_valid_till" value="{{ id_card_footer.validTill|default:'' }}" placeholder="Valid Till">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label>Custom Validity Text</label>
+                                    <input type="text" name="validity_text" value="{{ id_card_footer.validityText|default:'' }}" placeholder="Upto December 2026">
+                                </div>
+                            </div>
+                            <div class="two fields">
+                                <div class="field">
+                                    <label>Signature Label</label>
+                                    <input type="text" name="signature_label" value="{{ id_card_footer.signatureLabel|default:'Principal Signature' }}">
+                                </div>
+                                <div class="field">
+                                    <label>Principal Signature</label>
+                                    <input type="file" name="principal_signature" accept="image/*">
+                                    <div class="signature-cropper" id="signatureCropper">
+                                        <canvas id="signatureCropCanvas" width="440" height="230"></canvas>
+                                        <div class="signature-crop-actions ui mini form">
+                                            <button type="button" class="ui mini button" onclick="autoCropSignature()">
+                                                <i class="crop icon"></i>
+                                                Auto Crop
+                                            </button>
+                                            <button type="button" class="ui mini blue button" onclick="applySignatureCrop()">
+                                                Apply
+                                            </button>
+                                            <div class="ui checkbox">
+                                                <input type="checkbox" id="removeSignatureBackground" checked>
+                                                <label>Extract ink only</label>
+                                            </div>
+                                        </div>
+                                        <div class="signature-cleanup-controls ui mini form">
+                                            <div class="field">
+                                                <label>Cleanup Mode</label>
+                                                <select class="ui compact dropdown" id="signatureCleanupMode">
+                                                    <option value="transparent" selected>Transparent Ink</option>
+                                                    <option value="contrast">High Contrast</option>
+                                                    <option value="crop">Crop Only</option>
+                                                </select>
+                                            </div>
+                                            <div class="field">
+                                                <label>Cleanup Strength</label>
+                                                <input type="range" id="signatureCleanupStrength" min="8" max="95" value="38">
+                                            </div>
+                                            <div class="field">
+                                                <label>Edge Softness</label>
+                                                <input type="range" id="signatureFeather" min="6" max="80" value="28">
+                                            </div>
+                                            <div class="field">
+                                                <label>Ink Weight</label>
+                                                <input type="range" id="signatureInkDarkness" min="0" max="100" value="88">
+                                            </div>
+                                        </div>
+                                        <div class="signature-preview-grid">
+                                            <div class="signature-preview-box field">
+                                                <label>Cropped Original</label>
+                                                <canvas id="signatureOriginalPreview" width="300" height="90"></canvas>
+                                            </div>
+                                            <div class="signature-preview-box field">
+                                                <label>Optimized Preview</label>
+                                                <canvas id="signatureCleanPreview" width="300" height="90"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% if id_card_design.principalSignature %}
+                                        <img class="signature-preview" src="{{ id_card_design.principalSignature.url }}" alt="Principal Signature">
+                                        <div class="ui checkbox" style="margin-top:0.45rem;">
+                                            <input type="checkbox" name="remove_principal_signature" value="1">
+                                            <label>Remove current signature</label>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="inline fields">
+                                <div class="field"><div class="ui checkbox"><input type="checkbox" name="show_validity" {% if id_card_footer.showValidity %}checked{% endif %}><label>Show Validity</label></div></div>
+                                <div class="field"><div class="ui checkbox"><input type="checkbox" name="show_signature" {% if id_card_footer.showSignature %}checked{% endif %}><label>Show Signature</label></div></div>
+                                <div class="field"><div class="ui checkbox"><input type="checkbox" name="show_signature_image" {% if id_card_footer.showSignatureImage %}checked{% endif %}><label>Use Signature Image</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="id-design-panel">
+                            <h4 class="ui header">Style</h4>
+                            <div class="color-grid">
+                                <div class="field color-field"><label>Primary</label><input type="color" name="primary_color" value="{{ id_card_style.primaryColor|default:'#2452a3' }}"></div>
+                                <div class="field color-field"><label>Header</label><input type="color" name="header_color" value="{{ id_card_style.headerColor|default:'#2457ad' }}"></div>
+                                <div class="field color-field"><label>Header Text</label><input type="color" name="header_text_color" value="{{ id_card_style.headerTextColor|default:'#ffffff' }}"></div>
+                                <div class="field color-field"><label>Background</label><input type="color" name="card_background_color" value="{{ id_card_style.cardBackgroundColor|default:'#f3f5f8' }}"></div>
+                                <div class="field color-field"><label>Text</label><input type="color" name="text_color" value="{{ id_card_style.textColor|default:'#122030' }}"></div>
+                                <div class="field color-field"><label>Label</label><input type="color" name="label_color" value="{{ id_card_style.labelColor|default:'#324f75' }}"></div>
+                            </div>
+                            <div class="three fields" style="margin-top:0.75rem;">
+                                <div class="field">
+                                    <label>Font Family</label>
+                                    <input type="text" name="font_family" value="{{ id_card_style.fontFamily|default:'Arial, sans-serif' }}">
+                                </div>
+                                <div class="field">
+                                    <label>Photo Shape</label>
+                                    <select class="ui dropdown" name="photo_shape">
+                                        <option value="rounded" {% if id_card_style.photoShape != 'circle' %}selected{% endif %}>Rounded</option>
+                                        <option value="circle" {% if id_card_style.photoShape == 'circle' %}selected{% endif %}>Circle</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label>Background Image</label>
+                                    <input type="file" name="background_image" accept="image/*">
+                                    {% if id_card_design.backgroundImage %}
+                                        <div class="ui checkbox" style="margin-top:0.45rem;">
+                                            <input type="checkbox" name="remove_background_image" value="1">
+                                            <label>Remove current background</label>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="ui green button" onclick="saveIdCardDesign()">
+                            <i class="save icon"></i>
+                            Save Design
+                        </button>
+                        <a class="ui button" href="{% url 'managementApp:student_id_cards' %}">
+                            <i class="id card icon"></i>
+                            Back To Cards
+                        </a>
+                    </div>
+
+                    <div class="id-design-panel id-preview-panel">
+                        <h4 class="ui header">Preview</h4>
+                        {% if preview_student %}
+                            {% include 'managementApp/student/student_id_card_embed.html' %}
+                            <div class="ui tiny message">Preview updates as you edit.</div>
+                        {% else %}
+                            <div class="ui info message">Add a student to see an ID card preview.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        const fieldConfig = JSON.parse('{{ fields_config_json|escapejs }}');
+        const defaultValidityLabel = '{{ valid_till_label|default:"Upto December 2026"|escapejs }}';
+        let signatureCropState = null;
+        let processedSignatureBlob = null;
+
+        $(function () {
+            $('.ui.checkbox').checkbox();
+            $('.ui.dropdown').dropdown();
+            $('#design_valid_till_cal').calendar({
+                monthFirst: false,
+                type: 'date',
+                formatter: {
+                    date: function (date) {
+                        if (!date) return '';
+                        return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+                    }
+                },
+                onChange: function () {
+                    updatePreview();
+                }
+            });
+            hydrateDesignValidityCalendar();
+            renderFieldConfig();
+            bindRealtimePreview();
+            updatePreview();
+        });
+
+        function hydrateDesignValidityCalendar() {
+            const input = document.getElementById('design_valid_till');
+            if (!input || !input.value) return;
+            const parsed = parseDateValue(input.value);
+            if (parsed) {
+                $('#design_valid_till_cal').calendar('set date', parsed, false, false);
+            }
+        }
+
+        function renderFieldConfig() {
+            const wrap = document.getElementById('fieldConfigList');
+            wrap.innerHTML = '';
+            fieldConfig.forEach(function (field) {
+                const row = document.createElement('div');
+                row.className = 'field-row';
+                row.innerHTML = '' +
+                    '<div class="ui checkbox field-toggle">' +
+                        '<input type="checkbox" class="field-visible" data-key="' + field.key + '"' + (field.visible ? ' checked' : '') + '>' +
+                        '<label>Show</label>' +
+                    '</div>' +
+                    '<div class="ui input">' +
+                        '<input type="text" class="field-label" data-key="' + field.key + '" value="' + escapeAttr(field.label || '') + '">' +
+                    '</div>';
+                wrap.appendChild(row);
+            });
+            $('#fieldConfigList .ui.checkbox').checkbox();
+        }
+
+        function bindRealtimePreview() {
+            const form = document.getElementById('idCardDesignForm');
+            form.addEventListener('input', updatePreview);
+            form.addEventListener('change', updatePreview);
+
+            ['signatureCleanupMode', 'signatureCleanupStrength', 'signatureFeather', 'signatureInkDarkness', 'removeSignatureBackground'].forEach(function (id) {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('input', updateSignatureCleanPreview);
+                    input.addEventListener('change', updateSignatureCleanPreview);
+                }
+            });
+
+            const signatureInput = form.querySelector('input[name="principal_signature"]');
+            if (signatureInput) {
+                signatureInput.addEventListener('change', function () {
+                    processedSignatureBlob = null;
+                    prepareSignatureCropper(signatureInput);
+                });
+            }
+
+            const backgroundInput = form.querySelector('input[name="background_image"]');
+            if (backgroundInput) {
+                backgroundInput.addEventListener('change', function () {
+                    previewImageFile(backgroundInput, function (dataUrl) {
+                        const card = document.querySelector('[data-preview-card]');
+                        if (card && dataUrl) {
+                            card.style.backgroundImage = 'url("' + dataUrl + '")';
+                            card.style.backgroundSize = 'cover';
+                            card.style.backgroundPosition = 'center';
+                        }
+                    });
+                });
+            }
+        }
+
+        function previewImageFile(input, callback) {
+            const file = input.files && input.files[0];
+            if (!file) {
+                callback('');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                callback(event.target.result || '');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function prepareSignatureCropper(input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const image = new Image();
+                image.onload = function () {
+                    const canvas = document.getElementById('signatureCropCanvas');
+            const cropper = document.getElementById('signatureCropper');
+            const ctx = canvas.getContext('2d');
+            const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
+                    const drawWidth = image.width * scale;
+                    const drawHeight = image.height * scale;
+                    const offsetX = (canvas.width - drawWidth) / 2;
+                    const offsetY = (canvas.height - drawHeight) / 2;
+                    signatureCropState = {
+                        image: image,
+                        scale: scale,
+                        offsetX: offsetX,
+                        offsetY: offsetY,
+                        drawWidth: drawWidth,
+                        drawHeight: drawHeight,
+                        crop: {x: offsetX, y: offsetY, w: drawWidth, h: drawHeight},
+                        dragging: false,
+                        dragStart: null,
+                    };
+                    cropper.classList.add('active');
+                    $('#signatureCropper .ui.dropdown').dropdown();
+                    $('input[name="show_signature"]').closest('.ui.checkbox').checkbox('set checked');
+                    $('input[name="show_signature_image"]').closest('.ui.checkbox').checkbox('set checked');
+                    drawSignatureCropper();
+                    updateSignaturePreviewImage(event.target.result || '');
+                    updateSignatureCleanPreview();
+                    updatePreview();
+                };
+                image.src = event.target.result || '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function optimizeSignatureCanvasForUpload(sourceCanvas) {
+            const maxWidth = 640;
+            const maxHeight = 240;
+            const scale = Math.min(1, maxWidth / sourceCanvas.width, maxHeight / sourceCanvas.height);
+            if (scale >= 1) {
+                return sourceCanvas;
+            }
+            const output = document.createElement('canvas');
+            output.width = Math.max(1, Math.round(sourceCanvas.width * scale));
+            output.height = Math.max(1, Math.round(sourceCanvas.height * scale));
+            output.getContext('2d').drawImage(sourceCanvas, 0, 0, output.width, output.height);
+            return output;
+        }
+
+        function buildProcessedSignatureBlob() {
+            return new Promise(function (resolve) {
+                if (!signatureCropState) {
+                    resolve(null);
+                    return;
+                }
+                const cropped = getCroppedSignatureCanvas();
+                if (!cropped) {
+                    resolve(null);
+                    return;
+                }
+                const cleaned = extractSignatureInk(cropped);
+                const optimized = optimizeSignatureCanvasForUpload(cleaned);
+                optimized.toBlob(function (blob) {
+                    resolve(blob || null);
+                }, 'image/png');
+            });
+        }
+
+        function drawSignatureCropper() {
+            if (!signatureCropState) return;
+            const canvas = document.getElementById('signatureCropCanvas');
+            const ctx = canvas.getContext('2d');
+            const crop = signatureCropState.crop;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(
+                signatureCropState.image,
+                signatureCropState.offsetX,
+                signatureCropState.offsetY,
+                signatureCropState.drawWidth,
+                signatureCropState.drawHeight
+            );
+            ctx.save();
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.34)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.rect(crop.x, crop.y, crop.w, crop.h);
+            ctx.clip();
+            ctx.drawImage(
+                signatureCropState.image,
+                signatureCropState.offsetX,
+                signatureCropState.offsetY,
+                signatureCropState.drawWidth,
+                signatureCropState.drawHeight
+            );
+            ctx.restore();
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
+            ctx.fillRect(crop.x, crop.y, crop.w, crop.h);
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(crop.x, crop.y, crop.w, crop.h);
+            ctx.setLineDash([7, 5]);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(crop.x + 4, crop.y + 4, Math.max(1, crop.w - 8), Math.max(1, crop.h - 8));
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#2563eb';
+            [
+                [crop.x, crop.y],
+                [crop.x + crop.w, crop.y],
+                [crop.x, crop.y + crop.h],
+                [crop.x + crop.w, crop.y + crop.h],
+            ].forEach(function (point) {
+                ctx.fillRect(point[0] - 5, point[1] - 5, 10, 10);
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(point[0] - 5, point[1] - 5, 10, 10);
+            });
+            ctx.restore();
+        }
+
+        function cropCanvasPoint(event) {
+            const canvas = document.getElementById('signatureCropCanvas');
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (event.clientX - rect.left) * (canvas.width / rect.width),
+                y: (event.clientY - rect.top) * (canvas.height / rect.height),
+            };
+        }
+
+        document.addEventListener('mousedown', function (event) {
+            if (!signatureCropState || event.target.id !== 'signatureCropCanvas') return;
+            signatureCropState.dragging = true;
+            signatureCropState.dragStart = cropCanvasPoint(event);
+            signatureCropState.crop = {x: signatureCropState.dragStart.x, y: signatureCropState.dragStart.y, w: 1, h: 1};
+            drawSignatureCropper();
+            updateSignatureCleanPreview();
+        });
+
+        document.addEventListener('mousemove', function (event) {
+            if (!signatureCropState || !signatureCropState.dragging) return;
+            const point = cropCanvasPoint(event);
+            const start = signatureCropState.dragStart;
+            const minX = Math.max(signatureCropState.offsetX, Math.min(start.x, point.x));
+            const minY = Math.max(signatureCropState.offsetY, Math.min(start.y, point.y));
+            const maxX = Math.min(signatureCropState.offsetX + signatureCropState.drawWidth, Math.max(start.x, point.x));
+            const maxY = Math.min(signatureCropState.offsetY + signatureCropState.drawHeight, Math.max(start.y, point.y));
+            signatureCropState.crop = {
+                x: minX,
+                y: minY,
+                w: Math.max(8, maxX - minX),
+                h: Math.max(8, maxY - minY),
+            };
+            drawSignatureCropper();
+            updateSignatureCleanPreview();
+        });
+
+        document.addEventListener('mouseup', function () {
+            if (signatureCropState) {
+                signatureCropState.dragging = false;
+            }
+        });
+
+        function autoCropSignature() {
+            if (!signatureCropState) return;
+            const canvas = document.createElement('canvas');
+            canvas.width = signatureCropState.image.width;
+            canvas.height = signatureCropState.image.height;
+            const ctx = canvas.getContext('2d', {willReadFrequently: true});
+            ctx.drawImage(signatureCropState.image, 0, 0);
+            const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const bounds = findInkBounds(pixels, canvas.width, canvas.height, 14);
+            if (!bounds) return;
+            const pad = 18;
+            const minX = Math.max(0, bounds.minX - pad);
+            const minY = Math.max(0, bounds.minY - pad);
+            const maxX = Math.min(canvas.width, bounds.maxX + pad);
+            const maxY = Math.min(canvas.height, bounds.maxY + pad);
+            signatureCropState.crop = {
+                x: signatureCropState.offsetX + minX * signatureCropState.scale,
+                y: signatureCropState.offsetY + minY * signatureCropState.scale,
+                w: (maxX - minX) * signatureCropState.scale,
+                h: (maxY - minY) * signatureCropState.scale,
+            };
+            drawSignatureCropper();
+            updateSignatureCleanPreview();
+        }
+
+        function luminance(r, g, b) {
+            return 0.299 * r + 0.587 * g + 0.114 * b;
+        }
+
+        function percentile(values, p) {
+            if (!values.length) return 0;
+            values.sort(function (a, b) { return a - b; });
+            const index = Math.min(values.length - 1, Math.max(0, Math.round((values.length - 1) * p)));
+            return values[index];
+        }
+
+        function smoothstep(edge0, edge1, value) {
+            const x = Math.max(0, Math.min(1, (value - edge0) / Math.max(1, edge1 - edge0)));
+            return x * x * (3 - 2 * x);
+        }
+
+        function imageStats(imageData, width, height) {
+            const lumValues = [];
+            const brightR = [];
+            const brightG = [];
+            const brightB = [];
+            for (let y = 0; y < height; y += 2) {
+                for (let x = 0; x < width; x += 2) {
+                    const i = (y * width + x) * 4;
+                    const r = imageData.data[i];
+                    const g = imageData.data[i + 1];
+                    const b = imageData.data[i + 2];
+                    const lum = luminance(r, g, b);
+                    lumValues.push(lum);
+                }
+            }
+            const paperLum = percentile(lumValues.slice(), 0.86);
+            const inkLum = percentile(lumValues.slice(), 0.08);
+            for (let y = 0; y < height; y += 2) {
+                for (let x = 0; x < width; x += 2) {
+                    const i = (y * width + x) * 4;
+                    const r = imageData.data[i];
+                    const g = imageData.data[i + 1];
+                    const b = imageData.data[i + 2];
+                    if (luminance(r, g, b) >= paperLum - 8) {
+                        brightR.push(r);
+                        brightG.push(g);
+                        brightB.push(b);
+                    }
+                }
+            }
+            return {
+                paperLum: paperLum,
+                inkLum: inkLum,
+                paperR: median(brightR),
+                paperG: median(brightG),
+                paperB: median(brightB),
+            };
+        }
+
+        function findInkBounds(imageData, width, height, padSignal) {
+            const stats = imageStats(imageData, width, height);
+            const baseThreshold = Math.max(18, (stats.paperLum - stats.inkLum) * 0.24, padSignal || 0);
+            let minX = width;
+            let minY = height;
+            let maxX = 0;
+            let maxY = 0;
+            for (let y = 0; y < height; y += 1) {
+                for (let x = 0; x < width; x += 1) {
+                    const i = (y * width + x) * 4;
+                    const r = imageData.data[i];
+                    const g = imageData.data[i + 1];
+                    const b = imageData.data[i + 2];
+                    const lum = luminance(r, g, b);
+                    const colorDistance = Math.hypot(stats.paperR - r, stats.paperG - g, stats.paperB - b);
+                    const signal = Math.max(stats.paperLum - lum, colorDistance * 0.58);
+                    if (signal > baseThreshold) {
+                        minX = Math.min(minX, x);
+                        minY = Math.min(minY, y);
+                        maxX = Math.max(maxX, x);
+                        maxY = Math.max(maxY, y);
+                    }
+                }
+            }
+            if (minX >= maxX || minY >= maxY) return null;
+            return {minX: minX, minY: minY, maxX: maxX, maxY: maxY};
+        }
+
+        function getCroppedSignatureCanvas() {
+            if (!signatureCropState) return null;
+            const crop = signatureCropState.crop;
+            const sourceX = Math.max(0, (crop.x - signatureCropState.offsetX) / signatureCropState.scale);
+            const sourceY = Math.max(0, (crop.y - signatureCropState.offsetY) / signatureCropState.scale);
+            const sourceW = Math.min(signatureCropState.image.width - sourceX, crop.w / signatureCropState.scale);
+            const sourceH = Math.min(signatureCropState.image.height - sourceY, crop.h / signatureCropState.scale);
+            const output = document.createElement('canvas');
+            output.width = Math.max(1, Math.round(sourceW));
+            output.height = Math.max(1, Math.round(sourceH));
+            const ctx = output.getContext('2d', {willReadFrequently: true});
+            ctx.drawImage(signatureCropState.image, sourceX, sourceY, sourceW, sourceH, 0, 0, output.width, output.height);
+            return output;
+        }
+
+        function median(values) {
+            if (!values.length) return 255;
+            values.sort(function (a, b) { return a - b; });
+            return values[Math.floor(values.length / 2)];
+        }
+
+        function extractSignatureInk(sourceCanvas) {
+            const removeBackground = document.getElementById('removeSignatureBackground').checked;
+            const mode = document.getElementById('signatureCleanupMode').value || 'transparent';
+            if (!removeBackground || mode === 'crop') return trimCanvas(sourceCanvas, false);
+
+            const output = document.createElement('canvas');
+            output.width = sourceCanvas.width;
+            output.height = sourceCanvas.height;
+            const ctx = output.getContext('2d', {willReadFrequently: true});
+            ctx.drawImage(sourceCanvas, 0, 0);
+            const imageData = ctx.getImageData(0, 0, output.width, output.height);
+            const stats = imageStats(imageData, output.width, output.height);
+            const strength = Number(document.getElementById('signatureCleanupStrength').value || 38);
+            const feather = Number(document.getElementById('signatureFeather').value || 28);
+            const inkDarkness = Number(document.getElementById('signatureInkDarkness').value || 88) / 100;
+            const dynamicRange = Math.max(24, stats.paperLum - stats.inkLum);
+            const low = Math.max(8, dynamicRange * 0.16 + strength * 0.26);
+            const high = low + feather;
+
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                const r = imageData.data[i];
+                const g = imageData.data[i + 1];
+                const b = imageData.data[i + 2];
+                const lum = luminance(r, g, b);
+                const colorDistance = Math.hypot(stats.paperR - r, stats.paperG - g, stats.paperB - b);
+                const contrast = Math.max(stats.paperLum - lum, colorDistance * 0.58);
+                let alpha = smoothstep(low, high, contrast);
+                if (alpha < 0.05) alpha = 0;
+                const ink = Math.max(0, Math.round(42 * (1 - inkDarkness)));
+                if (mode === 'contrast') {
+                    imageData.data[i] = alpha ? ink : 255;
+                    imageData.data[i + 1] = alpha ? ink : 255;
+                    imageData.data[i + 2] = alpha ? ink : 255;
+                    imageData.data[i + 3] = 255;
+                } else {
+                    imageData.data[i] = ink;
+                    imageData.data[i + 1] = ink;
+                    imageData.data[i + 2] = ink;
+                    imageData.data[i + 3] = Math.round(alpha * 255);
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+            return trimCanvas(output, mode === 'contrast');
+        }
+
+        function trimCanvas(sourceCanvas, opaqueBackground) {
+            const ctx = sourceCanvas.getContext('2d', {willReadFrequently: true});
+            const imageData = ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+            let bounds;
+            if (opaqueBackground) {
+                bounds = findInkBounds(imageData, sourceCanvas.width, sourceCanvas.height, 20);
+            } else {
+                let minX = sourceCanvas.width;
+                let minY = sourceCanvas.height;
+                let maxX = 0;
+                let maxY = 0;
+                for (let y = 0; y < sourceCanvas.height; y += 1) {
+                    for (let x = 0; x < sourceCanvas.width; x += 1) {
+                        const i = (y * sourceCanvas.width + x) * 4;
+                        if (imageData.data[i + 3] > 12) {
+                            minX = Math.min(minX, x);
+                            minY = Math.min(minY, y);
+                            maxX = Math.max(maxX, x);
+                            maxY = Math.max(maxY, y);
+                        }
+                    }
+                }
+                bounds = minX < maxX && minY < maxY ? {minX: minX, minY: minY, maxX: maxX, maxY: maxY} : null;
+            }
+            if (!bounds) return sourceCanvas;
+            const pad = 10;
+            const sx = Math.max(0, bounds.minX - pad);
+            const sy = Math.max(0, bounds.minY - pad);
+            const sw = Math.min(sourceCanvas.width - sx, bounds.maxX - bounds.minX + pad * 2);
+            const sh = Math.min(sourceCanvas.height - sy, bounds.maxY - bounds.minY + pad * 2);
+            const trimmed = document.createElement('canvas');
+            trimmed.width = Math.max(1, sw);
+            trimmed.height = Math.max(1, sh);
+            const trimmedCtx = trimmed.getContext('2d');
+            if (opaqueBackground) {
+                trimmedCtx.fillStyle = '#ffffff';
+                trimmedCtx.fillRect(0, 0, trimmed.width, trimmed.height);
+            }
+            trimmedCtx.drawImage(sourceCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
+            return trimmed;
+        }
+
+        function updateSignatureCleanPreview() {
+            const preview = document.getElementById('signatureCleanPreview');
+            const originalPreview = document.getElementById('signatureOriginalPreview');
+            if (!preview || !signatureCropState) return;
+            const source = getCroppedSignatureCanvas();
+            if (!source) return;
+            const cleaned = extractSignatureInk(source);
+            drawCanvasFit(originalPreview, source);
+            drawCanvasFit(preview, cleaned);
+        }
+
+        function drawCanvasFit(target, source) {
+            if (!target || !source) return;
+            const ctx = target.getContext('2d');
+            ctx.clearRect(0, 0, target.width, target.height);
+            const scale = Math.min(target.width / source.width, target.height / source.height);
+            const width = source.width * scale;
+            const height = source.height * scale;
+            ctx.drawImage(source, (target.width - width) / 2, (target.height - height) / 2, width, height);
+        }
+
+        async function applySignatureCrop() {
+            if (!signatureCropState) return;
+            const cropped = getCroppedSignatureCanvas();
+            if (!cropped) return;
+            const output = extractSignatureInk(cropped);
+            processedSignatureBlob = await buildProcessedSignatureBlob();
+            if (!processedSignatureBlob) return;
+            const file = new File([processedSignatureBlob], 'principal-signature.png', {type: 'image/png'});
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            const input = document.querySelector('input[name="principal_signature"]');
+            input.files = transfer.files;
+            const dataUrl = output.toDataURL('image/png');
+            updateSignaturePreviewImage(dataUrl);
+            updatePreview();
+            addSuccessNotification('Signature crop applied.');
+        }
+
+        function escapeAttr(value) {
+            return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function collectFieldsConfig() {
+            return fieldConfig.map(function (field) {
+                const visible = document.querySelector('.field-visible[data-key="' + field.key + '"]');
+                const label = document.querySelector('.field-label[data-key="' + field.key + '"]');
+                return {
+                    key: field.key,
+                    label: label ? label.value : field.label,
+                    visible: visible ? visible.checked : false
+                };
+            });
+        }
+
+        function formValue(name) {
+            const input = document.querySelector('[name="' + name + '"]');
+            return input ? input.value : '';
+        }
+
+        function formChecked(name) {
+            const input = document.querySelector('[name="' + name + '"]');
+            return input ? input.checked : false;
+        }
+
+        function numericFormValue(name, fallback) {
+            const value = parseFloat(formValue(name));
+            return Number.isFinite(value) ? value : fallback;
+        }
+
+        function setVisible(element, visible) {
+            if (element) {
+                element.style.display = visible ? '' : 'none';
+            }
+        }
+
+        function textOrSpace(value) {
+            return String(value || '').trim();
+        }
+
+        function monthYearLabel(dateValue) {
+            if (!dateValue) {
+                return defaultValidityLabel || 'Upto December 2026';
+            }
+            const date = parseDateValue(dateValue);
+            if (!date) {
+                return defaultValidityLabel || 'Upto December 2026';
+            }
+            return 'Upto ' + date.toLocaleString('en', { month: 'long', year: 'numeric' });
+        }
+
+        function parseDateValue(dateValue) {
+            const raw = String(dateValue || '').trim();
+            let parts = raw.split('-');
+            if (parts.length === 3) {
+                const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                return Number.isNaN(date.getTime()) ? null : date;
+            }
+            parts = raw.split('/');
+            if (parts.length === 3) {
+                const date = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+                return Number.isNaN(date.getTime()) ? null : date;
+            }
+            return null;
+        }
+
+        function updateSignaturePreviewImage(dataUrl) {
+            const signature = document.querySelector('[data-preview-signature]');
+            if (!signature || !dataUrl) return;
+            let image = signature.querySelector('[data-preview-signature-img]');
+            const line = signature.querySelector('[data-preview-signature-line]');
+            if (!image) {
+                image = document.createElement('img');
+                image.className = 'principal-signature';
+                image.setAttribute('data-preview-signature-img', '');
+                image.alt = 'Principal Signature';
+                signature.insertBefore(image, signature.firstChild);
+            }
+            image.src = dataUrl;
+            setVisible(image, true);
+            setVisible(line, true);
+        }
+
+        function updatePreview() {
+            const card = document.querySelector('[data-preview-card]');
+            if (!card) return;
+
+            const primary = formValue('primary_color') || '#2452a3';
+            const header = formValue('header_color') || '#2457ad';
+            const headerText = formValue('header_text_color') || '#ffffff';
+            const bg = formValue('card_background_color') || '#f3f5f8';
+            const text = formValue('text_color') || '#122030';
+            const label = formValue('label_color') || '#324f75';
+
+            card.style.backgroundColor = bg;
+            card.style.color = text;
+            card.style.borderColor = primary;
+            card.style.fontFamily = formValue('font_family') || 'Arial, sans-serif';
+            if (formChecked('remove_background_image')) {
+                card.style.backgroundImage = 'none';
+            }
+
+            const head = document.querySelector('[data-preview-head]');
+            if (head) {
+                const headerLayout = formValue('header_layout') || 'masthead';
+                head.classList.toggle('masthead', headerLayout === 'masthead');
+                head.classList.toggle('band', headerLayout === 'band');
+                head.style.background = headerLayout === 'masthead'
+                    ? header
+                    : 'linear-gradient(180deg, ' + header + ' 0%, ' + primary + ' 100%)';
+                head.style.color = headerText;
+            }
+
+            const showLogo = formChecked('show_logo');
+            const showSchoolName = formChecked('show_school_name');
+            const schoolBlock = document.querySelector('[data-preview-school-block]');
+            const logo = document.querySelector('[data-preview-logo]');
+            const schoolName = document.querySelector('[data-preview-school-name]');
+            setVisible(schoolBlock, showLogo || showSchoolName);
+            setVisible(logo, showLogo);
+            setVisible(schoolName, showSchoolName);
+            if (logo) {
+                const logoSize = numericFormValue('logo_size_mm', 4.6);
+                logo.style.width = logoSize + 'mm';
+                logo.style.height = logoSize + 'mm';
+            }
+            if (schoolName) {
+                schoolName.style.fontSize = numericFormValue('school_name_font_size', 15) + 'px';
+            }
+            if (schoolBlock) {
+                schoolBlock.classList.toggle('no-logo', !showLogo);
+            }
+
+            const address = document.querySelector('[data-preview-address]');
+            const phone = document.querySelector('[data-preview-phone]');
+            const website = document.querySelector('[data-preview-website]');
+            const webPhone = document.querySelector('[data-preview-web-phone]');
+            const separator = document.querySelector('[data-preview-separator]');
+            const contact = document.querySelector('[data-preview-contact]');
+            const addressText = textOrSpace(formValue('address_text'));
+            const websiteUrl = textOrSpace(formValue('website_url'));
+            const phoneNumber = textOrSpace(formValue('phone_number'));
+            const showAddress = formChecked('show_address');
+            const showPhone = formChecked('show_phone');
+            const showWebsite = formChecked('show_website');
+            if (address) {
+                address.textContent = addressText;
+            }
+            if (website) {
+                website.textContent = websiteUrl;
+            }
+            if (phone) {
+                phone.textContent = phoneNumber;
+            }
+            if (contact) {
+                contact.style.fontSize = numericFormValue('address_font_size', 8.8) + 'px';
+            }
+            if (webPhone) {
+                webPhone.style.fontSize = numericFormValue('contact_font_size', 8.3) + 'px';
+            }
+            setVisible(address, showAddress && Boolean(addressText));
+            setVisible(phone, showPhone && Boolean(phoneNumber));
+            setVisible(website, showWebsite && Boolean(websiteUrl));
+            setVisible(separator, showPhone && showWebsite && Boolean(websiteUrl) && Boolean(phoneNumber));
+            setVisible(webPhone, (showPhone && Boolean(phoneNumber)) || (showWebsite && Boolean(websiteUrl)));
+            setVisible(contact, (showAddress && Boolean(addressText)) || (showPhone && Boolean(phoneNumber)) || (showWebsite && Boolean(websiteUrl)));
+
+            const title = document.querySelector('[data-preview-title]');
+            const subtitle = document.querySelector('[data-preview-subtitle]');
+            const titleValue = textOrSpace(formValue('card_title'));
+            const subtitleValue = textOrSpace(formValue('card_subtitle'));
+            if (title) {
+                title.textContent = titleValue;
+                title.style.fontSize = numericFormValue('title_font_size', 9) + 'px';
+                title.style.color = '#ffffff';
+                setVisible(title, Boolean(titleValue));
+            }
+            if (subtitle) {
+                subtitle.textContent = subtitleValue;
+                subtitle.style.fontSize = numericFormValue('subtitle_font_size', 7) + 'px';
+                setVisible(subtitle, Boolean(subtitleValue));
+            }
+
+            collectFieldsConfig().forEach(function (field) {
+                const row = document.querySelector('[data-preview-field="' + field.key + '"]');
+                if (!row) return;
+                const labelNode = row.querySelector('[data-preview-field-label]');
+                if (labelNode) {
+                    labelNode.textContent = (field.label || '') + ':';
+                    labelNode.style.color = label;
+                }
+                const valueNode = row.querySelector('.v');
+                if (valueNode) {
+                    valueNode.style.color = text;
+                }
+                setVisible(row, field.visible);
+            });
+
+            document.querySelectorAll('.photo-fallback').forEach(function (node) {
+                node.style.color = primary;
+            });
+            document.querySelectorAll('.photo-wrap img, .photo-fallback').forEach(function (node) {
+                node.style.borderRadius = formValue('photo_shape') === 'circle' ? '50%' : '10px';
+            });
+
+            const validity = document.querySelector('[data-preview-validity]');
+            const validityMode = formValue('validity_mode');
+            let validityLabel = '';
+            if (formChecked('show_validity') && validityMode !== 'hidden') {
+                if (validityMode === 'custom_text') {
+                    validityLabel = textOrSpace(formValue('validity_text'));
+                } else if (validityMode === 'custom_date') {
+                    validityLabel = monthYearLabel(formValue('valid_till'));
+                } else {
+                    validityLabel = defaultValidityLabel || 'Upto December 2026';
+                }
+            }
+            if (validity) {
+                validity.textContent = validityLabel ? 'Valid till : ' + validityLabel : '';
+                validity.style.color = primary;
+                setVisible(validity, Boolean(validityLabel));
+            }
+
+            const signature = document.querySelector('[data-preview-signature]');
+            const signatureImage = signature ? signature.querySelector('[data-preview-signature-img]') : null;
+            const signatureLine = signature ? signature.querySelector('[data-preview-signature-line]') : null;
+            const signatureLabel = signature ? signature.querySelector('[data-preview-signature-label]') : null;
+            setVisible(signature, formChecked('show_signature'));
+            if (signatureLabel) {
+                signatureLabel.textContent = formValue('signature_label') || 'Principal Signature';
+            }
+            if (formChecked('remove_principal_signature')) {
+                setVisible(signatureImage, false);
+                setVisible(signatureLine, true);
+            } else {
+                const showSignatureImage = formChecked('show_signature_image') && signatureImage && signatureImage.getAttribute('src');
+                setVisible(signatureImage, Boolean(showSignatureImage));
+                setVisible(signatureLine, true);
+            }
+        }
+
+        async function saveIdCardDesign() {
+            const form = document.getElementById('idCardDesignForm');
+            const saveButton = document.querySelector('button[onclick="saveIdCardDesign()"]');
+            if (saveButton) {
+                saveButton.classList.add('loading', 'disabled');
+            }
+            if (signatureCropState && !processedSignatureBlob) {
+                processedSignatureBlob = await buildProcessedSignatureBlob();
+            }
+            const data = new FormData(form);
+            data.set('fields_config', JSON.stringify(collectFieldsConfig()));
+            if (processedSignatureBlob) {
+                data.set('processed_principal_signature', processedSignatureBlob, 'principal-signature.png');
+                data.set('show_signature', 'on');
+                data.set('show_signature_image', 'on');
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'managementAppAPI:save_student_id_card_design_api' %}",
+                data: data,
+                contentType: false,
+                processData: false,
+                cache: false,
+                success: function (response) {
+                    if (response.success) {
+                        const signatureNote = response.data && response.data.has_signature ? ' Signature saved.' : '';
+                        addSuccessNotification((response.message || 'ID card design saved.') + signatureNote);
+                        window.location.reload();
+                    } else {
+                        addErrorNotification(response.message || 'Unable to save design.');
+                    }
+                },
+                error: function (xhr) {
+                    const message = xhr.responseJSON && xhr.responseJSON.message
+                        ? xhr.responseJSON.message
+                        : 'Unable to save design. Please try a smaller signature crop.';
+                    addErrorNotification(message);
+                },
+                complete: function () {
+                    if (saveButton) {
+                        saveButton.classList.remove('loading', 'disabled');
+                    }
+                }
+            });
+        }
+    </script>
+{% endblock %}

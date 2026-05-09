@@ -63,6 +63,15 @@ from financeApp.services import (
 )
 from managementApp.models import *
 from managementApp.reporting import build_report_cards_for_student, upsert_progress_report_snapshot
+from managementApp.services.id_cards import (
+    DEFAULT_FIELDS_CONFIG,
+    DEFAULT_FOOTER_CONFIG,
+    DEFAULT_HEADER_CONFIG,
+    DEFAULT_STYLE_CONFIG,
+    get_or_create_active_id_card_design,
+    merged_config,
+    normalize_fields_config,
+)
 from managementApp.services.session_rollover import preview_session_import, run_session_import
 from managementApp.signals import pre_save_with_user
 from managementApp.leave_utils import (
@@ -2600,6 +2609,145 @@ def add_student_id_card_record_api(request):
     except Exception as e:
         logger.error(f'Error in add_student_id_card_record_api: {e}')
         return ErrorResponse('Failed to update ID card tracker.', extra={'color': 'red'}).to_json_response()
+
+
+def _truthy_post_value(value):
+    return str(value).lower() in ('1', 'true', 'yes', 'on')
+
+
+def _clean_color(value, fallback):
+    value = (value or '').strip()
+    if len(value) == 7 and value.startswith('#'):
+        return value
+    return fallback
+
+
+def _clean_number(value, fallback, minimum, maximum):
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return fallback
+    return max(minimum, min(maximum, number))
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+@check_groups('Admin', 'Owner')
+def save_student_id_card_design_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Invalid request method.', extra={'color': 'red'}).to_json_response()
+
+    try:
+        current_session = request.session.get('current_session', {})
+        school_id = current_session.get('SchoolID')
+        session_id = current_session.get('Id')
+        if not school_id or not session_id:
+            return ErrorResponse('Current school session not found.', extra={'color': 'red'}).to_json_response()
+
+        design = get_or_create_active_id_card_design(school_id, session_id)
+
+        existing_header = merged_config(design.headerConfig, DEFAULT_HEADER_CONFIG)
+        header_layout = request.POST.get('header_layout') or existing_header.get('layout') or 'masthead'
+        if header_layout not in ('masthead', 'band'):
+            header_layout = 'masthead'
+        header_config = {
+            'layout': header_layout,
+            'showLogo': _truthy_post_value(request.POST.get('show_logo')),
+            'showSchoolName': _truthy_post_value(request.POST.get('show_school_name')),
+            'showAddress': _truthy_post_value(request.POST.get('show_address')),
+            'showPhone': _truthy_post_value(request.POST.get('show_phone')),
+            'showWebsite': _truthy_post_value(request.POST.get('show_website')),
+            'title': (request.POST.get('card_title') or existing_header['title']).strip(),
+            'subtitle': (request.POST.get('card_subtitle') or '').strip(),
+            'addressText': (request.POST.get('address_text') or '').strip(),
+            'phoneNumber': (request.POST.get('phone_number') or '').strip(),
+            'websiteUrl': (request.POST.get('website_url') or '').strip(),
+            'schoolNameFontSize': _clean_number(request.POST.get('school_name_font_size'), existing_header.get('schoolNameFontSize', 15), 9, 24),
+            'logoSizeMm': _clean_number(request.POST.get('logo_size_mm'), existing_header.get('logoSizeMm', 4.6), 0, 12),
+            'addressFontSize': _clean_number(request.POST.get('address_font_size'), existing_header.get('addressFontSize', 8.8), 5, 14),
+            'contactFontSize': _clean_number(request.POST.get('contact_font_size'), existing_header.get('contactFontSize', 8.3), 5, 14),
+            'titleFontSize': _clean_number(request.POST.get('title_font_size'), existing_header.get('titleFontSize', 9), 5, 16),
+            'subtitleFontSize': _clean_number(request.POST.get('subtitle_font_size'), existing_header.get('subtitleFontSize', 7), 5, 14),
+        }
+
+        existing_style = merged_config(design.styleConfig, DEFAULT_STYLE_CONFIG)
+        style_config = {
+            'primaryColor': _clean_color(request.POST.get('primary_color'), existing_style['primaryColor']),
+            'headerColor': _clean_color(request.POST.get('header_color'), existing_style['headerColor']),
+            'headerTextColor': _clean_color(request.POST.get('header_text_color'), existing_style['headerTextColor']),
+            'cardBackgroundColor': _clean_color(request.POST.get('card_background_color'), existing_style['cardBackgroundColor']),
+            'textColor': _clean_color(request.POST.get('text_color'), existing_style['textColor']),
+            'labelColor': _clean_color(request.POST.get('label_color'), existing_style['labelColor']),
+            'fontFamily': (request.POST.get('font_family') or existing_style['fontFamily']).strip(),
+            'photoShape': request.POST.get('photo_shape') if request.POST.get('photo_shape') in ('rounded', 'circle') else 'rounded',
+        }
+
+        validity_mode = request.POST.get('validity_mode') or DEFAULT_FOOTER_CONFIG['validityMode']
+        if validity_mode not in ('session_end', 'custom_date', 'custom_text', 'hidden'):
+            validity_mode = 'session_end'
+
+        valid_till = (request.POST.get('valid_till') or '').strip()
+        parsed_valid_till = ''
+        if valid_till:
+            try:
+                parsed_valid_till = datetime.strptime(valid_till, '%Y-%m-%d').date().isoformat()
+            except ValueError:
+                try:
+                    parsed_valid_till = datetime.strptime(valid_till, '%d/%m/%Y').date().isoformat()
+                except ValueError:
+                    return ErrorResponse('Invalid validity date.', extra={'color': 'red'}).to_json_response()
+
+        footer_config = {
+            'showValidity': _truthy_post_value(request.POST.get('show_validity')),
+            'validityMode': validity_mode,
+            'validityText': (request.POST.get('validity_text') or '').strip(),
+            'validTill': parsed_valid_till,
+            'showSignature': _truthy_post_value(request.POST.get('show_signature')),
+            'showSignatureImage': _truthy_post_value(request.POST.get('show_signature_image')),
+            'signatureLabel': (request.POST.get('signature_label') or DEFAULT_FOOTER_CONFIG['signatureLabel']).strip(),
+        }
+
+        fields_payload = request.POST.get('fields_config') or '[]'
+        try:
+            fields_config = json.loads(fields_payload)
+        except json.JSONDecodeError:
+            return ErrorResponse('Invalid field configuration.', extra={'color': 'red'}).to_json_response()
+        fields_config = normalize_fields_config(fields_config)
+
+        design.name = (request.POST.get('design_name') or design.name or 'Default ID Card Design').strip()
+        design.headerConfig = header_config
+        design.fieldsConfig = fields_config
+        design.styleConfig = style_config
+        design.footerConfig = footer_config
+
+        if request.FILES.get('processed_principal_signature'):
+            design.principalSignature = request.FILES['processed_principal_signature']
+        elif request.FILES.get('principal_signature'):
+            design.principalSignature = request.FILES['principal_signature']
+        if request.POST.get('remove_principal_signature') == '1':
+            design.principalSignature.delete(save=False)
+            design.principalSignature = None
+
+        if request.FILES.get('background_image'):
+            design.backgroundImage = request.FILES['background_image']
+        if request.POST.get('remove_background_image') == '1':
+            design.backgroundImage.delete(save=False)
+            design.backgroundImage = None
+
+        pre_save_with_user.send(sender=StudentIdCardDesign, instance=design, user=request.user.pk)
+
+        return SuccessResponse(
+            'ID card design saved successfully.',
+            data={
+                'design_id': design.pk,
+                'has_signature': bool(design.principalSignature),
+            },
+            extra={'color': 'success'}
+        ).to_json_response()
+    except Exception as e:
+        logger.error(f'Error in save_student_id_card_design_api: {e}')
+        return ErrorResponse('Failed to save ID card design.', extra={'color': 'red'}).to_json_response()
 
 
 @transaction.atomic
