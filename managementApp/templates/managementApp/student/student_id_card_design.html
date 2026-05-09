@@ -1136,9 +1136,11 @@
                 const logoSize = numericFormValue('logo_size_mm', 4.6);
                 logo.style.width = logoSize + 'mm';
                 logo.style.height = logoSize + 'mm';
+                logo.style.color = headerText;
             }
             if (schoolName) {
                 schoolName.style.fontSize = numericFormValue('school_name_font_size', 15) + 'px';
+                schoolName.style.color = headerText;
             }
             if (schoolBlock) {
                 schoolBlock.classList.toggle('no-logo', !showLogo);
@@ -1167,9 +1169,11 @@
             }
             if (contact) {
                 contact.style.fontSize = numericFormValue('address_font_size', 8.8) + 'px';
+                contact.style.color = headerText;
             }
             if (webPhone) {
                 webPhone.style.fontSize = numericFormValue('contact_font_size', 8.3) + 'px';
+                webPhone.style.color = headerText;
             }
             setVisible(address, showAddress && Boolean(addressText));
             setVisible(phone, showPhone && Boolean(phoneNumber));
@@ -1185,12 +1189,13 @@
             if (title) {
                 title.textContent = titleValue;
                 title.style.fontSize = numericFormValue('title_font_size', 9) + 'px';
-                title.style.color = '#ffffff';
+                title.style.color = headerText;
                 setVisible(title, Boolean(titleValue));
             }
             if (subtitle) {
                 subtitle.textContent = subtitleValue;
                 subtitle.style.fontSize = numericFormValue('subtitle_font_size', 7) + 'px';
+                subtitle.style.color = headerText;
                 setVisible(subtitle, Boolean(subtitleValue));
             }
 

@@ -159,12 +159,13 @@
     }
 
     .id-head.masthead .title {
-        color: #ffffff;
+        color: {{ id_card_style.headerTextColor|default:'#122030' }};
         font-size: {{ id_card_header.titleFontSize|default:9 }}px;
         margin-top: 0.03cm;
     }
 
     .id-head.masthead .subtitle {
+        color: {{ id_card_style.headerTextColor|default:'#122030' }};
         font-size: {{ id_card_header.subtitleFontSize|default:7 }}px;
     }
 
