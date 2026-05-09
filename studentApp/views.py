@@ -10,6 +10,7 @@ from homeApp.session_utils import build_current_session_payload, build_session_l
 from homeApp.utils import login_required
 from managementApp.models import *
 from managementApp.reporting import build_report_cards_for_student
+from managementApp.services.id_cards import build_id_card_context
 from teacherApp.models import SubjectNote
 from utils.custom_decorators import check_groups
 
@@ -457,16 +458,7 @@ def student_id_card(request):
     if not student:
         return render(request, 'studentApp/dashboard.html', {'student_not_found': True})
 
-    context = {
-        'instance': student,
-        'school': student.schoolID,
-        'school_name': (
-            (student.schoolID.schoolName if student.schoolID else '')
-            or (student.schoolID.name if student.schoolID else '')
-            or 'School Name'
-        ),
-        'valid_till_label': 'Upto 2026',
-    }
+    context = build_id_card_context(student)
     return render(request, 'studentApp/id_card.html', context)
 
 

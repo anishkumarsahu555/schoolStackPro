@@ -70,6 +70,7 @@ urlpatterns = [
     path('edit_student_api', edit_student_api, name='edit_student_api'),
     path('StudentIdCardRecordListJson', StudentIdCardRecordListJson.as_view(), name='StudentIdCardRecordListJson'),
     path('add_student_id_card_record_api', add_student_id_card_record_api, name='add_student_id_card_record_api'),
+    path('save_student_id_card_design_api', save_student_id_card_design_api, name='save_student_id_card_design_api'),
 
     # Exam
     path('add_exam', add_exam, name='add_exam'),

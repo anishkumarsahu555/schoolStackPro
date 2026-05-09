@@ -7,24 +7,37 @@
     }
 
     .id-card-shell {
-        width: 5.4cm;
-        height: 8.6cm;
-        background: #f3f5f8;
-        color: #122030;
-        border: 2px solid #2452a3;
+        width: {{ id_card_design.cardWidthMm|default:54 }}mm;
+        height: {{ id_card_design.cardHeightMm|default:86 }}mm;
+        background: {{ id_card_style.cardBackgroundColor|default:'#f3f5f8' }};
+        color: {{ id_card_style.textColor|default:'#122030' }};
+        border: 2px solid {{ id_card_style.primaryColor|default:'#2452a3' }};
         border-radius: 18px;
         overflow: hidden;
         box-shadow: 0 8px 18px rgba(12, 30, 66, 0.14);
         display: flex;
         flex-direction: column;
+        font-family: {{ id_card_style.fontFamily|default:'Arial, sans-serif' }};
         font-size: 8px;
+        {% if id_card_design.backgroundImage %}
+            background-image: url("{{ id_card_design.backgroundImage.url }}");
+            background-size: cover;
+            background-position: center;
+        {% endif %}
     }
 
     .id-head {
-        background: linear-gradient(180deg, #2d67c4 0%, #2457ad 100%);
-        color: #fff;
+        background: linear-gradient(180deg, {{ id_card_style.headerColor|default:'#2457ad' }} 0%, {{ id_card_style.primaryColor|default:'#2452a3' }} 100%);
+        color: {{ id_card_style.headerTextColor|default:'#ffffff' }};
         text-align: center;
         padding: 0.12cm 0.14cm 0.14cm;
+    }
+
+    .id-head.masthead {
+        background: {{ id_card_style.headerColor|default:'#ffffff' }};
+        color: {{ id_card_style.headerTextColor|default:'#122030' }};
+        padding: 0.15cm 0.16cm 0.12cm;
+        border-bottom: 1px solid rgba(36, 82, 163, 0.18);
     }
 
     .id-school {
@@ -33,6 +46,10 @@
         align-items: center;
         column-gap: 0.08cm;
         margin-bottom: 0.05cm;
+    }
+
+    .id-school.no-logo {
+        grid-template-columns: 1fr;
     }
 
     .school-logo {
@@ -66,17 +83,90 @@
         overflow: hidden;
     }
 
+    .id-school.no-logo .school-name {
+        text-align: center;
+        max-height: none;
+    }
+
+    .id-head.masthead .id-school {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.08cm;
+        margin-bottom: 0.02cm;
+    }
+
+    .id-head.masthead .school-logo,
+    .id-head.masthead .school-logo-fallback {
+        width: {{ id_card_header.logoSizeMm|default:4.6 }}mm;
+        height: {{ id_card_header.logoSizeMm|default:4.6 }}mm;
+        border-color: rgba(18, 32, 48, 0.18);
+        background: rgba(18, 32, 48, 0.04);
+        color: {{ id_card_style.headerTextColor|default:'#122030' }};
+        flex: 0 0 auto;
+    }
+
+    .id-head.masthead .school-name {
+        color: {{ id_card_style.headerTextColor|default:'#122030' }};
+        text-align: center;
+        font-size: {{ id_card_header.schoolNameFontSize|default:15 }}px;
+        font-weight: 800;
+        line-height: 1.02;
+        max-height: none;
+        letter-spacing: 0;
+    }
+
+    .school-contact {
+        font-size: 5.8px;
+        line-height: 1.12;
+        opacity: 0.95;
+        overflow: hidden;
+        display: grid;
+        gap: 1px;
+    }
+
+    .school-contact div {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .id-head.masthead .school-contact {
+        color: {{ id_card_style.headerTextColor|default:'#122030' }};
+        font-size: {{ id_card_header.addressFontSize|default:8.8 }}px;
+        line-height: 1.12;
+        gap: 1px;
+        opacity: 1;
+    }
+
+    .id-head.masthead .school-contact .web-phone {
+        font-style: italic;
+        font-size: {{ id_card_header.contactFontSize|default:8.3 }}px;
+    }
+
     .id-head .title {
-        font-size: 4.4mm;
+        font-size: 4.1mm;
         font-weight: 700;
         letter-spacing: 0.4px;
         line-height: 1.05;
+        margin-top: 0.04cm;
     }
 
     .id-head .subtitle {
-        font-size: 3.3mm;
+        font-size: 3mm;
         opacity: 0.96;
         line-height: 1.1;
+    }
+
+    .id-head.masthead .title {
+        color: {{ id_card_style.headerTextColor|default:'#122030' }};
+        font-size: {{ id_card_header.titleFontSize|default:9 }}px;
+        margin-top: 0.03cm;
+    }
+
+    .id-head.masthead .subtitle {
+        color: {{ id_card_style.headerTextColor|default:'#122030' }};
+        font-size: {{ id_card_header.subtitleFontSize|default:7 }}px;
     }
 
     .id-body {
@@ -97,7 +187,7 @@
     .photo-fallback {
         width: 1.65cm;
         height: 1.95cm;
-        border-radius: 10px;
+        border-radius: {% if id_card_style.photoShape == 'circle' %}50%{% else %}10px{% endif %};
         border: 1px solid #cad8ee;
         object-fit: cover;
         background: #eef3fb;
@@ -108,7 +198,7 @@
         align-items: center;
         justify-content: center;
         font-size: 12px;
-        color: #3569ba;
+        color: {{ id_card_style.primaryColor|default:'#2452a3' }};
         font-weight: 700;
     }
 
@@ -122,21 +212,16 @@
     }
 
     .line .k {
-        color: #324f75;
+        color: {{ id_card_style.labelColor|default:'#324f75' }};
         font-weight: 700;
         white-space: nowrap;
-        font-size: 9px;
+        font-size: 8.8px;
     }
 
     .line .v {
-        color: #1b2e46;
+        color: {{ id_card_style.textColor|default:'#122030' }};
         font-weight: 700;
         word-break: break-word;
-        font-size: 9px;
-    }
-
-    .line.father .k,
-    .line.father .v {
         font-size: 8.8px;
     }
 
@@ -148,44 +233,86 @@
     }
 
     .id-foot {
-        padding: 0.06cm 0.14cm 0.08cm;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
+        height: 1.15cm;
+        min-height: 1.15cm;
+        max-height: 1.15cm;
+        padding: 0.04cm 0.14cm 0.07cm;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 1.92cm;
+        align-items: start;
+        gap: 0.1cm;
+        overflow: hidden;
     }
 
     .validity {
         font-size: 7px;
-        color: #1e4177;
+        color: {{ id_card_style.primaryColor|default:'#2452a3' }};
         font-weight: 700;
+        line-height: 1.12;
+        padding-top: 0.08cm;
     }
 
     .sign {
         text-align: center;
-        font-size: 6.5px;
+        font-size: 6px;
+        line-height: 1.12;
         color: #3a4f67;
-        min-width: 1.55cm;
+        width: 1.92cm;
+        height: 0.96cm;
+        display: grid;
+        grid-template-rows: 0.46cm 0.12cm 0.24cm;
+        align-items: end;
+        justify-items: center;
+        overflow: hidden;
+    }
+
+    .principal-signature {
+        max-width: 1.84cm;
+        max-height: 0.44cm;
+        object-fit: contain;
+        display: block;
+        margin: 0 auto;
     }
 
     .sign .line-sign {
         border-top: 1px solid #405f89;
-        margin-bottom: 2px;
+        width: 1.58cm;
+        align-self: end;
+        margin-bottom: 0.08cm;
+    }
+
+    .sign [data-preview-signature-label] {
+        white-space: nowrap;
+        padding-bottom: 0.02cm;
     }
 </style>
 
 <div class="id-card-page">
-    <div class="id-card-shell" id="student-id-card">
-        <div class="id-head">
-            <div class="id-school">
+    <div class="id-card-shell" id="student-id-card" data-preview-card>
+        <div class="id-head {{ id_card_header.layout|default:'masthead' }}" data-preview-head>
+            <div class="id-school {% if not id_card_header.showLogo %}no-logo{% endif %}" data-preview-school-block {% if not id_card_header.showLogo and not id_card_header.showSchoolName %}style="display:none;"{% endif %}>
                 {% if school and school.logo %}
-                    <img class="school-logo" src="{{ school.logo.url }}" alt="{{ school_name }}">
+                    <img class="school-logo" data-preview-logo src="{{ school.logo.url }}" alt="{{ school_name }}" {% if not id_card_header.showLogo %}style="display:none;"{% endif %}>
                 {% else %}
-                    <div class="school-logo-fallback">{{ school_name|slice:":1"|upper }}</div>
+                    <div class="school-logo-fallback" data-preview-logo {% if not id_card_header.showLogo %}style="display:none;"{% endif %}>{{ school_name|slice:":1"|upper }}</div>
                 {% endif %}
-                <div class="school-name">{{ school_name }}</div>
+                <div class="school-name" data-preview-school-name {% if not id_card_header.showSchoolName %}style="display:none;"{% endif %}>{{ school_name }}</div>
             </div>
-            <div class="title">STUDENT ID CARD</div>
-            <div class="subtitle">School Identification</div>
+
+            <div class="school-contact" data-preview-contact {% if not id_card_header.showAddress and not id_card_header.showPhone and not id_card_header.showWebsite %}style="display:none;"{% endif %}>
+                {% firstof id_card_header.addressText school.address as header_address_text %}
+                <div data-preview-address {% if not id_card_header.showAddress or not header_address_text %}style="display:none;"{% endif %}>{{ header_address_text }}</div>
+                <div class="web-phone" data-preview-web-phone {% if not id_card_header.showPhone and not id_card_header.showWebsite %}style="display:none;"{% endif %}>
+                    {% firstof id_card_header.websiteUrl school.website as header_website_url %}
+                    {% firstof id_card_header.phoneNumber school.phoneNumber as header_phone_number %}
+                    <span data-preview-website {% if not id_card_header.showWebsite or not header_website_url %}style="display:none;"{% endif %}>{{ header_website_url }}</span>
+                    <span data-preview-separator {% if not id_card_header.showWebsite or not id_card_header.showPhone or not header_website_url or not header_phone_number %}style="display:none;"{% endif %}> | </span>
+                    <span data-preview-phone {% if not id_card_header.showPhone or not header_phone_number %}style="display:none;"{% endif %}>{{ header_phone_number }}</span>
+                </div>
+            </div>
+
+            <div class="title" data-preview-title {% if not id_card_header.title %}style="display:none;"{% endif %}>{{ id_card_header.title }}</div>
+            <div class="subtitle" data-preview-subtitle {% if not id_card_header.subtitle %}style="display:none;"{% endif %}>{{ id_card_header.subtitle }}</div>
         </div>
 
         <div class="id-body">
@@ -197,23 +324,34 @@
                 {% endif %}
             </div>
 
-            <div class="line"><div class="k">Regd. No.:</div><div class="v">{{ instance.registrationCode|default:'N/A' }}</div></div>
-            <div class="line"><div class="k">Name :</div><div class="v">{{ instance.name|default:'N/A' }}</div></div>
-            <div class="line"><div class="k">Class :</div><div class="v">{{ instance.standardID.name|default:'N/A' }}{% if instance.standardID.section %} - {{ instance.standardID.section }}{% endif %}</div></div>
-            <div class="line"><div class="k">Roll no.:</div><div class="v">{{ instance.roll|default:'N/A' }}</div></div>
-            <div class="line father"><div class="k">Father's Name:</div><div class="v">{{ instance.parentID.fatherName|default:'N/A' }}</div></div>
-            <div class="line"><div class="k">Mother's Name:</div><div class="v">{{ instance.parentID.motherName|default:'N/A' }}</div></div>
-            <div class="line"><div class="k">D.O.B :</div><div class="v">{{ instance.dob|date:'d-m-Y'|default:'N/A' }}</div></div>
-            <div class="line address"><div class="k">Address :</div><div class="v">{% firstof instance.presentAddress instance.permanentAddress instance.parentID.fatherAddress instance.parentID.motherAddress "N/A" %}</div></div>
-            <div class="line"><div class="k">Contact No.:</div><div class="v">{{ instance.phoneNumber|default:instance.parentID.phoneNumber|default:'N/A' }}</div></div>
+            {% for field in field_rows %}
+                <div class="line {{ field.key }}" data-preview-field="{{ field.key }}" {% if not field.visible %}style="display:none;"{% endif %}>
+                    <div class="k" data-preview-field-label>{{ field.label }}:</div>
+                    <div class="v">{{ field.value|default:'N/A' }}</div>
+                </div>
+            {% endfor %}
         </div>
 
         <div class="id-foot">
-            <div class="validity">Valid till : {{ valid_till_label }}</div>
-            <div class="sign">
-                <div class="line-sign"></div>
-                Principal Signature
-            </div>
+            {% if valid_till_label %}
+                <div class="validity" data-preview-validity>Valid till : {{ valid_till_label }}</div>
+            {% else %}
+                <div class="validity" data-preview-validity style="display:none;"></div>
+            {% endif %}
+            {% if id_card_footer.showSignature %}
+                <div class="sign" data-preview-signature>
+                    {% if id_card_design.principalSignature and id_card_footer.showSignatureImage %}
+                        <img class="principal-signature" data-preview-signature-img src="{{ id_card_design.principalSignature.url }}" alt="Principal Signature">
+                    {% endif %}
+                    <div class="line-sign" data-preview-signature-line></div>
+                    <div data-preview-signature-label>{{ id_card_footer.signatureLabel|default:'Principal Signature' }}</div>
+                </div>
+            {% else %}
+                <div class="sign" data-preview-signature style="display:none;">
+                    <div class="line-sign" data-preview-signature-line></div>
+                    <div data-preview-signature-label>{{ id_card_footer.signatureLabel|default:'Principal Signature' }}</div>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
