@@ -2,6 +2,8 @@ from django.http import HttpResponse
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from urllib.parse import urlencode
 from datetime import datetime
 from types import SimpleNamespace
@@ -81,6 +83,26 @@ def dashboard(request):
 def design_library(request):
     school, _ = get_request_scope(request)
     ensure_system_certificate_defaults(school_id=school.id if school else None, user_obj=request.user)
+    curated_template_order = [
+        'navy_gold_shield',
+        'black_gold_sweep',
+        'cobalt_corner_lines',
+        'ivory_gold_arch',
+        'sapphire_wave_frame',
+        'emerald_gold_ribbon',
+        'maroon_gold_gate',
+        'charcoal_orbit_frame',
+        'royal_blue_plaque',
+        'pearl_gold_corners',
+        'slate_gold_diagonal',
+        'indigo_bottom_flourish',
+        'ceremonial_gold',
+        'royal_arc',
+        'award_plaque',
+        'hand_fill_form',
+        'prize_day_form',
+    ]
+    curated_template_rank = {key: index for index, key in enumerate(curated_template_order)}
 
     def infer_purpose_tags(cert_type, design):
         text = ' '.join([
@@ -106,6 +128,38 @@ def design_library(request):
             tags.append('general')
         return tags
 
+    def classify_design(design, purpose_tags):
+        if design.isCustom:
+            return 'custom', 'Custom'
+        if design.templateKey in {'hand_fill_form', 'prize_day_form'}:
+            return 'forms', 'Write-In'
+        if design.templateKey in {'ledger_grid'} or 'records' in purpose_tags:
+            return 'official', 'Official'
+        premium_frame_keys = {
+            'ceremonial_gold',
+            'ribbon_banner',
+            'royal_arc',
+            'laurel_frame',
+            'award_plaque',
+            'navy_gold_shield',
+            'black_gold_sweep',
+            'cobalt_corner_lines',
+            'ivory_gold_arch',
+            'sapphire_wave_frame',
+            'emerald_gold_ribbon',
+            'maroon_gold_gate',
+            'charcoal_orbit_frame',
+            'royal_blue_plaque',
+            'pearl_gold_corners',
+            'slate_gold_diagonal',
+            'indigo_bottom_flourish',
+        }
+        if design.templateKey in premium_frame_keys:
+            return 'ribbon', 'Ribbon'
+        if 'sports' in purpose_tags:
+            return 'sports', 'Sports'
+        return 'formal', 'Formal'
+
     types = list(get_certificate_types(school_id=school.id if school else None))
     design_map = {}
 
@@ -114,6 +168,7 @@ def design_library(request):
             return ('design', design.id)
         return (
             'family',
+            design.certificateTypeID.recipientCategory if design.certificateTypeID_id else '',
             design.templateKey,
             design.designMode,
             design.pageSize,
@@ -132,8 +187,55 @@ def design_library(request):
             design.customFooterText or '',
         )
 
+    def design_publish_payload(design):
+        return {
+            'name': design.name,
+            'design_mode': design.designMode,
+            'page_size': design.pageSize,
+            'orientation': design.orientation,
+            'page_width_mm': design.pageWidthMm,
+            'page_height_mm': design.pageHeightMm,
+            'margin_top_mm': design.marginTopMm,
+            'margin_right_mm': design.marginRightMm,
+            'margin_bottom_mm': design.marginBottomMm,
+            'margin_left_mm': design.marginLeftMm,
+            'title_alignment': design.titleAlignment,
+            'body_alignment': design.bodyAlignment,
+            'border_style': design.borderStyle,
+            'font_family': design.fontFamily or 'Georgia',
+            'accent_color': design.accentColor or '#1d4ed8',
+            'text_color': design.textColor or '#1f2937',
+            'background_color': design.backgroundColor or '#ffffff',
+            'background_image': design.backgroundImage,
+            'custom_header_text': design.customHeaderText or '',
+            'custom_footer_text': design.customFooterText or '',
+            'custom_css': design.customCss or '',
+            'overlay_schema': design.overlaySchema or [],
+            'layout_config': design.layoutConfig or {},
+            'show_logo': design.showLogo,
+            'show_signature_line': design.showSignatureLine,
+            'show_seal': design.showSeal,
+            'status': design.status,
+        }
+
+    def design_readiness(design):
+        errors = validate_design_for_publish(cleaned_data=design_publish_payload(design), existing_design=design)
+        is_ready = not errors
+        if design.status == 'draft':
+            label = 'Ready to publish' if is_ready else 'Draft needs work'
+        else:
+            label = 'Publish-ready' if is_ready else 'Needs review'
+        return SimpleNamespace(
+            is_ready=is_ready,
+            label=label,
+            errors=errors,
+            error_count=len(errors),
+            preview=', '.join(errors[:2]),
+        )
+
     for cert_type in types:
         for design in get_certificate_designs(certificate_type=cert_type, school_id=school.id if school else None, include_inactive=True):
+            readiness = design_readiness(design)
             signature = build_design_signature(design)
             entry = design_map.setdefault(signature, {
                 'design': design,
@@ -141,6 +243,7 @@ def design_library(request):
                 'certificate_types': [],
                 'certificate_type_names': [],
                 'purpose_tags': set(),
+                'readiness': readiness,
             })
             if cert_type.id not in [item.id for item in entry['certificate_types']]:
                 entry['certificate_types'].append(cert_type)
@@ -149,6 +252,7 @@ def design_library(request):
             if design.isCustom and not entry['design'].isCustom:
                 entry['design'] = design
                 entry['sample_type'] = cert_type
+                entry['readiness'] = readiness
 
     catalog_entries = []
     for entry in design_map.values():
@@ -159,26 +263,43 @@ def design_library(request):
         if len(type_names) > 3:
             support_preview += f' +{len(type_names) - 3} more'
 
-        if design.designMode == 'image_overlay':
+        style_key, style_label = classify_design(design, purpose_tags)
+
+        if design.isCustom:
+            section_key = 'school'
+            section_title = 'School Originals & Drafts'
+            section_copy = 'Custom school-created designs and in-progress drafts kept separate from the curated system gallery.'
+            scope_label = 'School Original'
+        elif design.designMode == 'image_overlay':
             section_key = 'artwork'
             section_title = 'Imported Artwork Bases'
             section_copy = 'Photo, scan, or PDF-based certificate layouts that preserve artwork and place editable fields on top.'
             scope_label = 'Artwork Base'
         elif design.templateKey in {'hand_fill_form', 'prize_day_form'}:
             section_key = 'forms'
-            section_title = 'Write-In Forms'
-            section_copy = 'Manual write-in and event-day certificate sheets built for fast practical issuing.'
+            section_title = 'Write-In & Official Forms'
+            section_copy = 'Manual and document-style templates for practical office issuing.'
             scope_label = 'Write-In Form'
-        elif design.isCustom:
-            section_key = 'school'
-            section_title = 'School Originals'
-            section_copy = 'School-specific designs shaped around local identity, ceremony style, and institutional needs.'
-            scope_label = 'School Original'
+        elif design.certificateTypeID.recipientCategory == 'teacher':
+            section_key = 'teacher'
+            section_title = 'Teacher Certificate Designs'
+            section_copy = 'Faculty-focused templates for appreciation, training, excellence, and service recognition.'
+            scope_label = 'Teacher Template'
+        elif style_key == 'ribbon':
+            section_key = 'ribbon'
+            section_title = 'Ribbon & Award Designs'
+            section_copy = 'Ceremonial templates with stronger award framing for merit, events, and recognitions.'
+            scope_label = 'Curated Ribbon'
+        elif style_key == 'official':
+            section_key = 'forms'
+            section_title = 'Write-In & Official Forms'
+            section_copy = 'Manual and document-style templates for practical office issuing.'
+            scope_label = 'Official Template'
         else:
-            section_key = 'shared'
-            section_title = 'Shared Template Families'
-            section_copy = 'Reusable system design families surfaced once instead of repeated for every certificate type.'
-            scope_label = 'Shared Family'
+            section_key = 'featured'
+            section_title = 'Curated Formal Templates'
+            section_copy = 'A focused set of reusable templates shown once, even when they support many certificate types.'
+            scope_label = 'Curated Template'
 
         catalog_entries.append(SimpleNamespace(
             section_key=section_key,
@@ -192,17 +313,57 @@ def design_library(request):
             support_preview=support_preview,
             purpose_tags=purpose_tags or ['general'],
             purpose_label=' / '.join(tag.title() for tag in (purpose_tags or ['general'])[:2]),
+            style_key=style_key,
+            style_label=style_label,
             scope_label=scope_label,
+            readiness=entry['readiness'],
         ))
 
-    section_order = ['school', 'artwork', 'forms', 'shared']
-    section_map = {key: [] for key in section_order}
+    custom_entries = [entry for entry in catalog_entries if entry.design.isCustom or entry.design.designMode == 'image_overlay']
+    curated_system_entries = {}
     for entry in catalog_entries:
+        if entry.design.isCustom or entry.design.designMode == 'image_overlay':
+            continue
+        if entry.design.templateKey not in curated_template_rank:
+            continue
+        entry_key = (entry.sample_type.recipientCategory, entry.design.templateKey)
+        current_entry = curated_system_entries.get(entry_key)
+        if not current_entry or entry.certificate_type_count > current_entry.certificate_type_count:
+            curated_system_entries[entry_key] = entry
+
+    teacher_template_order = [
+        'navy_gold_shield',
+        'black_gold_sweep',
+        'royal_blue_plaque',
+        'emerald_gold_ribbon',
+    ]
+    teacher_entries = [
+        curated_system_entries[('teacher', key)]
+        for key in teacher_template_order
+        if ('teacher', key) in curated_system_entries
+    ]
+    system_template_limit = max(0, 15 - len(custom_entries) - len(teacher_entries))
+    general_entries = [
+        curated_system_entries[('student', key)]
+        for key in curated_template_order
+        if ('student', key) in curated_system_entries
+    ][:system_template_limit]
+    curated_entries = custom_entries + general_entries + teacher_entries
+    section_order = ['school', 'featured', 'ribbon', 'teacher', 'forms', 'artwork']
+    section_map = {key: [] for key in section_order}
+    for entry in curated_entries:
         section_map[entry.section_key].append(entry)
 
     design_sections = []
     for key in section_order:
-        rows = sorted(section_map[key], key=lambda item: ((0 if item.design.isCustom else 1), item.design.name.lower()))
+        rows = sorted(
+            section_map[key],
+            key=lambda item: (
+                0 if item.design.isCustom else 1,
+                curated_template_rank.get(item.design.templateKey, 99),
+                item.design.name.lower(),
+            ),
+        )
         if not rows:
             continue
         design_sections.append(SimpleNamespace(
@@ -214,7 +375,9 @@ def design_library(request):
 
     return render(request, 'certificateApp/design_library.html', {
         'design_sections': design_sections,
-        'unique_design_count': len(catalog_entries),
+        'unique_design_count': len(curated_entries),
+        'total_unique_design_count': len(catalog_entries),
+        'hidden_design_count': max(0, len(catalog_entries) - len(curated_entries)),
         'school': school,
     })
 
@@ -262,6 +425,11 @@ def _design_cleaned_data(request):
         'custom_footer_text': request.POST.get('custom_footer_text', ''),
         'custom_css': request.POST.get('custom_css', ''),
         'overlay_schema': request.POST.get('overlay_schema_json', '[]'),
+        'layout_config': {
+            'qr_position': request.POST.get('qr_position', 'center'),
+            'signature_position': request.POST.get('signature_position', 'right'),
+            'seal_position': request.POST.get('seal_position', 'left'),
+        },
         'show_logo': request.POST.get('show_logo'),
         'show_signature_line': request.POST.get('show_signature_line'),
         'show_seal': request.POST.get('show_seal'),
@@ -271,6 +439,13 @@ def _design_cleaned_data(request):
 
 def _design_initial_data(design=None, posted_data=None):
     data = posted_data or {}
+    if posted_data and isinstance(posted_data.get('layout_config'), dict):
+        data = {
+            **posted_data,
+            'qr_position': posted_data['layout_config'].get('qr_position', 'center'),
+            'signature_position': posted_data['layout_config'].get('signature_position', 'right'),
+            'seal_position': posted_data['layout_config'].get('seal_position', 'left'),
+        }
     if design and not posted_data:
         data = {
             'certificate_type_id': design.certificateTypeID_id,
@@ -295,6 +470,9 @@ def _design_initial_data(design=None, posted_data=None):
             'custom_footer_text': design.customFooterText or '',
             'custom_css': design.customCss or '',
             'overlay_schema': design.overlaySchema or [],
+            'qr_position': (design.layoutConfig or {}).get('qr_position', 'center'),
+            'signature_position': (design.layoutConfig or {}).get('signature_position', 'right'),
+            'seal_position': (design.layoutConfig or {}).get('seal_position', 'left'),
             'show_logo': design.showLogo,
             'show_signature_line': design.showSignatureLine,
             'show_seal': design.showSeal,
@@ -348,7 +526,36 @@ def duplicate_design(request, design_id):
         source_design=source_design,
         save_as_draft=request.POST.get('save_action') != 'publish',
     )
+    if design.status == 'draft':
+        return redirect('certificateApp:edit_design', design_id=design.id)
     return redirect('certificateApp:design_detail', design_id=design.id)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def set_default_design(request, design_id):
+    if request.method != 'POST':
+        return redirect('certificateApp:design_detail', design_id=design_id)
+    school, _ = get_request_scope(request)
+    design = get_object_or_404(
+        CertificateDesign.objects.select_related('certificateTypeID'),
+        Q(schoolID=school) | Q(schoolID__isnull=True),
+        pk=design_id,
+        isDeleted=False,
+        isActive=True,
+    )
+    CertificateDesign.objects.filter(
+        certificateTypeID=design.certificateTypeID,
+        schoolID=design.schoolID,
+        isDeleted=False,
+    ).exclude(pk=design.pk).update(isDefaultForType=False)
+    if not design.isDefaultForType:
+        design.isDefaultForType = True
+        design.save(update_fields=['isDefaultForType', 'lastUpdatedOn'])
+    next_url = request.POST.get('next') or request.META.get('HTTP_REFERER') or ''
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = reverse('certificateApp:design_detail', kwargs={'design_id': design.id})
+    return redirect(next_url)
 
 
 @login_required
@@ -371,6 +578,34 @@ def design_detail(request, design_id):
         'design': design,
         'preview_school': design.schoolID or school,
         'detail_preview_context': preview_context,
+    })
+
+
+@xframe_options_sameorigin
+@login_required
+@check_groups('Admin', 'Owner')
+def design_quick_preview(request, design_id):
+    school, _ = get_request_scope(request)
+    design = get_object_or_404(
+        CertificateDesign.objects.select_related('certificateTypeID'),
+        Q(schoolID=school) | Q(schoolID__isnull=True),
+        pk=design_id,
+        isDeleted=False,
+    )
+    preview_context = build_generator_preview_context(
+        request=request,
+        certificate_type=design.certificateTypeID,
+        design=design,
+        custom_title=design.certificateTypeID.defaultTitle or design.name,
+        custom_subtitle=design.certificateTypeID.defaultSubtitle or '',
+        custom_body_text=design.certificateTypeID.defaultBodyTemplate or '',
+        custom_footer_text=design.customFooterText or design.certificateTypeID.defaultFooterText or '',
+    )
+    preview_context['render_mode'] = 'preview'
+    preview_context['issue'].certificateNumber = 'CERT-PREVIEW-001'
+    return render(request, 'certificateApp/design_quick_preview.html', {
+        'design': design,
+        'preview_context': preview_context,
     })
 
 
@@ -461,9 +696,14 @@ def generator(request):
                     'showLogo': bool(design.showLogo),
                     'showSeal': bool(design.showSeal),
                     'showSignatureLine': bool(design.showSignatureLine),
+                    'layoutConfig': design.layoutConfig or {},
+                    'qrPosition': (design.layoutConfig or {}).get('qr_position', 'center'),
+                    'signaturePosition': (design.layoutConfig or {}).get('signature_position', 'right'),
+                    'sealPosition': (design.layoutConfig or {}).get('seal_position', 'left'),
                     'backgroundImageUrl': design.backgroundImage.url if design.backgroundImage else '',
                     'overlaySchema': design.overlaySchema or [],
                     'isCustom': design.isCustom,
+                    'isDefaultForType': design.isDefaultForType,
                 }
                 for design in designs
             ],
@@ -547,7 +787,7 @@ def issue_preview(request, issue_id):
         pk=issue_id,
         isDeleted=False,
     )
-    context = build_issue_context(issue, request=request)
+    context = build_issue_context(issue, request=request, render_mode='print')
     context['preview_urls'] = build_preview_urls(issue)
     context['replacement_issues'] = issue.reissuedIssues.filter(isDeleted=False).order_by('-id')
     return render(request, 'certificateApp/issue_preview.html', context)

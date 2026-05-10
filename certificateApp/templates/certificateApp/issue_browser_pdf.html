@@ -10,15 +10,24 @@
             background: transparent;
             width: {{ page_width_mm|default:'210' }}mm;
             height: {{ page_height_mm|default:'297' }}mm;
+            padding: {{ margin_top|default:'12' }}mm {{ margin_right|default:'12' }}mm {{ margin_bottom|default:'12' }}mm {{ margin_left|default:'12' }}mm;
             overflow: hidden;
         }
         body,
         html {
+            box-sizing: border-box;
             width: {{ page_width_mm|default:'210' }}mm;
             height: {{ page_height_mm|default:'297' }}mm;
             min-height: {{ page_height_mm|default:'297' }}mm;
             max-height: {{ page_height_mm|default:'297' }}mm;
             overflow: hidden;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+        *,
+        *::before,
+        *::after {
+            box-sizing: inherit;
         }
     </style>
 </head>

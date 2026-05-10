@@ -23,7 +23,7 @@ from homeApp.models import SchoolDetail, SchoolSession
 from managementApp.models import Parent, Student, TeacherDetail
 
 from .models import CertificateDesign, CertificateIssue, CertificateSequence, CertificateType
-from .qr import qr_svg_data_uri
+from .qr import qr_png_data_uri, qr_svg_data_uri
 
 
 SYSTEM_CERTIFICATE_TYPES = [
@@ -104,6 +104,58 @@ SYSTEM_CERTIFICATE_TYPES = [
         ),
         'defaultFooterText': 'Issued upon request for official purposes.',
     },
+    {
+        'slug': 'teacher-appreciation-certificate',
+        'name': 'Teacher Appreciation Certificate',
+        'recipientCategory': 'teacher',
+        'description': 'Recognizes a teacher for dedication, mentoring, and contribution to school learning.',
+        'defaultTitle': 'Certificate of Appreciation',
+        'defaultSubtitle': 'Faculty Recognition',
+        'defaultBodyTemplate': (
+            'This certificate is presented to ${teacher_name}, ${designation}, in appreciation of dedicated service, classroom commitment, '
+            'and meaningful contribution to the learning environment at ${school_name} during session ${session_year}.'
+        ),
+        'defaultFooterText': 'Issued in recognition of professional dedication and service to the school.',
+    },
+    {
+        'slug': 'teacher-training-certificate',
+        'name': 'Teacher Training Certificate',
+        'recipientCategory': 'teacher',
+        'description': 'Certifies participation in teacher training, workshop, or faculty development activities.',
+        'defaultTitle': 'Certificate of Participation',
+        'defaultSubtitle': 'Teacher Training & Development',
+        'defaultBodyTemplate': (
+            'This certificate is awarded to ${teacher_name}, ${designation}, for participation in professional development, training, '
+            'or workshop activities conducted by ${school_name} during session ${session_year}.'
+        ),
+        'defaultFooterText': 'Issued as part of the school faculty development record.',
+    },
+    {
+        'slug': 'teacher-excellence-award',
+        'name': 'Teacher Excellence Award',
+        'recipientCategory': 'teacher',
+        'description': 'Award certificate for excellence in teaching, leadership, or student mentorship.',
+        'defaultTitle': 'Teacher Excellence Award',
+        'defaultSubtitle': 'Recognition of Outstanding Contribution',
+        'defaultBodyTemplate': (
+            'This award is presented to ${teacher_name}, ${designation}, for outstanding contribution to teaching, mentoring, discipline, '
+            'and academic growth at ${school_name} during session ${session_year}.'
+        ),
+        'defaultFooterText': 'Issued under the authority of the school.',
+    },
+    {
+        'slug': 'teacher-service-recognition',
+        'name': 'Teacher Service Recognition',
+        'recipientCategory': 'teacher',
+        'description': 'Recognizes sustained service and professional conduct by a teacher or staff member.',
+        'defaultTitle': 'Service Recognition Certificate',
+        'defaultSubtitle': 'Faculty Service Record',
+        'defaultBodyTemplate': (
+            'This certificate records appreciation for ${teacher_name}, ${designation}, for sincere service, professional conduct, '
+            'and contribution to institutional responsibilities at ${school_name} during session ${session_year}.'
+        ),
+        'defaultFooterText': 'Issued for official school service recognition.',
+    },
 ]
 
 
@@ -176,7 +228,7 @@ SYSTEM_DESIGNS = [
         'orientation': 'landscape',
         'titleAlignment': 'center',
         'bodyAlignment': 'center',
-        'borderStyle': 'ribbon',
+        'borderStyle': 'laurel',
         'fontFamily': 'Palatino',
         'accentColor': '#7c3f00',
         'textColor': '#4b2e1f',
@@ -191,12 +243,204 @@ SYSTEM_DESIGNS = [
         'orientation': 'portrait',
         'titleAlignment': 'left',
         'bodyAlignment': 'left',
-        'borderStyle': 'none',
+        'borderStyle': 'modern_frame',
         'fontFamily': 'Arial',
         'accentColor': '#0f172a',
         'textColor': '#111827',
         'backgroundColor': '#f8fafc',
         'customHeaderText': 'School Certificate',
+    },
+    {
+        'slug': 'navy-gold-shield',
+        'name': 'Navy Gold Shield',
+        'templateKey': 'navy_gold_shield',
+        'pageSize': 'A4',
+        'orientation': 'portrait',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'classic_frame',
+        'fontFamily': 'Georgia',
+        'accentColor': '#d4af37',
+        'textColor': '#111827',
+        'backgroundColor': '#ffffff',
+        'customHeaderText': 'Certificate of Distinction',
+        'customFooterText': 'Issued under the authority of the school.',
+    },
+    {
+        'slug': 'black-gold-sweep',
+        'name': 'Black Gold Sweep',
+        'templateKey': 'black_gold_sweep',
+        'pageSize': 'A4',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'hairline',
+        'fontFamily': 'Palatino',
+        'accentColor': '#d6a635',
+        'textColor': '#2f2f2f',
+        'backgroundColor': '#fffdf7',
+        'customHeaderText': 'Award Certificate',
+        'customFooterText': 'Issued under the authority of the school.',
+    },
+    {
+        'slug': 'cobalt-corner-lines',
+        'name': 'Cobalt Corner Lines',
+        'templateKey': 'cobalt_corner_lines',
+        'pageSize': 'A4',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'corner_marks',
+        'fontFamily': 'Trebuchet MS',
+        'accentColor': '#d6b23f',
+        'textColor': '#111827',
+        'backgroundColor': '#ffffff',
+        'customHeaderText': 'Formal Recognition',
+        'customFooterText': 'Issued under the authority of the school.',
+    },
+    {
+        'slug': 'ivory-gold-arch',
+        'name': 'Ivory Gold Arch',
+        'templateKey': 'ivory_gold_arch',
+        'pageSize': 'A4',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'laurel',
+        'fontFamily': 'Palatino',
+        'accentColor': '#b8860b',
+        'textColor': '#2f2b24',
+        'backgroundColor': '#fffaf0',
+        'customHeaderText': 'Ceremonial Certificate',
+        'customFooterText': 'Issued under the authority of the school.',
+    },
+    {
+        'slug': 'sapphire-wave-frame',
+        'name': 'Sapphire Wave Frame',
+        'templateKey': 'sapphire_wave_frame',
+        'pageSize': 'A4',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'plaque',
+        'fontFamily': 'Georgia',
+        'accentColor': '#f0c84b',
+        'textColor': '#172033',
+        'backgroundColor': '#ffffff',
+        'customHeaderText': 'Certificate of Appreciation',
+        'customFooterText': 'Issued under the authority of the school.',
+    },
+    {
+        'slug': 'emerald-gold-ribbon',
+        'name': 'Emerald Gold Ribbon',
+        'templateKey': 'emerald_gold_ribbon',
+        'pageSize': 'A4',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'top_bottom',
+        'fontFamily': 'Palatino',
+        'accentColor': '#d7ad3f',
+        'textColor': '#12342d',
+        'backgroundColor': '#fbfff8',
+        'customHeaderText': 'Achievement Award',
+        'customFooterText': 'Issued under the authority of the school.',
+    },
+    {
+        'slug': 'maroon-gold-gate',
+        'name': 'Maroon Gold Gate',
+        'templateKey': 'maroon_gold_gate',
+        'pageSize': 'A4',
+        'orientation': 'portrait',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'triple',
+        'fontFamily': 'Times New Roman',
+        'accentColor': '#d8b34a',
+        'textColor': '#3f1515',
+        'backgroundColor': '#fff8f3',
+        'customHeaderText': 'Official Citation',
+        'customFooterText': 'Issued under the authority of the school.',
+    },
+    {
+        'slug': 'charcoal-orbit-frame',
+        'name': 'Charcoal Orbit Frame',
+        'templateKey': 'charcoal_orbit_frame',
+        'pageSize': 'A4',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'modern_frame',
+        'fontFamily': 'Trebuchet MS',
+        'accentColor': '#d8a63d',
+        'textColor': '#1f2937',
+        'backgroundColor': '#fbfaf7',
+        'customHeaderText': 'Participation Certificate',
+        'customFooterText': 'Issued under the authority of the school.',
+    },
+    {
+        'slug': 'royal-blue-plaque',
+        'name': 'Royal Blue Plaque',
+        'templateKey': 'royal_blue_plaque',
+        'pageSize': 'A4',
+        'orientation': 'portrait',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'thick',
+        'fontFamily': 'Georgia',
+        'accentColor': '#e2b857',
+        'textColor': '#101827',
+        'backgroundColor': '#ffffff',
+        'customHeaderText': 'Award of Excellence',
+        'customFooterText': 'Issued under the authority of the school.',
+    },
+    {
+        'slug': 'pearl-gold-corners',
+        'name': 'Pearl Gold Corners',
+        'templateKey': 'pearl_gold_corners',
+        'pageSize': 'A4',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'corner_flourish',
+        'fontFamily': 'Palatino',
+        'accentColor': '#c89b2c',
+        'textColor': '#2f2a1e',
+        'backgroundColor': '#fffef8',
+        'customHeaderText': 'Commendation Certificate',
+        'customFooterText': 'Issued under the authority of the school.',
+    },
+    {
+        'slug': 'slate-gold-diagonal',
+        'name': 'Slate Gold Diagonal',
+        'templateKey': 'slate_gold_diagonal',
+        'pageSize': 'A4',
+        'orientation': 'landscape',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'ledger',
+        'fontFamily': 'Arial',
+        'accentColor': '#d6a635',
+        'textColor': '#1f2937',
+        'backgroundColor': '#ffffff',
+        'customHeaderText': 'Certificate Record',
+        'customFooterText': 'Issued under the authority of the school.',
+    },
+    {
+        'slug': 'indigo-bottom-flourish',
+        'name': 'Indigo Bottom Flourish',
+        'templateKey': 'indigo_bottom_flourish',
+        'pageSize': 'A4',
+        'orientation': 'portrait',
+        'titleAlignment': 'center',
+        'bodyAlignment': 'center',
+        'borderStyle': 'inner_line',
+        'fontFamily': 'Georgia',
+        'accentColor': '#e0b84d',
+        'textColor': '#151a2e',
+        'backgroundColor': '#ffffff',
+        'customHeaderText': 'Certificate of Honor',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'emerald-ledger',
@@ -238,13 +482,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'landscape',
         'titleAlignment': 'center',
         'bodyAlignment': 'center',
-        'borderStyle': 'ribbon',
+        'borderStyle': 'plaque',
         'fontFamily': 'Palatino',
         'accentColor': '#c2410c',
         'textColor': '#7c2d12',
         'backgroundColor': '#fff7ed',
         'customHeaderText': 'Merit Recognition',
-        'customFooterText': 'Suitable for merit, cultural, and school event certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'slate-editorial',
@@ -260,7 +504,7 @@ SYSTEM_DESIGNS = [
         'textColor': '#0f172a',
         'backgroundColor': '#f8fafc',
         'customHeaderText': 'Institutional Brief',
-        'customFooterText': 'Editorial-style spacing for concise official certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'ivory-ribbon',
@@ -276,7 +520,7 @@ SYSTEM_DESIGNS = [
         'textColor': '#431407',
         'backgroundColor': '#fffbeb',
         'customHeaderText': 'Commendation Series',
-        'customFooterText': 'Suitable for achievement and school function certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'cobalt-panel',
@@ -286,13 +530,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'landscape',
         'titleAlignment': 'left',
         'bodyAlignment': 'left',
-        'borderStyle': 'single',
+        'borderStyle': 'side_bars',
         'fontFamily': 'Trebuchet MS',
         'accentColor': '#1d4ed8',
         'textColor': '#1e293b',
         'backgroundColor': '#f5f9ff',
         'customHeaderText': 'Professional Issue Desk',
-        'customFooterText': 'Strong horizontal layout for staff, experience, and service certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'rose-archive',
@@ -302,13 +546,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'portrait',
         'titleAlignment': 'center',
         'bodyAlignment': 'center',
-        'borderStyle': 'single',
+        'borderStyle': 'corner_flourish',
         'fontFamily': 'Georgia',
         'accentColor': '#be185d',
         'textColor': '#831843',
         'backgroundColor': '#fff7fb',
         'customHeaderText': 'Archive Copy',
-        'customFooterText': 'Compact premium layout for small-format issue certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'olive-scholar',
@@ -318,13 +562,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'portrait',
         'titleAlignment': 'center',
         'bodyAlignment': 'center',
-        'borderStyle': 'double',
+        'borderStyle': 'classic_frame',
         'fontFamily': 'Times New Roman',
         'accentColor': '#4d7c0f',
         'textColor': '#365314',
         'backgroundColor': '#f7fee7',
         'customHeaderText': 'Scholastic Register',
-        'customFooterText': 'Suitable for bonafide and academic standing certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'pearl-citation',
@@ -334,13 +578,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'landscape',
         'titleAlignment': 'center',
         'bodyAlignment': 'center',
-        'borderStyle': 'ornate',
+        'borderStyle': 'corner_marks',
         'fontFamily': 'Palatino',
         'accentColor': '#7c3aed',
         'textColor': '#4c1d95',
         'backgroundColor': '#faf5ff',
         'customHeaderText': 'Citation Gallery',
-        'customFooterText': 'Suitable for formal recognition and appreciation certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'graphite-column',
@@ -350,13 +594,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'portrait',
         'titleAlignment': 'left',
         'bodyAlignment': 'left',
-        'borderStyle': 'none',
+        'borderStyle': 'hairline',
         'fontFamily': 'Arial',
         'accentColor': '#111827',
         'textColor': '#111827',
         'backgroundColor': '#fcfcfd',
         'customHeaderText': 'Formal Registry',
-        'customFooterText': 'Suitable for formal institutional and administrative certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'teal-horizon',
@@ -366,13 +610,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'landscape',
         'titleAlignment': 'center',
         'bodyAlignment': 'center',
-        'borderStyle': 'ribbon',
+        'borderStyle': 'top_bottom',
         'fontFamily': 'Palatino',
         'accentColor': '#0f766e',
         'textColor': '#134e4a',
         'backgroundColor': '#f0fdfa',
         'customHeaderText': 'Celebration Horizon',
-        'customFooterText': 'Suitable for participation and school activity certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'amber-broadcast',
@@ -382,13 +626,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'landscape',
         'titleAlignment': 'left',
         'bodyAlignment': 'left',
-        'borderStyle': 'single',
+        'borderStyle': 'dashed',
         'fontFamily': 'Trebuchet MS',
         'accentColor': '#d97706',
         'textColor': '#78350f',
         'backgroundColor': '#fffbeb',
         'customHeaderText': 'Quick Recognition',
-        'customFooterText': 'Suitable for club, event, and short-format certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'sports-meet-stripe',
@@ -398,13 +642,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'landscape',
         'titleAlignment': 'left',
         'bodyAlignment': 'left',
-        'borderStyle': 'single',
+        'borderStyle': 'ledger',
         'fontFamily': 'Trebuchet MS',
         'accentColor': '#0f766e',
         'textColor': '#134e4a',
         'backgroundColor': '#f0fdfa',
         'customHeaderText': 'Annual Sports Meet',
-        'customFooterText': 'Suitable for sports meet, award, and team certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'board-merit-frame',
@@ -414,13 +658,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'portrait',
         'titleAlignment': 'center',
         'bodyAlignment': 'center',
-        'borderStyle': 'double',
+        'borderStyle': 'triple',
         'fontFamily': 'Georgia',
         'accentColor': '#7c2d12',
         'textColor': '#431407',
         'backgroundColor': '#fffbf5',
         'customHeaderText': 'Board Merit Citation',
-        'customFooterText': 'Suitable for board merit and examination distinction certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'festival-banner',
@@ -436,7 +680,7 @@ SYSTEM_DESIGNS = [
         'textColor': '#581c87',
         'backgroundColor': '#faf5ff',
         'customHeaderText': 'Cultural Festival Honors',
-        'customFooterText': 'Suitable for cultural, music, and festival certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'staff-service-ledger',
@@ -446,13 +690,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'portrait',
         'titleAlignment': 'left',
         'bodyAlignment': 'left',
-        'borderStyle': 'single',
+        'borderStyle': 'inner_line',
         'fontFamily': 'Arial',
         'accentColor': '#475569',
         'textColor': '#1e293b',
         'backgroundColor': '#f8fafc',
         'customHeaderText': 'Service Verification Desk',
-        'customFooterText': 'Suitable for staff service and employment record certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'science-fair-citation',
@@ -462,13 +706,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'landscape',
         'titleAlignment': 'center',
         'bodyAlignment': 'center',
-        'borderStyle': 'ornate',
+        'borderStyle': 'plaque',
         'fontFamily': 'Palatino',
         'accentColor': '#2563eb',
         'textColor': '#1e3a8a',
         'backgroundColor': '#eff6ff',
         'customHeaderText': 'Innovation Showcase',
-        'customFooterText': 'Suitable for fairs, exhibitions, and innovation award certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'attendance-column',
@@ -478,13 +722,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'portrait',
         'titleAlignment': 'left',
         'bodyAlignment': 'left',
-        'borderStyle': 'none',
+        'borderStyle': 'dotted',
         'fontFamily': 'Arial',
         'accentColor': '#0f172a',
         'textColor': '#1f2937',
         'backgroundColor': '#ffffff',
         'customHeaderText': 'Attendance & Record Slip',
-        'customFooterText': 'Suitable for attendance and routine school record certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'house-championship-plaque',
@@ -494,13 +738,13 @@ SYSTEM_DESIGNS = [
         'orientation': 'landscape',
         'titleAlignment': 'center',
         'bodyAlignment': 'center',
-        'borderStyle': 'double',
+        'borderStyle': 'thick',
         'fontFamily': 'Times New Roman',
         'accentColor': '#b91c1c',
         'textColor': '#7f1d1d',
         'backgroundColor': '#fef2f2',
         'customHeaderText': 'House Championship Honors',
-        'customFooterText': 'Suitable for championship and inter-house award certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'principal-honors-note',
@@ -516,7 +760,7 @@ SYSTEM_DESIGNS = [
         'textColor': '#0f172a',
         'backgroundColor': '#f8fbff',
         'customHeaderText': 'Principal Honors Desk',
-        'customFooterText': 'Suitable for principal appreciation and honors certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'community-service-scroll',
@@ -532,7 +776,7 @@ SYSTEM_DESIGNS = [
         'textColor': '#115e59',
         'backgroundColor': '#f0fdfa',
         'customHeaderText': 'Service & Outreach Commendation',
-        'customFooterText': 'Suitable for outreach, service, and volunteer recognition certificates.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'hand-fill-form',
@@ -548,7 +792,7 @@ SYSTEM_DESIGNS = [
         'textColor': '#1f2937',
         'backgroundColor': '#ffffff',
         'customHeaderText': 'Write-In Certificate Sheet',
-        'customFooterText': 'Use this format for manual handwriting and event-day issue.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
     {
         'slug': 'prize-day-form',
@@ -564,7 +808,7 @@ SYSTEM_DESIGNS = [
         'textColor': '#3f2a1d',
         'backgroundColor': '#fffdf8',
         'customHeaderText': 'Prize Distribution Write-In',
-        'customFooterText': 'Prepared for manual filling during school events and ceremonies.',
+        'customFooterText': 'Issued under the authority of the school.',
     },
 ]
 
@@ -578,6 +822,27 @@ FONT_STACKS = {
     'verdana': 'Verdana, Geneva, sans-serif',
     'courier new': '"Courier New", Courier, monospace',
 }
+
+PLACEMENT_DEFAULTS = {
+    'qr_position': 'center',
+    'signature_position': 'right',
+    'seal_position': 'left',
+}
+
+PLACEMENT_OPTIONS = {
+    'qr_position': {'left', 'center', 'right', 'hidden'},
+    'signature_position': {'left', 'center', 'right'},
+    'seal_position': {'left', 'center', 'right'},
+}
+
+
+def normalize_layout_config(value=None):
+    config = value if isinstance(value, dict) else {}
+    normalized = {}
+    for key, default in PLACEMENT_DEFAULTS.items():
+        selected = str(config.get(key) or default).strip().lower()
+        normalized[key] = selected if selected in PLACEMENT_OPTIONS[key] else default
+    return normalized
 
 
 OVERLAY_FIELD_PRESETS = {
@@ -775,14 +1040,14 @@ def render_certificate_document(context, *, request=None):
 
 
 def render_issue_document(issue, *, request=None, render_mode='preview'):
-    context = build_issue_context(issue, request=request)
+    context = build_issue_context(issue, request=request, render_mode=render_mode)
     context['render_mode'] = render_mode
     return render_certificate_document(context, request=request)
 
 
 def build_issue_pdf(issue, *, request=None):
-    context = build_issue_context(issue, request=request)
-    context['render_mode'] = 'print'
+    context = build_issue_context(issue, request=request, render_mode='pdf', is_pdf_export=True)
+    context['render_mode'] = 'pdf'
     context['is_pdf_export'] = True
     html = render_to_string('certificateApp/issue_browser_pdf.html', context)
     html = _replace_pdf_asset_urls(html)
@@ -798,7 +1063,82 @@ def build_issue_pdf(issue, *, request=None):
         page = browser_context.new_page()
         page.set_content(html, wait_until='load')
         page.wait_for_load_state('networkidle')
+        page.evaluate(
+            """
+            async () => {
+                if (document.fonts && document.fonts.ready) {
+                    await document.fonts.ready;
+                }
+                const images = Array.from(document.images || []);
+                await Promise.all(images.map((image) => {
+                    if (image.complete && image.naturalWidth > 0) {
+                        return Promise.resolve();
+                    }
+                    if (image.decode) {
+                        return image.decode().catch(() => {});
+                    }
+                    return new Promise((resolve) => {
+                        image.addEventListener('load', resolve, {once: true});
+                        image.addEventListener('error', resolve, {once: true});
+                    });
+                }));
+            }
+            """
+        )
         page.emulate_media(media='print')
+        page.evaluate(
+            """
+            () => {
+                const sheet = document.querySelector('.certificate-sheet');
+                if (!sheet) {
+                    return;
+                }
+                const bodyStyle = window.getComputedStyle(document.body);
+                const paddingX = parseFloat(bodyStyle.paddingLeft || 0) + parseFloat(bodyStyle.paddingRight || 0);
+                const paddingY = parseFloat(bodyStyle.paddingTop || 0) + parseFloat(bodyStyle.paddingBottom || 0);
+                const availableWidth = Math.max(1, document.body.clientWidth - paddingX);
+                const availableHeight = Math.max(1, document.body.clientHeight - paddingY);
+                sheet.style.transform = '';
+                sheet.style.width = availableWidth + 'px';
+                sheet.style.maxWidth = availableWidth + 'px';
+                sheet.style.height = availableHeight + 'px';
+                sheet.style.maxHeight = availableHeight + 'px';
+                sheet.style.minHeight = availableHeight + 'px';
+                sheet.style.overflow = 'hidden';
+
+                const inner = sheet.querySelector('.certificate-inner');
+                if (inner) {
+                    const innerStyle = window.getComputedStyle(inner);
+                    const marginX = parseFloat(innerStyle.marginLeft || 0) + parseFloat(innerStyle.marginRight || 0);
+                    const marginY = parseFloat(innerStyle.marginTop || 0) + parseFloat(innerStyle.marginBottom || 0);
+                    inner.style.minHeight = '0';
+                    inner.style.width = Math.max(1, sheet.clientWidth - marginX) + 'px';
+                    inner.style.height = Math.max(1, sheet.clientHeight - marginY) + 'px';
+                    inner.style.overflow = 'hidden';
+
+                    const measuredWidth = Math.max(inner.scrollWidth, inner.clientWidth, 1);
+                    const measuredHeight = Math.max(inner.scrollHeight, inner.clientHeight, 1);
+                    let scale = Math.min(1, inner.clientWidth / measuredWidth, inner.clientHeight / measuredHeight);
+                    if (scale >= 1) {
+                        return;
+                    }
+                    scale = Math.max(0.1, scale * 0.94);
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'certificate-pdf-content-fit';
+                    wrapper.style.transformOrigin = 'top left';
+                    wrapper.style.transform = 'scale(' + scale + ')';
+                    wrapper.style.width = measuredWidth + 'px';
+                    wrapper.style.height = measuredHeight + 'px';
+                    wrapper.style.position = 'relative';
+                    wrapper.style.zIndex = '1';
+                    while (inner.firstChild) {
+                        wrapper.appendChild(inner.firstChild);
+                    }
+                    inner.appendChild(wrapper);
+                }
+            }
+            """
+        )
         pdf_bytes = page.pdf(
             print_background=True,
             prefer_css_page_size=True,
@@ -813,7 +1153,7 @@ def _replace_pdf_asset_urls(html):
     def replace_attr(match):
         prefix, quote, raw_url, suffix = match.groups()
         asset_path = _asset_url_to_file_uri(raw_url)
-        return f'{prefix}{quote}{asset_path}{quote}{suffix}'
+        return f'{prefix}{quote}{asset_path}{suffix}'
 
     def replace_css(match):
         quote, raw_url = match.groups()
@@ -948,7 +1288,7 @@ def get_certificate_designs(*, certificate_type, school_id=None, include_inactiv
     )
     if not include_inactive:
         queryset = queryset.filter(isActive=True)
-    return queryset.order_by('-isCustom', 'status', 'name')
+    return queryset.order_by('-isDefaultForType', '-isCustom', 'status', 'name')
 
 
 def get_recipient_options(*, recipient_category, school_id=None, session_id=None):
@@ -1044,10 +1384,12 @@ def _pronouns_from_gender(value):
 
 
 def _absolute_uri(request, path):
+    base_url = str(getattr(settings, 'PUBLIC_BASE_URL', '') or '').rstrip('/')
+    if base_url:
+        return f'{base_url}{path}'
     if request:
         return request.build_absolute_uri(path)
-    base_url = str(getattr(settings, 'PUBLIC_BASE_URL', '') or '').rstrip('/')
-    return f'{base_url}{path}' if base_url else path
+    return path
 
 
 def build_verification_url(issue, *, request=None):
@@ -1057,7 +1399,7 @@ def build_verification_url(issue, *, request=None):
     return _absolute_uri(request, path)
 
 
-def build_issue_context(issue, *, request=None):
+def build_issue_context(issue, *, request=None, render_mode=None, is_pdf_export=False):
     school = issue.schoolID
     session_obj = issue.sessionID
     design = issue.certificateDesignID
@@ -1158,7 +1500,7 @@ def build_issue_context(issue, *, request=None):
         'issue': issue,
         'certificate_type': cert_type,
         'design': design,
-        'render_mode': 'preview',
+        'render_mode': render_mode or 'preview',
         'design_font_stack': resolve_font_stack(design.fontFamily if design else 'Georgia'),
         'title': title,
         'subtitle': subtitle,
@@ -1178,9 +1520,14 @@ def build_issue_context(issue, *, request=None):
         'scope_data': data,
         'verification_url': build_verification_url(issue, request=request),
         'verification_qr_data_uri': '',
+        'verification_code': issue.verificationToken[:10].upper() if issue.verificationToken else '',
+        'is_pdf_export': is_pdf_export,
     }
     if context['verification_url']:
-        context['verification_qr_data_uri'] = qr_svg_data_uri(context['verification_url'])
+        if is_pdf_export or render_mode == 'print':
+            context['verification_qr_data_uri'] = qr_png_data_uri(context['verification_url'])
+        else:
+            context['verification_qr_data_uri'] = qr_svg_data_uri(context['verification_url'])
     context['resolved_overlay_items'] = resolve_overlay_items(
         design=design,
         scope_data=data,
@@ -1191,6 +1538,10 @@ def build_issue_context(issue, *, request=None):
         rendered_body=rendered_body,
         rendered_footer=rendered_footer,
     )
+    context['layout_config'] = normalize_layout_config(design.layoutConfig if design else {})
+    context['qr_position'] = context['layout_config']['qr_position']
+    context['signature_position'] = context['layout_config']['signature_position']
+    context['seal_position'] = context['layout_config']['seal_position']
     context['is_image_overlay'] = bool(design and design.designMode == 'image_overlay')
     return context
 
@@ -1399,6 +1750,10 @@ def build_generator_preview_context(*, request, certificate_type, design, recipi
         rendered_body=rendered_body,
         rendered_footer=rendered_footer,
     )
+    context['layout_config'] = normalize_layout_config(design.layoutConfig if design else {})
+    context['qr_position'] = context['layout_config']['qr_position']
+    context['signature_position'] = context['layout_config']['signature_position']
+    context['seal_position'] = context['layout_config']['seal_position']
     context['is_image_overlay'] = bool(design and design.designMode == 'image_overlay')
     return context
 
@@ -1640,6 +1995,7 @@ def create_custom_design(*, request, certificate_type, cleaned_data):
         customFooterText=cleaned_data.get('custom_footer_text') or None,
         customCss=cleaned_data.get('custom_css') or None,
         overlaySchema=normalize_overlay_schema(cleaned_data.get('overlay_schema') or []),
+        layoutConfig=normalize_layout_config(cleaned_data.get('layout_config')),
         showLogo=bool(cleaned_data.get('show_logo')),
         showSignatureLine=bool(cleaned_data.get('show_signature_line')),
         showSeal=bool(cleaned_data.get('show_seal')),
@@ -1729,6 +2085,7 @@ def update_custom_design(*, request, design, certificate_type, cleaned_data):
     design.customFooterText = cleaned_data.get('custom_footer_text') or None
     design.customCss = cleaned_data.get('custom_css') or None
     design.overlaySchema = normalize_overlay_schema(cleaned_data.get('overlay_schema') or [])
+    design.layoutConfig = normalize_layout_config(cleaned_data.get('layout_config'))
     design.showLogo = bool(cleaned_data.get('show_logo'))
     design.showSignatureLine = bool(cleaned_data.get('show_signature_line'))
     design.showSeal = bool(cleaned_data.get('show_seal'))

@@ -1,4 +1,8 @@
 import base64
+import io
+import zlib
+
+import qrcode
 
 
 _GF_EXP = [0] * 512
@@ -224,15 +228,11 @@ def _draw_data(matrix, reserved, codewords):
 
 
 def qr_svg_data_uri(payload, *, module_size=4, border=4):
-    size = 45
-    matrix, reserved = _empty_matrix(size)
-    _draw_patterns(matrix, reserved)
-    _draw_data(matrix, reserved, _build_codewords(payload))
-    _draw_format_and_version(matrix, reserved)
-
+    matrix = qr_matrix(payload)
+    size = len(matrix)
     full_size = (size + border * 2) * module_size
     parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {full_size} {full_size}" width="{full_size}" height="{full_size}">',
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {full_size} {full_size}" width="{full_size}" height="{full_size}" shape-rendering="crispEdges">',
         '<rect width="100%" height="100%" fill="#fff"/>',
     ]
     for row_index, row in enumerate(matrix):
@@ -240,7 +240,65 @@ def qr_svg_data_uri(payload, *, module_size=4, border=4):
             if value:
                 x = (col_index + border) * module_size
                 y = (row_index + border) * module_size
-                parts.append(f'<rect x="{x}" y="{y}" width="{module_size}" height="{module_size}" fill="#111827"/>')
+                parts.append(f'<rect x="{x}" y="{y}" width="{module_size}" height="{module_size}" fill="#000"/>')
     parts.append('</svg>')
     encoded = base64.b64encode(''.join(parts).encode('utf-8')).decode('ascii')
     return f'data:image/svg+xml;base64,{encoded}'
+
+
+def qr_png_data_uri(payload, *, module_size=12, border=4):
+    matrix = qr_matrix(payload)
+    size = len(matrix)
+    full_size = (size + border * 2) * module_size
+    raw_rows = []
+    for y in range(full_size):
+        matrix_row = (y // module_size) - border
+        row = bytearray([0])
+        for x in range(full_size):
+            matrix_col = (x // module_size) - border
+            dark = 0 <= matrix_row < size and 0 <= matrix_col < size and matrix[matrix_row][matrix_col]
+            row.extend((0, 0, 0) if dark else (255, 255, 255))
+        raw_rows.append(bytes(row))
+    raw = b''.join(raw_rows)
+
+    def chunk(kind, data):
+        crc = zlib.crc32(kind + data) & 0xffffffff
+        return len(data).to_bytes(4, 'big') + kind + data + crc.to_bytes(4, 'big')
+
+    png = (
+        b'\x89PNG\r\n\x1a\n'
+        + chunk(b'IHDR', full_size.to_bytes(4, 'big') + full_size.to_bytes(4, 'big') + bytes([8, 2, 0, 0, 0]))
+        + chunk(b'IDAT', zlib.compress(raw, 9))
+        + chunk(b'IEND', b'')
+    )
+    encoded = base64.b64encode(png).decode('ascii')
+    return f'data:image/png;base64,{encoded}'
+
+
+def qr_matrix(payload):
+    size = 45
+    matrix, reserved = _empty_matrix(size)
+    _draw_patterns(matrix, reserved)
+    _draw_data(matrix, reserved, _build_codewords(payload))
+    _draw_format_and_version(matrix, reserved)
+    return matrix
+
+
+def qr_png_data_uri(payload, *, module_size=12, border=4):
+    qr = qrcode.QRCode(
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=module_size,
+        border=border,
+    )
+    qr.add_data(payload)
+    qr.make(fit=True)
+    image = qr.make_image(fill_color='black', back_color='white').convert('RGB')
+    buffer = io.BytesIO()
+    image.save(buffer, format='PNG', optimize=True)
+    encoded = base64.b64encode(buffer.getvalue()).decode('ascii')
+    return f'data:image/png;base64,{encoded}'
+
+
+def qr_svg_data_uri(payload, *, module_size=8, border=4):
+    return qr_png_data_uri(payload, module_size=module_size, border=border)

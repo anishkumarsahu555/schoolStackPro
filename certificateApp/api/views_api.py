@@ -72,9 +72,14 @@ def get_certificate_generator_meta_api(request):
                     'showLogo': bool(design.showLogo),
                     'showSeal': bool(design.showSeal),
                     'showSignatureLine': bool(design.showSignatureLine),
+                    'layoutConfig': design.layoutConfig or {},
+                    'qrPosition': (design.layoutConfig or {}).get('qr_position', 'center'),
+                    'signaturePosition': (design.layoutConfig or {}).get('signature_position', 'right'),
+                    'sealPosition': (design.layoutConfig or {}).get('seal_position', 'left'),
                     'backgroundImageUrl': design.backgroundImage.url if design.backgroundImage else '',
                     'overlaySchema': design.overlaySchema or [],
                     'isCustom': design.isCustom,
+                    'isDefaultForType': design.isDefaultForType,
                 }
                 for design in designs
             ],

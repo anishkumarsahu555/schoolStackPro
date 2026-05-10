@@ -38,11 +38,11 @@
         }
 
         .design-library-hero {
-            border-radius: 28px;
-            padding: 1.35rem 1.45rem 1.2rem;
+            border-radius: 12px;
+            padding: 1.15rem 1.2rem;
             border: 1px solid var(--design-library-border);
             background: var(--design-library-hero);
-            box-shadow: var(--design-library-shadow);
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
         }
 
         .design-library-kicker {
@@ -162,6 +162,38 @@
             gap: 0.5rem;
         }
 
+        .design-library-view-row {
+            display: inline-flex;
+            gap: 0.25rem;
+            padding: 0.25rem;
+            border-radius: 999px;
+            background: rgba(241, 245, 249, 0.92);
+            border: 1px solid var(--design-library-border);
+            margin-bottom: 0.65rem;
+        }
+
+        .design-library-view-btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 0.45rem 0.78rem;
+            background: transparent;
+            color: #334155;
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+        }
+
+        .design-library-view-btn.active {
+            background: var(--app-brand, #1d4ed8);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .design-library-view-panel.is-hidden {
+            display: none;
+        }
+
         .design-library-filter-btn {
             border: 0;
             border-radius: 999px;
@@ -194,10 +226,10 @@
         }
 
         .design-library-group {
-            border-radius: 26px;
+            border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--design-library-border);
-            box-shadow: var(--design-library-shadow);
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05);
             background: linear-gradient(180deg, var(--design-library-card), rgba(248,250,252,0.58));
         }
 
@@ -210,7 +242,7 @@
         }
 
         .design-library-group-head {
-            padding: 1.05rem 1.2rem;
+            padding: 0.85rem 1rem;
             border-bottom: 1px solid var(--design-library-border);
             display: flex;
             justify-content: space-between;
@@ -266,6 +298,133 @@
             padding: 0.7rem;
             background: var(--design-library-stage);
             border-bottom: 1px solid var(--design-library-border);
+        }
+
+        .design-template-preview {
+            min-height: 168px;
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            background:
+                radial-gradient(circle at top right, rgba(255,255,255,0.88), transparent 34%),
+                linear-gradient(180deg, var(--preview-bg, #ffffff), rgba(255,255,255,0.95));
+            color: var(--preview-text, #1f2937);
+            border: 2px solid var(--preview-accent, #1d4ed8);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        .design-template-preview.landscape {
+            min-height: 138px;
+        }
+
+        .design-template-preview::before {
+            content: '';
+            position: absolute;
+            inset: 10px;
+            border: 1px solid rgba(37, 99, 235, 0.18);
+            border-radius: 10px;
+            pointer-events: none;
+        }
+
+        .design-template-preview.style-ribbon::after,
+        .design-template-preview.template-ribbon_banner::after,
+        .design-template-preview.template-royal_arc::after,
+        .design-template-preview.template-laurel_frame::after,
+        .design-template-preview.template-award_plaque::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 18px;
+            width: 38px;
+            height: 78px;
+            background: var(--preview-accent, #1d4ed8);
+            opacity: 0.18;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+        }
+
+        .design-template-preview.style-forms,
+        .design-template-preview.style-official {
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.98)),
+                repeating-linear-gradient(180deg, rgba(15,23,42,0.04) 0, rgba(15,23,42,0.04) 1px, transparent 1px, transparent 24px);
+        }
+
+        .design-template-preview-inner {
+            position: relative;
+            z-index: 1;
+            min-height: inherit;
+            padding: 1rem 1.05rem 0.85rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 0.55rem;
+        }
+
+        .design-template-preview-kicker {
+            color: var(--preview-accent, #1d4ed8);
+            font-size: 0.55rem;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .design-template-preview-title {
+            color: var(--preview-accent, #1d4ed8);
+            font-size: 1rem;
+            font-weight: 900;
+            line-height: 1.08;
+            text-transform: uppercase;
+            max-width: 82%;
+        }
+
+        .design-template-preview-line {
+            height: 5px;
+            width: 52%;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.14);
+        }
+
+        .design-template-preview-copy {
+            color: #64748b;
+            font-size: 0.62rem;
+            line-height: 1.35;
+            max-width: 84%;
+        }
+
+        .design-template-preview-footer {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 0.7rem;
+            color: #64748b;
+            font-size: 0.54rem;
+            font-weight: 700;
+        }
+
+        .design-template-preview-sign {
+            width: 64px;
+            border-top: 1px solid currentColor;
+            padding-top: 0.22rem;
+            text-align: center;
+        }
+
+        .design-readiness-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: var(--app-muted);
+            font-size: 0.76rem;
+            font-weight: 800;
+            margin-bottom: 0.72rem;
+        }
+
+        .design-readiness-inline.is-ready {
+            color: #15803d;
+        }
+
+        .design-readiness-inline.needs-work {
+            color: #c2410c;
         }
 
         .design-preview-paper {
@@ -378,6 +537,10 @@
             white-space: pre-line;
         }
 
+        .design-preview-recipient {
+            display: none;
+        }
+
         .design-preview-meta {
             display: flex;
             justify-content: space-between;
@@ -418,6 +581,451 @@
             transform: rotate(34deg);
             background: var(--preview-accent, #1d4ed8);
             opacity: 0.16;
+        }
+
+        .design-preview-paper.template-navy_gold_shield,
+        .design-preview-paper.template-royal_blue_plaque,
+        .design-preview-paper.template-indigo_bottom_flourish,
+        .design-preview-paper.template-maroon_gold_gate {
+            border-radius: 4px;
+            background: #071833 !important;
+            box-shadow: inset 0 0 0 8px rgba(214, 178, 63, 0.22), 0 12px 24px rgba(15, 23, 42, 0.13);
+        }
+
+        .design-preview-paper.template-maroon_gold_gate {
+            background: #4a1118 !important;
+        }
+
+        .design-preview-paper.template-navy_gold_shield::before,
+        .design-preview-paper.template-royal_blue_plaque::before,
+        .design-preview-paper.template-indigo_bottom_flourish::before,
+        .design-preview-paper.template-maroon_gold_gate::before {
+            inset: 14px;
+            background: #ffffff;
+            border: 2px solid var(--preview-accent, #d6b23f);
+            box-shadow: inset 0 0 0 3px rgba(214, 178, 63, 0.18);
+        }
+
+        .design-preview-paper.template-navy_gold_shield::after,
+        .design-preview-paper.template-indigo_bottom_flourish::after {
+            content: '';
+            position: absolute;
+            left: 12px;
+            right: 12px;
+            bottom: 7px;
+            height: 54px;
+            background:
+                radial-gradient(ellipse at 16% 100%, transparent 0 44%, #071833 45% 62%, transparent 63%),
+                radial-gradient(ellipse at 84% 100%, transparent 0 44%, #071833 45% 62%, transparent 63%),
+                linear-gradient(90deg, transparent 0 18%, var(--preview-accent, #d6b23f) 18% 21%, transparent 21% 79%, var(--preview-accent, #d6b23f) 79% 82%, transparent 82%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .design-preview-paper.template-royal_blue_plaque::after,
+        .design-preview-paper.template-maroon_gold_gate::after {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border: 1px solid rgba(255,255,255,0.32);
+            box-shadow: inset 0 0 0 2px var(--preview-accent, #d6b23f);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .design-preview-paper.template-black_gold_sweep,
+        .design-preview-paper.template-charcoal_orbit_frame,
+        .design-preview-paper.template-slate_gold_diagonal,
+        .design-preview-paper.template-sapphire_wave_frame,
+        .design-preview-paper.template-emerald_gold_ribbon {
+            border-radius: 4px;
+            background: #fffdf8 !important;
+        }
+
+        .design-preview-paper.template-black_gold_sweep::before,
+        .design-preview-paper.template-charcoal_orbit_frame::before,
+        .design-preview-paper.template-sapphire_wave_frame::before,
+        .design-preview-paper.template-emerald_gold_ribbon::before {
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 100% 0, rgba(15, 23, 42, 0.96) 0 30%, transparent 31%),
+                radial-gradient(ellipse at 0 100%, rgba(15, 23, 42, 0.96) 0 30%, transparent 31%),
+                radial-gradient(ellipse at 100% 0, transparent 0 34%, var(--preview-accent, #d6a635) 35% 39%, transparent 40%),
+                radial-gradient(ellipse at 0 100%, transparent 0 34%, var(--preview-accent, #d6a635) 35% 39%, transparent 40%);
+        }
+
+        .design-preview-paper.template-sapphire_wave_frame::before {
+            background:
+                radial-gradient(ellipse at 0 100%, #071a3b 0 28%, transparent 29%),
+                radial-gradient(ellipse at 100% 0, #071a3b 0 28%, transparent 29%),
+                radial-gradient(ellipse at 0 100%, transparent 0 32%, var(--preview-accent, #f0c84b) 33% 37%, transparent 38%),
+                radial-gradient(ellipse at 100% 0, transparent 0 32%, var(--preview-accent, #f0c84b) 33% 37%, transparent 38%);
+        }
+
+        .design-preview-paper.template-emerald_gold_ribbon::before {
+            background:
+                radial-gradient(ellipse at 0 100%, #0b3b32 0 28%, transparent 29%),
+                radial-gradient(ellipse at 100% 0, #0b3b32 0 28%, transparent 29%),
+                radial-gradient(ellipse at 0 100%, transparent 0 32%, var(--preview-accent, #d7ad3f) 33% 37%, transparent 38%),
+                radial-gradient(ellipse at 100% 0, transparent 0 32%, var(--preview-accent, #d7ad3f) 33% 37%, transparent 38%);
+        }
+
+        .design-preview-paper.template-black_gold_sweep::after,
+        .design-preview-paper.template-charcoal_orbit_frame::after,
+        .design-preview-paper.template-sapphire_wave_frame::after,
+        .design-preview-paper.template-emerald_gold_ribbon::after {
+            content: '';
+            position: absolute;
+            inset: 13px;
+            border: 1px solid var(--preview-accent, #d6a635);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .design-preview-paper.template-cobalt_corner_lines,
+        .design-preview-paper.template-pearl_gold_corners,
+        .design-preview-paper.template-ivory_gold_arch {
+            border-radius: 4px;
+            background: #fffef8 !important;
+        }
+
+        .design-preview-paper.template-cobalt_corner_lines::before,
+        .design-preview-paper.template-slate_gold_diagonal::before {
+            inset: 0;
+            background:
+                linear-gradient(90deg, #0b2f75 0 7%, transparent 7%),
+                linear-gradient(180deg, #0b2f75 0 10%, transparent 10%),
+                linear-gradient(270deg, #0b2f75 0 7%, transparent 7%),
+                linear-gradient(0deg, #0b2f75 0 10%, transparent 10%);
+            background-size: 44% 54%, 44% 36%, 42% 50%, 42% 36%;
+            background-position: left top, left top, right bottom, right bottom;
+            background-repeat: no-repeat;
+        }
+
+        .design-preview-paper.template-cobalt_corner_lines::after,
+        .design-preview-paper.template-slate_gold_diagonal::after,
+        .design-preview-paper.template-ivory_gold_arch::after,
+        .design-preview-paper.template-pearl_gold_corners::after {
+            content: '';
+            position: absolute;
+            inset: 13px;
+            border: 1px solid var(--preview-accent, #d6b23f);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .design-preview-paper.template-ivory_gold_arch::before,
+        .design-preview-paper.template-pearl_gold_corners::before {
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 0 0, rgba(184, 134, 11, 0.18) 0 18%, transparent 19%),
+                radial-gradient(ellipse at 100% 100%, rgba(184, 134, 11, 0.16) 0 18%, transparent 19%),
+                repeating-linear-gradient(150deg, rgba(184, 134, 11, 0.12) 0 1px, transparent 1px 6px);
+        }
+
+        .design-preview-paper.template-navy_gold_shield .design-preview-inner,
+        .design-preview-paper.template-royal_blue_plaque .design-preview-inner,
+        .design-preview-paper.template-maroon_gold_gate .design-preview-inner,
+        .design-preview-paper.template-indigo_bottom_flourish .design-preview-inner {
+            margin: 12px;
+            min-height: calc(100% - 24px);
+            padding: 0.7rem 0.75rem;
+            background: rgba(255,255,255,0.96);
+            border: 1px solid rgba(214, 178, 63, 0.58);
+            box-shadow: inset 0 0 0 3px rgba(214, 178, 63, 0.14);
+        }
+
+        .design-preview-paper.template-black_gold_sweep .design-preview-inner,
+        .design-preview-paper.template-charcoal_orbit_frame .design-preview-inner,
+        .design-preview-paper.template-cobalt_corner_lines .design-preview-inner,
+        .design-preview-paper.template-ivory_gold_arch .design-preview-inner,
+        .design-preview-paper.template-sapphire_wave_frame .design-preview-inner,
+        .design-preview-paper.template-emerald_gold_ribbon .design-preview-inner,
+        .design-preview-paper.template-pearl_gold_corners .design-preview-inner,
+        .design-preview-paper.template-slate_gold_diagonal .design-preview-inner {
+            margin: 12px;
+            min-height: calc(100% - 24px);
+            padding: 0.7rem 0.85rem;
+            background: rgba(255,255,255,0.76);
+            border: 1px solid rgba(214, 178, 63, 0.48);
+        }
+
+        .design-preview-paper.template-navy_gold_shield .design-preview-topline,
+        .design-preview-paper.template-black_gold_sweep .design-preview-topline,
+        .design-preview-paper.template-cobalt_corner_lines .design-preview-topline,
+        .design-preview-paper.template-ivory_gold_arch .design-preview-topline,
+        .design-preview-paper.template-sapphire_wave_frame .design-preview-topline,
+        .design-preview-paper.template-emerald_gold_ribbon .design-preview-topline,
+        .design-preview-paper.template-maroon_gold_gate .design-preview-topline,
+        .design-preview-paper.template-charcoal_orbit_frame .design-preview-topline,
+        .design-preview-paper.template-royal_blue_plaque .design-preview-topline,
+        .design-preview-paper.template-pearl_gold_corners .design-preview-topline,
+        .design-preview-paper.template-slate_gold_diagonal .design-preview-topline,
+        .design-preview-paper.template-indigo_bottom_flourish .design-preview-topline {
+            width: max-content;
+            max-width: 90%;
+            margin: 0 auto 0.2rem;
+            padding: 0.12rem 0.34rem;
+            border-top: 1px solid currentColor;
+            border-bottom: 1px solid currentColor;
+            font-size: 0.42rem;
+            letter-spacing: 0.16em;
+            text-align: center !important;
+        }
+
+        .design-preview-paper.template-navy_gold_shield .design-preview-school,
+        .design-preview-paper.template-black_gold_sweep .design-preview-school,
+        .design-preview-paper.template-cobalt_corner_lines .design-preview-school,
+        .design-preview-paper.template-ivory_gold_arch .design-preview-school,
+        .design-preview-paper.template-sapphire_wave_frame .design-preview-school,
+        .design-preview-paper.template-emerald_gold_ribbon .design-preview-school,
+        .design-preview-paper.template-maroon_gold_gate .design-preview-school,
+        .design-preview-paper.template-charcoal_orbit_frame .design-preview-school,
+        .design-preview-paper.template-royal_blue_plaque .design-preview-school,
+        .design-preview-paper.template-pearl_gold_corners .design-preview-school,
+        .design-preview-paper.template-slate_gold_diagonal .design-preview-school,
+        .design-preview-paper.template-indigo_bottom_flourish .design-preview-school {
+            justify-content: center;
+            gap: 0.36rem;
+        }
+
+        .design-preview-paper.template-navy_gold_shield .design-preview-badge,
+        .design-preview-paper.template-black_gold_sweep .design-preview-badge,
+        .design-preview-paper.template-cobalt_corner_lines .design-preview-badge,
+        .design-preview-paper.template-ivory_gold_arch .design-preview-badge,
+        .design-preview-paper.template-sapphire_wave_frame .design-preview-badge,
+        .design-preview-paper.template-emerald_gold_ribbon .design-preview-badge,
+        .design-preview-paper.template-maroon_gold_gate .design-preview-badge,
+        .design-preview-paper.template-charcoal_orbit_frame .design-preview-badge,
+        .design-preview-paper.template-royal_blue_plaque .design-preview-badge,
+        .design-preview-paper.template-pearl_gold_corners .design-preview-badge,
+        .design-preview-paper.template-slate_gold_diagonal .design-preview-badge,
+        .design-preview-paper.template-indigo_bottom_flourish .design-preview-badge {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--preview-accent, #d6b23f);
+            background:
+                radial-gradient(circle, #ffffff 0 38%, rgba(214, 178, 63, 0.18) 39% 100%);
+        }
+
+        .design-preview-paper.template-navy_gold_shield .design-preview-school-name,
+        .design-preview-paper.template-black_gold_sweep .design-preview-school-name,
+        .design-preview-paper.template-cobalt_corner_lines .design-preview-school-name,
+        .design-preview-paper.template-ivory_gold_arch .design-preview-school-name,
+        .design-preview-paper.template-sapphire_wave_frame .design-preview-school-name,
+        .design-preview-paper.template-emerald_gold_ribbon .design-preview-school-name,
+        .design-preview-paper.template-maroon_gold_gate .design-preview-school-name,
+        .design-preview-paper.template-charcoal_orbit_frame .design-preview-school-name,
+        .design-preview-paper.template-royal_blue_plaque .design-preview-school-name,
+        .design-preview-paper.template-pearl_gold_corners .design-preview-school-name,
+        .design-preview-paper.template-slate_gold_diagonal .design-preview-school-name,
+        .design-preview-paper.template-indigo_bottom_flourish .design-preview-school-name {
+            max-width: 120px;
+            font-size: 0.52rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .design-preview-paper.template-navy_gold_shield .design-preview-title,
+        .design-preview-paper.template-black_gold_sweep .design-preview-title,
+        .design-preview-paper.template-cobalt_corner_lines .design-preview-title,
+        .design-preview-paper.template-ivory_gold_arch .design-preview-title,
+        .design-preview-paper.template-sapphire_wave_frame .design-preview-title,
+        .design-preview-paper.template-emerald_gold_ribbon .design-preview-title,
+        .design-preview-paper.template-maroon_gold_gate .design-preview-title,
+        .design-preview-paper.template-charcoal_orbit_frame .design-preview-title,
+        .design-preview-paper.template-royal_blue_plaque .design-preview-title,
+        .design-preview-paper.template-pearl_gold_corners .design-preview-title,
+        .design-preview-paper.template-slate_gold_diagonal .design-preview-title,
+        .design-preview-paper.template-indigo_bottom_flourish .design-preview-title {
+            max-width: none;
+            color: #111827 !important;
+            font-size: 0.9rem;
+            letter-spacing: 0.13em;
+            text-align: center !important;
+        }
+
+        .design-preview-paper.template-navy_gold_shield .design-preview-subtitle,
+        .design-preview-paper.template-black_gold_sweep .design-preview-subtitle,
+        .design-preview-paper.template-cobalt_corner_lines .design-preview-subtitle,
+        .design-preview-paper.template-ivory_gold_arch .design-preview-subtitle,
+        .design-preview-paper.template-sapphire_wave_frame .design-preview-subtitle,
+        .design-preview-paper.template-emerald_gold_ribbon .design-preview-subtitle,
+        .design-preview-paper.template-maroon_gold_gate .design-preview-subtitle,
+        .design-preview-paper.template-charcoal_orbit_frame .design-preview-subtitle,
+        .design-preview-paper.template-royal_blue_plaque .design-preview-subtitle,
+        .design-preview-paper.template-pearl_gold_corners .design-preview-subtitle,
+        .design-preview-paper.template-slate_gold_diagonal .design-preview-subtitle,
+        .design-preview-paper.template-indigo_bottom_flourish .design-preview-subtitle {
+            color: #30343b;
+            font-size: 0.48rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-align: center !important;
+            text-transform: uppercase;
+        }
+
+        .design-preview-paper.template-navy_gold_shield .design-preview-body,
+        .design-preview-paper.template-black_gold_sweep .design-preview-body,
+        .design-preview-paper.template-cobalt_corner_lines .design-preview-body,
+        .design-preview-paper.template-ivory_gold_arch .design-preview-body,
+        .design-preview-paper.template-sapphire_wave_frame .design-preview-body,
+        .design-preview-paper.template-emerald_gold_ribbon .design-preview-body,
+        .design-preview-paper.template-maroon_gold_gate .design-preview-body,
+        .design-preview-paper.template-charcoal_orbit_frame .design-preview-body,
+        .design-preview-paper.template-royal_blue_plaque .design-preview-body,
+        .design-preview-paper.template-pearl_gold_corners .design-preview-body,
+        .design-preview-paper.template-slate_gold_diagonal .design-preview-body,
+        .design-preview-paper.template-indigo_bottom_flourish .design-preview-body {
+            position: relative;
+            max-width: 72%;
+            margin: 0.14rem auto;
+            padding-top: 0.38rem;
+            color: #334155;
+            border-top: 1px solid #2f3541;
+            font-size: 0.5rem;
+            font-weight: 700;
+            line-height: 1.25;
+            text-align: center !important;
+        }
+
+        .design-preview-paper.template-navy_gold_shield .design-preview-recipient,
+        .design-preview-paper.template-black_gold_sweep .design-preview-recipient,
+        .design-preview-paper.template-cobalt_corner_lines .design-preview-recipient,
+        .design-preview-paper.template-ivory_gold_arch .design-preview-recipient,
+        .design-preview-paper.template-sapphire_wave_frame .design-preview-recipient,
+        .design-preview-paper.template-emerald_gold_ribbon .design-preview-recipient,
+        .design-preview-paper.template-maroon_gold_gate .design-preview-recipient,
+        .design-preview-paper.template-charcoal_orbit_frame .design-preview-recipient,
+        .design-preview-paper.template-royal_blue_plaque .design-preview-recipient,
+        .design-preview-paper.template-pearl_gold_corners .design-preview-recipient,
+        .design-preview-paper.template-slate_gold_diagonal .design-preview-recipient,
+        .design-preview-paper.template-indigo_bottom_flourish .design-preview-recipient {
+            display: block;
+            width: 58%;
+            margin: 0.16rem auto 0.1rem;
+            padding-bottom: 0.16rem;
+            color: var(--preview-accent, #d6b23f);
+            border-bottom: 1px solid #2f3541;
+            font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+            font-size: 0.78rem;
+            font-style: italic;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .design-preview-paper.template-cobalt_corner_lines .design-preview-recipient,
+        .design-preview-paper.template-slate_gold_diagonal .design-preview-recipient {
+            color: #111827;
+            font-family: Arial, Helvetica, sans-serif;
+            font-style: normal;
+            letter-spacing: 0.04em;
+        }
+
+        .design-preview-paper.template-navy_gold_shield .design-preview-meta,
+        .design-preview-paper.template-black_gold_sweep .design-preview-meta,
+        .design-preview-paper.template-cobalt_corner_lines .design-preview-meta,
+        .design-preview-paper.template-ivory_gold_arch .design-preview-meta,
+        .design-preview-paper.template-sapphire_wave_frame .design-preview-meta,
+        .design-preview-paper.template-emerald_gold_ribbon .design-preview-meta,
+        .design-preview-paper.template-maroon_gold_gate .design-preview-meta,
+        .design-preview-paper.template-charcoal_orbit_frame .design-preview-meta,
+        .design-preview-paper.template-royal_blue_plaque .design-preview-meta,
+        .design-preview-paper.template-pearl_gold_corners .design-preview-meta,
+        .design-preview-paper.template-slate_gold_diagonal .design-preview-meta,
+        .design-preview-paper.template-indigo_bottom_flourish .design-preview-meta {
+            display: none;
+        }
+
+        .design-preview-paper.template-navy_gold_shield .design-preview-footer,
+        .design-preview-paper.template-black_gold_sweep .design-preview-footer,
+        .design-preview-paper.template-cobalt_corner_lines .design-preview-footer,
+        .design-preview-paper.template-ivory_gold_arch .design-preview-footer,
+        .design-preview-paper.template-sapphire_wave_frame .design-preview-footer,
+        .design-preview-paper.template-emerald_gold_ribbon .design-preview-footer,
+        .design-preview-paper.template-maroon_gold_gate .design-preview-footer,
+        .design-preview-paper.template-charcoal_orbit_frame .design-preview-footer,
+        .design-preview-paper.template-royal_blue_plaque .design-preview-footer,
+        .design-preview-paper.template-pearl_gold_corners .design-preview-footer,
+        .design-preview-paper.template-slate_gold_diagonal .design-preview-footer,
+        .design-preview-paper.template-indigo_bottom_flourish .design-preview-footer {
+            width: 78%;
+            margin: 0.12rem auto 0;
+            color: #334155;
+            font-size: 0.42rem;
+        }
+
+        .design-preview-paper.template-navy_gold_shield .design-preview-sign,
+        .design-preview-paper.template-black_gold_sweep .design-preview-sign,
+        .design-preview-paper.template-cobalt_corner_lines .design-preview-sign,
+        .design-preview-paper.template-ivory_gold_arch .design-preview-sign,
+        .design-preview-paper.template-sapphire_wave_frame .design-preview-sign,
+        .design-preview-paper.template-emerald_gold_ribbon .design-preview-sign,
+        .design-preview-paper.template-maroon_gold_gate .design-preview-sign,
+        .design-preview-paper.template-charcoal_orbit_frame .design-preview-sign,
+        .design-preview-paper.template-royal_blue_plaque .design-preview-sign,
+        .design-preview-paper.template-pearl_gold_corners .design-preview-sign,
+        .design-preview-paper.template-slate_gold_diagonal .design-preview-sign,
+        .design-preview-paper.template-indigo_bottom_flourish .design-preview-sign {
+            min-width: 54px;
+        }
+
+        .design-preview-paper.template-black_gold_sweep::before,
+        .design-preview-paper.template-charcoal_orbit_frame::before,
+        .design-preview-paper.template-sapphire_wave_frame::before,
+        .design-preview-paper.template-emerald_gold_ribbon::before {
+            opacity: 0.92;
+            background:
+                radial-gradient(ellipse 86px 54px at 100% 0, rgba(15, 23, 42, 0.94) 0 58%, transparent 60%),
+                radial-gradient(ellipse 86px 54px at 0 100%, rgba(15, 23, 42, 0.94) 0 58%, transparent 60%),
+                radial-gradient(ellipse 104px 66px at 100% 0, transparent 0 63%, var(--preview-accent, #d6a635) 64% 72%, transparent 73%),
+                radial-gradient(ellipse 104px 66px at 0 100%, transparent 0 63%, var(--preview-accent, #d6a635) 64% 72%, transparent 73%);
+        }
+
+        .design-preview-paper.template-sapphire_wave_frame::before {
+            background:
+                radial-gradient(ellipse 90px 58px at 0 100%, #071a3b 0 58%, transparent 60%),
+                radial-gradient(ellipse 90px 58px at 100% 0, #071a3b 0 58%, transparent 60%),
+                radial-gradient(ellipse 108px 70px at 0 100%, transparent 0 63%, var(--preview-accent, #f0c84b) 64% 72%, transparent 73%),
+                radial-gradient(ellipse 108px 70px at 100% 0, transparent 0 63%, var(--preview-accent, #f0c84b) 64% 72%, transparent 73%);
+        }
+
+        .design-preview-paper.template-emerald_gold_ribbon::before {
+            background:
+                radial-gradient(ellipse 90px 58px at 0 100%, #0b3b32 0 58%, transparent 60%),
+                radial-gradient(ellipse 90px 58px at 100% 0, #0b3b32 0 58%, transparent 60%),
+                radial-gradient(ellipse 108px 70px at 0 100%, transparent 0 63%, var(--preview-accent, #d7ad3f) 64% 72%, transparent 73%),
+                radial-gradient(ellipse 108px 70px at 100% 0, transparent 0 63%, var(--preview-accent, #d7ad3f) 64% 72%, transparent 73%);
+        }
+
+        .design-preview-paper.template-black_gold_sweep .design-preview-inner,
+        .design-preview-paper.template-charcoal_orbit_frame .design-preview-inner,
+        .design-preview-paper.template-sapphire_wave_frame .design-preview-inner,
+        .design-preview-paper.template-emerald_gold_ribbon .design-preview-inner {
+            position: relative;
+            z-index: 2;
+            margin: 14px 18px;
+            min-height: calc(100% - 28px);
+            padding: 0.72rem 0.9rem;
+            background: rgba(255,255,255,0.94);
+            border: 1px solid rgba(214, 178, 63, 0.58);
+            box-shadow:
+                0 8px 18px rgba(15, 23, 42, 0.08),
+                inset 0 0 0 3px rgba(255,255,255,0.75);
+        }
+
+        .design-preview-paper.template-cobalt_corner_lines::before,
+        .design-preview-paper.template-slate_gold_diagonal::before {
+            opacity: 0.95;
+            background:
+                linear-gradient(90deg, #0b2f75 0 5%, transparent 5%),
+                linear-gradient(180deg, #0b2f75 0 8%, transparent 8%),
+                linear-gradient(270deg, #0b2f75 0 5%, transparent 5%),
+                linear-gradient(0deg, #0b2f75 0 8%, transparent 8%);
+            background-size: 38% 42%, 38% 24%, 34% 38%, 34% 24%;
+            background-position: left top, left top, right bottom, right bottom;
+            background-repeat: no-repeat;
         }
 
         .design-form-preview {
@@ -481,21 +1089,21 @@
         }
 
         .design-card-body {
-            padding: 0.75rem 0.85rem 0.85rem;
+            padding: 0.82rem 0.9rem 0.9rem;
         }
 
         .design-card-head {
             display: flex;
             justify-content: space-between;
             align-items: start;
-            gap: 0.8rem;
-            margin-bottom: 0.65rem;
+            gap: 0.7rem;
+            margin-bottom: 0.55rem;
         }
 
         .design-card-head h4 {
             margin: 0;
             color: var(--app-text);
-            font-size: 0.92rem;
+            font-size: 0.95rem;
         }
 
         .design-card-head p {
@@ -565,11 +1173,11 @@
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            padding: 0.32rem 0.58rem;
+            padding: 0.28rem 0.52rem;
             border-radius: 999px;
             background: rgba(37, 99, 235, 0.1);
             color: #1d4ed8;
-            font-size: 0.74rem;
+            font-size: 0.7rem;
             font-weight: 700;
             white-space: nowrap;
         }
@@ -578,9 +1186,9 @@
             display: inline-flex;
             align-items: center;
             gap: 0.34rem;
-            padding: 0.3rem 0.56rem;
+            padding: 0.26rem 0.5rem;
             border-radius: 999px;
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             font-weight: 800;
             white-space: nowrap;
         }
@@ -595,6 +1203,45 @@
             background: rgba(22, 163, 74, 0.12);
             border: 1px solid rgba(22, 163, 74, 0.2);
             color: #15803d;
+        }
+
+        .design-readiness-card {
+            display: flex;
+            gap: 0.55rem;
+            align-items: flex-start;
+            padding: 0.58rem 0.62rem;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            background: rgba(248, 250, 252, 0.74);
+        }
+
+        .design-readiness-card.is-ready {
+            border-color: rgba(22, 163, 74, 0.22);
+            background: rgba(240, 253, 244, 0.76);
+        }
+
+        .design-readiness-card.needs-work {
+            border-color: rgba(234, 88, 12, 0.2);
+            background: rgba(255, 247, 237, 0.78);
+        }
+
+        .design-readiness-card i {
+            margin-top: 0.1rem;
+        }
+
+        .design-readiness-title {
+            color: var(--app-text);
+            font-size: 0.78rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .design-readiness-copy {
+            color: var(--app-muted);
+            font-size: 0.73rem;
+            line-height: 1.35;
+            margin-top: 0.16rem;
         }
 
         .design-meta-grid {
@@ -640,6 +1287,66 @@
             align-items: center;
             gap: 0.8rem;
             flex-wrap: wrap;
+        }
+
+        .design-preview-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            display: none;
+            background: rgba(15, 23, 42, 0.68);
+            backdrop-filter: blur(6px);
+        }
+
+        .design-preview-modal.is-open {
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .design-preview-modal-shell {
+            width: min(1180px, 100%);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 20px;
+            background: #f8fafc;
+            box-shadow: 0 28px 70px rgba(2, 6, 23, 0.36);
+        }
+
+        .design-preview-modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+            background: #ffffff;
+        }
+
+        .design-preview-modal-title {
+            color: #1f2937;
+            font-size: 0.92rem;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+
+        .design-preview-modal-close {
+            border: 0;
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.08);
+            color: #334155;
+            cursor: pointer;
+        }
+
+        .design-preview-modal-frame {
+            width: 100%;
+            height: min(78vh, 820px);
+            border: 0;
+            background: #f8fafc;
         }
 
         .design-card-accent {
@@ -717,6 +1424,14 @@
             color: #e2e8f0;
         }
 
+        html[data-theme="dark"] .design-library-view-row {
+            background: rgba(15, 23, 42, 0.62);
+        }
+
+        html[data-theme="dark"] .design-library-view-btn {
+            color: #e2e8f0;
+        }
+
         html[data-theme="dark"] .design-library-search-shell input,
         html[data-theme="dark"] .design-library-search-clear {
             background: rgba(15, 23, 42, 0.62) !important;
@@ -724,8 +1439,23 @@
         }
 
         html[data-theme="dark"] .design-meta-item,
-        html[data-theme="dark"] .design-preview-meta {
+        html[data-theme="dark"] .design-preview-meta,
+        html[data-theme="dark"] .design-readiness-card {
             background: rgba(15, 23, 42, 0.42);
+        }
+
+        html[data-theme="dark"] .design-preview-modal-shell,
+        html[data-theme="dark"] .design-preview-modal-frame {
+            background: #0f172a;
+        }
+
+        html[data-theme="dark"] .design-preview-modal-head {
+            background: #111827;
+            border-color: rgba(148, 163, 184, 0.18);
+        }
+
+        html[data-theme="dark"] .design-preview-modal-title {
+            color: #e2e8f0;
         }
 
         @media (max-width: 1200px) {
@@ -775,7 +1505,7 @@
                     Design Library
                 </div>
                 <h2>Certificate Design Library</h2>
-                <p>Browse certificate designs by layout, paper size, orientation, and supported certificate use.</p>
+                <p>A focused gallery of reusable certificate templates, ribbon awards, official forms, and school drafts.</p>
                 <div class="design-library-toolbar">
                     <div class="field design-library-search">
                         <label class="design-library-search-label">Search Designs</label>
@@ -790,23 +1520,24 @@
                     <div>
                         <div class="design-library-filter-row" style="margin-bottom:0.65rem;">
                             <button type="button" class="design-library-filter-btn active" data-library-filter="all">All</button>
-                            <button type="button" class="design-library-filter-btn" data-library-filter="system">System</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="student">Student</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="teacher">Teacher</button>
                             <button type="button" class="design-library-filter-btn" data-library-filter="custom">Custom</button>
                             <button type="button" class="design-library-filter-btn" data-library-filter="draft">Drafts</button>
-                            <button type="button" class="design-library-filter-btn" data-library-filter="published">Published</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="formal">Formal</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="ribbon">Ribbon</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="forms">Forms</button>
+                            <button type="button" class="design-library-filter-btn" data-library-filter="official">Official</button>
                             <button type="button" class="design-library-filter-btn" data-library-filter="sports">Sports</button>
-                            <button type="button" class="design-library-filter-btn" data-library-filter="festival">Festival</button>
-                            <button type="button" class="design-library-filter-btn" data-library-filter="staff">Staff</button>
-                            <button type="button" class="design-library-filter-btn" data-library-filter="merit">Merit</button>
-                            <button type="button" class="design-library-filter-btn" data-library-filter="records">Records</button>
-                            <button type="button" class="design-library-filter-btn" data-library-filter="portrait">Portrait</button>
-                            <button type="button" class="design-library-filter-btn" data-library-filter="landscape">Landscape</button>
                             <button type="button" class="design-library-filter-btn" id="designLibraryClearFilters">Clear</button>
                         </div>
                         <div class="design-library-chip-row">
-                            <div class="design-library-chip"><i class="images outline icon"></i> Unique layouts</div>
+                            <div class="design-library-chip"><i class="images outline icon"></i> Curated gallery</div>
                             <div class="design-library-chip"><i class="certificate icon"></i> Supported certificate types</div>
-                            <div class="design-library-chip"><i class="palette icon"></i> School and shared designs</div>
+                            <div class="design-library-chip"><i class="palette icon"></i> School drafts included</div>
+                            {% if hidden_design_count %}
+                                <div class="design-library-chip"><i class="filter icon"></i> {{ hidden_design_count }} repeated variant{{ hidden_design_count|pluralize }} hidden</div>
+                            {% endif %}
                             <div class="design-library-chip"><i class="search icon"></i><span id="designLibraryCount">{{ unique_design_count }} designs</span></div>
                         </div>
                     </div>
@@ -814,8 +1545,9 @@
             </div>
         </div>
 
+        <div class="sixteen wide column design-library-view-panel" data-design-view-panel="unique">
         {% for section in design_sections %}
-            <div class="sixteen wide column">
+            <div>
                 <section class="design-library-group" data-design-group="{{ section.title|lower }}">
                     <div class="design-library-group-head">
                         <div>
@@ -833,9 +1565,10 @@
                                      data-filter-type="{% if design.isCustom %}custom{% else %}system{% endif %}"
                                      data-filter-status="{{ design.status|default:'published'|lower }}"
                                      data-filter-orientation="{{ design.orientation|lower }}"
-                                     data-filter-purpose="{{ entry.purpose_tags|join:' ' }}">
+                                     data-filter-recipient="{{ certificate_type.recipientCategory|lower }}"
+                                     data-filter-purpose="{{ entry.style_key }} {{ entry.purpose_tags|join:' ' }}">
                                 <div class="design-preview-stage">
-                                    <div class="design-preview-paper {% if design.orientation == 'landscape' %}landscape{% endif %} {% if design.borderStyle == 'ribbon' %}design-preview-ribbon{% endif %} {% if design.templateKey == 'hand_fill_form' or design.templateKey == 'prize_day_form' %}form-sheet{% endif %}"
+                                    <div class="design-preview-paper template-{{ design.templateKey }} {% if design.orientation == 'landscape' %}landscape{% endif %} {% if design.borderStyle == 'ribbon' %}design-preview-ribbon{% endif %} {% if design.templateKey == 'hand_fill_form' or design.templateKey == 'prize_day_form' %}form-sheet{% endif %}"
                                          style="
                                              background: {{ design.backgroundColor|default:'#ffffff' }};
                                              color: {{ design.textColor|default:'#1f2937' }};
@@ -844,8 +1577,18 @@
                                                     0
                                                 {% elif design.borderStyle == 'double' %}
                                                     4px double {{ design.accentColor|default:'#1d4ed8' }}
-                                                {% elif design.borderStyle == 'ornate' %}
+                                                {% elif design.borderStyle == 'ornate' or design.borderStyle == 'thick' %}
                                                     6px solid {{ design.accentColor|default:'#1d4ed8' }}
+                                                {% elif design.borderStyle == 'hairline' %}
+                                                    1px solid {{ design.accentColor|default:'#1d4ed8' }}
+                                                {% elif design.borderStyle == 'triple' or design.borderStyle == 'classic_frame' or design.borderStyle == 'corner_flourish' or design.borderStyle == 'laurel' %}
+                                                    5px double {{ design.accentColor|default:'#1d4ed8' }}
+                                                {% elif design.borderStyle == 'dotted' %}
+                                                    2px dotted {{ design.accentColor|default:'#1d4ed8' }}
+                                                {% elif design.borderStyle == 'dashed' %}
+                                                    2px dashed {{ design.accentColor|default:'#1d4ed8' }}
+                                                {% elif design.borderStyle == 'plaque' %}
+                                                    5px solid {{ design.accentColor|default:'#1d4ed8' }}
                                                 {% else %}
                                                     2px solid {{ design.accentColor|default:'#1d4ed8' }}
                                                 {% endif %};
@@ -912,8 +1655,27 @@
                                                 <div class="design-preview-subtitle" style="text-align: {{ design.titleAlignment|default:'center' }};">
                                                     {{ certificate_type.defaultSubtitle|default:'Presented with care' }}
                                                 </div>
+                                                <div class="design-preview-recipient">
+                                                    {% if certificate_type.recipientCategory == 'teacher' or certificate_type.recipientCategory == 'staff' %}
+                                                        Teacher Name
+                                                    {% elif certificate_type.recipientCategory == 'parent' %}
+                                                        Parent Name
+                                                    {% elif certificate_type.recipientCategory == 'school' %}
+                                                        School Name
+                                                    {% else %}
+                                                        Student Name
+                                                    {% endif %}
+                                                </div>
                                                 <div class="design-preview-body" style="text-align: {{ design.bodyAlignment|default:'center' }};">
-                                                    {{ certificate_type.defaultBodyTemplate|default:'This certificate is issued as per school record.'|truncatechars:110 }}
+                                                    {% if design.templateKey == 'navy_gold_shield' or design.templateKey == 'black_gold_sweep' or design.templateKey == 'cobalt_corner_lines' or design.templateKey == 'ivory_gold_arch' or design.templateKey == 'sapphire_wave_frame' or design.templateKey == 'emerald_gold_ribbon' or design.templateKey == 'maroon_gold_gate' or design.templateKey == 'charcoal_orbit_frame' or design.templateKey == 'royal_blue_plaque' or design.templateKey == 'pearl_gold_corners' or design.templateKey == 'slate_gold_diagonal' or design.templateKey == 'indigo_bottom_flourish' %}
+                                                        {% if certificate_type.recipientCategory == 'teacher' or certificate_type.recipientCategory == 'staff' %}
+                                                            Presented in recognition of faculty service, professional growth, and contribution to school learning.
+                                                        {% else %}
+                                                            Presented with appreciation for achievement, participation, and official school recognition.
+                                                        {% endif %}
+                                                    {% else %}
+                                                        {{ certificate_type.defaultBodyTemplate|default:'This certificate is issued as per school record.'|truncatechars:110 }}
+                                                    {% endif %}
                                                 </div>
                                                 <div class="design-preview-meta">
                                                     <div>No. CERT-001</div>
@@ -948,13 +1710,31 @@
                                             <div class="design-type-pill">
                                                 {{ entry.certificate_type_count }} certificate type{{ entry.certificate_type_count|pluralize }}
                                             </div>
+                                            {% if design.isDefaultForType %}
+                                                <div class="design-status-pill is-published">
+                                                    <i class="star icon"></i>
+                                                    Default
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     </div>
 
                                     <div class="design-purpose-row">
+                                        <span class="design-purpose-pill" data-purpose="{{ entry.style_key }}">{{ entry.style_label }}</span>
                                         {% for purpose_tag in entry.purpose_tags %}
                                             <span class="design-purpose-pill" data-purpose="{{ purpose_tag }}">{{ purpose_tag }}</span>
                                         {% endfor %}
+                                    </div>
+
+                                    <div class="design-readiness-inline {% if entry.readiness.is_ready %}is-ready{% else %}needs-work{% endif %}">
+                                        <i class="{% if entry.readiness.is_ready %}check circle{% else %}exclamation triangle{% endif %} icon"></i>
+                                        <span>
+                                            {% if entry.readiness.is_ready %}
+                                                {{ entry.readiness.label }}
+                                            {% else %}
+                                                {{ entry.readiness.error_count }} publish item{{ entry.readiness.error_count|pluralize }}
+                                            {% endif %}
+                                        </span>
                                     </div>
 
                                     <div class="design-meta-grid">
@@ -967,12 +1747,12 @@
                                             <div class="value">{{ design.get_borderStyle_display }}</div>
                                         </div>
                                         <div class="design-meta-item">
-                                            <div class="label">Title Align</div>
-                                            <div class="value">{{ design.get_titleAlignment_display }}</div>
+                                            <div class="label">Style</div>
+                                            <div class="value">{{ entry.style_label }}</div>
                                         </div>
                                         <div class="design-meta-item">
-                                            <div class="label">Body Align</div>
-                                            <div class="value">{{ design.get_bodyAlignment_display }}</div>
+                                            <div class="label">Supports</div>
+                                            <div class="value">{{ entry.support_preview }}</div>
                                         </div>
                                     </div>
 
@@ -981,6 +1761,16 @@
                                             <span class="dot" style="background: {{ design.accentColor|default:'#1d4ed8' }};"></span>
                                             {{ design.accentColor|default:'#1d4ed8' }}
                                         </div>
+                                        {% if design.isActive and not design.isDefaultForType %}
+                                            <form method="post" action="{% url 'certificateApp:set_default_design' design.id %}" style="display:inline;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                                <button type="submit" class="ui mini button">
+                                                    <i class="star outline icon"></i>
+                                                    Set Default
+                                                </button>
+                                            </form>
+                                        {% endif %}
                                         <form method="post" action="{% url 'certificateApp:duplicate_design' design.id %}" style="display:inline;">
                                             {% csrf_token %}
                                             <button type="submit" name="save_action" value="draft" class="ui mini button">
@@ -994,9 +1784,13 @@
                                                 {% if design.status == 'draft' %}Continue Draft{% else %}Edit{% endif %}
                                             </a>
                                         {% endif %}
-                                        <a class="ui mini blue button" href="{% url 'certificateApp:design_detail' design.id %}">
+                                        <button type="button" class="ui mini blue button" data-design-preview-url="{% url 'certificateApp:design_quick_preview' design.id %}" data-design-preview-title="{{ design.name }} · {{ certificate_type.name }}">
                                             <i class="eye icon"></i>
-                                            View
+                                            Preview
+                                        </button>
+                                        <a class="ui mini button" href="{% url 'certificateApp:design_detail' design.id %}">
+                                            <i class="external alternate icon"></i>
+                                            Details
                                         </a>
                                     </div>
                                 </div>
@@ -1010,10 +1804,24 @@
                 </section>
             </div>
         {% empty %}
-            <div class="sixteen wide column">
+            <div>
                 <div class="ui segment">No certificate designs available.</div>
             </div>
         {% endfor %}
+        </div>
+
+    </div>
+
+    <div class="design-preview-modal" id="designPreviewModal" aria-hidden="true">
+        <div class="design-preview-modal-shell">
+            <div class="design-preview-modal-head">
+                <div class="design-preview-modal-title" id="designPreviewModalTitle">Certificate Preview</div>
+                <button type="button" class="design-preview-modal-close" id="designPreviewModalClose" aria-label="Close preview">
+                    <i class="times icon"></i>
+                </button>
+            </div>
+            <iframe class="design-preview-modal-frame" id="designPreviewModalFrame" title="Certificate design preview"></iframe>
+        </div>
     </div>
 {% endblock %}
 
@@ -1026,22 +1834,39 @@
                 return;
             }
 
-            const storageKey = 'certificate_design_library_filters_v1';
-            const groups = Array.from(document.querySelectorAll('[data-design-group]'));
-            const cards = Array.from(document.querySelectorAll('.design-library-card[data-search-text]'));
+            const storageKey = 'certificate_design_library_filters_v2';
+            const panels = Array.from(document.querySelectorAll('[data-design-view-panel]'));
+            const viewButtons = Array.from(document.querySelectorAll('[data-library-view]'));
             const filterButtons = Array.from(document.querySelectorAll('[data-library-filter]'));
             const clearButton = document.getElementById('designLibraryClearFilters');
             const clearSearchButton = document.getElementById('designLibraryClearSearch');
+            let activeView = 'unique';
             let activeFilter = 'all';
 
             function saveState() {
                 try {
                     window.localStorage.setItem(storageKey, JSON.stringify({
                         query: searchInput.value || '',
+                        view: activeView || 'unique',
                         filter: activeFilter || 'all'
                     }));
                 } catch (error) {
                 }
+            }
+
+            function getActivePanel() {
+                return panels.find(function (panel) {
+                    return panel.getAttribute('data-design-view-panel') === activeView;
+                }) || panels[0];
+            }
+
+            function applyActiveViewButton() {
+                viewButtons.forEach(function (node) {
+                    node.classList.toggle('active', node.getAttribute('data-library-view') === activeView);
+                });
+                panels.forEach(function (panel) {
+                    panel.classList.toggle('is-hidden', panel.getAttribute('data-design-view-panel') !== activeView);
+                });
             }
 
             function applyActiveFilterButton() {
@@ -1060,6 +1885,11 @@
                     if (parsed && typeof parsed.query === 'string') {
                         searchInput.value = parsed.query;
                     }
+                    if (parsed && typeof parsed.view === 'string' && viewButtons.some(function (node) {
+                        return node.getAttribute('data-library-view') === parsed.view;
+                    })) {
+                        activeView = parsed.view;
+                    }
                     if (parsed && typeof parsed.filter === 'string' && filterButtons.some(function (node) {
                         return node.getAttribute('data-library-filter') === parsed.filter;
                     })) {
@@ -1071,7 +1901,12 @@
 
             function updateDesignLibrarySearch() {
                 const query = (searchInput.value || '').trim().toLowerCase();
+                const activePanel = getActivePanel();
+                const groups = Array.from(activePanel.querySelectorAll('[data-design-group]'));
+                const cards = Array.from(activePanel.querySelectorAll('.design-library-card[data-search-text]'));
                 let visibleCount = 0;
+
+                applyActiveViewButton();
 
                 groups.forEach(function (group) {
                     const groupCards = Array.from(group.querySelectorAll('.design-library-card[data-search-text]'));
@@ -1082,12 +1917,14 @@
                         const typeFilter = card.getAttribute('data-filter-type') || '';
                         const statusFilter = card.getAttribute('data-filter-status') || '';
                         const orientationFilter = card.getAttribute('data-filter-orientation') || '';
+                        const recipientFilter = card.getAttribute('data-filter-recipient') || '';
                         const purposeFilter = card.getAttribute('data-filter-purpose') || '';
                         const matchesQuery = !query || haystack.indexOf(query) !== -1;
                         const matchesFilter = activeFilter === 'all'
                             || typeFilter === activeFilter
                             || statusFilter === activeFilter
                             || orientationFilter === activeFilter
+                            || recipientFilter === activeFilter
                             || purposeFilter.split(/\s+/).includes(activeFilter);
                         const matches = matchesQuery && matchesFilter;
                         card.classList.toggle('is-hidden', !matches);
@@ -1113,6 +1950,13 @@
             }
 
             searchInput.addEventListener('input', updateDesignLibrarySearch);
+            viewButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    activeView = button.getAttribute('data-library-view') || 'unique';
+                    applyActiveViewButton();
+                    updateDesignLibrarySearch();
+                });
+            });
             filterButtons.forEach(function (button) {
                 button.addEventListener('click', function () {
                     activeFilter = button.getAttribute('data-library-filter') || 'all';
@@ -1135,7 +1979,95 @@
                     searchInput.focus();
                 });
             }
+
+            const previewModal = document.getElementById('designPreviewModal');
+            const previewFrame = document.getElementById('designPreviewModalFrame');
+            const previewTitle = document.getElementById('designPreviewModalTitle');
+            const previewClose = document.getElementById('designPreviewModalClose');
+
+            function closePreviewModal() {
+                if (!previewModal || !previewFrame) {
+                    return;
+                }
+                previewModal.classList.remove('is-open');
+                previewModal.setAttribute('aria-hidden', 'true');
+                previewFrame.setAttribute('src', 'about:blank');
+                previewFrame.removeAttribute('srcdoc');
+                document.body.style.overflow = '';
+            }
+
+            function previewFrameHtml(message) {
+                return '<!doctype html><html><head><meta charset="utf-8"><style>' +
+                    'html,body{margin:0;height:100%;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#64748b;}' +
+                    'body{display:flex;align-items:center;justify-content:center;text-align:center;}' +
+                    '.state{max-width:360px;padding:24px;line-height:1.5;}' +
+                    '.state strong{display:block;color:#1f2937;margin-bottom:6px;}' +
+                    '</style></head><body><div class="state">' + message + '</div></body></html>';
+            }
+
+            function sameOriginPreviewUrl(url) {
+                try {
+                    const parsedUrl = new URL(url, window.location.href);
+                    if (parsedUrl.origin !== window.location.origin) {
+                        return parsedUrl.pathname + parsedUrl.search + parsedUrl.hash;
+                    }
+                    return parsedUrl.pathname + parsedUrl.search + parsedUrl.hash;
+                } catch (error) {
+                    return url;
+                }
+            }
+
+            function openPreviewModal(url, title) {
+                if (!previewModal || !previewFrame) {
+                    window.location.href = url;
+                    return;
+                }
+                if (previewTitle) {
+                    previewTitle.textContent = title || 'Certificate Preview';
+                }
+                const previewUrl = sameOriginPreviewUrl(url);
+                previewFrame.removeAttribute('src');
+                previewFrame.setAttribute('srcdoc', previewFrameHtml('<strong>Loading preview...</strong>Please wait while the certificate design opens.'));
+                previewModal.classList.add('is-open');
+                previewModal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                fetch(previewUrl, {credentials: 'same-origin'})
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error('Preview returned ' + response.status);
+                        }
+                        return response.text();
+                    })
+                    .then(function (html) {
+                        previewFrame.setAttribute('srcdoc', html);
+                    })
+                    .catch(function () {
+                        previewFrame.setAttribute('srcdoc', previewFrameHtml('<strong>Preview could not load.</strong>Refresh the designs page and try again.'));
+                    });
+            }
+
+            document.querySelectorAll('[data-design-preview-url]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    openPreviewModal(button.getAttribute('data-design-preview-url'), button.getAttribute('data-design-preview-title'));
+                });
+            });
+            if (previewClose) {
+                previewClose.addEventListener('click', closePreviewModal);
+            }
+            if (previewModal) {
+                previewModal.addEventListener('click', function (event) {
+                    if (event.target === previewModal) {
+                        closePreviewModal();
+                    }
+                });
+            }
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && previewModal && previewModal.classList.contains('is-open')) {
+                    closePreviewModal();
+                }
+            });
             restoreState();
+            applyActiveViewButton();
             applyActiveFilterButton();
             updateDesignLibrarySearch();
         })();

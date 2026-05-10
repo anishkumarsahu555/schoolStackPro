@@ -618,10 +618,31 @@
         .generator-design-preview-meta {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             gap: 0.4rem;
             font-size: 0.46rem;
             font-weight: 700;
             color: var(--generator-preview-muted-strong);
+        }
+
+        .generator-design-preview-meta.qr-position-left .generator-design-preview-qr {
+            order: -1;
+        }
+
+        .generator-design-preview-meta.qr-position-right .generator-design-preview-qr {
+            order: 3;
+        }
+
+        .generator-design-preview-qr {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1rem;
+            height: 1rem;
+            border: 1px solid currentColor;
+            border-radius: 3px;
+            font-size: 0.36rem;
+            letter-spacing: 0.03em;
         }
 
         .generator-design-preview-footer {
@@ -630,6 +651,20 @@
             align-items: end;
             gap: 0.45rem;
             font-size: 0.46rem;
+        }
+
+        .generator-design-preview-footer.signature-position-left {
+            flex-direction: row-reverse;
+        }
+
+        .generator-design-preview-footer.signature-position-center {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .generator-design-preview-footer.signature-position-center .generator-design-preview-note {
+            text-align: center;
         }
 
         .generator-design-preview-sign {
@@ -656,6 +691,19 @@
             margin: 0;
             font-size: 0.96rem;
             color: var(--app-text);
+        }
+
+        .generator-design-default-label {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 0.35rem;
+            padding: 0.16rem 0.42rem;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.14);
+            color: #b45309;
+            font-size: 0.62rem;
+            font-weight: 900;
+            vertical-align: middle;
         }
 
         .generator-design-card p {
@@ -2068,7 +2116,7 @@
                                 <div id="livePreviewFrame" class="generator-live-preview-frame">
                                     {% if initial_exact_preview_context %}
                                         <div class="generator-live-preview-shell">
-                                            {% include 'certificateApp/partials/certificate_document.html' with issue=initial_exact_preview_context.issue certificate_type=initial_exact_preview_context.certificate_type design=initial_exact_preview_context.design render_mode=initial_exact_preview_context.render_mode design_font_stack=initial_exact_preview_context.design_font_stack title=initial_exact_preview_context.title subtitle=initial_exact_preview_context.subtitle recipient_name=initial_exact_preview_context.recipient_name recipient_subtitle=initial_exact_preview_context.recipient_subtitle rendered_body=initial_exact_preview_context.rendered_body rendered_footer=initial_exact_preview_context.rendered_footer page_size_css=initial_exact_preview_context.page_size_css margin_top=initial_exact_preview_context.margin_top margin_right=initial_exact_preview_context.margin_right margin_bottom=initial_exact_preview_context.margin_bottom margin_left=initial_exact_preview_context.margin_left page_width_mm=initial_exact_preview_context.page_width_mm page_height_mm=initial_exact_preview_context.page_height_mm content_width_mm=initial_exact_preview_context.content_width_mm content_height_mm=initial_exact_preview_context.content_height_mm scope_data=initial_exact_preview_context.scope_data resolved_overlay_items=initial_exact_preview_context.resolved_overlay_items is_image_overlay=initial_exact_preview_context.is_image_overlay %}
+                                            {% include 'certificateApp/partials/certificate_document.html' with issue=initial_exact_preview_context.issue certificate_type=initial_exact_preview_context.certificate_type design=initial_exact_preview_context.design render_mode=initial_exact_preview_context.render_mode design_font_stack=initial_exact_preview_context.design_font_stack title=initial_exact_preview_context.title subtitle=initial_exact_preview_context.subtitle recipient_name=initial_exact_preview_context.recipient_name recipient_subtitle=initial_exact_preview_context.recipient_subtitle rendered_body=initial_exact_preview_context.rendered_body rendered_footer=initial_exact_preview_context.rendered_footer page_size_css=initial_exact_preview_context.page_size_css margin_top=initial_exact_preview_context.margin_top margin_right=initial_exact_preview_context.margin_right margin_bottom=initial_exact_preview_context.margin_bottom margin_left=initial_exact_preview_context.margin_left page_width_mm=initial_exact_preview_context.page_width_mm page_height_mm=initial_exact_preview_context.page_height_mm content_width_mm=initial_exact_preview_context.content_width_mm content_height_mm=initial_exact_preview_context.content_height_mm scope_data=initial_exact_preview_context.scope_data resolved_overlay_items=initial_exact_preview_context.resolved_overlay_items is_image_overlay=initial_exact_preview_context.is_image_overlay qr_position=initial_exact_preview_context.qr_position signature_position=initial_exact_preview_context.signature_position seal_position=initial_exact_preview_context.seal_position %}
                                         </div>
                                     {% endif %}
                                 </div>
@@ -2494,6 +2542,13 @@
                 const bodySnippet = escapeHtml(previewBody.length > 88 ? previewBody.slice(0, 88) + '...' : previewBody);
                 const previewTopline = escapeHtml(design.customHeaderText || prettyLabel(design.templateKey));
                 const isFormDesign = isFormTemplate(design.templateKey);
+                const layoutConfig = design.layoutConfig || {};
+                const qrPosition = layoutConfig.qr_position || design.qrPosition || 'center';
+                const signaturePosition = layoutConfig.signature_position || design.signaturePosition || 'right';
+                const sealPosition = layoutConfig.seal_position || design.sealPosition || 'left';
+                const qrPreview = qrPosition === 'hidden' ? '' : '<span class="generator-design-preview-qr">QR</span>';
+                const metaPreview = '<div class="generator-design-preview-meta qr-position-' + qrPosition + '"><span>No. CERT-001</span>' + qrPreview + '<span>Issued today</span></div>';
+                const sealPreview = design.showSeal ? '<div class="generator-preview-seal" style="margin-top:0.45rem;' + (sealPosition === 'right' ? ' margin-left:auto;' : '') + (sealPosition === 'center' ? ' margin-left:auto; margin-right:auto;' : '') + '">Verified</div>' : '';
                 const schoolBadgeMarkup = design.showLogo
                     ? '<div class="generator-design-preview-badge" style="color:' + (design.accentColor || '#1d4ed8') + ';">' + schoolLogoMarkup + '</div>'
                     : '';
@@ -2508,7 +2563,7 @@
                         '<div class="generator-design-preview-body" style="text-align:center;">This is to certify that ........ has ........ for ........</div>' +
                         '<div class="generator-design-preview-body" style="text-align:center;">competition held in ........ year ........</div>' +
                     '</div>' +
-                    '<div class="generator-design-preview-footer">' +
+                    '<div class="generator-design-preview-footer signature-position-' + signaturePosition + '">' +
                         '<div>Date: ............</div>' +
                         '<div class="generator-design-preview-sign">' + (design.showSignatureLine ? '<div class="generator-design-preview-sign-line"></div>' : '') + '<div>Sign</div></div>' +
                     '</div>'
@@ -2521,10 +2576,10 @@
                         '<div class="generator-design-preview-title" style="color:' + (design.accentColor || '#1d4ed8') + '; text-align:' + (design.titleAlignment || 'center') + ';">' + escapeHtml(generatorMeta.defaultTitle || 'Certificate') + '</div>' +
                         '<div class="generator-design-preview-subtitle" style="text-align:' + (design.titleAlignment || 'center') + ';">' + escapeHtml(generatorMeta.defaultSubtitle || 'Presented with care') + '</div>' +
                         '<div class="generator-design-preview-body" style="text-align:' + (design.bodyAlignment || 'center') + ';">' + bodySnippet + '</div>' +
-                        '<div class="generator-design-preview-meta"><span>No. CERT-001</span><span>Issued today</span></div>' +
+                        metaPreview +
                     '</div>' +
-                    '<div class="generator-design-preview-footer">' +
-                        '<div>' + escapeHtml((design.isCustom ? 'Custom school design' : 'System certificate design').slice(0, 28)) + (design.showSeal ? '<div class="generator-preview-seal" style="margin-top:0.45rem;">Verified</div>' : '') + '</div>' +
+                    '<div class="generator-design-preview-footer signature-position-' + signaturePosition + '">' +
+                        '<div class="generator-design-preview-note">' + escapeHtml((design.isCustom ? 'Custom school design' : 'System certificate design').slice(0, 28)) + sealPreview + '</div>' +
                         '<div class="generator-design-preview-sign">' + (design.showSignatureLine ? '<div class="generator-design-preview-sign-line"></div>' : '') + '<div>Sign</div></div>' +
                     '</div>';
                 return (
@@ -2543,7 +2598,7 @@
                         '<div class="generator-design-top">' +
                             '<div style="display:flex; align-items:center; gap:0.65rem;">' +
                                 '<span class="generator-design-dot" style="background:' + (design.accentColor || '#1d4ed8') + ';"></span>' +
-                                '<div><h5>' + design.name + '</h5><p>' + prettyLabel(design.templateKey) + '</p></div>' +
+                                '<div><h5>' + design.name + (design.isDefaultForType ? ' <span class="generator-design-default-label">Default</span>' : '') + '</h5><p>' + prettyLabel(design.templateKey) + '</p></div>' +
                             '</div>' +
                         '</div>' +
                         '<p>' + (design.isCustom ? 'Custom certificate design for this school.' : 'Built-in certificate design.') + '</p>' +

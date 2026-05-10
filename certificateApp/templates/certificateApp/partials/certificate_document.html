@@ -64,7 +64,11 @@
 
     @page {
         size: {{ page_size_css }} {% if design %}{{ design.orientation }}{% else %}portrait{% endif %};
-        margin: {{ margin_top }}mm {{ margin_right }}mm {{ margin_bottom }}mm {{ margin_left }}mm;
+        {% if is_pdf_export or render_mode == 'print' %}
+            margin: 0;
+        {% else %}
+            margin: {{ margin_top }}mm {{ margin_right }}mm {{ margin_bottom }}mm {{ margin_left }}mm;
+        {% endif %}
     }
 
     .certificate-sheet {
@@ -84,7 +88,40 @@
         position: relative;
         overflow: hidden;
         {% if design and design.borderStyle != 'none' %}
-            border: {% if design.borderStyle == 'double' %}6px double{% elif design.borderStyle == 'ornate' %}8px solid{% else %}3px solid{% endif %} {{ design.accentColor|default:'#1d4ed8' }};
+            border:
+                {% if design.borderStyle == 'double' %}
+                    6px double
+                {% elif design.borderStyle == 'ornate' or design.borderStyle == 'thick' %}
+                    8px solid
+                {% elif design.borderStyle == 'hairline' %}
+                    1px solid
+                {% elif design.borderStyle == 'triple' %}
+                    7px double
+                {% elif design.borderStyle == 'corner_flourish' or design.borderStyle == 'laurel' or design.borderStyle == 'classic_frame' %}
+                    5px double
+                {% elif design.borderStyle == 'dotted' %}
+                    3px dotted
+                {% elif design.borderStyle == 'dashed' %}
+                    3px dashed
+                {% elif design.borderStyle == 'plaque' %}
+                    6px solid
+                {% elif design.borderStyle == 'modern_frame' or design.borderStyle == 'corner_marks' or design.borderStyle == 'ledger' %}
+                    2px solid
+                {% else %}
+                    3px solid
+                {% endif %}
+                {{ design.accentColor|default:'#1d4ed8' }};
+            {% if design.borderStyle == 'side_bars' %}
+                border-top-width: 0;
+                border-bottom-width: 0;
+                border-left-width: 10px;
+                border-right-width: 10px;
+            {% elif design.borderStyle == 'top_bottom' %}
+                border-left-width: 0;
+                border-right-width: 0;
+                border-top-width: 8px;
+                border-bottom-width: 8px;
+            {% endif %}
         {% endif %}
     }
 
@@ -150,6 +187,660 @@
     .certificate-sheet.template-award_plaque {
         background:
             linear-gradient(180deg, rgba(255,251,235,1), rgba(254,242,242,0.98));
+    }
+
+    .certificate-sheet.template-navy_gold_shield,
+    .certificate-sheet.template-royal_blue_plaque,
+    .certificate-sheet.template-indigo_bottom_flourish {
+        background: #061735;
+        border-color: #d7ad3f;
+        border-radius: 0;
+        box-shadow:
+            0 24px 48px rgba(15, 23, 42, 0.18),
+            inset 0 0 0 12px rgba(215, 173, 63, 0.22);
+    }
+
+    .certificate-sheet.template-maroon_gold_gate {
+        background: #4a1118;
+        border-radius: 0;
+        box-shadow:
+            0 24px 48px rgba(15, 23, 42, 0.18),
+            inset 0 0 0 12px rgba(216, 179, 74, 0.18);
+    }
+
+    .certificate-sheet.template-black_gold_sweep,
+    .certificate-sheet.template-charcoal_orbit_frame,
+    .certificate-sheet.template-slate_gold_diagonal {
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,247,1));
+        border-radius: 0;
+        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.15);
+    }
+
+    .certificate-sheet.template-cobalt_corner_lines,
+    .certificate-sheet.template-pearl_gold_corners {
+        background:
+            linear-gradient(180deg, rgba(255,255,255,1), rgba(252,252,249,1));
+        border-radius: 0;
+        box-shadow: 0 22px 44px rgba(15, 23, 42, 0.13);
+    }
+
+    .certificate-sheet.template-ivory_gold_arch,
+    .certificate-sheet.template-sapphire_wave_frame,
+    .certificate-sheet.template-emerald_gold_ribbon {
+        background:
+            radial-gradient(circle at top left, rgba(255,255,255,0.9), transparent 32%),
+            linear-gradient(180deg, rgba(255,253,247,1), rgba(255,250,238,1));
+        border-radius: 0;
+        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.14);
+    }
+
+    .certificate-sheet.template-navy_gold_shield::before,
+    .certificate-sheet.template-royal_blue_plaque::before,
+    .certificate-sheet.template-maroon_gold_gate::before,
+    .certificate-sheet.template-indigo_bottom_flourish::before {
+        content: '';
+        position: absolute;
+        inset: 30px;
+        z-index: 0;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,1));
+        border: 3px solid {{ design.accentColor|default:'#d7ad3f' }};
+        box-shadow:
+            inset 0 0 0 5px rgba(255,255,255,0.7),
+            inset 0 0 0 7px rgba(215, 173, 63, 0.32);
+    }
+
+    .certificate-sheet.template-navy_gold_shield::after,
+    .certificate-sheet.template-indigo_bottom_flourish::after {
+        content: '';
+        position: absolute;
+        inset: auto 28px 22px 28px;
+        height: 160px;
+        z-index: 0;
+        pointer-events: none;
+        background:
+            radial-gradient(ellipse at 16% 100%, transparent 0 45%, #061735 46% 62%, transparent 63%),
+            radial-gradient(ellipse at 84% 100%, transparent 0 45%, #061735 46% 62%, transparent 63%),
+            linear-gradient(90deg, transparent 0 18%, {{ design.accentColor|default:'#d7ad3f' }} 18% 21%, transparent 21% 79%, {{ design.accentColor|default:'#d7ad3f' }} 79% 82%, transparent 82%);
+        opacity: 0.96;
+    }
+
+    .certificate-sheet.template-royal_blue_plaque::after,
+    .certificate-sheet.template-maroon_gold_gate::after {
+        content: '';
+        position: absolute;
+        inset: 18px;
+        z-index: 0;
+        pointer-events: none;
+        border: 2px solid rgba(255,255,255,0.28);
+        box-shadow:
+            inset 0 0 0 2px {{ design.accentColor|default:'#d7ad3f' }},
+            inset 0 0 0 14px rgba(255,255,255,0.08);
+    }
+
+    .certificate-sheet.template-black_gold_sweep::before,
+    .certificate-sheet.template-charcoal_orbit_frame::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background:
+            radial-gradient(ellipse 360px 220px at 100% 0, rgba(15, 23, 42, 0.96) 0 58%, transparent 60%),
+            radial-gradient(ellipse 360px 220px at 0 100%, rgba(15, 23, 42, 0.96) 0 58%, transparent 60%),
+            radial-gradient(ellipse 430px 270px at 100% 0, transparent 0 62%, {{ design.accentColor|default:'#d6a635' }} 63% 70%, transparent 71%),
+            radial-gradient(ellipse 430px 270px at 0 100%, transparent 0 62%, {{ design.accentColor|default:'#d6a635' }} 63% 70%, transparent 71%);
+    }
+
+    .certificate-sheet.template-black_gold_sweep::after,
+    .certificate-sheet.template-charcoal_orbit_frame::after {
+        content: '';
+        position: absolute;
+        inset: 30px;
+        z-index: 0;
+        pointer-events: none;
+        border: 2px solid {{ design.accentColor|default:'#d6a635' }};
+        box-shadow: inset 0 0 0 2px rgba(255,255,255,0.68);
+    }
+
+    .certificate-sheet.template-cobalt_corner_lines::before,
+    .certificate-sheet.template-slate_gold_diagonal::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background:
+            linear-gradient(90deg, #0b2f75 0 6%, transparent 6%),
+            linear-gradient(180deg, #0b2f75 0 8%, transparent 8%),
+            linear-gradient(270deg, #0b2f75 0 6%, transparent 6%),
+            linear-gradient(0deg, #0b2f75 0 8%, transparent 8%);
+        background-size: 42% 48%, 42% 34%, 38% 44%, 38% 34%;
+        background-position: left top, left top, right bottom, right bottom;
+        background-repeat: no-repeat;
+    }
+
+    .certificate-sheet.template-cobalt_corner_lines::after,
+    .certificate-sheet.template-slate_gold_diagonal::after {
+        content: '';
+        position: absolute;
+        inset: 26px;
+        z-index: 0;
+        pointer-events: none;
+        border: 2px solid {{ design.accentColor|default:'#d6b23f' }};
+        box-shadow:
+            -18px -18px 0 -16px {{ design.accentColor|default:'#d6b23f' }},
+            18px 18px 0 -16px {{ design.accentColor|default:'#d6b23f' }},
+            inset 0 0 0 4px rgba(255,255,255,0.8);
+    }
+
+    .certificate-sheet.template-ivory_gold_arch::before,
+    .certificate-sheet.template-pearl_gold_corners::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background:
+            radial-gradient(ellipse at 0 0, rgba(184, 134, 11, 0.18) 0 16%, transparent 17%),
+            radial-gradient(ellipse at 100% 100%, rgba(184, 134, 11, 0.16) 0 18%, transparent 19%),
+            repeating-linear-gradient(150deg, rgba(184, 134, 11, 0.12) 0 1px, transparent 1px 6px);
+        opacity: 0.68;
+    }
+
+    .certificate-sheet.template-ivory_gold_arch::after,
+    .certificate-sheet.template-pearl_gold_corners::after {
+        content: '';
+        position: absolute;
+        inset: 26px;
+        z-index: 0;
+        pointer-events: none;
+        border: 2px solid {{ design.accentColor|default:'#b8860b' }};
+        border-radius: 0 54px 0 54px;
+        box-shadow: inset 0 0 0 5px rgba(255,255,255,0.72);
+    }
+
+    .certificate-sheet.template-sapphire_wave_frame::before,
+    .certificate-sheet.template-emerald_gold_ribbon::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background:
+            radial-gradient(ellipse 360px 220px at 0 100%, #071a3b 0 58%, transparent 60%),
+            radial-gradient(ellipse 360px 220px at 100% 0, #071a3b 0 58%, transparent 60%),
+            radial-gradient(ellipse 430px 270px at 0 100%, transparent 0 62%, {{ design.accentColor|default:'#f0c84b' }} 63% 70%, transparent 71%),
+            radial-gradient(ellipse 430px 270px at 100% 0, transparent 0 62%, {{ design.accentColor|default:'#f0c84b' }} 63% 70%, transparent 71%);
+    }
+
+    .certificate-sheet.template-sapphire_wave_frame::after,
+    .certificate-sheet.template-emerald_gold_ribbon::after {
+        content: '';
+        position: absolute;
+        inset: 28px;
+        z-index: 0;
+        pointer-events: none;
+        border: 2px solid {{ design.accentColor|default:'#f0c84b' }};
+        box-shadow: inset 0 0 0 2px rgba(255,255,255,0.78);
+    }
+
+    .certificate-sheet.template-emerald_gold_ribbon::before {
+        background:
+            radial-gradient(ellipse 360px 220px at 0 100%, #0b3b32 0 58%, transparent 60%),
+            radial-gradient(ellipse 360px 220px at 100% 0, #0b3b32 0 58%, transparent 60%),
+            radial-gradient(ellipse 430px 270px at 0 100%, transparent 0 62%, {{ design.accentColor|default:'#d7ad3f' }} 63% 70%, transparent 71%),
+            radial-gradient(ellipse 430px 270px at 100% 0, transparent 0 62%, {{ design.accentColor|default:'#d7ad3f' }} 63% 70%, transparent 71%);
+    }
+
+    .certificate-sheet.template-navy_gold_shield .certificate-inner,
+    .certificate-sheet.template-royal_blue_plaque .certificate-inner,
+    .certificate-sheet.template-maroon_gold_gate .certificate-inner,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-inner {
+        width: calc(100% - 96px);
+        min-height: calc(1000px - 96px);
+        margin: 26px auto;
+        padding: 2.2rem 3rem 2.5rem;
+        background: rgba(255,255,255,0.96);
+        border: 1px solid rgba(215, 173, 63, 0.55);
+        box-shadow:
+            inset 0 0 0 4px rgba(255,255,255,0.9),
+            inset 0 0 0 6px rgba(215, 173, 63, 0.24);
+        text-align: center;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-inner,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-inner,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-inner,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-inner,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-inner,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-inner,
+    .certificate-sheet.template-ivory_gold_arch .certificate-inner,
+    .certificate-sheet.template-pearl_gold_corners .certificate-inner {
+        min-height: 900px;
+        padding: 2.4rem 3.4rem 2.2rem;
+        border: 1px solid rgba(214, 166, 53, 0.48);
+        background: rgba(255,255,255,0.95);
+        box-shadow:
+            0 18px 36px rgba(15, 23, 42, 0.08),
+            inset 0 0 0 4px rgba(255,255,255,0.82);
+        text-align: center;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-topline,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-topline,
+    .certificate-sheet.template-ivory_gold_arch .certificate-topline,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-topline,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-topline,
+    .certificate-sheet.template-maroon_gold_gate .certificate-topline,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-topline,
+    .certificate-sheet.template-royal_blue_plaque .certificate-topline,
+    .certificate-sheet.template-pearl_gold_corners .certificate-topline,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-topline,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-topline,
+    .certificate-sheet.template-navy_gold_shield .certificate-topline {
+        display: inline-flex;
+        justify-content: center;
+        margin: 0 auto 0.9rem;
+        padding: 0.36rem 0.9rem;
+        border-top: 1px solid currentColor;
+        border-bottom: 1px solid currentColor;
+        font-size: 0.78rem;
+        letter-spacing: 0.22em;
+        text-align: center;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-school,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-school,
+    .certificate-sheet.template-ivory_gold_arch .certificate-school,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-school,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-school,
+    .certificate-sheet.template-maroon_gold_gate .certificate-school,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-school,
+    .certificate-sheet.template-royal_blue_plaque .certificate-school,
+    .certificate-sheet.template-pearl_gold_corners .certificate-school,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-school,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-school,
+    .certificate-sheet.template-navy_gold_shield .certificate-school {
+        justify-content: center;
+        margin: 0 auto 1.45rem;
+        gap: 0.8rem;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-school img,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-school img,
+    .certificate-sheet.template-ivory_gold_arch .certificate-school img,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-school img,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-school img,
+    .certificate-sheet.template-maroon_gold_gate .certificate-school img,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-school img,
+    .certificate-sheet.template-royal_blue_plaque .certificate-school img,
+    .certificate-sheet.template-pearl_gold_corners .certificate-school img,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-school img,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-school img,
+    .certificate-sheet.template-navy_gold_shield .certificate-school img {
+        width: 82px;
+        height: 82px;
+        border-radius: 50%;
+        border: 4px solid {{ design.accentColor|default:'#d6a635' }};
+        box-shadow:
+            0 0 0 7px rgba(214, 166, 53, 0.18),
+            0 10px 18px rgba(15, 23, 42, 0.12);
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-school-name,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-school-name,
+    .certificate-sheet.template-ivory_gold_arch .certificate-school-name,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-school-name,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-school-name,
+    .certificate-sheet.template-maroon_gold_gate .certificate-school-name,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-school-name,
+    .certificate-sheet.template-royal_blue_plaque .certificate-school-name,
+    .certificate-sheet.template-pearl_gold_corners .certificate-school-name,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-school-name,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-school-name,
+    .certificate-sheet.template-navy_gold_shield .certificate-school-name {
+        font-size: 1.15rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-school-meta,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-school-meta,
+    .certificate-sheet.template-ivory_gold_arch .certificate-school-meta,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-school-meta,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-school-meta,
+    .certificate-sheet.template-maroon_gold_gate .certificate-school-meta,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-school-meta,
+    .certificate-sheet.template-royal_blue_plaque .certificate-school-meta,
+    .certificate-sheet.template-pearl_gold_corners .certificate-school-meta,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-school-meta,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-school-meta,
+    .certificate-sheet.template-navy_gold_shield .certificate-school-meta {
+        display: none;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-title,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-title,
+    .certificate-sheet.template-ivory_gold_arch .certificate-title,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-title,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-title,
+    .certificate-sheet.template-maroon_gold_gate .certificate-title,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-title,
+    .certificate-sheet.template-royal_blue_plaque .certificate-title,
+    .certificate-sheet.template-pearl_gold_corners .certificate-title,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-title,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-title,
+    .certificate-sheet.template-navy_gold_shield .certificate-title {
+        margin: 0.2rem auto 0.2rem;
+        color: #111827;
+        font-size: 3.05rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        line-height: 1.04;
+        text-align: center;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-subtitle,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-subtitle,
+    .certificate-sheet.template-ivory_gold_arch .certificate-subtitle,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-subtitle,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-subtitle,
+    .certificate-sheet.template-maroon_gold_gate .certificate-subtitle,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-subtitle,
+    .certificate-sheet.template-royal_blue_plaque .certificate-subtitle,
+    .certificate-sheet.template-pearl_gold_corners .certificate-subtitle,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-subtitle,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-subtitle,
+    .certificate-sheet.template-navy_gold_shield .certificate-subtitle {
+        margin: 0 auto 2.4rem;
+        color: #30343b;
+        font-size: 1.05rem;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-recipient,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-recipient,
+    .certificate-sheet.template-ivory_gold_arch .certificate-recipient,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-recipient,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-recipient,
+    .certificate-sheet.template-maroon_gold_gate .certificate-recipient,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-recipient,
+    .certificate-sheet.template-royal_blue_plaque .certificate-recipient,
+    .certificate-sheet.template-pearl_gold_corners .certificate-recipient,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-recipient,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-recipient,
+    .certificate-sheet.template-navy_gold_shield .certificate-recipient {
+        position: relative;
+        display: inline-block;
+        min-width: 58%;
+        margin: 0.35rem auto 0.55rem;
+        padding: 0 1.6rem 0.45rem;
+        color: {{ design.accentColor|default:'#d6a635' }};
+        border-bottom: 2px solid #2f3541;
+        font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+        font-size: 3rem;
+        font-style: italic;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-align: center;
+    }
+
+    .certificate-sheet.template-cobalt_corner_lines .certificate-recipient,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-recipient {
+        color: #111827;
+        font-style: normal;
+        font-size: 2.45rem;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-recipient::before,
+    .certificate-sheet.template-black_gold_sweep .certificate-recipient::after,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-recipient::before,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-recipient::after,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-recipient::before,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-recipient::after {
+        content: '';
+        position: absolute;
+        bottom: -5px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #2f3541;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-recipient::before,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-recipient::before,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-recipient::before {
+        left: -4px;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-recipient::after,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-recipient::after,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-recipient::after {
+        right: -4px;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-recipient-subtitle,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-recipient-subtitle,
+    .certificate-sheet.template-ivory_gold_arch .certificate-recipient-subtitle,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-recipient-subtitle,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-recipient-subtitle,
+    .certificate-sheet.template-maroon_gold_gate .certificate-recipient-subtitle,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-recipient-subtitle,
+    .certificate-sheet.template-royal_blue_plaque .certificate-recipient-subtitle,
+    .certificate-sheet.template-pearl_gold_corners .certificate-recipient-subtitle,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-recipient-subtitle,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-recipient-subtitle,
+    .certificate-sheet.template-navy_gold_shield .certificate-recipient-subtitle {
+        margin-bottom: 1.7rem;
+        text-align: center;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-body,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-body,
+    .certificate-sheet.template-ivory_gold_arch .certificate-body,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-body,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-body,
+    .certificate-sheet.template-maroon_gold_gate .certificate-body,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-body,
+    .certificate-sheet.template-royal_blue_plaque .certificate-body,
+    .certificate-sheet.template-pearl_gold_corners .certificate-body,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-body,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-body,
+    .certificate-sheet.template-navy_gold_shield .certificate-body {
+        max-width: 68%;
+        margin: 0 auto;
+        color: #2f3541;
+        font-size: 1rem;
+        font-weight: 600;
+        line-height: 1.62;
+        text-align: center;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-meta-strip,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-meta-strip,
+    .certificate-sheet.template-ivory_gold_arch .certificate-meta-strip,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-meta-strip,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-meta-strip,
+    .certificate-sheet.template-maroon_gold_gate .certificate-meta-strip,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-meta-strip,
+    .certificate-sheet.template-royal_blue_plaque .certificate-meta-strip,
+    .certificate-sheet.template-pearl_gold_corners .certificate-meta-strip,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-meta-strip,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-meta-strip,
+    .certificate-sheet.template-navy_gold_shield .certificate-meta-strip {
+        max-width: 72%;
+        margin: 1.8rem auto 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        font-size: 0.8rem;
+        text-align: left;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-footer,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-footer,
+    .certificate-sheet.template-ivory_gold_arch .certificate-footer,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-footer,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-footer,
+    .certificate-sheet.template-maroon_gold_gate .certificate-footer,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-footer,
+    .certificate-sheet.template-royal_blue_plaque .certificate-footer,
+    .certificate-sheet.template-pearl_gold_corners .certificate-footer,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-footer,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-footer,
+    .certificate-sheet.template-navy_gold_shield .certificate-footer {
+        width: 74%;
+        margin: 2.1rem auto 0;
+        align-items: end;
+        color: #2f3541;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-footer-note,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-footer-note,
+    .certificate-sheet.template-ivory_gold_arch .certificate-footer-note,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-footer-note,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-footer-note,
+    .certificate-sheet.template-maroon_gold_gate .certificate-footer-note,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-footer-note,
+    .certificate-sheet.template-royal_blue_plaque .certificate-footer-note,
+    .certificate-sheet.template-pearl_gold_corners .certificate-footer-note,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-footer-note,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-footer-note,
+    .certificate-sheet.template-navy_gold_shield .certificate-footer-note {
+        max-width: 42%;
+        font-size: 0.86rem;
+        text-align: left;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .certificate-signature,
+    .certificate-sheet.template-cobalt_corner_lines .certificate-signature,
+    .certificate-sheet.template-ivory_gold_arch .certificate-signature,
+    .certificate-sheet.template-sapphire_wave_frame .certificate-signature,
+    .certificate-sheet.template-emerald_gold_ribbon .certificate-signature,
+    .certificate-sheet.template-maroon_gold_gate .certificate-signature,
+    .certificate-sheet.template-charcoal_orbit_frame .certificate-signature,
+    .certificate-sheet.template-royal_blue_plaque .certificate-signature,
+    .certificate-sheet.template-pearl_gold_corners .certificate-signature,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-signature,
+    .certificate-sheet.template-indigo_bottom_flourish .certificate-signature,
+    .certificate-sheet.template-navy_gold_shield .certificate-signature {
+        min-width: 190px;
+        font-size: 0.92rem;
+    }
+
+    .certificate-sheet.template-black_gold_sweep .seal-chip,
+    .certificate-sheet.template-cobalt_corner_lines .seal-chip,
+    .certificate-sheet.template-ivory_gold_arch .seal-chip,
+    .certificate-sheet.template-sapphire_wave_frame .seal-chip,
+    .certificate-sheet.template-emerald_gold_ribbon .seal-chip,
+    .certificate-sheet.template-maroon_gold_gate .seal-chip,
+    .certificate-sheet.template-charcoal_orbit_frame .seal-chip,
+    .certificate-sheet.template-royal_blue_plaque .seal-chip,
+    .certificate-sheet.template-pearl_gold_corners .seal-chip,
+    .certificate-sheet.template-slate_gold_diagonal .seal-chip,
+    .certificate-sheet.template-indigo_bottom_flourish .seal-chip,
+    .certificate-sheet.template-navy_gold_shield .seal-chip {
+        display: inline-flex;
+        min-width: 78px;
+        min-height: 78px;
+        margin-top: 0.75rem;
+        padding: 0.8rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 4px double {{ design.accentColor|default:'#d6a635' }};
+        background:
+            radial-gradient(circle, rgba(255,255,255,1) 0 42%, rgba(214, 166, 53, 0.18) 43% 100%);
+        color: #111827;
+        font-size: 0.54rem;
+        line-height: 1.2;
+        text-align: center;
+        letter-spacing: 0.06em;
+    }
+
+    .certificate-sheet.template-cobalt_corner_lines .certificate-school,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-school {
+        justify-content: space-between;
+        text-align: left;
+    }
+
+    .certificate-sheet.template-cobalt_corner_lines .certificate-title,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-title {
+        margin-top: 0.4rem;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 2.65rem;
+        letter-spacing: 0.18em;
+    }
+
+    .certificate-sheet.template-cobalt_corner_lines .certificate-body,
+    .certificate-sheet.template-slate_gold_diagonal .certificate-body {
+        max-width: 76%;
+    }
+
+    .certificate-sheet.border-corner_marks::after,
+    .certificate-sheet.border-corner_flourish::after,
+    .certificate-sheet.border-laurel::after,
+    .certificate-sheet.border-plaque::after,
+    .certificate-sheet.border-modern_frame::after,
+    .certificate-sheet.border-classic_frame::after {
+        content: '';
+        position: absolute;
+        inset: 18px;
+        pointer-events: none;
+        border-radius: inherit;
+        z-index: 0;
+    }
+
+    .certificate-sheet.border-corner_marks::after {
+        background:
+            linear-gradient({{ design.accentColor|default:'#1d4ed8' }}, {{ design.accentColor|default:'#1d4ed8' }}) left top / 54px 2px no-repeat,
+            linear-gradient({{ design.accentColor|default:'#1d4ed8' }}, {{ design.accentColor|default:'#1d4ed8' }}) left top / 2px 54px no-repeat,
+            linear-gradient({{ design.accentColor|default:'#1d4ed8' }}, {{ design.accentColor|default:'#1d4ed8' }}) right top / 54px 2px no-repeat,
+            linear-gradient({{ design.accentColor|default:'#1d4ed8' }}, {{ design.accentColor|default:'#1d4ed8' }}) right top / 2px 54px no-repeat,
+            linear-gradient({{ design.accentColor|default:'#1d4ed8' }}, {{ design.accentColor|default:'#1d4ed8' }}) left bottom / 54px 2px no-repeat,
+            linear-gradient({{ design.accentColor|default:'#1d4ed8' }}, {{ design.accentColor|default:'#1d4ed8' }}) left bottom / 2px 54px no-repeat,
+            linear-gradient({{ design.accentColor|default:'#1d4ed8' }}, {{ design.accentColor|default:'#1d4ed8' }}) right bottom / 54px 2px no-repeat,
+            linear-gradient({{ design.accentColor|default:'#1d4ed8' }}, {{ design.accentColor|default:'#1d4ed8' }}) right bottom / 2px 54px no-repeat;
+        opacity: 0.72;
+    }
+
+    .certificate-sheet.border-corner_flourish::after {
+        border: 1px solid rgba(37, 99, 235, 0.18);
+        background:
+            radial-gradient(circle at top left, {{ design.accentColor|default:'#1d4ed8' }} 0 4px, transparent 5px),
+            radial-gradient(circle at top right, {{ design.accentColor|default:'#1d4ed8' }} 0 4px, transparent 5px),
+            radial-gradient(circle at bottom left, {{ design.accentColor|default:'#1d4ed8' }} 0 4px, transparent 5px),
+            radial-gradient(circle at bottom right, {{ design.accentColor|default:'#1d4ed8' }} 0 4px, transparent 5px);
+        opacity: 0.72;
+    }
+
+    .certificate-sheet.border-laurel::after {
+        border-top: 4px double {{ design.accentColor|default:'#1d4ed8' }};
+        border-bottom: 4px double {{ design.accentColor|default:'#1d4ed8' }};
+        opacity: 0.58;
+    }
+
+    .certificate-sheet.border-plaque::after {
+        inset: 12px;
+        border: 8px solid rgba(120, 53, 15, 0.12);
+        box-shadow: inset 0 0 0 2px {{ design.accentColor|default:'#1d4ed8' }};
+    }
+
+    .certificate-sheet.border-modern_frame::after {
+        inset: 14px;
+        border-left: 8px solid {{ design.accentColor|default:'#1d4ed8' }};
+        border-right: 1px solid rgba(37, 99, 235, 0.24);
+    }
+
+    .certificate-sheet.border-classic_frame::after {
+        inset: 14px;
+        border: 1px solid rgba(37, 99, 235, 0.28);
+        box-shadow: inset 0 0 0 6px rgba(37, 99, 235, 0.08);
     }
 
     .certificate-sheet.certificate-sheet--fixed-canvas {
@@ -642,6 +1333,26 @@
         align-items: center;
     }
 
+    .certificate-meta-strip.has-verification-qr.qr-position-left {
+        grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .certificate-meta-strip.has-verification-qr.qr-position-left .certificate-verification-qr {
+        order: -1;
+    }
+
+    .certificate-meta-strip.has-verification-qr.qr-position-right {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    }
+
+    .certificate-meta-strip.has-verification-qr.qr-position-right .certificate-verification-qr {
+        order: 3;
+    }
+
+    .certificate-meta-strip.has-verification-qr.qr-position-right .certificate-meta-strip-right {
+        order: 2;
+    }
+
     .certificate-verification-qr {
         display: flex;
         flex-direction: column;
@@ -710,6 +1421,33 @@
         color: #4b5563;
         line-height: 1.5;
         white-space: pre-line;
+    }
+
+    .certificate-footer.signature-position-left {
+        flex-direction: row-reverse;
+    }
+
+    .certificate-footer.signature-position-center {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .certificate-footer.signature-position-center .certificate-footer-note {
+        max-width: 76%;
+        text-align: center;
+    }
+
+    .certificate-seal-slot {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-width: 100px;
+    }
+
+    .certificate-footer.seal-position-right .seal-chip {
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .certificate-sheet.template-award_plaque .certificate-footer {
@@ -1012,7 +1750,7 @@
     }
 </style>
 
-<div class="certificate-sheet{% if design and design.templateKey %} template-{{ design.templateKey }}{% endif %}{% if certificate_type and certificate_type.slug %} type-{{ certificate_type.slug }}{% endif %}{% if is_image_overlay %} image-overlay-sheet{% endif %}{% if design and design.templateKey == 'hand_fill_form' or design and design.templateKey == 'prize_day_form' %} form-sheet{% endif %}{% if render_mode == 'pdf' or render_mode == 'print' %} certificate-sheet--fixed-canvas{% endif %}{% if render_mode == 'print' %} certificate-sheet--print-optimized{% endif %}">
+<div class="certificate-sheet{% if design and design.templateKey %} template-{{ design.templateKey }}{% endif %}{% if design and design.borderStyle %} border-{{ design.borderStyle }}{% endif %}{% if certificate_type and certificate_type.slug %} type-{{ certificate_type.slug }}{% endif %}{% if is_image_overlay %} image-overlay-sheet{% endif %}{% if design and design.templateKey == 'hand_fill_form' or design and design.templateKey == 'prize_day_form' %} form-sheet{% endif %}{% if render_mode == 'pdf' or render_mode == 'print' %} certificate-sheet--fixed-canvas{% endif %}{% if render_mode == 'print' %} certificate-sheet--print-optimized{% endif %}">
     {% if is_image_overlay %}
     <div class="image-overlay-canvas">
         <div class="image-overlay-layer">
@@ -1044,7 +1782,11 @@
                 {% endif %}
                 <div class="certificate-school">
                     {% if design.showLogo and issue.schoolID and issue.schoolID.logo %}
-                        <img src="{{ issue.schoolID.logo.medium.url }}" alt="School logo">
+                        {% if is_pdf_export %}
+                            <img src="{{ issue.schoolID.logo.url }}" alt="School logo">
+                        {% else %}
+                            <img src="{{ issue.schoolID.logo.medium.url }}" alt="School logo">
+                        {% endif %}
                     {% endif %}
                     <div>
                         <div class="certificate-school-name">{{ issue.schoolID.schoolName|default:'School Name' }}</div>
@@ -1097,7 +1839,11 @@
 
         <div class="certificate-school">
             {% if design.showLogo and issue.schoolID and issue.schoolID.logo %}
-                <img src="{{ issue.schoolID.logo.medium.url }}" alt="School logo">
+                {% if is_pdf_export %}
+                    <img src="{{ issue.schoolID.logo.url }}" alt="School logo">
+                {% else %}
+                    <img src="{{ issue.schoolID.logo.medium.url }}" alt="School logo">
+                {% endif %}
             {% endif %}
             <div>
                 <div class="certificate-school-name">{{ issue.schoolID.schoolName|default:'School Name' }}</div>
@@ -1109,7 +1855,7 @@
             </div>
         </div>
 
-        {% include 'certificateApp/partials/certificate_standard_content.html' with title=title subtitle=subtitle recipient_name=recipient_name recipient_subtitle=recipient_subtitle rendered_body=rendered_body certificate_number=issue.certificateNumber issue_date_label=issue.issueDate|date:'d-m-Y' rendered_footer=rendered_footer show_seal=design.showSeal seal_label='Verified by '|add:issue.schoolID.schoolName|default:'School' show_signature_line=design.showSignatureLine custom_footer_text=design.customFooterText verification_qr_data_uri=verification_qr_data_uri %}
+        {% include 'certificateApp/partials/certificate_standard_content.html' with title=title subtitle=subtitle recipient_name=recipient_name recipient_subtitle=recipient_subtitle rendered_body=rendered_body certificate_number=issue.certificateNumber issue_date_label=issue.issueDate|date:'d-m-Y' rendered_footer=rendered_footer show_seal=design.showSeal seal_label='Verified by '|add:issue.schoolID.schoolName|default:'School' show_signature_line=design.showSignatureLine custom_footer_text=design.customFooterText verification_qr_data_uri=verification_qr_data_uri qr_position=qr_position signature_position=signature_position seal_position=seal_position %}
     </div>
     {% endif %}
     {% endif %}

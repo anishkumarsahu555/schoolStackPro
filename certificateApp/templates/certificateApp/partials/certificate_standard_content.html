@@ -10,7 +10,7 @@
 
 <div class="certificate-body{% if body_extra_class %} {{ body_extra_class }}{% endif %}"{% if body_id %} id="{{ body_id }}"{% endif %}>{{ rendered_body }}</div>
 
-<div class="certificate-meta-strip{% if verification_qr_data_uri %} has-verification-qr{% endif %}{% if meta_extra_class %} {{ meta_extra_class }}{% endif %}">
+<div class="certificate-meta-strip qr-position-{{ qr_position|default:'center' }}{% if verification_qr_data_uri and qr_position != 'hidden' %} has-verification-qr{% endif %}{% if meta_extra_class %} {{ meta_extra_class }}{% endif %}">
     <div>
         <strong>Certificate No.</strong><br>
         {% if certificate_number_id %}
@@ -19,7 +19,7 @@
             {{ certificate_number }}
         {% endif %}
     </div>
-    {% if verification_qr_data_uri %}
+    {% if verification_qr_data_uri and qr_position != 'hidden' %}
         <div class="certificate-verification-qr">
             <img src="{{ verification_qr_data_uri }}" alt="Certificate verification QR">
             <span>Scan to verify</span>
@@ -35,13 +35,18 @@
     </div>
 </div>
 
-<div class="certificate-footer{% if footer_extra_class %} {{ footer_extra_class }}{% endif %}">
+<div class="certificate-footer signature-position-{{ signature_position|default:'right' }} seal-position-{{ seal_position|default:'left' }}{% if footer_extra_class %} {{ footer_extra_class }}{% endif %}">
     <div class="certificate-footer-note{% if footer_note_extra_class %} {{ footer_note_extra_class }}{% endif %}"{% if footer_note_id %} id="{{ footer_note_id }}"{% endif %}>
         {{ rendered_footer }}
-        {% if show_seal %}
+        {% if show_seal and seal_position != 'center' and seal_position != 'right' %}
             <div class="seal-chip{% if seal_extra_class %} {{ seal_extra_class }}{% endif %}"{% if seal_id %} id="{{ seal_id }}"{% endif %}>{{ seal_label }}</div>
         {% endif %}
     </div>
+    {% if show_seal and seal_position == 'center' %}
+        <div class="certificate-seal-slot">
+            <div class="seal-chip{% if seal_extra_class %} {{ seal_extra_class }}{% endif %}"{% if seal_id %} id="{{ seal_id }}"{% endif %}>{{ seal_label }}</div>
+        </div>
+    {% endif %}
     <div class="certificate-signature{% if signature_extra_class %} {{ signature_extra_class }}{% endif %}">
         {% if show_signature_line %}
             <div class="signature-line{% if signature_line_extra_class %} {{ signature_line_extra_class }}{% endif %}"{% if signature_line_id %} id="{{ signature_line_id }}"{% endif %}></div>
@@ -49,6 +54,9 @@
         <div><strong>Principal / Authorized Signatory</strong></div>
         {% if custom_footer_text or custom_footer_id %}
             <div{% if custom_footer_id %} id="{{ custom_footer_id }}"{% endif %} style="margin-top:0.35rem; color:#6b7280;">{{ custom_footer_text }}</div>
+        {% endif %}
+        {% if show_seal and seal_position == 'right' %}
+            <div class="seal-chip{% if seal_extra_class %} {{ seal_extra_class }}{% endif %}"{% if seal_id %} id="{{ seal_id }}"{% endif %}>{{ seal_label }}</div>
         {% endif %}
     </div>
 </div>

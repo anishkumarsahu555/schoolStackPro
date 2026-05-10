@@ -573,6 +573,9 @@
                         <div class="design-detail-chip"><i class="file alternate outline icon"></i>{{ design.get_pageSize_display }} / {{ design.get_orientation_display }}</div>
                         <div class="design-detail-chip"><i class="certificate icon"></i>{% if design.isCustom %}Custom{% else %}System{% endif %}</div>
                         <div class="design-detail-chip"><i class="{% if design.status == 'draft' %}edit outline{% else %}check circle outline{% endif %} icon"></i>{{ design.status|default:'published'|title }}</div>
+                        {% if design.isDefaultForType %}
+                            <div class="design-detail-chip"><i class="star icon"></i>Default for {{ design.certificateTypeID.name }}</div>
+                        {% endif %}
                     </div>
                     <div>
                         <a class="ui mini button" href="{% url 'certificateApp:design_library' %}">
@@ -584,6 +587,16 @@
                                 <i class="file alternate outline icon"></i>
                                 Use In Generator
                             </a>
+                            {% if not design.isDefaultForType %}
+                                <form method="post" action="{% url 'certificateApp:set_default_design' design.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="ui mini button">
+                                        <i class="star outline icon"></i>
+                                        Set Default
+                                    </button>
+                                </form>
+                            {% endif %}
                         {% endif %}
                         {% if design.isCustom %}
                             <a class="ui mini orange button" href="{% url 'certificateApp:edit_design' design.id %}">
@@ -610,7 +623,7 @@
                     <p>Preview the certificate layout, spacing, and page fit before using this design.</p>
                 </div>
                 <div class="design-preview-stage">
-                    {% include 'certificateApp/partials/certificate_document.html' with issue=detail_preview_context.issue certificate_type=detail_preview_context.certificate_type design=detail_preview_context.design render_mode=detail_preview_context.render_mode design_font_stack=detail_preview_context.design_font_stack title=detail_preview_context.title subtitle=detail_preview_context.subtitle recipient_name=detail_preview_context.recipient_name recipient_subtitle=detail_preview_context.recipient_subtitle rendered_body=detail_preview_context.rendered_body rendered_footer=detail_preview_context.rendered_footer page_size_css=detail_preview_context.page_size_css margin_top=detail_preview_context.margin_top margin_right=detail_preview_context.margin_right margin_bottom=detail_preview_context.margin_bottom margin_left=detail_preview_context.margin_left page_width_mm=detail_preview_context.page_width_mm page_height_mm=detail_preview_context.page_height_mm content_width_mm=detail_preview_context.content_width_mm content_height_mm=detail_preview_context.content_height_mm scope_data=detail_preview_context.scope_data resolved_overlay_items=detail_preview_context.resolved_overlay_items is_image_overlay=detail_preview_context.is_image_overlay %}
+                    {% include 'certificateApp/partials/certificate_document.html' with issue=detail_preview_context.issue certificate_type=detail_preview_context.certificate_type design=detail_preview_context.design render_mode=detail_preview_context.render_mode design_font_stack=detail_preview_context.design_font_stack title=detail_preview_context.title subtitle=detail_preview_context.subtitle recipient_name=detail_preview_context.recipient_name recipient_subtitle=detail_preview_context.recipient_subtitle rendered_body=detail_preview_context.rendered_body rendered_footer=detail_preview_context.rendered_footer page_size_css=detail_preview_context.page_size_css margin_top=detail_preview_context.margin_top margin_right=detail_preview_context.margin_right margin_bottom=detail_preview_context.margin_bottom margin_left=detail_preview_context.margin_left page_width_mm=detail_preview_context.page_width_mm page_height_mm=detail_preview_context.page_height_mm content_width_mm=detail_preview_context.content_width_mm content_height_mm=detail_preview_context.content_height_mm scope_data=detail_preview_context.scope_data resolved_overlay_items=detail_preview_context.resolved_overlay_items is_image_overlay=detail_preview_context.is_image_overlay qr_position=detail_preview_context.qr_position signature_position=detail_preview_context.signature_position seal_position=detail_preview_context.seal_position %}
                 </div>
             </section>
         </div>
@@ -644,6 +657,10 @@
                             <div class="value">{{ design.status|default:'published'|title }}</div>
                         </div>
                         <div class="design-meta-item">
+                            <div class="label">Default Design</div>
+                            <div class="value">{% if design.isDefaultForType %}Yes{% else %}No{% endif %}</div>
+                        </div>
+                        <div class="design-meta-item">
                             <div class="label">Border Style</div>
                             <div class="value">{{ design.get_borderStyle_display }}</div>
                         </div>
@@ -658,6 +675,18 @@
                         <div class="design-meta-item">
                             <div class="label">Body Alignment</div>
                             <div class="value">{{ design.get_bodyAlignment_display }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">QR Placement</div>
+                            <div class="value">{{ design.layoutConfig.qr_position|default:'center'|title }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Signature Placement</div>
+                            <div class="value">{{ design.layoutConfig.signature_position|default:'right'|title }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Seal Placement</div>
+                            <div class="value">{{ design.layoutConfig.seal_position|default:'left'|title }}</div>
                         </div>
                         <div class="design-meta-item">
                             <div class="label">Accent Color</div>
@@ -683,6 +712,16 @@
                                 <i class="file alternate outline icon"></i>
                                 Use In Generator
                             </a>
+                            {% if not design.isDefaultForType %}
+                                <form method="post" action="{% url 'certificateApp:set_default_design' design.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="ui mini button">
+                                        <i class="star outline icon"></i>
+                                        Set Default
+                                    </button>
+                                </form>
+                            {% endif %}
                         {% endif %}
                         {% if design.isCustom %}
                             <a class="ui mini orange button" href="{% url 'certificateApp:edit_design' design.id %}">

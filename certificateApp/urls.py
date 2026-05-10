@@ -5,6 +5,7 @@ from .views import (
     dashboard,
     design_detail,
     design_library,
+    design_quick_preview,
     duplicate_design,
     edit_design,
     generator,
@@ -14,6 +15,7 @@ from .views import (
     issue_preview,
     issue_print,
     issue_reissue,
+    set_default_design,
     verify_certificate,
 )
 
@@ -24,6 +26,8 @@ urlpatterns = [
     path('designs/create/', create_design, name='create_design'),
     path('designs/<int:design_id>/edit/', edit_design, name='edit_design'),
     path('designs/<int:design_id>/duplicate/', duplicate_design, name='duplicate_design'),
+    path('designs/<int:design_id>/set-default/', set_default_design, name='set_default_design'),
+    path('designs/<int:design_id>/quick-preview/', design_quick_preview, name='design_quick_preview'),
     path('designs/<int:design_id>/', design_detail, name='design_detail'),
     path('generate/', generator, name='generator'),
     path('generate/live-preview/', generator_live_preview, name='generator_live_preview'),

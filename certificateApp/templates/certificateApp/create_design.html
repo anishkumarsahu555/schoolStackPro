@@ -1015,6 +1015,7 @@
         .certificate-preview-meta {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-items: center;
             gap: 0.8rem;
             padding: 0.85rem 1rem;
             border-radius: 14px;
@@ -1024,12 +1025,67 @@
             text-align: left;
         }
 
+        .certificate-preview-meta.has-qr {
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        }
+
+        .certificate-preview-meta.has-qr.qr-position-left {
+            grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+        }
+
+        .certificate-preview-meta.qr-position-left .certificate-preview-qr {
+            order: -1;
+        }
+
+        .certificate-preview-meta.has-qr.qr-position-right {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+        }
+
+        .certificate-preview-meta.qr-position-right .certificate-preview-qr {
+            order: 3;
+        }
+
+        .certificate-preview-meta.qr-position-right .certificate-preview-date {
+            order: 2;
+            justify-self: end;
+        }
+
+        .certificate-preview-qr {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            justify-self: center;
+            width: 46px;
+            height: 46px;
+            border-radius: 8px;
+            color: var(--preview-accent, #1d4ed8);
+            border: 1px solid currentColor;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+        }
+
         .certificate-preview-footer {
             display: flex;
             justify-content: space-between;
             align-items: end;
             gap: 1rem;
             margin-top: 1.8rem;
+        }
+
+        .certificate-preview-footer.signature-position-left {
+            flex-direction: row-reverse;
+        }
+
+        .certificate-preview-footer.signature-position-center {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .certificate-preview-footer.signature-position-center .certificate-preview-note {
+            max-width: 76%;
+            text-align: center;
         }
 
         .certificate-preview-note {
@@ -1063,6 +1119,15 @@
             border: 1px solid var(--certificate-preview-meta-border);
         }
 
+        .certificate-preview-footer.seal-position-center .certificate-preview-seal {
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .certificate-preview-footer.seal-position-right .certificate-preview-seal {
+            margin-left: auto;
+        }
+
         .certificate-preview-ribbon::after {
             content: '';
             position: absolute;
@@ -1074,6 +1139,171 @@
             background: var(--preview-accent, #1d4ed8);
             opacity: 0.14;
         }
+
+        .certificate-preview-corner_marks::after,
+        .certificate-preview-corner_flourish::after,
+        .certificate-preview-laurel::after,
+        .certificate-preview-plaque::after,
+        .certificate-preview-modern_frame::after,
+        .certificate-preview-classic_frame::after {
+            content: '';
+            position: absolute;
+            inset: 18px;
+            pointer-events: none;
+            border-radius: inherit;
+        }
+
+        .certificate-preview-corner_marks::after {
+            background:
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) left top / 46px 2px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) left top / 2px 46px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) right top / 46px 2px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) right top / 2px 46px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) left bottom / 46px 2px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) left bottom / 2px 46px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) right bottom / 46px 2px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) right bottom / 2px 46px no-repeat;
+            opacity: 0.72;
+        }
+
+        .certificate-preview-corner_flourish::after {
+            border: 1px solid rgba(37, 99, 235, 0.18);
+            background:
+                radial-gradient(circle at top left, var(--preview-accent, #1d4ed8) 0 3px, transparent 4px),
+                radial-gradient(circle at top right, var(--preview-accent, #1d4ed8) 0 3px, transparent 4px),
+                radial-gradient(circle at bottom left, var(--preview-accent, #1d4ed8) 0 3px, transparent 4px),
+                radial-gradient(circle at bottom right, var(--preview-accent, #1d4ed8) 0 3px, transparent 4px);
+            opacity: 0.72;
+        }
+
+        .certificate-preview-laurel::after {
+            border-top: 4px double var(--preview-accent, #1d4ed8);
+            border-bottom: 4px double var(--preview-accent, #1d4ed8);
+            opacity: 0.58;
+        }
+
+        .certificate-preview-plaque::after {
+            inset: 12px;
+            border: 8px solid rgba(120, 53, 15, 0.12);
+            box-shadow: inset 0 0 0 2px var(--preview-accent, #1d4ed8);
+        }
+
+        .certificate-preview-modern_frame::after {
+            inset: 14px;
+            border-left: 8px solid var(--preview-accent, #1d4ed8);
+            border-right: 1px solid rgba(37, 99, 235, 0.24);
+        }
+
+        .certificate-preview-classic_frame::after {
+            inset: 14px;
+            border: 1px solid rgba(37, 99, 235, 0.28);
+            box-shadow: inset 0 0 0 6px rgba(37, 99, 235, 0.08);
+        }
+
+        .border-style-palette {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+            gap: 0.65rem;
+            margin-top: 0.4rem;
+        }
+
+        .border-style-option {
+            min-height: 82px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            border-radius: 14px;
+            background: #ffffff;
+            color: #334155;
+            padding: 0.62rem;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+        }
+
+        .border-style-option:hover,
+        .border-style-option.is-active {
+            border-color: var(--preview-accent, #1d4ed8);
+            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.11);
+            transform: translateY(-1px);
+        }
+
+        .border-style-option.is-active {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), #ffffff);
+        }
+
+        .border-style-sample {
+            position: relative;
+            display: block;
+            height: 38px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            overflow: hidden;
+        }
+
+        .border-style-name {
+            display: block;
+            margin-top: 0.48rem;
+            font-size: 0.78rem;
+            font-weight: 800;
+            line-height: 1.15;
+            color: #1f2937;
+        }
+
+        .border-style-sample.none { border: 1px solid rgba(148, 163, 184, 0.2); }
+        .border-style-sample.single { border: 3px solid var(--preview-accent, #1d4ed8); }
+        .border-style-sample.double { border: 5px double var(--preview-accent, #1d4ed8); }
+        .border-style-sample.ornate { border: 6px solid var(--preview-accent, #1d4ed8); box-shadow: inset 0 0 0 3px rgba(37, 99, 235, 0.12); }
+        .border-style-sample.ribbon { border: 2px solid var(--preview-accent, #1d4ed8); }
+        .border-style-sample.ribbon::after {
+            content: '';
+            position: absolute;
+            top: 7px;
+            right: -17px;
+            width: 62px;
+            height: 13px;
+            transform: rotate(35deg);
+            background: var(--preview-accent, #1d4ed8);
+            opacity: 0.32;
+        }
+        .border-style-sample.hairline { border: 1px solid var(--preview-accent, #1d4ed8); }
+        .border-style-sample.thick { border: 7px solid var(--preview-accent, #1d4ed8); }
+        .border-style-sample.inner_line { border: 3px solid var(--preview-accent, #1d4ed8); box-shadow: inset 0 0 0 5px #ffffff, inset 0 0 0 6px rgba(37, 99, 235, 0.35); }
+        .border-style-sample.triple { border: 6px double var(--preview-accent, #1d4ed8); box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.35); }
+        .border-style-sample.corner_marks { border: 1px solid rgba(15, 23, 42, 0.12); }
+        .border-style-sample.corner_marks::after {
+            content: '';
+            position: absolute;
+            inset: 7px;
+            background:
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) left top / 20px 2px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) left top / 2px 20px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) right top / 20px 2px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) right top / 2px 20px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) left bottom / 20px 2px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) left bottom / 2px 20px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) right bottom / 20px 2px no-repeat,
+                linear-gradient(var(--preview-accent, #1d4ed8), var(--preview-accent, #1d4ed8)) right bottom / 2px 20px no-repeat;
+        }
+        .border-style-sample.corner_flourish { border: 4px double var(--preview-accent, #1d4ed8); }
+        .border-style-sample.corner_flourish::after {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            background:
+                radial-gradient(circle at top left, var(--preview-accent, #1d4ed8) 0 3px, transparent 4px),
+                radial-gradient(circle at top right, var(--preview-accent, #1d4ed8) 0 3px, transparent 4px),
+                radial-gradient(circle at bottom left, var(--preview-accent, #1d4ed8) 0 3px, transparent 4px),
+                radial-gradient(circle at bottom right, var(--preview-accent, #1d4ed8) 0 3px, transparent 4px);
+        }
+        .border-style-sample.side_bars { border-left: 8px solid var(--preview-accent, #1d4ed8); border-right: 8px solid var(--preview-accent, #1d4ed8); border-top: 1px solid rgba(15, 23, 42, 0.12); border-bottom: 1px solid rgba(15, 23, 42, 0.12); }
+        .border-style-sample.top_bottom { border-top: 7px solid var(--preview-accent, #1d4ed8); border-bottom: 7px solid var(--preview-accent, #1d4ed8); border-left: 1px solid rgba(15, 23, 42, 0.12); border-right: 1px solid rgba(15, 23, 42, 0.12); }
+        .border-style-sample.dotted { border: 3px dotted var(--preview-accent, #1d4ed8); }
+        .border-style-sample.dashed { border: 3px dashed var(--preview-accent, #1d4ed8); }
+        .border-style-sample.ledger { border-top: 1px solid rgba(15, 23, 42, 0.28); border-bottom: 4px solid var(--preview-accent, #1d4ed8); }
+        .border-style-sample.laurel { border-top: 5px double var(--preview-accent, #1d4ed8); border-bottom: 5px double var(--preview-accent, #1d4ed8); }
+        .border-style-sample.plaque { border: 7px solid rgba(120, 53, 15, 0.18); box-shadow: inset 0 0 0 2px var(--preview-accent, #1d4ed8); }
+        .border-style-sample.modern_frame { border-left: 9px solid var(--preview-accent, #1d4ed8); border-top: 1px solid rgba(15, 23, 42, 0.16); border-right: 1px solid rgba(15, 23, 42, 0.16); border-bottom: 1px solid rgba(15, 23, 42, 0.16); }
+        .border-style-sample.classic_frame { border: 5px double var(--preview-accent, #1d4ed8); box-shadow: inset 0 0 0 5px rgba(37, 99, 235, 0.08); }
 
         .preview-dimensions {
             margin-top: 0.75rem;
@@ -1876,8 +2106,45 @@
                                     <option value="double">Double</option>
                                     <option value="ornate">Ornate</option>
                                     <option value="ribbon">Ribbon</option>
+                                    <option value="hairline">Hairline</option>
+                                    <option value="thick">Thick Frame</option>
+                                    <option value="inner_line">Inner Line</option>
+                                    <option value="triple">Triple Frame</option>
+                                    <option value="corner_marks">Corner Marks</option>
+                                    <option value="corner_flourish">Corner Flourish</option>
+                                    <option value="side_bars">Side Bars</option>
+                                    <option value="top_bottom">Top & Bottom</option>
+                                    <option value="dotted">Dotted</option>
+                                    <option value="dashed">Dashed</option>
+                                    <option value="ledger">Ledger Rule</option>
+                                    <option value="laurel">Laurel</option>
+                                    <option value="plaque">Plaque</option>
+                                    <option value="modern_frame">Modern Frame</option>
+                                    <option value="classic_frame">Classic Frame</option>
                                 </select>
                             </div>
+                        </div>
+                        <div class="border-style-palette" id="borderStylePalette" aria-label="Border style previews">
+                            <button class="border-style-option" type="button" data-border-option="none"><span class="border-style-sample none"></span><span class="border-style-name">None</span></button>
+                            <button class="border-style-option" type="button" data-border-option="single"><span class="border-style-sample single"></span><span class="border-style-name">Single</span></button>
+                            <button class="border-style-option" type="button" data-border-option="double"><span class="border-style-sample double"></span><span class="border-style-name">Double</span></button>
+                            <button class="border-style-option" type="button" data-border-option="ornate"><span class="border-style-sample ornate"></span><span class="border-style-name">Ornate</span></button>
+                            <button class="border-style-option" type="button" data-border-option="ribbon"><span class="border-style-sample ribbon"></span><span class="border-style-name">Ribbon</span></button>
+                            <button class="border-style-option" type="button" data-border-option="hairline"><span class="border-style-sample hairline"></span><span class="border-style-name">Hairline</span></button>
+                            <button class="border-style-option" type="button" data-border-option="thick"><span class="border-style-sample thick"></span><span class="border-style-name">Thick Frame</span></button>
+                            <button class="border-style-option" type="button" data-border-option="inner_line"><span class="border-style-sample inner_line"></span><span class="border-style-name">Inner Line</span></button>
+                            <button class="border-style-option" type="button" data-border-option="triple"><span class="border-style-sample triple"></span><span class="border-style-name">Triple Frame</span></button>
+                            <button class="border-style-option" type="button" data-border-option="corner_marks"><span class="border-style-sample corner_marks"></span><span class="border-style-name">Corner Marks</span></button>
+                            <button class="border-style-option" type="button" data-border-option="corner_flourish"><span class="border-style-sample corner_flourish"></span><span class="border-style-name">Corner Flourish</span></button>
+                            <button class="border-style-option" type="button" data-border-option="side_bars"><span class="border-style-sample side_bars"></span><span class="border-style-name">Side Bars</span></button>
+                            <button class="border-style-option" type="button" data-border-option="top_bottom"><span class="border-style-sample top_bottom"></span><span class="border-style-name">Top & Bottom</span></button>
+                            <button class="border-style-option" type="button" data-border-option="dotted"><span class="border-style-sample dotted"></span><span class="border-style-name">Dotted</span></button>
+                            <button class="border-style-option" type="button" data-border-option="dashed"><span class="border-style-sample dashed"></span><span class="border-style-name">Dashed</span></button>
+                            <button class="border-style-option" type="button" data-border-option="ledger"><span class="border-style-sample ledger"></span><span class="border-style-name">Ledger Rule</span></button>
+                            <button class="border-style-option" type="button" data-border-option="laurel"><span class="border-style-sample laurel"></span><span class="border-style-name">Laurel</span></button>
+                            <button class="border-style-option" type="button" data-border-option="plaque"><span class="border-style-sample plaque"></span><span class="border-style-name">Plaque</span></button>
+                            <button class="border-style-option" type="button" data-border-option="modern_frame"><span class="border-style-sample modern_frame"></span><span class="border-style-name">Modern Frame</span></button>
+                            <button class="border-style-option" type="button" data-border-option="classic_frame"><span class="border-style-sample classic_frame"></span><span class="border-style-name">Classic Frame</span></button>
                         </div>
                         <div class="two fields">
                             <div class="field">
@@ -1908,6 +2175,33 @@
                                     <input type="checkbox" name="show_seal" id="show_seal" checked>
                                     <label>Show seal badge</label>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="three fields">
+                            <div class="field">
+                                <label>QR Placement</label>
+                                <select class="ui dropdown" name="qr_position" id="qr_position">
+                                    <option value="center" selected>Center</option>
+                                    <option value="left">Left</option>
+                                    <option value="right">Right</option>
+                                    <option value="hidden">Hidden</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Signature Placement</label>
+                                <select class="ui dropdown" name="signature_position" id="signature_position">
+                                    <option value="right" selected>Right</option>
+                                    <option value="left">Left</option>
+                                    <option value="center">Center</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Seal Placement</label>
+                                <select class="ui dropdown" name="seal_position" id="seal_position">
+                                    <option value="left" selected>Left</option>
+                                    <option value="center">Center</option>
+                                    <option value="right">Right</option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -1951,6 +2245,11 @@
                                 <input type="range" id="tuning_shadow_depth" min="0" max="48" value="20">
                                 <div class="tuning-value" id="tuningShadowDepthValue">20px</div>
                             </div>
+                            <div class="tuning-card">
+                                <label for="tuning_border_weight">Border Weight</label>
+                                <input type="range" id="tuning_border_weight" min="0" max="12" step="0.5" value="3">
+                                <div class="tuning-value" id="tuningBorderWeightValue">3px</div>
+                            </div>
                         </div>
                         <div class="tuning-toggle-row">
                             <button type="button" class="studio-panel-toggle" id="advancedTuningToggle">Show Advanced Tuning</button>
@@ -1985,6 +2284,31 @@
                                 <label for="tuning_footer_scale">Footer Scale</label>
                                 <input type="range" id="tuning_footer_scale" min="85" max="130" value="100">
                                 <div class="tuning-value" id="tuningFooterScaleValue">100%</div>
+                            </div>
+                            <div class="tuning-card">
+                                <label for="tuning_logo_size">Logo Size</label>
+                                <input type="range" id="tuning_logo_size" min="42" max="110" value="74">
+                                <div class="tuning-value" id="tuningLogoSizeValue">74px</div>
+                            </div>
+                            <div class="tuning-card">
+                                <label for="tuning_signature_width">Signature Width</label>
+                                <input type="range" id="tuning_signature_width" min="130" max="320" value="220">
+                                <div class="tuning-value" id="tuningSignatureWidthValue">220px</div>
+                            </div>
+                            <div class="tuning-card">
+                                <label for="tuning_seal_scale">Seal Scale</label>
+                                <input type="range" id="tuning_seal_scale" min="70" max="140" value="100">
+                                <div class="tuning-value" id="tuningSealScaleValue">100%</div>
+                            </div>
+                            <div class="tuning-card">
+                                <label for="tuning_qr_size">QR Size</label>
+                                <input type="range" id="tuning_qr_size" min="14" max="34" value="22">
+                                <div class="tuning-value" id="tuningQrSizeValue">22mm</div>
+                            </div>
+                            <div class="tuning-card">
+                                <label for="tuning_meta_spacing">Meta Spacing</label>
+                                <input type="range" id="tuning_meta_spacing" min="8" max="32" value="16">
+                                <div class="tuning-value" id="tuningMetaSpacingValue">16px</div>
                             </div>
                         </div>
                     </div>
@@ -2142,12 +2466,13 @@ The student has shown admirable commitment and deserves this certificate of appr
 
                                         The student has shown admirable commitment and deserves this certificate of appreciation.
                                     </div>
-                                    <div class="certificate-preview-meta">
+                                    <div class="certificate-preview-meta has-qr qr-position-center">
                                         <div><strong>Certificate No.</strong><br> CERT-20260423-0012</div>
-                                        <div><strong>Issue Date</strong><br> 23-04-2026</div>
+                                        <div class="certificate-preview-qr" id="previewQr">QR</div>
+                                        <div class="certificate-preview-date"><strong>Issue Date</strong><br> 23-04-2026</div>
                                     </div>
                                 </div>
-                                <div class="certificate-preview-footer">
+                                <div class="certificate-preview-footer signature-position-right seal-position-left">
                                     <div class="certificate-preview-note" id="previewFooterText">
                                         Digitally managed by certificateApp
                                         <div class="certificate-preview-seal" id="previewSeal">Verified by School</div>
@@ -2391,27 +2716,38 @@ The student has shown admirable commitment and deserves this certificate of appr
             const bodyWidth = getTuningNumber('tuning_body_width', 64);
             const paperRadius = getTuningNumber('tuning_paper_radius', 18);
             const shadowDepth = getTuningNumber('tuning_shadow_depth', 20);
+            const borderWeight = getTuningNumber('tuning_border_weight', 3);
             const subtitleScale = getTuningNumber('tuning_subtitle_scale', 100) / 100;
             const recipientWidth = getTuningNumber('tuning_recipient_width', 80);
             const titleTracking = getTuningNumber('tuning_title_tracking', 1);
             const sectionSpacing = getTuningNumber('tuning_section_spacing', 100) / 100;
             const metaScale = getTuningNumber('tuning_meta_scale', 100) / 100;
             const footerScale = getTuningNumber('tuning_footer_scale', 100) / 100;
+            const logoSize = getTuningNumber('tuning_logo_size', 74);
+            const signatureWidth = getTuningNumber('tuning_signature_width', 220);
+            const sealScale = getTuningNumber('tuning_seal_scale', 100) / 100;
+            const qrSize = getTuningNumber('tuning_qr_size', 22);
+            const metaSpacing = getTuningNumber('tuning_meta_spacing', 16);
 
             const cssLines = [
                 SMART_CSS_START,
                 '#previewPaper, .certificate-sheet { border-radius: ' + paperRadius + 'px; }',
                 '#previewPaper, .certificate-sheet { box-shadow: 0 ' + Math.max(0, shadowDepth * 0.85).toFixed(0) + 'px ' + Math.max(0, shadowDepth * 2).toFixed(0) + 'px rgba(15, 23, 42, 0.16); }',
+                '#previewPaper, .certificate-sheet { border-width: ' + borderWeight.toFixed(1) + 'px; }',
                 '#previewTopline, .certificate-topline { margin-bottom: calc(0.8rem * ' + sectionSpacing.toFixed(2) + '); }',
                 '#previewSchool, .certificate-school { margin-bottom: calc(1.4rem * ' + sectionSpacing.toFixed(2) + '); }',
+                '#previewLogo, .certificate-school img { width: ' + logoSize.toFixed(0) + 'px; height: ' + logoSize.toFixed(0) + 'px; }',
                 '#previewTitle, .certificate-title { font-size: calc(2.05rem * ' + titleScale.toFixed(2) + '); letter-spacing: ' + titleTracking.toFixed(1) + 'px; margin-top: calc(1.3rem * ' + sectionSpacing.toFixed(2) + '); margin-bottom: calc(0.4rem * ' + sectionSpacing.toFixed(2) + '); }',
                 '#previewSubtitle, .certificate-subtitle { font-size: calc(1rem * ' + subtitleScale.toFixed(2) + '); margin-bottom: calc(1rem * ' + sectionSpacing.toFixed(2) + '); }',
                 '#previewRecipient, .certificate-recipient { font-size: calc(2.2rem * ' + recipientScale.toFixed(2) + '); line-height: ' + Math.max(0.95, 1.12 - ((recipientScale - 1) * 0.14)).toFixed(2) + '; max-width: ' + recipientWidth.toFixed(0) + '%; margin-left: auto; margin-right: auto; margin-top: calc(1rem * ' + sectionSpacing.toFixed(2) + '); }',
                 '#previewRecipientSubtitle, .certificate-recipient-subtitle { max-width: ' + Math.min(98, Math.max(recipientWidth, bodyWidth + 8)).toFixed(0) + '%; margin-left: auto; margin-right: auto; margin-bottom: calc(1.6rem * ' + sectionSpacing.toFixed(2) + '); }',
                 '#previewBody, .certificate-body { font-size: calc(1rem * ' + bodyScale.toFixed(2) + '); max-width: ' + bodyWidth.toFixed(0) + '%; }',
-                '.certificate-preview-meta, .certificate-meta-strip { font-size: calc(1rem * ' + metaScale.toFixed(2) + '); margin-top: calc(2rem * ' + sectionSpacing.toFixed(2) + '); }',
+                '.certificate-preview-meta, .certificate-meta-strip { font-size: calc(1rem * ' + metaScale.toFixed(2) + '); margin-top: calc(2rem * ' + sectionSpacing.toFixed(2) + '); gap: ' + metaSpacing.toFixed(0) + 'px; }',
                 '#previewFooterText, .certificate-footer-note { font-size: calc(1rem * ' + footerScale.toFixed(2) + '); }',
-                '.certificate-preview-signature, .certificate-signature { font-size: calc(1rem * ' + footerScale.toFixed(2) + '); }',
+                '.certificate-preview-signature, .certificate-signature { font-size: calc(1rem * ' + footerScale.toFixed(2) + '); min-width: ' + signatureWidth.toFixed(0) + 'px; }',
+                '#previewSignatureLine, .signature-line { width: ' + signatureWidth.toFixed(0) + 'px; max-width: 100%; margin-left: auto; margin-right: auto; }',
+                '#previewSeal, .seal-chip { transform: scale(' + sealScale.toFixed(2) + '); transform-origin: left center; }',
+                '.certificate-verification-qr img { width: ' + qrSize.toFixed(0) + 'mm; height: ' + qrSize.toFixed(0) + 'mm; }',
                 '.certificate-preview-footer, .certificate-footer { margin-top: calc(3rem * ' + sectionSpacing.toFixed(2) + '); }',
                 SMART_CSS_END
             ];
@@ -2432,12 +2768,18 @@ The student has shown admirable commitment and deserves this certificate of appr
             $('#tuningBodyWidthValue').text(getTuningNumber('tuning_body_width', 64).toFixed(0) + '%');
             $('#tuningPaperRadiusValue').text(getTuningNumber('tuning_paper_radius', 18).toFixed(0) + 'px');
             $('#tuningShadowDepthValue').text(getTuningNumber('tuning_shadow_depth', 20).toFixed(0) + 'px');
+            $('#tuningBorderWeightValue').text(getTuningNumber('tuning_border_weight', 3).toFixed(1).replace('.0', '') + 'px');
             $('#tuningSubtitleScaleValue').text(getTuningNumber('tuning_subtitle_scale', 100).toFixed(0) + '%');
             $('#tuningRecipientWidthValue').text(getTuningNumber('tuning_recipient_width', 80).toFixed(0) + '%');
             $('#tuningTitleTrackingValue').text(getTuningNumber('tuning_title_tracking', 1).toFixed(1) + 'px');
             $('#tuningSectionSpacingValue').text(getTuningNumber('tuning_section_spacing', 100).toFixed(0) + '%');
             $('#tuningMetaScaleValue').text(getTuningNumber('tuning_meta_scale', 100).toFixed(0) + '%');
             $('#tuningFooterScaleValue').text(getTuningNumber('tuning_footer_scale', 100).toFixed(0) + '%');
+            $('#tuningLogoSizeValue').text(getTuningNumber('tuning_logo_size', 74).toFixed(0) + 'px');
+            $('#tuningSignatureWidthValue').text(getTuningNumber('tuning_signature_width', 220).toFixed(0) + 'px');
+            $('#tuningSealScaleValue').text(getTuningNumber('tuning_seal_scale', 100).toFixed(0) + '%');
+            $('#tuningQrSizeValue').text(getTuningNumber('tuning_qr_size', 22).toFixed(0) + 'mm');
+            $('#tuningMetaSpacingValue').text(getTuningNumber('tuning_meta_spacing', 16).toFixed(0) + 'px');
         }
 
         function updateSmartCustomizeSummary() {
@@ -2450,6 +2792,9 @@ The student has shown admirable commitment and deserves this certificate of appr
             const footerScale = getTuningNumber('tuning_footer_scale', 100);
             const radius = getTuningNumber('tuning_paper_radius', 18);
             const shadow = getTuningNumber('tuning_shadow_depth', 20);
+            const borderWeight = getTuningNumber('tuning_border_weight', 3);
+            const logoSize = getTuningNumber('tuning_logo_size', 74);
+            const signatureWidth = getTuningNumber('tuning_signature_width', 220);
 
             const typographySummary = (
                 (recipientScale >= 125 ? 'Recipient-led hierarchy' : titleScale >= 110 ? 'Title-led hierarchy' : 'Balanced formal hierarchy') +
@@ -2467,12 +2812,12 @@ The student has shown admirable commitment and deserves this certificate of appr
                 (radius <= 6 ? 'square paper edge' : radius >= 22 ? 'soft premium edge' : 'rounded paper edge') +
                 ' · ' +
                 (shadow <= 8 ? 'flat finish' : shadow >= 28 ? 'deep stage shadow' : 'soft paper depth') +
-                ' · meta ' + metaScale.toFixed(0) + '% / footer ' + footerScale.toFixed(0) + '%'
+                ' · border ' + borderWeight.toFixed(1).replace('.0', '') + 'px'
             );
 
             $('#smartTypographySummary').text(typographySummary);
             $('#smartCompositionSummary').text(compositionSummary);
-            $('#smartFinishSummary').text(finishSummary);
+            $('#smartFinishSummary').text(finishSummary + ' · logo ' + logoSize.toFixed(0) + 'px / sign ' + signatureWidth.toFixed(0) + 'px');
         }
 
         function applySmartAction(action) {
@@ -2489,7 +2834,7 @@ The student has shown admirable commitment and deserves this certificate of appr
                 $('#tuning_section_spacing').val('98');
                 $('#tuning_meta_scale').val('98');
                 $('#tuning_footer_scale').val('96');
-                $('#border_style').dropdown('set selected', 'double');
+                setBorderStyle('double');
                 $('#title_alignment').dropdown('set selected', 'center');
                 $('#body_alignment').dropdown('set selected', 'center');
             } else if (action === 'highlight_name') {
@@ -2529,7 +2874,7 @@ The student has shown admirable commitment and deserves this certificate of appr
                 $('#tuning_section_spacing').val('108');
                 $('#tuning_meta_scale').val('103');
                 $('#tuning_footer_scale').val('100');
-                $('#border_style').dropdown('set selected', 'ornate');
+                setBorderStyle('ornate');
             } else if (action === 'minimal_modern') {
                 $('#tuning_title_scale').val('100');
                 $('#tuning_recipient_scale').val('104');
@@ -2543,7 +2888,7 @@ The student has shown admirable commitment and deserves this certificate of appr
                 $('#tuning_section_spacing').val('94');
                 $('#tuning_meta_scale').val('96');
                 $('#tuning_footer_scale').val('94');
-                $('#border_style').dropdown('set selected', 'single');
+                setBorderStyle('single');
                 $('#font_family').val('Trebuchet MS');
                 $('#title_alignment').dropdown('set selected', 'left');
                 $('#body_alignment').dropdown('set selected', 'left');
@@ -2560,7 +2905,7 @@ The student has shown admirable commitment and deserves this certificate of appr
                 $('#tuning_section_spacing').val('122');
                 $('#tuning_meta_scale').val('96');
                 $('#tuning_footer_scale').val('94');
-                $('#border_style').dropdown('set selected', 'single');
+                setBorderStyle('single');
                 $('#title_alignment').dropdown('set selected', 'center');
                 $('#body_alignment').dropdown('set selected', 'center');
             } else if (action === 'form_ready') {
@@ -2576,7 +2921,7 @@ The student has shown admirable commitment and deserves this certificate of appr
                 $('#tuning_section_spacing').val('88');
                 $('#tuning_meta_scale').val('92');
                 $('#tuning_footer_scale').val('90');
-                $('#border_style').dropdown('set selected', 'single');
+                setBorderStyle('single');
                 $('#title_alignment').dropdown('set selected', 'left');
                 $('#body_alignment').dropdown('set selected', 'left');
             }
@@ -3038,9 +3383,66 @@ The student has shown admirable commitment and deserves this certificate of appr
                 single: 'Single border',
                 double: 'Double border',
                 ornate: 'Ornate frame',
-                ribbon: 'Ribbon accent'
+                ribbon: 'Ribbon accent',
+                hairline: 'Hairline',
+                thick: 'Thick frame',
+                inner_line: 'Inner line',
+                triple: 'Triple frame',
+                corner_marks: 'Corner marks',
+                corner_flourish: 'Corner flourish',
+                side_bars: 'Side bars',
+                top_bottom: 'Top & bottom',
+                dotted: 'Dotted',
+                dashed: 'Dashed',
+                ledger: 'Ledger rule',
+                laurel: 'Laurel',
+                plaque: 'Plaque',
+                modern_frame: 'Modern frame',
+                classic_frame: 'Classic frame'
             };
             return map[value] || 'Single border';
+        }
+
+        function borderCssForPreview(borderStyle, accent) {
+            const borderMap = {
+                none: '0',
+                single: '3px solid ' + accent,
+                double: '6px double ' + accent,
+                ornate: '8px solid ' + accent,
+                ribbon: '3px solid ' + accent,
+                hairline: '1px solid ' + accent,
+                thick: '8px solid ' + accent,
+                inner_line: '3px solid ' + accent,
+                triple: '7px double ' + accent,
+                corner_marks: '2px solid rgba(15, 23, 42, 0.12)',
+                corner_flourish: '3px double ' + accent,
+                side_bars: '0 solid ' + accent,
+                top_bottom: '0 solid ' + accent,
+                dotted: '3px dotted ' + accent,
+                dashed: '3px dashed ' + accent,
+                ledger: '1px solid rgba(15, 23, 42, 0.22)',
+                laurel: '3px double ' + accent,
+                plaque: '6px solid ' + accent,
+                modern_frame: '2px solid rgba(15, 23, 42, 0.12)',
+                classic_frame: '5px double ' + accent
+            };
+            return borderMap[borderStyle] || borderMap.single;
+        }
+
+        function setBorderStyle(value) {
+            const borderStyle = value || 'single';
+            $('#border_style').dropdown('set selected', borderStyle);
+            syncBorderStylePalette(borderStyle);
+        }
+
+        function syncBorderStylePalette(value) {
+            const borderStyle = value || getFieldValue('border_style', 'single');
+            $('#borderStylePalette .border-style-option')
+                .removeClass('is-active')
+                .attr('aria-pressed', 'false');
+            $('#borderStylePalette [data-border-option="' + borderStyle + '"]')
+                .addClass('is-active')
+                .attr('aria-pressed', 'true');
         }
 
         function updatePaperCompositionUI(args) {
@@ -3115,6 +3517,10 @@ The student has shown admirable commitment and deserves this certificate of appr
             if (!preset) return;
 
             Object.keys(preset).forEach(function (key) {
+                if (key === 'border_style') {
+                    setBorderStyle(preset[key]);
+                    return;
+                }
                 const $field = $('#' + key);
                 if ($field.length) {
                     $field.val(preset[key]);
@@ -3211,6 +3617,9 @@ The student has shown admirable commitment and deserves this certificate of appr
             const headerText = getFieldValue('custom_header_text', 'School Certificate Desk');
             const footerText = getFieldValue('custom_footer_text', 'Digitally managed by certificateApp');
             const borderStyle = getFieldValue('border_style', 'single');
+            const qrPosition = getFieldValue('qr_position', 'center');
+            const signaturePosition = getFieldValue('signature_position', 'right');
+            const sealPosition = getFieldValue('seal_position', 'left');
             const showLogo = $('#show_logo').is(':checked');
             const showSeal = $('#show_seal').is(':checked');
             const showSignatureLine = $('#show_signature_line').is(':checked');
@@ -3243,6 +3652,8 @@ The student has shown admirable commitment and deserves this certificate of appr
 
             $('#previewCanvas').toggleClass('is-landscape', orientation === 'landscape');
             $('#previewCanvas').css('transform', 'scale(' + previewZoom + ')').attr('data-mode', previewMode);
+            $('#borderStylePalette').css('--preview-accent', accent);
+            syncBorderStylePalette(borderStyle);
             setDesignModeUI(designMode);
 
             $('#previewPaper')
@@ -3253,20 +3664,17 @@ The student has shown admirable commitment and deserves this certificate of appr
                     minHeight: paperHeight + 'px',
                     '--preview-accent': accent
                 })
-                .removeClass('certificate-preview-ribbon');
+                .removeClass('certificate-preview-ribbon certificate-preview-corner_marks certificate-preview-corner_flourish certificate-preview-laurel certificate-preview-plaque certificate-preview-modern_frame certificate-preview-classic_frame')
+                .css({
+                    border: borderCssForPreview(borderStyle, accent),
+                    borderLeftWidth: borderStyle === 'side_bars' ? '10px' : '',
+                    borderRightWidth: borderStyle === 'side_bars' ? '10px' : '',
+                    borderTopWidth: borderStyle === 'top_bottom' ? '8px' : '',
+                    borderBottomWidth: borderStyle === 'top_bottom' ? '8px' : ''
+                });
 
-            if (borderStyle === 'none') {
-                $('#previewPaper').css('border', '0');
-            } else if (borderStyle === 'double') {
-                $('#previewPaper').css('border', '6px double ' + accent);
-            } else if (borderStyle === 'ornate') {
-                $('#previewPaper').css('border', '8px solid ' + accent);
-            } else {
-                $('#previewPaper').css('border', '3px solid ' + accent);
-            }
-
-            if (borderStyle === 'ribbon') {
-                $('#previewPaper').addClass('certificate-preview-ribbon');
+            if (['ribbon', 'corner_marks', 'corner_flourish', 'laurel', 'plaque', 'modern_frame', 'classic_frame'].includes(borderStyle)) {
+                $('#previewPaper').addClass('certificate-preview-' + borderStyle);
             }
 
             $('#previewAccentDot').css('background', accent);
@@ -3281,6 +3689,14 @@ The student has shown admirable commitment and deserves this certificate of appr
             $('#previewBody').text(previewBody).css({textAlign: bodyAlign});
             $('#previewSchoolName').text(previewSchoolName).css({color: textColor});
             renderPreviewLogo(showLogo, accent, previewSchoolName ? previewSchoolName.charAt(0).toUpperCase() : 'S');
+            $('.certificate-preview-meta')
+                .removeClass('has-qr qr-position-left qr-position-center qr-position-right qr-position-hidden')
+                .addClass('qr-position-' + qrPosition)
+                .toggleClass('has-qr', qrPosition !== 'hidden');
+            $('#previewQr').toggle(qrPosition !== 'hidden').css({color: accent});
+            $('.certificate-preview-footer')
+                .removeClass('signature-position-left signature-position-center signature-position-right seal-position-left seal-position-center seal-position-right')
+                .addClass('signature-position-' + signaturePosition + ' seal-position-' + sealPosition);
             $('#previewSeal').toggle(showSeal).css({color: accent});
             $('#previewSignatureLine').toggle(showSignatureLine);
             $('#previewFooterText').contents().first()[0].textContent = footerText || 'Digitally managed by certificateApp';
@@ -3666,6 +4082,13 @@ The student has shown admirable commitment and deserves this certificate of appr
             if ($(event.target).is('.margin-range')) {
                 return;
             }
+            if (event.target && event.target.id === 'border_style') {
+                syncBorderStylePalette($(event.target).val());
+            }
+            schedulePreview();
+        });
+        $('#borderStylePalette').on('click', '.border-style-option', function () {
+            setBorderStyle($(this).data('border-option'));
             schedulePreview();
         });
         $('#design_mode').on('change', function () {
@@ -3726,11 +4149,14 @@ The student has shown admirable commitment and deserves this certificate of appr
             $('#accent_color').val(data.accent_color || '#1d4ed8');
             $('#text_color').val(data.text_color || '#1f2937');
             $('#background_color').val(data.background_color || '#ffffff');
-            $('#border_style').dropdown('set selected', data.border_style || 'single');
+            setBorderStyle(data.border_style || 'single');
             $('#custom_css').val(data.custom_css || '');
             setCheckboxValue('#show_logo', data.show_logo !== false);
             setCheckboxValue('#show_signature_line', data.show_signature_line !== false);
             setCheckboxValue('#show_seal', data.show_seal !== false);
+            $('#qr_position').dropdown('set selected', data.qr_position || 'center');
+            $('#signature_position').dropdown('set selected', data.signature_position || 'right');
+            $('#seal_position').dropdown('set selected', data.seal_position || 'left');
             overlaySchema = normalizeOverlaySchema(data.overlay_schema || []);
             syncOverlaySchemaField();
             renderOverlayFields();
