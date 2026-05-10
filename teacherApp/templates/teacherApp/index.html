@@ -28,7 +28,7 @@
         <div class="nav-group-links">
             <a class="nav-item {% if request.resolver_match.url_name == 'teacher_home' or request.resolver_match.url_name == 'teacher_root' %}active{% endif %}"
                href="{% url 'teacherApp:teacher_home' %}"
-               data-active-paths="/teacher/">
+               data-active-exact-paths="/teacher/">
                 <i class="tachometer alternate icon"></i>
                 <span>Dashboard</span>
             </a>
