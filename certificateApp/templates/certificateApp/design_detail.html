@@ -1,0 +1,752 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>{{ design.name }}</title>
+{% endblock %}
+
+{% block css %}
+    <style>
+        :root {
+            --design-detail-hero:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.1), transparent 28%),
+                linear-gradient(135deg, #eef2ff 0%, #f8fafc 52%, #f0fdf4 100%);
+            --design-detail-border: rgba(148, 163, 184, 0.18);
+            --design-detail-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+            --design-detail-card: rgba(255, 255, 255, 0.82);
+            --design-detail-stage:
+                linear-gradient(180deg, rgba(255,255,255,0.06), transparent),
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(148, 163, 184, 0.05) 0,
+                    rgba(148, 163, 184, 0.05) 10px,
+                    transparent 10px,
+                    transparent 20px
+                );
+        }
+
+        html[data-theme="dark"] {
+            --design-detail-hero:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.16), transparent 28%),
+                linear-gradient(135deg, rgba(15, 23, 42, 0.94) 0%, rgba(17, 24, 39, 0.96) 52%, rgba(10, 18, 31, 0.98) 100%);
+            --design-detail-border: rgba(148, 163, 184, 0.16);
+            --design-detail-shadow: 0 18px 40px rgba(2, 6, 23, 0.28);
+            --design-detail-card: rgba(15, 23, 42, 0.56);
+        }
+
+        .design-detail-grid {
+            align-items: flex-start;
+            row-gap: 1rem;
+        }
+
+        .design-detail-hero {
+            border-radius: 28px;
+            padding: 1.35rem 1.45rem 1.2rem;
+            border: 1px solid var(--design-detail-border);
+            background: var(--design-detail-hero);
+            box-shadow: var(--design-detail-shadow);
+        }
+
+        .design-detail-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.44rem 0.78rem;
+            border-radius: 999px;
+            background: var(--design-detail-card);
+            border: 1px solid var(--design-detail-border);
+            color: var(--app-brand);
+            font-size: 0.77rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .design-detail-hero h2 {
+            margin: 0.9rem 0 0.35rem;
+            color: var(--app-text);
+            line-height: 1.08;
+        }
+
+        .design-detail-hero p {
+            margin: 0;
+            color: var(--app-muted);
+            line-height: 1.55;
+            max-width: 760px;
+        }
+
+        .design-detail-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .design-detail-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .design-detail-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.42rem;
+            padding: 0.44rem 0.76rem;
+            border-radius: 999px;
+            background: var(--design-detail-card);
+            border: 1px solid var(--design-detail-border);
+            color: var(--app-text);
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .design-detail-chip .dot {
+            width: 0.78rem;
+            height: 0.78rem;
+            border-radius: 999px;
+            background: {{ design.accentColor|default:'#1d4ed8' }};
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .design-detail-panel {
+            border-radius: 26px;
+            overflow: hidden;
+            border: 1px solid var(--design-detail-border);
+            box-shadow: var(--design-detail-shadow);
+            background: linear-gradient(180deg, var(--design-detail-card), rgba(248,250,252,0.6));
+        }
+
+        html[data-theme="dark"] .design-detail-panel {
+            background: linear-gradient(180deg, rgba(15,23,42,0.56), rgba(17,24,39,0.4));
+        }
+
+        .design-detail-panel-head {
+            padding: 1.05rem 1.2rem;
+            border-bottom: 1px solid var(--design-detail-border);
+            background: linear-gradient(135deg, rgba(255,255,255,0.04), transparent);
+        }
+
+        .design-detail-panel-head h3 {
+            margin: 0;
+            color: var(--app-text);
+        }
+
+        .design-detail-panel-head p {
+            margin: 0.3rem 0 0;
+            color: var(--app-muted);
+            line-height: 1.5;
+        }
+
+        .design-preview-stage {
+            padding: 1.1rem;
+            background: var(--design-detail-stage);
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-gutter: stable both-edges;
+        }
+
+        .design-preview-stage .certificate-sheet {
+            flex: 0 0 auto;
+        }
+
+        .design-preview-stage .certificate-sheet.certificate-sheet--fixed-canvas {
+            min-width: var(--certificate-content-width-mm);
+        }
+
+        .design-preview-paper {
+            min-height: 680px;
+            border-radius: 22px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 24px 52px rgba(15, 23, 42, 0.14);
+            background: {{ design.backgroundColor|default:'#ffffff' }};
+            color: {{ design.textColor|default:'#1f2937' }};
+            font-family: {{ design.fontFamily|default:'Georgia' }};
+            {% if design.borderStyle == 'none' %}
+                border: 0;
+            {% elif design.borderStyle == 'double' %}
+                border: 6px double {{ design.accentColor|default:'#1d4ed8' }};
+            {% elif design.borderStyle == 'ornate' %}
+                border: 8px solid {{ design.accentColor|default:'#1d4ed8' }};
+            {% else %}
+                border: 3px solid {{ design.accentColor|default:'#1d4ed8' }};
+            {% endif %}
+        }
+
+        .design-preview-paper.landscape {
+            min-height: 540px;
+        }
+
+        .design-preview-paper.form-sheet {
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.96)),
+                repeating-linear-gradient(
+                    180deg,
+                    rgba(15, 23, 42, 0.03) 0,
+                    rgba(15, 23, 42, 0.03) 1px,
+                    transparent 1px,
+                    transparent 32px
+                );
+        }
+
+        .design-preview-paper::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at top right, rgba(255,255,255,0.84), transparent 35%),
+                linear-gradient(135deg, rgba(255,255,255,0.1), transparent 56%);
+            pointer-events: none;
+        }
+
+        .design-image-overlay {
+            position: absolute;
+            inset: 0;
+            background: {{ design.backgroundColor|default:'#ffffff' }};
+            {% if design.backgroundImage %}
+                background-image: url('{{ design.backgroundImage.url }}');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+            {% endif %}
+        }
+
+        .design-image-overlay-item {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            white-space: pre-line;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .design-image-overlay-item.align-left {
+            transform: translate(0, -50%);
+            text-align: left;
+        }
+
+        .design-image-overlay-item.align-right {
+            transform: translate(-100%, -50%);
+            text-align: right;
+        }
+
+        .design-preview-ribbon::after {
+            content: '';
+            position: absolute;
+            top: 18px;
+            right: -42px;
+            width: 160px;
+            height: 34px;
+            transform: rotate(35deg);
+            background: {{ design.accentColor|default:'#1d4ed8' }};
+            opacity: 0.16;
+        }
+
+        .design-preview-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: {{ design.marginTopMm|default:12 }}mm {{ design.marginRightMm|default:12 }}mm {{ design.marginBottomMm|default:12 }}mm {{ design.marginLeftMm|default:12 }}mm;
+            height: 100%;
+        }
+
+        .design-preview-topline {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            color: {{ design.accentColor|default:'#1d4ed8' }};
+            text-align: {{ design.titleAlignment|default:'center' }};
+        }
+
+        .design-preview-school {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.95rem;
+            text-align: center;
+        }
+
+        .design-preview-badge {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 800;
+            background: rgba(255,255,255,0.82);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            color: {{ design.accentColor|default:'#1d4ed8' }};
+        }
+
+        .design-preview-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 16px;
+        }
+
+        .design-preview-school-name {
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .design-preview-school-meta,
+        .design-preview-subtitle,
+        .design-preview-recipient-subtitle,
+        .design-preview-note {
+            color: #64748b;
+        }
+
+        .design-preview-school-meta {
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .design-preview-title {
+            font-size: 2.15rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 1rem 0 0.35rem;
+            text-align: {{ design.titleAlignment|default:'center' }};
+            color: {{ design.accentColor|default:'#1d4ed8' }};
+        }
+
+        .design-preview-subtitle {
+            font-size: 1rem;
+            margin-bottom: 0.95rem;
+            text-align: {{ design.titleAlignment|default:'center' }};
+        }
+
+        .design-preview-recipient {
+            font-size: 2.35rem;
+            font-weight: 700;
+            margin: 0.75rem 0 0.22rem;
+            text-align: {{ design.titleAlignment|default:'center' }};
+        }
+
+        .design-preview-recipient-subtitle {
+            font-size: 0.98rem;
+            margin-bottom: 1rem;
+            text-align: {{ design.titleAlignment|default:'center' }};
+        }
+
+        .design-preview-body {
+            font-size: 1rem;
+            line-height: 1.8;
+            white-space: pre-line;
+            max-width: 720px;
+            margin: 0 auto;
+            text-align: {{ design.bodyAlignment|default:'center' }};
+        }
+
+        .design-preview-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+            padding: 0.9rem 1rem;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+
+        .design-preview-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 1rem;
+            margin-top: 1.9rem;
+        }
+
+        .design-preview-note {
+            max-width: 62%;
+            line-height: 1.55;
+            white-space: pre-line;
+        }
+
+        .design-preview-signature {
+            min-width: 220px;
+            text-align: center;
+        }
+
+        .design-preview-sign-line {
+            height: 1px;
+            background: currentColor;
+            margin-bottom: 0.5rem;
+        }
+
+        .design-preview-seal {
+            display: inline-flex;
+            margin-top: 0.9rem;
+            padding: 0.35rem 0.72rem;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.76);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            color: {{ design.accentColor|default:'#1d4ed8' }};
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .design-form-preview {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: {{ design.marginTopMm|default:12 }}mm {{ design.marginRightMm|default:12 }}mm {{ design.marginBottomMm|default:12 }}mm {{ design.marginLeftMm|default:12 }}mm;
+            height: 100%;
+        }
+
+        .design-form-preview-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: {{ design.accentColor|default:'#1d4ed8' }};
+        }
+
+        .design-form-preview-copy {
+            text-align: center;
+            color: #64748b;
+            font-size: 1rem;
+            margin-top: -0.35rem;
+        }
+
+        .design-form-preview-lines {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .design-form-preview-row {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            flex-wrap: nowrap;
+            color: {{ design.textColor|default:'#1f2937' }};
+            font-size: 1.02rem;
+        }
+
+        .design-form-preview-line {
+            flex: 1 1 auto;
+            min-width: 80px;
+            border-bottom: 2px dotted currentColor;
+            height: 0.92rem;
+        }
+
+        .design-form-preview-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 1rem;
+            margin-top: 2rem;
+            color: {{ design.textColor|default:'#1f2937' }};
+        }
+
+        .design-form-preview-sign {
+            min-width: 220px;
+            text-align: center;
+        }
+
+        .design-form-preview-sign-line {
+            height: 1px;
+            background: currentColor;
+            margin-bottom: 0.5rem;
+        }
+
+        .design-detail-body {
+            padding: 1.15rem 1.2rem 1.25rem;
+        }
+
+        .design-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        .design-meta-item {
+            border-radius: 16px;
+            padding: 0.85rem 0.9rem;
+            background: rgba(255,255,255,0.7);
+            border: 1px solid var(--design-detail-border);
+        }
+
+        html[data-theme="dark"] .design-meta-item,
+        html[data-theme="dark"] .design-preview-meta {
+            background: rgba(15, 23, 42, 0.42);
+        }
+
+        .design-meta-item .label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--app-muted);
+            margin-bottom: 0.2rem;
+        }
+
+        .design-meta-item .value {
+            color: var(--app-text);
+            font-size: 0.9rem;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .design-detail-actions {
+            display: flex;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .design-detail-note {
+            margin-top: 0.95rem;
+            color: var(--app-muted);
+            line-height: 1.55;
+        }
+
+        @media (max-width: 1100px) {
+            .design-meta-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .design-detail-toolbar,
+            .design-preview-footer {
+                display: block;
+            }
+
+            .design-detail-toolbar > * + *,
+            .design-preview-footer > * + * {
+                margin-top: 0.8rem;
+            }
+
+            .design-preview-paper.landscape,
+            .design-preview-paper {
+                min-height: 540px;
+            }
+
+            .design-preview-stage {
+                padding-bottom: 1.35rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid design-detail-grid">
+        <div class="sixteen wide column">
+            <div class="ui pointing secondary menu">
+                <div class="item active" data-tab="user">Design Detail</div>
+                <div style="margin-left:auto;">
+                    <a class="ui mini blue button" href="{% url 'certificateApp:create_design' %}">
+                        <i class="paint brush icon"></i>
+                        New Design
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="sixteen wide column">
+            <div class="design-detail-hero">
+                <div class="design-detail-kicker">
+                    <i class="paint brush icon"></i>
+                    Design Profile
+                </div>
+                <h2>{{ design.name }}</h2>
+                <p>{{ design.certificateTypeID.name }} design in {{ design.get_pageSize_display }} {{ design.get_orientation_display|lower }} format with the {{ design.get_templateKey_display|lower }} template.</p>
+                <div class="design-detail-toolbar">
+                    <div class="design-detail-chip-row">
+                        <div class="design-detail-chip"><span class="dot"></span>{{ design.accentColor|default:'#1d4ed8' }}</div>
+                        <div class="design-detail-chip"><i class="file alternate outline icon"></i>{{ design.get_pageSize_display }} / {{ design.get_orientation_display }}</div>
+                        <div class="design-detail-chip"><i class="certificate icon"></i>{% if design.isCustom %}Custom{% else %}System{% endif %}</div>
+                        <div class="design-detail-chip"><i class="{% if design.status == 'draft' %}edit outline{% else %}check circle outline{% endif %} icon"></i>{{ design.status|default:'published'|title }}</div>
+                        {% if design.isDefaultForType %}
+                            <div class="design-detail-chip"><i class="star icon"></i>Default for {{ design.certificateTypeID.name }}</div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <a class="ui mini button" href="{% url 'certificateApp:design_library' %}">
+                            <i class="arrow left icon"></i>
+                            Back To Library
+                        </a>
+                        {% if design.isActive %}
+                            <a class="ui mini green button" href="{% url 'certificateApp:generator' %}?design={{ design.id }}">
+                                <i class="file alternate outline icon"></i>
+                                Use In Generator
+                            </a>
+                            {% if not design.isDefaultForType %}
+                                <form method="post" action="{% url 'certificateApp:set_default_design' design.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="ui mini button">
+                                        <i class="star outline icon"></i>
+                                        Set Default
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                        {% if design.isCustom %}
+                            <a class="ui mini orange button" href="{% url 'certificateApp:edit_design' design.id %}">
+                                <i class="edit outline icon"></i>
+                                Edit Design
+                            </a>
+                        {% endif %}
+                        <form method="post" action="{% url 'certificateApp:duplicate_design' design.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" name="save_action" value="draft" class="ui mini blue button">
+                                <i class="copy outline icon"></i>
+                                {% if design.isCustom %}Duplicate Draft{% else %}Customize Copy{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ten wide large screen ten wide computer sixteen wide tablet sixteen wide mobile column">
+            <section class="design-detail-panel">
+                <div class="design-detail-panel-head">
+                    <h3>Live Design Preview</h3>
+                    <p>Preview the certificate layout, spacing, and page fit before using this design.</p>
+                </div>
+                <div class="design-preview-stage">
+                    {% include 'certificateApp/partials/certificate_document.html' with issue=detail_preview_context.issue certificate_type=detail_preview_context.certificate_type design=detail_preview_context.design render_mode=detail_preview_context.render_mode design_font_stack=detail_preview_context.design_font_stack title=detail_preview_context.title subtitle=detail_preview_context.subtitle recipient_name=detail_preview_context.recipient_name recipient_subtitle=detail_preview_context.recipient_subtitle rendered_body=detail_preview_context.rendered_body rendered_footer=detail_preview_context.rendered_footer page_size_css=detail_preview_context.page_size_css margin_top=detail_preview_context.margin_top margin_right=detail_preview_context.margin_right margin_bottom=detail_preview_context.margin_bottom margin_left=detail_preview_context.margin_left page_width_mm=detail_preview_context.page_width_mm page_height_mm=detail_preview_context.page_height_mm content_width_mm=detail_preview_context.content_width_mm content_height_mm=detail_preview_context.content_height_mm scope_data=detail_preview_context.scope_data resolved_overlay_items=detail_preview_context.resolved_overlay_items is_image_overlay=detail_preview_context.is_image_overlay qr_position=detail_preview_context.qr_position signature_position=detail_preview_context.signature_position seal_position=detail_preview_context.seal_position %}
+                </div>
+            </section>
+        </div>
+
+        <div class="six wide large screen six wide computer sixteen wide tablet sixteen wide mobile column">
+            <section class="design-detail-panel">
+                <div class="design-detail-panel-head">
+                    <h3>Design Details</h3>
+                    <p>Template settings and page details for this design.</p>
+                </div>
+                <div class="design-detail-body">
+                    <div class="design-meta-grid">
+                        <div class="design-meta-item">
+                            <div class="label">Certificate Type</div>
+                            <div class="value">{{ design.certificateTypeID.name }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Template Family</div>
+                            <div class="value">{{ design.get_templateKey_display }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Paper</div>
+                            <div class="value">{{ design.get_pageSize_display }} / {{ design.get_orientation_display }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Design Type</div>
+                            <div class="value">{% if design.isCustom %}Custom{% else %}System{% endif %}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Status</div>
+                            <div class="value">{{ design.status|default:'published'|title }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Default Design</div>
+                            <div class="value">{% if design.isDefaultForType %}Yes{% else %}No{% endif %}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Border Style</div>
+                            <div class="value">{{ design.get_borderStyle_display }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Font Family</div>
+                            <div class="value">{{ design.fontFamily|default:'Default' }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Title Alignment</div>
+                            <div class="value">{{ design.get_titleAlignment_display }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Body Alignment</div>
+                            <div class="value">{{ design.get_bodyAlignment_display }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">QR Placement</div>
+                            <div class="value">{{ design.layoutConfig.qr_position|default:'center'|title }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Signature Placement</div>
+                            <div class="value">{{ design.layoutConfig.signature_position|default:'right'|title }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Seal Placement</div>
+                            <div class="value">{{ design.layoutConfig.seal_position|default:'left'|title }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Accent Color</div>
+                            <div class="value">{{ design.accentColor|default:'N/A' }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Text Color</div>
+                            <div class="value">{{ design.textColor|default:'N/A' }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Background Color</div>
+                            <div class="value">{{ design.backgroundColor|default:'N/A' }}</div>
+                        </div>
+                        <div class="design-meta-item">
+                            <div class="label">Margins</div>
+                            <div class="value">{{ design.marginTopMm }} / {{ design.marginRightMm }} / {{ design.marginBottomMm }} / {{ design.marginLeftMm }} mm</div>
+                        </div>
+                    </div>
+
+                    <div class="design-detail-actions">
+                        {% if design.isActive %}
+                            <a class="ui mini green button" href="{% url 'certificateApp:generator' %}?design={{ design.id }}">
+                                <i class="file alternate outline icon"></i>
+                                Use In Generator
+                            </a>
+                            {% if not design.isDefaultForType %}
+                                <form method="post" action="{% url 'certificateApp:set_default_design' design.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="ui mini button">
+                                        <i class="star outline icon"></i>
+                                        Set Default
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                        {% if design.isCustom %}
+                            <a class="ui mini orange button" href="{% url 'certificateApp:edit_design' design.id %}">
+                                <i class="edit outline icon"></i>
+                                Edit Design
+                            </a>
+                        {% endif %}
+                        <form method="post" action="{% url 'certificateApp:duplicate_design' design.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" name="save_action" value="draft" class="ui mini blue button">
+                                <i class="copy outline icon"></i>
+                                {% if design.isCustom %}Duplicate As Draft{% else %}Customize As Draft{% endif %}
+                            </button>
+                        </form>
+                        <a class="ui mini button" href="{% url 'certificateApp:create_design' %}">
+                            <i class="paint brush icon"></i>
+                            Create Another Design
+                        </a>
+                    </div>
+
+                    <div class="design-detail-note">
+                        Review this design before using it in certificate generation.
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+{% endblock %}

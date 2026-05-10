@@ -13,8 +13,11 @@ dependencies = [
     "django-stdimage==6.0.2",
     "gunicorn>=23.0.0",
     "pywebpush>=2.0.3",
+    "qrcode[pil]>=8.2",
     "mysqlclient>=2.2.7",
     "python-dotenv>=1.2.1",
     "uvicorn>=0.40.0",
     "whitenoise>=6.9.0",
+    "xhtml2pdf>=0.2.17",
+    "playwright>=1.58.0",
 ]

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ design.name }} Preview</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            background:
+                linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.95)),
+                repeating-linear-gradient(45deg, rgba(148, 163, 184, 0.08) 0, rgba(148, 163, 184, 0.08) 10px, transparent 10px, transparent 20px);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .quick-preview-shell {
+            min-height: 100vh;
+            padding: 22px;
+            overflow: auto;
+        }
+
+        .quick-preview-head {
+            max-width: 1120px;
+            margin: 0 auto 14px;
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: center;
+            color: #1f2937;
+        }
+
+        .quick-preview-head h1 {
+            margin: 0;
+            font-size: 18px;
+            line-height: 1.2;
+        }
+
+        .quick-preview-head p {
+            margin: 4px 0 0;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .quick-preview-chip {
+            padding: 7px 10px;
+            border-radius: 999px;
+            background: #ffffff;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            color: #334155;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .quick-preview-canvas {
+            max-width: 1120px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .quick-preview-canvas .certificate-sheet {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <main class="quick-preview-shell">
+        <div class="quick-preview-head">
+            <div>
+                <h1>{{ design.name }}</h1>
+                <p>{{ design.certificateTypeID.name }} · {{ design.get_pageSize_display }} / {{ design.get_orientation_display }}</p>
+            </div>
+            <div class="quick-preview-chip">{{ design.get_templateKey_display }}</div>
+        </div>
+        <div class="quick-preview-canvas">
+            {% include 'certificateApp/partials/certificate_document.html' with issue=preview_context.issue certificate_type=preview_context.certificate_type design=preview_context.design render_mode=preview_context.render_mode design_font_stack=preview_context.design_font_stack title=preview_context.title subtitle=preview_context.subtitle recipient_name=preview_context.recipient_name recipient_subtitle=preview_context.recipient_subtitle rendered_body=preview_context.rendered_body rendered_footer=preview_context.rendered_footer page_size_css=preview_context.page_size_css margin_top=preview_context.margin_top margin_right=preview_context.margin_right margin_bottom=preview_context.margin_bottom margin_left=preview_context.margin_left page_width_mm=preview_context.page_width_mm page_height_mm=preview_context.page_height_mm content_width_mm=preview_context.content_width_mm content_height_mm=preview_context.content_height_mm scope_data=preview_context.scope_data verification_url=preview_context.verification_url verification_qr_data_uri=preview_context.verification_qr_data_uri resolved_overlay_items=preview_context.resolved_overlay_items resolved_fabric_overlay_items=preview_context.resolved_fabric_overlay_items resolved_fabric_canvas_items=preview_context.resolved_fabric_canvas_items has_fabric_overlay=preview_context.has_fabric_overlay is_image_overlay=preview_context.is_image_overlay qr_position=preview_context.qr_position signature_position=preview_context.signature_position seal_position=preview_context.seal_position %}
+        </div>
+    </main>
+</body>
+</html>

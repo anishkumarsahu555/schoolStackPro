@@ -1,0 +1,9 @@
+{% if is_empty_preview %}
+    <div class="generator-live-preview-empty">
+        Select a certificate type and design to load the live preview.
+    </div>
+{% else %}
+    <div class="generator-live-preview-shell">
+        {% include 'certificateApp/partials/certificate_document.html' %}
+    </div>
+{% endif %}

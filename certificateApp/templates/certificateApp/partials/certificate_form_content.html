@@ -1,0 +1,51 @@
+<div class="certificate-form-sheet{% if form_sheet_extra_class %} {{ form_sheet_extra_class }}{% endif %}"{% if form_sheet_id %} id="{{ form_sheet_id }}"{% endif %}>
+    <div>
+        {% if topline %}
+            <div class="certificate-topline{% if topline_extra_class %} {{ topline_extra_class }}{% endif %}"{% if topline_id %} id="{{ topline_id }}"{% endif %}>{{ topline }}</div>
+        {% endif %}
+        <div class="certificate-school{% if school_extra_class %} {{ school_extra_class }}{% endif %}">
+            {% if show_logo %}
+                {% if logo_image_url %}
+                    <img{% if logo_image_id %} id="{{ logo_image_id }}"{% endif %} src="{{ logo_image_url }}" alt="School logo">
+                {% elif logo_fallback %}
+                    <div class="certificate-school-badge{% if logo_badge_extra_class %} {{ logo_badge_extra_class }}{% endif %}"{% if logo_badge_id %} id="{{ logo_badge_id }}"{% endif %}>{{ logo_fallback }}</div>
+                {% endif %}
+            {% endif %}
+            <div>
+                <div class="certificate-school-name{% if school_name_extra_class %} {{ school_name_extra_class }}{% endif %}"{% if school_name_id %} id="{{ school_name_id }}"{% endif %}>{{ school_name }}</div>
+                <div class="certificate-school-meta{% if school_meta_extra_class %} {{ school_meta_extra_class }}{% endif %}"{% if school_meta_id %} id="{{ school_meta_id }}"{% endif %}>{{ school_meta }}</div>
+            </div>
+        </div>
+        <div class="certificate-form-sheet-title{% if form_title_extra_class %} {{ form_title_extra_class }}{% endif %}"{% if form_title_id %} id="{{ form_title_id }}"{% endif %}>{{ title }}</div>
+        <div class="certificate-form-sheet-copy{% if form_copy_extra_class %} {{ form_copy_extra_class }}{% endif %}"{% if form_copy_id %} id="{{ form_copy_id }}"{% endif %}>{{ form_copy }}</div>
+        <div class="certificate-form-sheet-lines">
+            <div class="certificate-form-sheet-row">
+                <span>This is to certify that</span>
+                <span class="certificate-form-sheet-line"></span>
+                <span>has</span>
+                <span class="certificate-form-sheet-line" style="max-width:180px;"></span>
+            </div>
+            <div class="certificate-form-sheet-row">
+                <span>been awarded</span>
+                <span class="certificate-form-sheet-line"></span>
+                <span>for</span>
+                <span class="certificate-form-sheet-line"></span>
+            </div>
+            <div class="certificate-form-sheet-row">
+                <span>competition held in</span>
+                <span class="certificate-form-sheet-line"></span>
+                <span>year</span>
+                <span class="certificate-form-sheet-line" style="max-width:180px;"></span>
+            </div>
+        </div>
+    </div>
+    <div class="certificate-form-sheet-footer">
+        <div>Date: <span class="certificate-form-sheet-line" style="display:inline-block; min-width:180px;"></span></div>
+        <div class="certificate-form-sheet-signature{% if form_signature_extra_class %} {{ form_signature_extra_class }}{% endif %}">
+            {% if show_signature_line %}
+                <div class="certificate-form-sheet-signature-line{% if form_signature_line_extra_class %} {{ form_signature_line_extra_class }}{% endif %}"{% if form_signature_line_id %} id="{{ form_signature_line_id }}"{% endif %}></div>
+            {% endif %}
+            <div><strong>Principal / Authorized Signatory</strong></div>
+        </div>
+    </div>
+</div>

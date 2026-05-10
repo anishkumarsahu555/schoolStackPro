@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'stdimage',
     "homeApp",
+    "certificateApp",
     "financeApp",
     "managementApp",
     "studentApp",
