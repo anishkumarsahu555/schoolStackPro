@@ -72,7 +72,7 @@
                 <i class="chalkboard teacher icon"></i>
                 <span>Add Teacher</span>
             </a>
-            <a class="nav-item" href="{% url 'managementApp:teacher_list' %}">
+            <a class="nav-item" href="{% url 'managementApp:teacher_list' %}" data-active-paths="/management/teacher_detail/ /management/edit_teacher/">
                 <i class="list alternate outline icon"></i>
                 <span>Teacher List</span>
             </a>
@@ -118,11 +118,11 @@
                 <i class="users icon"></i>
                 <span>Add Student</span>
             </a>
-            <a class="nav-item" href="{% url 'managementApp:student_list' %}">
+            <a class="nav-item" href="{% url 'managementApp:student_list' %}" data-active-paths="/management/student_detail/ /management/edit_student/">
                 <i class="list alternate outline icon"></i>
                 <span>Student List</span>
             </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'student_id_cards' or request.resolver_match.url_name == 'student_id_card_detail' %}active{% endif %}" href="{% url 'managementApp:student_id_cards' %}">
+            <a class="nav-item {% if request.resolver_match.url_name == 'student_id_cards' or request.resolver_match.url_name == 'student_id_card_detail' %}active{% endif %}" href="{% url 'managementApp:student_id_cards' %}" data-active-paths="/management/student_id_card/ /management/student_id_card_design/">
                 <i class="id card outline icon"></i>
                 <span>Student ID Cards</span>
             </a>
@@ -137,11 +137,13 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
-            <a class="nav-item {% if request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'certificateApp:dashboard' %}">
+            <a class="nav-item {% if request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+               href="{% url 'certificateApp:dashboard' %}"
+               data-active-paths="/certificates/generate/ /certificates/issue/">
                 <i class="certificate icon"></i>
                 <span>Certificate Dashboard</span>
             </a>
-            <a class="nav-item {% if request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'design_library' %}active{% endif %}" href="{% url 'certificateApp:design_library' %}">
+            <a class="nav-item {% if request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'design_library' or request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'create_design' or request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'edit_design' or request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'duplicate_design' or request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'set_default_design' or request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'design_quick_preview' or request.resolver_match.namespace == 'certificateApp' and request.resolver_match.url_name == 'design_detail' %}active{% endif %}" href="{% url 'certificateApp:design_library' %}">
                 <i class="paint brush icon"></i>
                 <span>Design Library</span>
             </a>
@@ -156,7 +158,7 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
-            <a class="nav-item" href="{% url 'managementApp:manage_parents' %}">
+            <a class="nav-item" href="{% url 'managementApp:manage_parents' %}" data-active-paths="/management/parent_detail/ /management/edit_parent/">
                 <i class="users icon"></i>
                 <span>Parents List</span>
             </a>
@@ -221,7 +223,7 @@
                 <i class="chart bar icon"></i>
                 <span>Finance Dashboard</span>
             </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'manage_receipts' %}active{% endif %}" href="{% url 'managementApp:manage_receipts' %}">
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_receipts' %}active{% endif %}" href="{% url 'managementApp:manage_receipts' %}" data-active-paths="/management/finance/receipt/">
                 <i class="receipt icon"></i>
                 <span>Receipts</span>
             </a>
@@ -300,7 +302,7 @@
                 <i class="linkify icon"></i>
                 <span>Assign Exam to Class</span>
             </a>
-            <a class="nav-item" href="{% url 'managementApp:manage_exam_timetable' %}">
+            <a class="nav-item" href="{% url 'managementApp:manage_exam_timetable' %}" data-active-paths="/management/manage_exam_timetable_preview/">
                 <i class="calendar alternate outline icon"></i>
                 <span>Exam Time Table</span>
             </a>

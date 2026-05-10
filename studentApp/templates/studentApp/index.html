@@ -27,7 +27,8 @@
         </button>
         <div class="nav-group-links">
             <a class="nav-item {% if request.resolver_match.url_name == 'student_home' or request.resolver_match.url_name == 'student_root' %}active{% endif %}"
-               href="{% url 'studentApp:student_home' %}">
+               href="{% url 'studentApp:student_home' %}"
+               data-active-paths="/student/">
                 <i class="tachometer alternate icon"></i>
                 <span>Dashboard</span>
             </a>
