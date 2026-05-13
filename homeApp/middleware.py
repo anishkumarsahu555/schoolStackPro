@@ -66,7 +66,8 @@ class RoleSessionBootstrapMiddleware:
         fallback_session_obj,
         school_obj,
     ):
-        current = dict(request.session.get("current_session", {}))
+        raw_current = request.session.get("current_session", {})
+        current = dict(raw_current) if isinstance(raw_current, dict) else {}
         current_id = current.get("Id")
 
         is_current_valid = False

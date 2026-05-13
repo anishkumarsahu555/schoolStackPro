@@ -17,6 +17,15 @@ from utils.custom_decorators import check_groups
 
 # Create your views here.
 
+def _session_id_from_session_payload(payload):
+    if isinstance(payload, dict):
+        payload = payload.get('Id') or payload.get('id') or payload.get('SessionID')
+    try:
+        return int(payload) if payload not in (None, '') else None
+    except (TypeError, ValueError):
+        return None
+
+
 def _bootstrap_student_context(request):
     student = Student.objects.select_related('sessionID', 'schoolID', 'standardID', 'parentID').filter(
         userID_id=request.user.id,
@@ -34,7 +43,7 @@ def _bootstrap_student_context(request):
             for s in session_qs
         ]
 
-    current_session_id = request.session.get('current_session', {}).get('Id') or (student.sessionID_id if student else None)
+    current_session_id = _session_id_from_session_payload(request.session.get('current_session')) or (student.sessionID_id if student else None)
     if student and current_session_id and student.sessionID_id != current_session_id:
         student = Student.objects.select_related('sessionID', 'schoolID', 'standardID', 'parentID').filter(
             userID_id=request.user.id,
@@ -321,7 +330,7 @@ def student_holiday_list(request):
         appliesTo__in=['both', 'students'],
     ).order_by('-startDate', '-datetime') if current_session_id else SchoolHoliday.objects.none()
 
-    return render(request, 'shared/holiday_list.html', {
+    return render(request, 'studentApp/holiday_list.html', {
         'base_template': 'studentApp/index.html',
         'page_title': 'Holiday List',
         'app_scope': 'student',

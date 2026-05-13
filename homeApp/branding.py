@@ -12,6 +12,8 @@ def get_school_branding(request):
     icon_url = None
 
     session_info = request.session.get("current_session", {}) if hasattr(request, "session") else {}
+    if not isinstance(session_info, dict):
+        session_info = {}
     school_id = session_info.get("SchoolID")
 
     if not school_id and session_info.get("Id"):
@@ -52,7 +54,8 @@ def get_school_branding(request):
             icon_url = school.logo.url
 
     if hasattr(request, "session"):
-        current = dict(request.session.get("current_session", {}))
+        raw_current = request.session.get("current_session", {})
+        current = dict(raw_current) if isinstance(raw_current, dict) else {}
         changed = False
         if school_id and current.get("SchoolID") != school_id:
             current["SchoolID"] = school_id
