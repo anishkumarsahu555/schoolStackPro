@@ -11,7 +11,10 @@ DEFAULT_EXPIRED_MESSAGE = "Activation expired. Please contact the administrator 
 
 
 def resolve_school_for_request(request) -> Optional[SchoolDetail]:
-    current_school_id = request.session.get("current_session", {}).get("SchoolID")
+    current_session = request.session.get("current_session", {})
+    if not isinstance(current_session, dict):
+        current_session = {}
+    current_school_id = current_session.get("SchoolID")
     if current_school_id:
         school = SchoolDetail.objects.select_related("ownerID").filter(
             pk=current_school_id,

@@ -2,6 +2,7 @@ from datetime import date, timedelta
 import json
 
 from django.db.models import Q, Count
+from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
 
 from homeApp.models import SchoolSession, SchoolDetail
@@ -23,8 +24,19 @@ from managementApp.models import (
 from managementApp.reporting import build_report_cards_for_student
 from teacherApp.models import SubjectNote
 from utils.custom_decorators import check_groups
+from utils.logger import logger
+
 
 # Create your views here.
+
+
+def _session_id_from_session_payload(payload):
+    if isinstance(payload, dict):
+        payload = payload.get('Id') or payload.get('id') or payload.get('SessionID')
+    try:
+        return int(payload) if payload not in (None, '') else None
+    except (TypeError, ValueError):
+        return None
 
 
 def _bootstrap_teacher_context(request):
@@ -44,7 +56,14 @@ def _bootstrap_teacher_context(request):
             for s in session_qs
         ]
 
-    current_session_id = request.session.get('current_session', {}).get('Id') or (teacher.sessionID_id if teacher else None)
+    current_session_id = _session_id_from_session_payload(request.session.get('current_session')) or (teacher.sessionID_id if teacher else None)
+    if teacher and current_session_id and teacher.sessionID_id != current_session_id:
+        teacher = TeacherDetail.objects.select_related('sessionID', 'schoolID').filter(
+            userID_id=request.user.id,
+            isDeleted=False,
+            sessionID_id=current_session_id,
+        ).order_by('-datetime').first() or teacher
+
     is_class_teacher = False
     if teacher and current_session_id:
         is_class_teacher = Standard.objects.filter(
@@ -351,20 +370,28 @@ def teacher_manage_event(request):
 @login_required
 @check_groups('Teaching')
 def teacher_holiday_list(request):
-    _, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
-    holidays = SchoolHoliday.objects.filter(
-        isDeleted=False,
-        sessionID_id=current_session_id,
-        appliesTo__in=['both', 'teachers'],
-    ).order_by('-startDate', '-datetime') if current_session_id else SchoolHoliday.objects.none()
-
-    return render(request, 'shared/holiday_list.html', {
-        'base_template': 'teacherApp/index.html',
-        'page_title': 'Holiday List',
-        'app_scope': 'teacher',
-        'holidays': holidays,
-        'is_class_teacher': is_class_teacher,
-    })
+    try:
+        _, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
+        holidays = SchoolHoliday.objects.filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            appliesTo__in=['both', 'teachers'],
+        ).order_by('-startDate', '-datetime') if current_session_id else SchoolHoliday.objects.none()
+        logger.info("Holiday list fetched successfully")
+        return render(request, 'teacherApp/holiday_list.html', {
+            'base_template': 'teacherApp/index.html',
+            'page_title': 'Holiday List',
+            'app_scope': 'teacher',
+            'holidays': holidays,
+            'is_class_teacher': is_class_teacher,
+        })
+    except Exception as e:
+        logger.error(f"Error in teacher_holiday_list" + str(e))
+        return HttpResponse(
+            "Unable to load holiday list right now. Please refresh after the server reloads.",
+            status=500,
+            content_type="text/plain",
+        )
 
 
 @login_required

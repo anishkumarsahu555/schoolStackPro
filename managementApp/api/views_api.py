@@ -86,7 +86,12 @@ from managementApp.leave_utils import (
     leave_duration_label,
     pending_leave_map_for_date,
 )
-from managementApp.holiday_utils import holiday_for_date, holiday_note, resync_holiday_to_attendance, revert_holiday_attendance_sync
+from managementApp.holiday_utils import (
+    holiday_audiences,
+    holiday_for_date,
+    holiday_note,
+    resync_holidays_for_scope,
+)
 from teacherApp.models import SubjectNote, SubjectNoteVersion
 from utils.conts import MONTHS_LIST
 from utils.get_school_detail import get_school_id
@@ -10926,7 +10931,14 @@ def add_holiday_api(request):
 
         obj = SchoolHoliday(**payload)
         pre_save_with_user.send(sender=SchoolHoliday, instance=obj, user=request.user.pk)
-        resync_holiday_to_attendance(obj, user_id=request.user.pk)
+        resync_holidays_for_scope(
+            session_id=obj.sessionID_id,
+            school_id=obj.schoolID_id,
+            start_date=obj.startDate,
+            end_date=obj.endDate,
+            audiences=holiday_audiences(obj.appliesTo),
+            user_id=request.user.pk,
+        )
         return SuccessResponse('Holiday added and attendance marked successfully.', extra={'color': 'success'}).to_json_response()
     except ValueError as e:
         return ErrorResponse(str(e), extra={'color': 'red'}).to_json_response()
@@ -10976,6 +10988,9 @@ def update_holiday_api(request):
             isDeleted=False,
             sessionID_id=request.session['current_session']['Id'],
         )
+        old_start_date = obj.startDate
+        old_end_date = obj.endDate
+        old_applies_to = obj.appliesTo
         duplicate = SchoolHoliday.objects.filter(
             isDeleted=False,
             sessionID_id=request.session['current_session']['Id'],
@@ -10990,7 +11005,14 @@ def update_holiday_api(request):
         for field, value in payload.items():
             setattr(obj, field, value)
         pre_save_with_user.send(sender=SchoolHoliday, instance=obj, user=request.user.pk)
-        resync_holiday_to_attendance(obj, user_id=request.user.pk)
+        resync_holidays_for_scope(
+            session_id=obj.sessionID_id,
+            school_id=obj.schoolID_id,
+            start_date=min(old_start_date, obj.startDate),
+            end_date=max(old_end_date, obj.endDate),
+            audiences=holiday_audiences(old_applies_to, obj.appliesTo),
+            user_id=request.user.pk,
+        )
         return SuccessResponse('Holiday updated and attendance refreshed successfully.', extra={'color': 'success'}).to_json_response()
     except ValueError as e:
         return ErrorResponse(str(e), extra={'color': 'red'}).to_json_response()
@@ -11012,9 +11034,19 @@ def delete_holiday(request):
             isDeleted=False,
             sessionID_id=request.session['current_session']['Id'],
         )
-        revert_holiday_attendance_sync(obj, user_id=request.user.pk)
+        start_date = obj.startDate
+        end_date = obj.endDate
+        applies_to = obj.appliesTo
         obj.isDeleted = True
         pre_save_with_user.send(sender=SchoolHoliday, instance=obj, user=request.user.pk)
+        resync_holidays_for_scope(
+            session_id=obj.sessionID_id,
+            school_id=obj.schoolID_id,
+            start_date=start_date,
+            end_date=end_date,
+            audiences=holiday_audiences(applies_to),
+            user_id=request.user.pk,
+        )
         return SuccessResponse('Holiday deleted and attendance reverted successfully.', extra={'color': 'success'}).to_json_response()
     except Exception as e:
         logger.error(f'Error in delete_holiday: {e}')
