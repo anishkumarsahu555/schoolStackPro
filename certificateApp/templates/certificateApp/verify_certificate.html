@@ -10,6 +10,7 @@
             font-family: Arial, Helvetica, sans-serif;
             background: #f3f4f6;
             color: #111827;
+            -webkit-text-size-adjust: 100%;
         }
         .verify-shell {
             width: min(920px, calc(100% - 32px));
@@ -26,12 +27,14 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            max-width: 100%;
             padding: 7px 10px;
             border-radius: 999px;
             font-size: 13px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.04em;
+            line-height: 1.25;
         }
         .verify-status.valid {
             color: #065f46;
@@ -43,8 +46,15 @@
         }
         h1 {
             margin: 18px 0 8px;
-            font-size: 28px;
+            font-size: clamp(24px, 5vw, 28px);
             line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
+        p {
+            margin: 0;
+            color: #4b5563;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
         }
         .verify-grid {
             display: grid;
@@ -55,6 +65,7 @@
         .verify-item {
             border-top: 1px solid #e5e7eb;
             padding-top: 12px;
+            min-width: 0;
         }
         .verify-label {
             color: #6b7280;
@@ -66,21 +77,80 @@
             margin-top: 5px;
             font-size: 15px;
             font-weight: 700;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
         }
         .verify-preview {
             margin-top: 28px;
-            overflow: auto;
+            overflow-x: hidden;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             background: #f9fafb;
             padding: 16px;
         }
+        .verify-preview .certificate-sheet {
+            max-width: 100%;
+        }
+        .verify-certificate-frame {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+        .verify-certificate-frame .certificate-sheet {
+            transform-origin: top left;
+        }
         @media (max-width: 720px) {
-            .verify-grid {
-                grid-template-columns: 1fr;
+            body {
+                background: #fff;
+            }
+            .verify-shell {
+                width: 100%;
+                margin: 0;
             }
             .verify-panel {
+                min-height: 100vh;
+                border: 0;
+                border-radius: 0;
                 padding: 18px;
+                box-shadow: none;
+            }
+            .verify-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                margin-top: 18px;
+            }
+            .verify-preview {
+                margin: 22px -6px 0;
+                padding: 8px;
+                border-radius: 6px;
+                overflow: hidden;
+            }
+            .verify-preview .certificate-sheet {
+                border-radius: 10px;
+                min-height: auto;
+                padding: 1rem;
+                box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+            }
+            .verify-preview .certificate-school {
+                gap: 0.55rem;
+            }
+            .verify-preview .certificate-school img {
+                width: 44px;
+                height: 44px;
+            }
+            .verify-preview .certificate-school-name {
+                font-size: clamp(1rem, 5vw, 1.35rem);
+            }
+            .verify-preview .certificate-title {
+                font-size: clamp(1.55rem, 8vw, 2.35rem);
+            }
+            .verify-preview .certificate-recipient {
+                font-size: clamp(1.45rem, 7vw, 2.25rem);
+            }
+            .verify-preview .certificate-body,
+            .verify-preview .certificate-meta-strip,
+            .verify-preview .certificate-footer {
+                font-size: 0.82rem;
             }
         }
     </style>
@@ -124,9 +194,50 @@
             </div>
 
             <div class="verify-preview">
-                {% include 'certificateApp/partials/certificate_document.html' %}
+                <div class="verify-certificate-frame" id="certificatePreviewFrame" data-natural-width="{% if design and design.orientation == 'landscape' %}1100{% else %}860{% endif %}">
+                    {% include 'certificateApp/partials/certificate_document.html' %}
+                </div>
             </div>
         </section>
     </main>
+    <script>
+        (function () {
+            function fitCertificatePreview() {
+                var frame = document.getElementById('certificatePreviewFrame');
+                if (!frame) return;
+                var sheet = frame.querySelector('.certificate-sheet');
+                if (!sheet) return;
+
+                sheet.style.transform = '';
+                sheet.style.width = '';
+                sheet.style.maxWidth = '';
+                frame.style.height = '';
+
+                var availableWidth = frame.clientWidth;
+                if (availableWidth < 720) {
+                    sheet.style.maxWidth = 'none';
+                }
+                var sheetRect = sheet.getBoundingClientRect();
+                var renderedWidth = sheet.scrollWidth || sheetRect.width;
+                var naturalWidth = parseFloat(frame.getAttribute('data-natural-width')) || 0;
+                renderedWidth = Math.max(renderedWidth, naturalWidth);
+                sheet.querySelectorAll('*').forEach(function (node) {
+                    var rect = node.getBoundingClientRect();
+                    renderedWidth = Math.max(renderedWidth, rect.right - sheetRect.left);
+                });
+                if (!availableWidth || !renderedWidth) return;
+
+                var scale = Math.min(1, Math.max(0.1, (availableWidth - 12) / renderedWidth));
+                if (scale < 1) {
+                    sheet.style.width = renderedWidth + 'px';
+                    sheet.style.transform = 'scale(' + scale + ')';
+                    frame.style.height = Math.ceil(sheet.offsetHeight * scale) + 'px';
+                }
+            }
+
+            window.addEventListener('load', fitCertificatePreview);
+            window.addEventListener('resize', fitCertificatePreview);
+        })();
+    </script>
 </body>
 </html>
