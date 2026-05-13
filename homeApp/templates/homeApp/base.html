@@ -736,9 +736,13 @@
 
 .nav-item span {
     min-width: 0;
-    white-space: nowrap;
+    line-height: 1.18;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
     overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .nav-item:hover {

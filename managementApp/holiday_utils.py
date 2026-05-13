@@ -28,6 +28,13 @@ def _holiday_applies_to_teachers(holiday_obj):
     return holiday_obj.appliesTo in ('both', 'teachers')
 
 
+def _save_with_optional_user(instance, *, user_id=None):
+    if user_id:
+        pre_save_with_user.send(sender=instance.__class__, instance=instance, user=user_id)
+    else:
+        instance.save()
+
+
 def _audiences_from_applies_to(applies_to):
     if applies_to == 'both':
         return {'students', 'teachers'}
@@ -68,7 +75,7 @@ def _restore_attendance_from_holiday(attendance_obj, *, user_id=None):
     attendance_obj.holidaySyncPreviousAbsentReason = None
     attendance_obj.holidaySyncPreviousAttendanceStatus = None
     attendance_obj.holidaySyncPreviousLeaveDurationType = None
-    pre_save_with_user.send(sender=attendance_obj.__class__, instance=attendance_obj, user=user_id)
+    _save_with_optional_user(attendance_obj, user_id=user_id)
 
 
 def _sync_attendance_row_to_holiday(attendance_obj, *, holiday_obj, note, created_by_sync, user_id=None):
@@ -93,7 +100,7 @@ def _sync_attendance_row_to_holiday(attendance_obj, *, holiday_obj, note, create
     attendance_obj.leaveDurationType = None
     attendance_obj.sourceHoliday = holiday_obj
     attendance_obj.holidaySyncCreatedAttendance = created_by_sync
-    pre_save_with_user.send(sender=attendance_obj.__class__, instance=attendance_obj, user=user_id)
+    _save_with_optional_user(attendance_obj, user_id=user_id)
 
 
 def sync_holiday_to_attendance(holiday_obj, *, user_id=None, start_date=None, end_date=None):
