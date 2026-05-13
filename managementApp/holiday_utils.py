@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 
+from django.db.models import Q
+
 from managementApp.models import SchoolHoliday, Student, StudentAttendance, TeacherAttendance, TeacherDetail
 from managementApp.signals import pre_save_with_user
 from managementApp.leave_utils import ATTENDANCE_STATUS_HOLIDAY, attendance_status_from_values
@@ -26,7 +28,57 @@ def _holiday_applies_to_teachers(holiday_obj):
     return holiday_obj.appliesTo in ('both', 'teachers')
 
 
+def _audiences_from_applies_to(applies_to):
+    if applies_to == 'both':
+        return {'students', 'teachers'}
+    if applies_to in {'students', 'teachers'}:
+        return {applies_to}
+    return set()
+
+
+def holiday_audiences(*applies_values):
+    audiences = set()
+    for applies_to in applies_values:
+        audiences.update(_audiences_from_applies_to(applies_to))
+    return audiences
+
+
+def _restore_attendance_from_holiday(attendance_obj, *, user_id=None):
+    if attendance_obj.holidaySyncCreatedAttendance:
+        attendance_obj.isDeleted = True
+        attendance_obj.sourceHoliday = None
+        attendance_obj.save(update_fields=['isDeleted', 'sourceHoliday', 'lastUpdatedOn'])
+        return
+
+    previous_status = attendance_obj.holidaySyncPreviousAttendanceStatus
+    attendance_obj.isPresent = bool(attendance_obj.holidaySyncPreviousIsPresent)
+    attendance_obj.isHoliday = bool(attendance_obj.holidaySyncPreviousIsHoliday)
+    attendance_obj.absentReason = attendance_obj.holidaySyncPreviousAbsentReason or ''
+    attendance_obj.leaveDurationType = attendance_obj.holidaySyncPreviousLeaveDurationType
+    attendance_obj.attendanceStatus = attendance_status_from_values(
+        is_present=attendance_obj.isPresent,
+        absent_reason=attendance_obj.absentReason,
+        is_holiday=attendance_obj.isHoliday,
+        attendance_status=previous_status,
+    )
+    attendance_obj.sourceHoliday = None
+    attendance_obj.holidaySyncCreatedAttendance = False
+    attendance_obj.holidaySyncPreviousIsPresent = None
+    attendance_obj.holidaySyncPreviousIsHoliday = None
+    attendance_obj.holidaySyncPreviousAbsentReason = None
+    attendance_obj.holidaySyncPreviousAttendanceStatus = None
+    attendance_obj.holidaySyncPreviousLeaveDurationType = None
+    pre_save_with_user.send(sender=attendance_obj.__class__, instance=attendance_obj, user=user_id)
+
+
 def _sync_attendance_row_to_holiday(attendance_obj, *, holiday_obj, note, created_by_sync, user_id=None):
+    if (
+        attendance_obj.sourceHoliday_id
+        and attendance_obj.sourceHoliday_id != holiday_obj.id
+        and attendance_obj.isHoliday
+    ):
+        return
+
     if attendance_obj.sourceHoliday_id != holiday_obj.id:
         attendance_obj.holidaySyncPreviousIsPresent = attendance_obj.isPresent
         attendance_obj.holidaySyncPreviousIsHoliday = attendance_obj.isHoliday
@@ -44,15 +96,19 @@ def _sync_attendance_row_to_holiday(attendance_obj, *, holiday_obj, note, create
     pre_save_with_user.send(sender=attendance_obj.__class__, instance=attendance_obj, user=user_id)
 
 
-def sync_holiday_to_attendance(holiday_obj, *, user_id=None):
+def sync_holiday_to_attendance(holiday_obj, *, user_id=None, start_date=None, end_date=None):
     note = holiday_note(holiday_obj)
+    range_start = max(holiday_obj.startDate, start_date) if start_date else holiday_obj.startDate
+    range_end = min(holiday_obj.endDate, end_date) if end_date else holiday_obj.endDate
+    if range_start > range_end:
+        return
 
     if _holiday_applies_to_students(holiday_obj):
         students = Student.objects.filter(
             isDeleted=False,
             sessionID_id=holiday_obj.sessionID_id,
         ).select_related('standardID')
-        for day in date_range(holiday_obj.startDate, holiday_obj.endDate):
+        for day in date_range(range_start, range_end):
             for student in students:
                 attendance_obj = StudentAttendance.objects.filter(
                     isDeleted=False,
@@ -86,7 +142,7 @@ def sync_holiday_to_attendance(holiday_obj, *, user_id=None):
             isDeleted=False,
             sessionID_id=holiday_obj.sessionID_id,
         )
-        for day in date_range(holiday_obj.startDate, holiday_obj.endDate):
+        for day in date_range(range_start, range_end):
             for teacher in teachers:
                 attendance_obj = TeacherAttendance.objects.filter(
                     isDeleted=False,
@@ -116,36 +172,72 @@ def sync_holiday_to_attendance(holiday_obj, *, user_id=None):
 def revert_holiday_attendance_sync(holiday_obj, *, user_id=None):
     for model in (StudentAttendance, TeacherAttendance):
         for attendance_obj in model.objects.filter(sourceHoliday_id=holiday_obj.id):
-            if attendance_obj.holidaySyncCreatedAttendance:
-                attendance_obj.isDeleted = True
-                attendance_obj.sourceHoliday = None
-                attendance_obj.save(update_fields=['isDeleted', 'sourceHoliday', 'lastUpdatedOn'])
-                continue
-
-            previous_status = attendance_obj.holidaySyncPreviousAttendanceStatus
-            attendance_obj.isPresent = bool(attendance_obj.holidaySyncPreviousIsPresent)
-            attendance_obj.isHoliday = bool(attendance_obj.holidaySyncPreviousIsHoliday)
-            attendance_obj.absentReason = attendance_obj.holidaySyncPreviousAbsentReason or ''
-            attendance_obj.leaveDurationType = attendance_obj.holidaySyncPreviousLeaveDurationType
-            attendance_obj.attendanceStatus = attendance_status_from_values(
-                is_present=attendance_obj.isPresent,
-                absent_reason=attendance_obj.absentReason,
-                is_holiday=attendance_obj.isHoliday,
-                attendance_status=previous_status,
-            )
-            attendance_obj.sourceHoliday = None
-            attendance_obj.holidaySyncCreatedAttendance = False
-            attendance_obj.holidaySyncPreviousIsPresent = None
-            attendance_obj.holidaySyncPreviousIsHoliday = None
-            attendance_obj.holidaySyncPreviousAbsentReason = None
-            attendance_obj.holidaySyncPreviousAttendanceStatus = None
-            attendance_obj.holidaySyncPreviousLeaveDurationType = None
-            pre_save_with_user.send(sender=model, instance=attendance_obj, user=user_id)
+            _restore_attendance_from_holiday(attendance_obj, user_id=user_id)
 
 
 def resync_holiday_to_attendance(holiday_obj, *, user_id=None):
     revert_holiday_attendance_sync(holiday_obj, user_id=user_id)
     sync_holiday_to_attendance(holiday_obj, user_id=user_id)
+
+
+def resync_holidays_for_scope(*, session_id, school_id=None, start_date, end_date, audiences, user_id=None):
+    if not session_id or not start_date or not end_date or not audiences:
+        return
+    if end_date < start_date:
+        return
+
+    if 'students' in audiences:
+        student_rows = StudentAttendance.objects.filter(
+            isDeleted=False,
+            sourceHoliday__isnull=False,
+            sessionID_id=session_id,
+            attendanceDate__date__gte=start_date,
+            attendanceDate__date__lte=end_date,
+            bySubject=False,
+        )
+        if school_id:
+            student_rows = student_rows.filter(schoolID_id=school_id)
+        for attendance_obj in student_rows.order_by('attendanceDate', 'id'):
+            _restore_attendance_from_holiday(attendance_obj, user_id=user_id)
+
+    if 'teachers' in audiences:
+        teacher_rows = TeacherAttendance.objects.filter(
+            isDeleted=False,
+            sourceHoliday__isnull=False,
+            sessionID_id=session_id,
+            attendanceDate__date__gte=start_date,
+            attendanceDate__date__lte=end_date,
+        )
+        if school_id:
+            teacher_rows = teacher_rows.filter(schoolID_id=school_id)
+        for attendance_obj in teacher_rows.order_by('attendanceDate', 'id'):
+            _restore_attendance_from_holiday(attendance_obj, user_id=user_id)
+
+    applies_filter = Q()
+    if 'students' in audiences:
+        applies_filter |= Q(appliesTo__in=['both', 'students'])
+    if 'teachers' in audiences:
+        applies_filter |= Q(appliesTo__in=['both', 'teachers'])
+    if not applies_filter:
+        return
+
+    holidays = SchoolHoliday.objects.filter(
+        applies_filter,
+        isDeleted=False,
+        sessionID_id=session_id,
+        startDate__lte=end_date,
+        endDate__gte=start_date,
+    )
+    if school_id:
+        holidays = holidays.filter(schoolID_id=school_id)
+
+    for holiday_obj in holidays.order_by('startDate', 'id'):
+        sync_holiday_to_attendance(
+            holiday_obj,
+            user_id=user_id,
+            start_date=start_date,
+            end_date=end_date,
+        )
 
 
 def holiday_for_date(*, session_id, target_date, applies_to):
