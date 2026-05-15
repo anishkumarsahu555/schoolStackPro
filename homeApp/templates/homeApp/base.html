@@ -3094,7 +3094,14 @@
 
         @media (max-width: 767px) {
             .main-content {
-                padding: 8px 5px !important;
+                padding: 8px 5px calc(7rem + env(safe-area-inset-bottom)) !important;
+            }
+
+            body:not(.chat-room-mobile-route) .main-content::after {
+                content: "";
+                display: block;
+                height: calc(7rem + env(safe-area-inset-bottom));
+                flex: 0 0 auto;
             }
 
             body.management-route .main-content {
@@ -3184,8 +3191,13 @@
                 margin-left: 0 !important;
                 margin-top: 0 !important;
                 height: 100vh !important;
-                padding: 8px 5px calc(84px + env(safe-area-inset-bottom)) !important;
+                padding: 8px 5px calc(7rem + env(safe-area-inset-bottom)) !important;
                 background: var(--app-bg) !important;
+            }
+
+            body.student-mobile-route .student-mobile-app,
+            body.teacher-mobile-route .student-mobile-app {
+                padding-bottom: calc(7rem + env(safe-area-inset-bottom)) !important;
             }
 
             body.student-mobile-route .student-mobile-bottom-nav {
@@ -3367,7 +3379,7 @@
                 margin-left: 0 !important;
                 margin-top: 0 !important;
                 height: 100vh !important;
-                padding: 8px 4px calc(84px + env(safe-area-inset-bottom)) !important;
+                padding: 8px 4px calc(7rem + env(safe-area-inset-bottom)) !important;
                 background: var(--app-bg) !important;
             }
 
@@ -3445,6 +3457,11 @@
                 border-radius: 999px !important;
             }
 
+            body.chat-room-mobile-route.student-mobile-route .main-content,
+            body.chat-room-mobile-route.teacher-mobile-route .main-content {
+                padding-bottom: 0 !important;
+            }
+
             html[data-theme="dark"] body.student-mobile-route .main-content {
                 background: var(--app-bg) !important;
             }
@@ -3452,7 +3469,7 @@
     </style>
 </head>
 
-<body class="{% if request.path|slice:':9' == '/student/' or request.path == '/profile/' and role_label == 'Student' %}student-mobile-route{% elif request.path|slice:':9' == '/teacher/' or request.path == '/profile/' and role_label == 'Teacher' %}teacher-mobile-route{% endif %}{% if request.path|slice:':12' == '/management/' %} management-route{% endif %}">
+<body class="{% if request.path|slice:':9' == '/student/' or request.path == '/profile/' and role_label == 'Student' %}student-mobile-route{% elif request.path|slice:':9' == '/teacher/' or request.path == '/profile/' and role_label == 'Teacher' %}teacher-mobile-route{% endif %}{% if request.resolver_match.url_name == 'student_chat_room' or request.resolver_match.url_name == 'teacher_chat_room' %} chat-room-mobile-route{% endif %}{% if request.path|slice:':12' == '/management/' %} management-route{% endif %}">
 <!-- sidebar -->
 <div class="ui sidebar material-sidenav vertical menu sidebar-menu" id="sidebar">
 
@@ -3589,7 +3606,7 @@
 
 
 </div>
-{% if request.path|slice:":9" == "/student/" or request.path == "/profile/" and role_label == "Student" %}
+{% if request.resolver_match.url_name != "student_chat_room" and request.path|slice:":9" == "/student/" or request.path == "/profile/" and role_label == "Student" %}
 <nav class="student-mobile-bottom-nav">
     <a class="student-nav-item {% if request.resolver_match.url_name == 'student_home' or request.resolver_match.url_name == 'student_root' %}active{% endif %}" href="{% url 'studentApp:student_home' %}">
         <i class="home icon"></i>
@@ -3613,7 +3630,7 @@
     </a>
 </nav>
 {% endif %}
-{% if request.path|slice:":9" == "/teacher/" or request.path == "/profile/" and role_label == "Teacher" %}
+{% if request.resolver_match.url_name != "teacher_chat_room" and request.path|slice:":9" == "/teacher/" or request.path == "/profile/" and role_label == "Teacher" %}
 <nav class="student-mobile-bottom-nav">
     <a class="student-nav-item {% if request.resolver_match.url_name == 'teacher_home' or request.resolver_match.url_name == 'teacher_root' %}active{% endif %}" href="{% url 'teacherApp:teacher_home' %}">
         <i class="home icon"></i>
@@ -3676,10 +3693,10 @@
 <div class="ui small modal notification-tour-modal" id="notificationTourModal">
     <div class="content">
         <div class="notification-tour-top">
-            <div class="notification-tour-chip">Smart Event Alerts</div>
+            <div class="notification-tour-chip">Smart School Alerts</div>
             <h3 class="notification-tour-title">Enable browser notifications</h3>
             <p class="notification-tour-subtitle">
-                Stay updated with instant event add/update alerts from your school.
+                Stay updated with chat messages and important event alerts from your school.
             </p>
         </div>
         <div class="notification-tour-body">
@@ -3694,7 +3711,7 @@
                 </li>
                 <li>
                     <span class="num">3</span>
-                    <span>You will start receiving event notifications instantly.</span>
+                    <span>You will start receiving chat and event notifications instantly.</span>
                 </li>
             </ul>
             <div class="notification-tour-tip">
@@ -5558,6 +5575,32 @@
         }
     });
 
+    {% if request.user.is_authenticated %}
+        (function () {
+            function updateChatUnreadBadge(count) {
+                $('[data-chat-unread-count]').each(function () {
+                    this.textContent = count ? ' (' + count + ')' : '';
+                });
+            }
+
+            function refreshChatUnreadBadge() {
+                if (!$('[data-chat-unread-count]').length) return;
+                fetch('{% url "chatApp:unread_summary_api" %}', {
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    credentials: 'same-origin'
+                })
+                    .then(function (response) { return response.ok ? response.json() : null; })
+                    .then(function (payload) {
+                        if (payload) {
+                            updateChatUnreadBadge(payload.total_unread || 0);
+                        }
+                    })
+                    .catch(function () {});
+            }
+
+            setInterval(refreshChatUnreadBadge, 30000);
+        })();
+    {% endif %}
 
 </script>
 

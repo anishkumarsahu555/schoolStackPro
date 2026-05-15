@@ -5,6 +5,7 @@ from django.db.models import Q, Count
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
 
+from chatApp.views import inbox as chat_inbox
 from homeApp.models import SchoolSession, SchoolDetail
 from homeApp.session_utils import build_current_session_payload, build_session_list_item
 from homeApp.utils import login_required
@@ -695,6 +696,13 @@ def teacher_student_detail(request, id=None):
         'is_class_teacher': is_class_teacher,
     }
     return render(request, 'managementApp/student/student_detail.html', context)
+
+
+@login_required
+@check_groups('Teaching')
+def teacher_chat(request, room_id=None):
+    _bootstrap_teacher_context(request)
+    return chat_inbox(request, room_id=room_id)
 
 
 @login_required

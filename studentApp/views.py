@@ -5,6 +5,7 @@ from django.db.models import Sum, Count, Q
 from django.db.models.functions import TruncMonth
 from django.shortcuts import render
 
+from chatApp.views import inbox as chat_inbox
 from homeApp.models import SchoolSession, SchoolDetail
 from homeApp.session_utils import build_current_session_payload, build_session_list_item
 from homeApp.utils import login_required
@@ -469,6 +470,13 @@ def student_id_card(request):
 
     context = build_id_card_context(student)
     return render(request, 'studentApp/id_card.html', context)
+
+
+@login_required
+@check_groups('Student')
+def student_chat(request, room_id=None):
+    _bootstrap_student_context(request)
+    return chat_inbox(request, room_id=room_id)
 
 
 @login_required

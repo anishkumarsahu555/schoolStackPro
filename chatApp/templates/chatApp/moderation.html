@@ -1,0 +1,736 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Chat Moderation</title>
+{% endblock %}
+
+{% block css %}
+    <style>
+        .moderation-studio-shell {
+            padding: 0 0.75rem 2rem;
+        }
+
+        .moderation-hero {
+            background: linear-gradient(135deg, #114a7a 0%, #1773b8 52%, #30a46c 100%);
+            border-radius: 24px;
+            color: #fff;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            padding: 1.35rem 1.45rem;
+            box-shadow: 0 18px 38px rgba(17, 74, 122, 0.24);
+        }
+
+        .moderation-hero-content {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .moderation-hero h2 {
+            color: #fff;
+            font-size: 1.6rem;
+            margin: 0 0 0.35rem;
+        }
+
+        .moderation-hero p {
+            color: rgba(255, 255, 255, 0.92);
+            margin: 0;
+            max-width: 680px;
+        }
+
+        .moderation-hero-tags {
+            display: flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            margin-top: 0.85rem;
+        }
+
+        .moderation-hero-tag,
+        .moderation-hero-note {
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #fff;
+        }
+
+        .moderation-hero-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            border-radius: 999px;
+            font-size: 0.88rem;
+            padding: 0.42rem 0.75rem;
+        }
+
+        .moderation-hero-tag i.icon,
+        .moderation-hero-note i.icon {
+            color: #ffffff !important;
+            margin: 0 !important;
+            opacity: 0.96;
+        }
+
+        .moderation-hero-note {
+            border-radius: 16px;
+            font-size: 0.92rem;
+            max-width: 280px;
+            min-width: 220px;
+            padding: 0.85rem 0.95rem;
+        }
+
+        .moderation-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 1rem;
+        }
+
+        .moderation-card {
+            border: 1px solid rgba(151, 161, 184, 0.18) !important;
+            border-radius: 22px !important;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 249, 252, 0.98) 100%) !important;
+            box-shadow: 0 18px 40px rgba(21, 35, 61, 0.08) !important;
+        }
+
+        .moderation-info {
+            border-radius: 16px;
+            margin-bottom: 1rem !important;
+        }
+
+        .moderation-toolbar {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 0.95rem;
+        }
+
+        .moderation-toolbar h4,
+        .moderation-side-panel h4 {
+            color: #183b5b;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .moderation-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            border-radius: 999px;
+            background: rgba(23, 115, 184, 0.1);
+            color: #1b6aa5;
+            font-size: 0.9rem;
+            padding: 0.45rem 0.75rem;
+        }
+
+        .moderation-pill i.icon {
+            color: #1773b8 !important;
+            margin: 0 !important;
+        }
+
+        .report-stack {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .report-panel {
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 255, 0.92) 100%);
+            overflow: hidden;
+        }
+
+        .report-panel-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: flex-start;
+            padding: 0.9rem 1rem;
+            background: linear-gradient(90deg, rgba(23, 115, 184, 0.08) 0%, rgba(48, 164, 108, 0.08) 100%);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        }
+
+        .report-room {
+            color: #183b5b;
+            font-size: 0.98rem;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .report-meta {
+            color: #6a809c;
+            font-size: 0.84rem;
+            margin-top: 0.18rem;
+        }
+
+        .report-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.12);
+            color: #8c4f10;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 0.42rem 0.72rem;
+            white-space: nowrap;
+        }
+
+        .report-status i.icon {
+            color: #b45309 !important;
+            margin: 0 !important;
+        }
+
+        .report-panel-body {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 240px;
+            gap: 0.85rem;
+            padding: 0.95rem 1rem;
+        }
+
+        .report-message-box,
+        .report-detail-box {
+            border: 1px dashed rgba(122, 145, 175, 0.28);
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(245, 249, 255, 0.72) 0%, rgba(255, 255, 255, 0.95) 100%);
+            padding: 0.85rem;
+        }
+
+        .report-label {
+            color: #68819f;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.35rem;
+            text-transform: uppercase;
+        }
+
+        .report-message {
+            color: #183b5b;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            max-height: 150px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .report-detail-item {
+            color: #6a809c;
+            font-size: 0.84rem;
+            margin-bottom: 0.5rem;
+            min-width: 0;
+        }
+
+        .report-detail-item strong {
+            color: #183b5b;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .report-chip-row {
+            display: flex;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+            margin-top: 0.6rem;
+        }
+
+        .report-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(23, 115, 184, 0.08);
+            color: #1b6aa5;
+            font-size: 0.8rem;
+            padding: 0.34rem 0.62rem;
+        }
+
+        .report-chip i.icon {
+            color: #1773b8 !important;
+            margin: 0 !important;
+        }
+
+        .report-chip.danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.18);
+            color: #b42318;
+        }
+
+        .report-chip.danger i.icon {
+            color: #b42318 !important;
+        }
+
+        .report-actions {
+            border-top: 1px solid rgba(148, 163, 184, 0.14);
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+            gap: 0.8rem;
+            padding: 0.9rem 1rem 1rem;
+        }
+
+        .report-primary-actions,
+        .report-mute-actions {
+            display: grid;
+            gap: 0.55rem;
+        }
+
+        .report-primary-actions {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .report-mute-form {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.45rem;
+        }
+
+        .report-actions .ui.button,
+        .report-mute-form .ui.dropdown {
+            border-radius: 999px !important;
+        }
+
+        .report-actions .ui.button i.icon,
+        .moderation-export i.icon {
+            margin: 0 0.38rem 0 0 !important;
+        }
+
+        .report-actions .ui.green.button i.icon,
+        .report-actions .ui.red.button i.icon,
+        .moderation-export.ui.primary.button i.icon {
+            color: #ffffff !important;
+        }
+
+        .report-actions .ui.button:not(.green):not(.red) i.icon,
+        .moderation-export.ui.basic.button i.icon {
+            color: #1773b8 !important;
+        }
+
+        .moderation-side-panel {
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 251, 255, 0.98) 100%);
+            padding: 1rem;
+        }
+
+        .moderation-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin: 0.85rem 0 1rem;
+        }
+
+        .moderation-stat {
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(242, 247, 255, 0.92) 100%);
+            padding: 0.9rem 0.95rem;
+        }
+
+        .moderation-stat .label {
+            color: #68819f;
+            font-size: 0.78rem;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+        }
+
+        .moderation-stat .value {
+            color: #12385a;
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+
+        .empty-state {
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 0.7rem;
+            color: #5f6f86;
+            border: 1px dashed rgba(122, 145, 175, 0.35);
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(245, 249, 255, 0.72) 0%, rgba(255, 255, 255, 0.95) 100%);
+            padding: 1rem;
+        }
+
+        .empty-state .icon-wrap {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(23, 115, 184, 0.12) 0%, rgba(48, 164, 108, 0.14) 100%);
+            color: #1773b8;
+            font-size: 1.5rem;
+        }
+
+        .empty-state .icon-wrap i.icon {
+            color: #1773b8 !important;
+            margin: 0 !important;
+        }
+
+        .history-list {
+            display: grid;
+            gap: 0.55rem;
+            margin-top: 0.75rem;
+            max-height: 460px;
+            overflow: auto;
+        }
+
+        .history-item {
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(246, 250, 255, 0.92) 100%);
+            padding: 0.75rem 0.85rem;
+        }
+
+        .history-item-main {
+            color: #183b5b;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .history-item-sub {
+            color: #6a809c;
+            font-size: 0.84rem;
+            margin-top: 0.18rem;
+        }
+
+        .history-export {
+            margin-top: 0.85rem;
+        }
+
+        html[data-theme="dark"] .moderation-card {
+            border-color: rgba(96, 112, 136, 0.28) !important;
+            background: linear-gradient(180deg, rgba(27, 33, 42, 0.98) 0%, rgba(22, 27, 35, 0.98) 100%) !important;
+            box-shadow: 0 18px 42px rgba(2, 6, 23, 0.38) !important;
+        }
+
+        html[data-theme="dark"] .moderation-hero {
+            box-shadow: 0 20px 44px rgba(2, 6, 23, 0.5);
+        }
+
+        html[data-theme="dark"] .report-panel,
+        html[data-theme="dark"] .moderation-side-panel,
+        html[data-theme="dark"] .history-item,
+        html[data-theme="dark"] .moderation-stat {
+            border-color: rgba(96, 112, 136, 0.28);
+            background: linear-gradient(180deg, rgba(30, 37, 47, 0.98) 0%, rgba(24, 30, 39, 0.98) 100%);
+        }
+
+        html[data-theme="dark"] .report-panel-head {
+            background: linear-gradient(90deg, rgba(116, 169, 255, 0.12) 0%, rgba(71, 193, 132, 0.12) 100%);
+            border-bottom-color: rgba(96, 112, 136, 0.24);
+        }
+
+        html[data-theme="dark"] .report-room,
+        html[data-theme="dark"] .report-message,
+        html[data-theme="dark"] .report-detail-item strong,
+        html[data-theme="dark"] .moderation-toolbar h4,
+        html[data-theme="dark"] .moderation-side-panel h4,
+        html[data-theme="dark"] .moderation-stat .value,
+        html[data-theme="dark"] .history-item-main {
+            color: #edf4ff;
+        }
+
+        html[data-theme="dark"] .report-meta,
+        html[data-theme="dark"] .report-detail-item,
+        html[data-theme="dark"] .moderation-stat .label,
+        html[data-theme="dark"] .history-item-sub,
+        html[data-theme="dark"] .empty-state {
+            color: #aab7c8;
+        }
+
+        html[data-theme="dark"] .report-message-box,
+        html[data-theme="dark"] .report-detail-box,
+        html[data-theme="dark"] .empty-state {
+            border-color: rgba(96, 112, 136, 0.34);
+            background: linear-gradient(180deg, rgba(23, 29, 38, 0.92) 0%, rgba(19, 24, 32, 0.98) 100%);
+        }
+
+        html[data-theme="dark"] .moderation-pill,
+        html[data-theme="dark"] .report-chip {
+            background: rgba(116, 169, 255, 0.14);
+            color: #9bc5ff;
+            border-color: rgba(116, 169, 255, 0.22);
+        }
+
+        html[data-theme="dark"] .moderation-pill i.icon,
+        html[data-theme="dark"] .report-chip i.icon,
+        html[data-theme="dark"] .moderation-export.ui.basic.button i.icon,
+        html[data-theme="dark"] .report-actions .ui.button:not(.green):not(.red) i.icon {
+            color: #9bc5ff !important;
+        }
+
+        html[data-theme="dark"] .report-status {
+            background: rgba(245, 158, 11, 0.16);
+            border-color: rgba(245, 158, 11, 0.26);
+            color: #ffd08a;
+        }
+
+        html[data-theme="dark"] .report-status i.icon {
+            color: #ffd08a !important;
+        }
+
+        html[data-theme="dark"] .report-chip.danger {
+            background: rgba(239, 68, 68, 0.14);
+            border-color: rgba(239, 68, 68, 0.24);
+            color: #ffb3ba;
+        }
+
+        html[data-theme="dark"] .report-chip.danger i.icon {
+            color: #ffb3ba !important;
+        }
+
+        html[data-theme="dark"] .empty-state .icon-wrap i.icon {
+            color: #9bc5ff !important;
+        }
+
+        @media (max-width: 900px) {
+            .moderation-grid,
+            .report-panel-body,
+            .report-actions,
+            .report-primary-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .moderation-studio-shell {
+                padding: 0 0.35rem 1.4rem;
+            }
+
+            .moderation-hero,
+            .moderation-card,
+            .report-panel,
+            .moderation-side-panel {
+                border-radius: 18px !important;
+            }
+
+            .moderation-hero {
+                padding: 1rem;
+            }
+
+            .moderation-hero h2 {
+                font-size: 1.28rem;
+            }
+
+            .report-panel-head,
+            .report-mute-form {
+                grid-template-columns: 1fr;
+            }
+
+            .report-panel-head {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .report-actions .ui.button,
+            .report-mute-form .ui.button {
+                width: 100%;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui basic segment moderation-studio-shell">
+        <div class="moderation-hero">
+            <div class="moderation-hero-content">
+                <div>
+                    <h2>Chat Moderation Studio</h2>
+                    <p>Review reported messages, remove unsafe content, mute senders when needed, and keep a downloadable audit trail for school records.</p>
+                    <div class="moderation-hero-tags">
+                        <span class="moderation-hero-tag"><i class="flag outline icon"></i> Report Review</span>
+                        <span class="moderation-hero-tag"><i class="trash alternate outline icon"></i> Content Action</span>
+                        <span class="moderation-hero-tag"><i class="download icon"></i> CSV Audit</span>
+                    </div>
+                </div>
+                <div class="moderation-hero-note">
+                    <strong>{{ reports|length }} open report{{ reports|length|pluralize }}</strong>
+                    <div style="margin-top:0.35rem;">Resolve reports with review, dismissal, removal, mute, or remove plus mute actions.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="moderation-grid">
+            <div class="ui segment moderation-card">
+                <div class="ui info small message moderation-info">
+                    <div class="header">How moderation works</div>
+                    <p>Open reports stay in this queue until reviewed or dismissed. Removing a message clears it from chat while preserving the report history.</p>
+                </div>
+
+                <div class="moderation-toolbar">
+                    <div>
+                        <h4>Open Reports</h4>
+                        <div class="ui small grey text">Newest reports appear first.</div>
+                    </div>
+                    <span class="moderation-pill"><i class="shield alternate icon"></i> Safety Queue</span>
+                </div>
+
+                {% if reports %}
+                    <div class="report-stack">
+                        {% for report in reports %}
+                            <article class="report-panel">
+                                <div class="report-panel-head">
+                                    <div>
+                                        <div class="report-room">{{ report.messageID.roomID.title }}</div>
+                                        <div class="report-meta">
+                                            Reported {{ report.datetime|date:"d M Y, h:i A" }} by {{ report.reportedBy.username|default:'Unknown' }}
+                                        </div>
+                                    </div>
+                                    <span class="report-status"><i class="flag outline icon"></i>{{ report.get_status_display }}</span>
+                                </div>
+
+                                <div class="report-panel-body">
+                                    <div class="report-message-box">
+                                        <div class="report-label">Reported Message</div>
+                                        <div class="report-message">{{ report.messageID.body|default:'Attachment message' }}</div>
+                                    </div>
+                                    <div class="report-detail-box">
+                                        <div class="report-label">Details</div>
+                                        <div class="report-detail-item">
+                                            Sender
+                                            <strong>{{ report.messageID.senderID.username|default:'System' }}</strong>
+                                        </div>
+                                        <div class="report-detail-item">
+                                            Reason
+                                            <strong>{{ report.reason|default:'No reason provided' }}</strong>
+                                        </div>
+                                        <div class="report-chip-row">
+                                            {% if report.messageID.isDeleted %}
+                                                <span class="report-chip danger"><i class="trash alternate outline icon"></i> Removed</span>
+                                            {% endif %}
+                                            {% if report.messageID.attachment %}
+                                                <span class="report-chip"><i class="paperclip icon"></i> Attachment</span>
+                                            {% endif %}
+                                            <span class="report-chip"><i class="comment alternate outline icon"></i> #{{ report.messageID.id }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="report-actions">
+                                    <form method="post" class="report-primary-actions">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="report_id" value="{{ report.id }}">
+                                        <button class="ui green button" type="submit" name="action" value="reviewed">
+                                            <i class="check icon"></i> Review
+                                        </button>
+                                        <button class="ui button" type="submit" name="action" value="dismissed">
+                                            <i class="times icon"></i> Dismiss
+                                        </button>
+                                        <button class="ui red button" type="submit" name="action" value="remove_message">
+                                            <i class="trash alternate outline icon"></i> Remove
+                                        </button>
+                                    </form>
+                                    {% if report.messageID.senderID %}
+                                        <div class="report-mute-actions">
+                                            <form method="post" class="report-mute-form">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="report_id" value="{{ report.id }}">
+                                                <select class="ui fluid dropdown" name="mute_minutes">
+                                                    {% for minutes, label in mute_duration_options %}
+                                                        <option value="{{ minutes }}">{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button class="ui button" type="submit" name="action" value="mute_sender">
+                                                    <i class="volume off icon"></i> Mute
+                                                </button>
+                                            </form>
+                                            <form method="post" class="report-mute-form">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="report_id" value="{{ report.id }}">
+                                                <select class="ui fluid dropdown" name="mute_minutes">
+                                                    {% for minutes, label in mute_duration_options %}
+                                                        <option value="{{ minutes }}">{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button class="ui red button" type="submit" name="action" value="remove_and_mute">
+                                                    <i class="ban icon"></i> Remove + Mute
+                                                </button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="icon-wrap">
+                            <i class="check circle outline icon"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight:700; color:#1b3f61; margin-bottom:0.2rem;">No open reports</div>
+                            <div class="ui small grey text">New reported messages will appear here for review.</div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <div class="ui segment moderation-card">
+                    <div class="moderation-side-panel">
+                        <h4>Moderation Summary</h4>
+                        <div class="ui small grey text" style="margin-top:0.2rem;">Open workload and recent outcomes.</div>
+                        <div class="moderation-stat-grid">
+                            <div class="moderation-stat">
+                                <div class="label">Open</div>
+                                <div class="value">{{ reports|length }}</div>
+                            </div>
+                            <div class="moderation-stat">
+                                <div class="label">Recent</div>
+                                <div class="value">{{ reviewed_reports|length }}</div>
+                            </div>
+                        </div>
+                        <a class="ui primary fluid button moderation-export" href="{% url 'chatApp:moderation_export' %}">
+                            <i class="download icon"></i> Export Reports CSV
+                        </a>
+                    </div>
+                </div>
+
+                <div class="ui segment moderation-card">
+                    <div class="moderation-side-panel">
+                        <h4>Recent Moderation History</h4>
+                        <div class="ui small grey text" style="margin-top:0.2rem;">Latest reviewed and dismissed reports.</div>
+                        {% if reviewed_reports %}
+                            <div class="history-list">
+                                {% for report in reviewed_reports %}
+                                    <div class="history-item">
+                                        <div class="history-item-main">{{ report.messageID.roomID.title }}</div>
+                                        <div class="history-item-sub">
+                                            {{ report.get_status_display }}{% if report.reviewedBy %} by {{ report.reviewedBy.username }}{% endif %}
+                                        </div>
+                                        <div class="history-item-sub">{{ report.lastUpdatedOn|date:"d M Y, h:i A" }}</div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="empty-state" style="min-height:180px; margin-top:0.85rem;">
+                                <div class="icon-wrap">
+                                    <i class="history icon"></i>
+                                </div>
+                                <div>No moderation history yet.</div>
+                            </div>
+                        {% endif %}
+                        <a class="ui basic fluid button moderation-export history-export" href="{% url 'chatApp:moderation_export' %}">
+                            <i class="download icon"></i> Export Full History
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        $('.ui.dropdown').dropdown();
+    </script>
+{% endblock %}

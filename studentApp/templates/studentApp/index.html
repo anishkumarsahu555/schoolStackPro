@@ -64,6 +64,22 @@
     <div class="nav-group">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
+                <span>Communication</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.namespace == 'chatApp' or request.resolver_match.url_name == 'student_chat' or request.resolver_match.url_name == 'student_chat_room' %}active{% endif %}"
+               href="{% url 'studentApp:student_chat' %}">
+                <i class="comments outline icon"></i>
+                <span>Chat<span data-chat-unread-count>{% if chat_unread_count %} ({{ chat_unread_count }}){% endif %}</span></span>
+            </a>
+        </div>
+    </div>
+
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
                 <span>Attendance</span>
             </span>
             <i class="chevron down icon nav-section-chevron"></i>

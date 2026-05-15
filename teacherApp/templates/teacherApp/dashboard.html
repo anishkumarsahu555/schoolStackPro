@@ -1098,6 +1098,10 @@
                         </div>
 
                         <div class="student-mobile-grid" id="teacherMobileGrid">
+                            <a class="student-mobile-tile" data-cat="teaching" href="{% url 'teacherApp:teacher_chat' %}">
+                                <div class="student-mobile-icon-wrap"><i class="comments outline icon"></i></div>
+                                <div class="student-mobile-tile-label">Chat</div>
+                            </a>
                             <a class="student-mobile-tile" data-cat="teaching" href="{% url 'teacherApp:teacher_home' %}">
                                 <div class="student-mobile-icon-wrap"><i class="tachometer alternate icon"></i></div>
                                 <div class="student-mobile-tile-label">Dashboard</div>
@@ -1418,6 +1422,9 @@
                             {% endif %}
                         </div>
                     </div>
+                    <div class="column">
+                        {% include 'chatApp/partials/recent_chat_widget.html' %}
+                    </div>
 
                     <div class="column">
                         <div class="ui segment block-card">
@@ -1443,6 +1450,9 @@
                                 </a>
                                 <a class="item" href="{% url 'teacherApp:teacher_marks_details' %}">
                                     <i class="list alternate outline icon"></i> View Marks Details
+                                </a>
+                                <a class="item" href="{% url 'teacherApp:teacher_chat' %}">
+                                    <i class="comments outline icon"></i> Open Chat
                                 </a>
                             </div>
                         </div>

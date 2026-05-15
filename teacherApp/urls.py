@@ -17,6 +17,7 @@ from .views import (
     teacher_assigned_class,
     teacher_leave_applications,
     teacher_subject_notes,
+    teacher_chat,
 )
 
 urlpatterns = [
@@ -27,6 +28,8 @@ urlpatterns = [
     path('assigned-class/', teacher_assigned_class, name='teacher_assigned_class'),
     path('assigned-subjects/', teacher_assigned_subjects, name='teacher_assigned_subjects'),
     path('subject-notes/', teacher_subject_notes, name='teacher_subject_notes'),
+    path('chat/', teacher_chat, name='teacher_chat'),
+    path('chat/room/<int:room_id>/', teacher_chat, name='teacher_chat_room'),
     path('student-attendance/', teacher_student_attendance, name='teacher_student_attendance'),
     path('attendance-history/', teacher_attendance_history, name='teacher_attendance_history'),
     path('manage-event/', teacher_manage_event, name='teacher_manage_event'),

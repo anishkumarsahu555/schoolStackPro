@@ -4,6 +4,8 @@ import base64
 import re
 
 from django.conf import settings
+from django.db.models import Q
+from django.utils import timezone
 
 from homeApp.models import WebPushSubscription
 from utils.logger import logger
@@ -30,6 +32,39 @@ APP_EVENT_URL_MAP = {
     'teacherapp': '/teacher/manage-event/',
     'managementapp': '/management/manage_event/',
 }
+
+ROLE_APP_MAP = {
+    'student': 'studentapp',
+    'teacher': 'teacherapp',
+    'admin': 'managementapp',
+    'parent': 'studentapp',
+}
+
+
+def _message_mentions_user(message, user):
+    text = (getattr(message, 'body', '') or '').lower()
+    if not text or not user:
+        return False
+    tokens = [getattr(user, 'username', '')]
+    full_name = f'{getattr(user, "first_name", "")} {getattr(user, "last_name", "")}'.strip()
+    if full_name:
+        tokens.append(full_name)
+    return any(f'@{token.lower()}' in text or token.lower() in text for token in tokens if token)
+
+
+def _participant_allows_chat_push(participant, message):
+    muted_until = getattr(participant, 'notificationMutedUntil', None)
+    if muted_until and muted_until <= timezone.now():
+        participant.notificationMuted = False
+        participant.notificationMutedUntil = None
+        if getattr(participant, 'notificationLevel', 'all') == 'off':
+            participant.notificationLevel = 'all'
+        participant.save(update_fields=['notificationMuted', 'notificationMutedUntil', 'notificationLevel'])
+    if getattr(participant, 'notificationMuted', False) or getattr(participant, 'notificationLevel', 'all') == 'off':
+        return False
+    if getattr(participant, 'notificationLevel', 'all') == 'mentions':
+        return _message_mentions_user(message, participant.userID)
+    return True
 
 DEFAULT_PUSH_ICON = '/static/sw/images/icon-192.png'
 DEFAULT_PUSH_BADGE = '/static/sw/images/icon-192-maskable.png'
@@ -192,6 +227,109 @@ def send_event_push_notifications(event, action='added'):
     logger.info(
         f'Event push dispatch: event={event.id}, action={action}, audience={audience}, '
         f'app_targets={app_targets}, subscriptions={total}, sent={sent}, failed={failed}'
+    )
+
+
+def send_chat_push_notifications(message):
+    if not message or not message.roomID_id or not message.roomID or not message.roomID.schoolID:
+        return
+
+    if not webpush:
+        logger.warning('pywebpush is unavailable; skipping chat web push send.')
+        return
+
+    if not is_web_push_configured():
+        logger.warning('VAPID keys are missing; skipping chat web push send.')
+        return
+
+    room = message.roomID
+    school = room.schoolID
+    sender_id = message.senderID_id
+    participant_rows = room.participants.select_related('userID').exclude(userID_id=sender_id)
+    participant_rows = [p for p in participant_rows if p.userID_id and _participant_allows_chat_push(p, message)]
+    if not participant_rows:
+        logger.info(f'Chat push skipped: no recipients for message={message.id}, room={room.id}')
+        return
+
+    user_app_pairs = []
+    for participant in participant_rows:
+        app_name = ROLE_APP_MAP.get(participant.role)
+        if not app_name or not is_school_app_push_enabled(school, app_name):
+            continue
+        user_app_pairs.append((participant.userID_id, app_name))
+
+    if not user_app_pairs:
+        logger.info(f'Chat push skipped: no enabled app targets for message={message.id}, room={room.id}')
+        return
+
+    query = None
+    for user_id, app_name in user_app_pairs:
+        condition = {
+            'userID_id': user_id,
+            'appName': app_name,
+            'schoolID_id': school.id,
+            'isActive': True,
+        }
+        q_obj = Q(**condition)
+        query = q_obj if query is None else query | q_obj
+
+    subscriptions = WebPushSubscription.objects.filter(query).only(
+        'id', 'endpoint', 'authKey', 'p256dhKey', 'appName', 'userID_id'
+    ) if query is not None else WebPushSubscription.objects.none()
+    subscriptions = list(subscriptions)
+    if not subscriptions:
+        logger.info(f'Chat push skipped: no active subscriptions for message={message.id}, room={room.id}')
+        return
+
+    school_name = (getattr(school, 'schoolName', '') or getattr(school, 'name', '') or 'SchoolStack').strip()
+    logo_url = get_school_logo_url(school)
+    sender_name = ''
+    try:
+        from chatApp.services import display_name
+        sender_name = display_name(message.senderID)
+    except Exception:
+        sender_name = getattr(message.senderID, 'username', '') if message.senderID else ''
+    body_text = (message.body or 'Sent an attachment').strip()
+    payload = {
+        'title': f'{room.title}',
+        'body': f'{sender_name}: {body_text[:160]}',
+        'icon': logo_url or DEFAULT_PUSH_ICON,
+        'image': logo_url or DEFAULT_PUSH_ICON,
+        'badge': DEFAULT_PUSH_BADGE,
+        'actions': [
+            {'action': 'open_chat', 'title': 'Open Chat'},
+            {'action': 'dismiss', 'title': 'Later'},
+        ],
+        'url': f'/chat/room/{room.id}/',
+        'tag': f'chat-room-{room.id}',
+        'data': {
+            'type': 'chat',
+            'schoolName': school_name,
+            'roomId': room.id,
+            'messageId': message.id,
+            'senderId': sender_id,
+        },
+    }
+
+    vapid_private = get_vapid_private_key()
+    vapid_claims = {'sub': get_vapid_subject()}
+    sent = 0
+    failed = 0
+    for sub in subscriptions:
+        ok, _ = _send_push_to_subscription(
+            sub=sub,
+            payload=payload,
+            vapid_private=vapid_private,
+            vapid_claims=vapid_claims,
+        )
+        if ok:
+            sent += 1
+        else:
+            failed += 1
+
+    logger.info(
+        f'Chat push dispatch: message={message.id}, room={room.id}, '
+        f'subscriptions={len(subscriptions)}, sent={sent}, failed={failed}'
     )
 
 
