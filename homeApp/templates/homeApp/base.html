@@ -2568,22 +2568,27 @@
             align-items: center !important;
         }
 
+        .app-title-bar,
         .universal-back-bar {
-            display: none !important;
-            justify-content: flex-end;
+            display: grid !important;
+            grid-template-columns: auto minmax(0, 1fr) auto;
             align-items: center;
-            min-height: 42px;
-            margin: 0 0 12px;
-            padding: 0 0 2px;
-            line-height: 0;
+            gap: 0.75rem;
+            min-height: 52px;
+            margin: 0 0 0.85rem;
+            padding: 0.55rem 0.75rem;
             position: relative;
             z-index: 2;
             overflow: hidden;
-            background: var(--app-bg);
+            background: var(--app-surface);
+            border: 1px solid var(--app-border);
+            border-radius: 14px;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
         }
 
-        .universal-back-bar.is-visible {
-            display: flex !important;
+        .app-title-bar.is-root .universal-back-button {
+            visibility: hidden;
+            pointer-events: none;
         }
 
         .universal-back-button {
@@ -2631,6 +2636,53 @@
             line-height: 1;
         }
 
+        .app-title-copy {
+            min-width: 0;
+        }
+
+        .app-page-title {
+            color: var(--app-text);
+            font-size: 1.05rem;
+            font-weight: 900;
+            line-height: 1.18;
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .app-page-subtitle {
+            color: var(--app-muted);
+            font-size: 0.76rem;
+            line-height: 1.25;
+            margin: 0.14rem 0 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .app-page-subtitle:empty,
+        .app-title-actions:empty {
+            display: none;
+        }
+
+        .app-title-actions {
+            align-items: center;
+            display: inline-flex;
+            gap: 0.4rem;
+            justify-content: flex-end;
+            min-width: 0;
+        }
+
+        .app-title-actions .ui.button {
+            border-radius: 999px !important;
+            white-space: nowrap;
+        }
+
+        .app-title-actions .mobile-label {
+            display: none;
+        }
+
         .universal-back-button:hover,
         .universal-back-button:focus {
             background: rgba(26, 115, 232, 0.08) !important;
@@ -2668,13 +2720,80 @@
             background: rgba(116, 169, 255, 0.14);
         }
 
+        html[data-theme="dark"] .app-title-bar {
+            background: rgba(18, 22, 29, 0.88);
+            border-color: rgba(148, 163, 184, 0.18);
+            box-shadow: none;
+        }
+
         @media (max-width: 767px) {
+            .app-title-bar,
             .universal-back-bar {
-                justify-content: flex-start;
-                min-height: 40px;
-                margin: 0 0 10px;
+                border-radius: 13px;
+                gap: 0.55rem;
+                grid-template-columns: auto minmax(0, 1fr) auto;
+                min-height: 44px;
+                margin: 0 0 0.55rem;
+                padding: 0.42rem 0.5rem;
             }
 
+            .universal-back-button {
+                border-radius: 12px;
+                gap: 0;
+                height: 2.25rem;
+                min-height: 2.25rem;
+                padding: 0 !important;
+                width: 2.25rem;
+            }
+
+            .universal-back-button i.icon {
+                background: transparent;
+                height: 100%;
+                width: 100%;
+                font-size: 0.95rem;
+            }
+
+            .universal-back-button-text {
+                display: none;
+            }
+
+            .app-page-title {
+                font-size: 0.96rem;
+            }
+
+            .app-page-subtitle {
+                display: none;
+            }
+
+            .app-title-actions {
+                max-width: 38vw;
+                overflow: hidden;
+            }
+
+            .app-title-actions .ui.button {
+                height: 2.15rem !important;
+                min-height: 2.15rem !important;
+                min-width: auto !important;
+                padding: 0 0.72rem !important;
+                font-size: 0.78rem !important;
+                gap: 0.25rem;
+            }
+
+            .app-title-actions .ui.button i.icon {
+                margin: 0 !important;
+            }
+
+            .app-title-actions .desktop-label {
+                display: none;
+            }
+
+            .app-title-actions .mobile-label {
+                display: inline;
+            }
+
+            body.chat-room-mobile-route .universal-back-bar {
+                display: none !important;
+            }
         }
 
         .ui.top.fixed.menu .left.menu .header.item {
@@ -3074,6 +3193,47 @@
         body .ui.icon.button {
             width: 2.45rem !important;
             padding: 0 !important;
+        }
+
+        body .ui.labeled.icon.button,
+        body .ui.right.labeled.icon.button {
+            gap: 0.45rem;
+            padding: 0 1rem !important;
+        }
+
+        body .ui.labeled.icon.button > .icon,
+        body .ui.right.labeled.icon.button > .icon {
+            align-items: center !important;
+            background: transparent !important;
+            display: inline-flex !important;
+            height: auto !important;
+            justify-content: center !important;
+            margin: 0 !important;
+            opacity: 1 !important;
+            order: initial;
+            padding: 0 !important;
+            position: static !important;
+            width: auto !important;
+        }
+
+        body .ui.right.labeled.icon.button > .icon {
+            order: 2;
+        }
+
+        body .ui.modal > .actions,
+        body .ui.basic.modal.custom > .actions {
+            align-items: center !important;
+            display: flex !important;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            justify-content: flex-end;
+        }
+
+        body .ui.modal > .actions .ui.button,
+        body .ui.basic.modal.custom > .actions .ui.button {
+            border-radius: 10px !important;
+            min-width: 104px;
+            white-space: nowrap;
         }
 
         .ui.table {
@@ -3592,11 +3752,18 @@
 <div class="pusher">
 
     <div class="main-content">
-        <div class="universal-back-bar" id="universalBackBar">
+        <div class="app-title-bar universal-back-bar" id="universalBackBar">
             <button type="button" class="universal-back-button" id="universalBackButton" aria-label="Go back">
                 <i class="arrow left icon"></i>
                 <span class="universal-back-button-text">Back</span>
             </button>
+            <div class="app-title-copy">
+                <h1 class="app-page-title" id="appPageTitle">{% block page_title %}{% endblock %}</h1>
+                <p class="app-page-subtitle" id="appPageSubtitle">{% block page_subtitle %}{% endblock %}</p>
+            </div>
+            <div class="app-title-actions">
+                {% block page_actions %}{% endblock %}
+            </div>
         </div>
         {% block body %}
             <p>BODY</p>
@@ -3738,7 +3905,14 @@
     (function initUniversalBackButton() {
         var button = document.getElementById('universalBackButton');
         var bar = document.getElementById('universalBackBar');
+        var title = document.getElementById('appPageTitle');
         if (!button) return;
+
+        function titleFromDocument() {
+            var value = (document.title || '').replace(/\s+/g, ' ').trim();
+            value = value.replace(/\s*[-|]\s*SchoolStack.*$/i, '').trim();
+            return value || 'Dashboard';
+        }
 
         function normalizePath(path) {
             var clean = String(path || '/').split('?')[0].split('#')[0];
@@ -3764,8 +3938,7 @@
             normalizePath('{% url "teacherApp:teacher_home" %}'),
             normalizePath('{% url "teacherApp:teacher_root" %}'),
             normalizePath('{% url "studentApp:student_home" %}'),
-            normalizePath('{% url "studentApp:student_root" %}'),
-            normalizePath('{% url "certificateApp:dashboard" %}')
+            normalizePath('{% url "studentApp:student_root" %}')
         ];
         var unsafePaths = [
             normalizePath('{% url "homeApp:login_page" %}'),
@@ -3804,19 +3977,20 @@
 
         if (shouldHide()) {
             if (bar) {
-                bar.classList.remove('is-visible');
-                bar.setAttribute('aria-hidden', 'true');
+                bar.classList.add('is-root');
             }
             button.setAttribute('tabindex', '-1');
-            return;
+        } else {
+            if (bar) {
+                bar.classList.remove('is-root');
+            }
+            button.removeAttribute('tabindex');
+            button.setAttribute('title', canUseHistory() ? 'Back to previous page' : 'Back to dashboard');
         }
 
-        if (bar) {
-            bar.classList.add('is-visible');
-            bar.removeAttribute('aria-hidden');
+        if (title && !title.textContent.trim()) {
+            title.textContent = titleFromDocument();
         }
-        button.removeAttribute('tabindex');
-        button.setAttribute('title', canUseHistory() ? 'Back to previous page' : 'Back to dashboard');
 
         button.addEventListener('click', function (event) {
             event.preventDefault();

@@ -3,6 +3,18 @@
 {% block title %}
     <title>Certificates</title>
 {% endblock %}
+{% block page_title %}Certificates{% endblock %}
+{% block page_subtitle %}Generate certificates, manage designs, and review issued records{% endblock %}
+{% block page_actions %}
+    <a class="ui primary button" href="{% url 'certificateApp:create_design' %}">
+        <i class="paint brush icon"></i>
+        <span><span class="desktop-label">Design</span><span class="mobile-label">Design</span></span>
+    </a>
+    <a class="ui green button" href="{% url 'certificateApp:generator' %}">
+        <i class="plus icon"></i>
+        <span><span class="desktop-label">Generate</span><span class="mobile-label">New</span></span>
+    </a>
+{% endblock %}
 
 {% block css %}
     <style>
@@ -15,9 +27,8 @@
             float: right;
         }
 
-        .dt-buttons {
-            position: absolute;
-            left: 174px;
+        #certificateIssueTable_wrapper .dt-buttons {
+            display: none;
         }
 
         input[type=search] {
@@ -59,16 +70,6 @@
         <div class="sixteen wide column">
             <div class="ui pointing secondary menu">
                 <div class="item active" data-tab="user">Certificates</div>
-                <div style="margin-left:auto;">
-                    <a class="ui mini green button" href="{% url 'certificateApp:generator' %}">
-                        <i class="plus square icon"></i>
-                        Generate
-                    </a>
-                    <a class="ui mini blue button" href="{% url 'certificateApp:create_design' %}">
-                        <i class="paint brush icon"></i>
-                        Design
-                    </a>
-                </div>
             </div>
 
                 <div class="ui tab active" data-tab="user">
