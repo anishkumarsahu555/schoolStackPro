@@ -3,6 +3,8 @@
 {% block title %}
     <title>Manage Leave Types</title>
 {% endblock %}
+{% block page_title %}Manage Leave Types{% endblock %}
+{% block page_subtitle %}Create and maintain leave categories, quotas, and approval rules{% endblock %}
 
 {% block body %}
     <style>
@@ -33,27 +35,118 @@
             flex-wrap: wrap;
             align-items: center;
         }
+
+        .leave-type-form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.9rem 1rem;
+            align-items: end;
+        }
+
+        .leave-type-form-grid .field {
+            margin: 0 !important;
+            min-width: 0;
+            width: auto !important;
+        }
+
+        .leave-name-field {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .leave-code-field {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .leave-applicable-field {
+            grid-column: 3;
+            grid-row: 1;
+        }
+
+        .leave-quota-field {
+            grid-column: 4;
+            grid-row: 1;
+        }
+
+        .leave-approval-field {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .leave-active-field {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        .leave-type-actions {
+            grid-column: 3 / span 2;
+            grid-row: 2;
+            justify-self: end;
+        }
+
+        @media (max-width: 991px) {
+            .leave-type-form-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .leave-code-field,
+            .leave-applicable-field,
+            .leave-quota-field,
+            .leave-approval-field,
+            .leave-active-field {
+                grid-column: auto;
+                grid-row: auto;
+            }
+
+            .leave-name-field {
+                grid-column: span 2;
+                grid-row: auto;
+            }
+
+            .leave-type-actions {
+                grid-column: span 2;
+                grid-row: auto;
+                justify-self: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .leave-type-form-grid {
+                gap: 0.75rem;
+            }
+
+            .leave-action-group {
+                justify-content: center;
+            }
+
+            .leave-action-group .ui.button {
+                min-width: 0;
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+        }
     </style>
 
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active">Manage Leave Types</div>
-            </div>
-
             <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="calendar check outline icon"></i>
+                    Add/Edit Leave Type
+                </h4>
                 <form class="ui tiny form" id="leaveTypeForm">{% csrf_token %}
                     <input type="hidden" id="editID">
-                    <div class="fields">
-                        <div class="three wide required field">
+                    <div class="leave-type-form-grid">
+                        <div class="required field leave-name-field">
                             <label>Name</label>
                             <input type="text" id="name" placeholder="Ex: Sick Leave">
                         </div>
-                        <div class="two wide field">
+                        <div class="field leave-code-field">
                             <label>Code</label>
                             <input type="text" id="code" placeholder="SL">
                         </div>
-                        <div class="three wide required field">
+                        <div class="required field leave-applicable-field">
                             <label>Applicable For</label>
                             <select class="ui dropdown" id="applicableFor">
                                 <option value="both">Both</option>
@@ -61,25 +154,25 @@
                                 <option value="student">Student</option>
                             </select>
                         </div>
-                        <div class="two wide field">
+                        <div class="field leave-quota-field">
                             <label>Quota</label>
                             <input type="number" min="0" step="0.5" id="quotaDays" placeholder="Unlimited">
                         </div>
-                        <div class="two wide field">
+                        <div class="field leave-approval-field">
                             <label>Need Approval</label>
                             <select class="ui dropdown" id="requiresApproval">
                                 <option value="true">Yes</option>
                                 <option value="false">No</option>
                             </select>
                         </div>
-                        <div class="two wide field">
+                        <div class="field leave-active-field">
                             <label>Active</label>
                             <select class="ui dropdown" id="isActive">
                                 <option value="true">Yes</option>
                                 <option value="false">No</option>
                             </select>
                         </div>
-                        <div class="two wide field" style="padding-top: 1.9rem;">
+                        <div class="field leave-type-actions">
                             <div class="leave-action-group">
                                 <button type="button" class="ui mini green button" id="addBtn" onclick="submitLeaveType()"><i class="plus icon"></i>Add</button>
                                 <button type="button" class="ui mini orange button" id="updateBtn" onclick="updateLeaveType()" style="display:none;"><i class="redo icon"></i>Update</button>
@@ -91,22 +184,28 @@
                 </form>
             </div>
 
-            <div class="row" style="padding-left: 5px; padding-right: 5px;">
-                <table class="ui unstackable tiny sortable celled nowrap very compact table" id="leaveTypeTable" style="width:100%;">
-                    <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Code</th>
-                        <th>Applicable For</th>
-                        <th>Quota</th>
-                        <th>Need Approval</th>
-                        <th>Status</th>
-                        <th>EditedBy</th>
-                        <th>Updated On</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                </table>
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="list alternate outline icon"></i>
+                    Leave type list
+                </h4>
+                <div class="row" style="padding-left: 5px; padding-right: 5px;">
+                    <table class="ui unstackable tiny sortable celled nowrap very compact table" id="leaveTypeTable" style="width:100%;">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Code</th>
+                            <th>Applicable For</th>
+                            <th>Quota</th>
+                            <th>Need Approval</th>
+                            <th>Status</th>
+                            <th>EditedBy</th>
+                            <th>Updated On</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

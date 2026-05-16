@@ -3,6 +3,8 @@
 {% block title %}
     <title>Manage Subject Notes</title>
 {% endblock %}
+{% block page_title %}Subject Notes{% endblock %}
+{% block page_subtitle %}Review, filter, and publish teacher subject notes{% endblock %}
 
 {% block body %}
     <style>
@@ -143,10 +145,6 @@
 
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active">Subject Notes</div>
-            </div>
-
             <div class="mnotes-shell">
                 <div class="mnotes-stats">
                     <div class="mnotes-stat"><div class="mnotes-label">Total</div><div class="mnotes-value" id="statTotal">{{ notes_total|default:0 }}</div></div>

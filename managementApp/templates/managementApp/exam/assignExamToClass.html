@@ -3,6 +3,8 @@
 {% block title %}
     <title>Assign Exam To Class</title>
 {% endblock %}
+{% block page_title %}Assign Exams To Class{% endblock %}
+{% block page_subtitle %}Map exams to classes with marks, pass marks, and exam dates{% endblock %}
 {% block css %}
 {% endblock %}
 {% block body %}
@@ -31,6 +33,27 @@
         #addForm .fields,
         #tableFilterForm .fields {
             align-items: flex-end !important;
+        }
+
+        .exam-assign-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.9rem 1rem;
+            align-items: end;
+        }
+
+        .exam-assign-details-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+            gap: 0.9rem 1rem;
+            align-items: end;
+            margin-top: 0.9rem;
+        }
+
+        .exam-assign-grid .field,
+        .exam-assign-details-grid .field {
+            margin: 0 !important;
+            min-width: 0;
         }
 
         #addForm .field.action-buttons,
@@ -81,7 +104,8 @@
             }
 
             #addForm .two.fields.exam-class-row {
-                display: block !important;
+                display: grid !important;
+                grid-template-columns: 1fr !important;
             }
 
             #addForm .two.fields.exam-class-row > .field {
@@ -90,18 +114,21 @@
                 min-width: 100% !important;
                 margin-bottom: 0.5rem !important;
             }
+
+            .exam-assign-details-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .exam-assign-details-grid > .field.action-buttons {
+                grid-column: span 2;
+                justify-content: center;
+            }
         }
     </style>
 
     <div class="ui left aligned basic  grid">
         <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Assign Exam To Class
-                </div>
-
-            </div>
-            <div class="ui tab " data-tab="user">
+            <div class="ui tab active" data-tab="user">
                 <div class="ui segment">
                     <h4 class="ui horizontal left aligned divider header">
                         <i class="left align icon"></i>
@@ -110,7 +137,7 @@
                     <form class="ui tiny form" id="addForm">{% csrf_token %}
                         <input type="hidden" id="editID">
 
-                        <div class="two fields exam-class-row">
+                        <div class="exam-assign-grid exam-class-row">
                             <div class="field required">
                                 <label>Exam Name</label>
                                 <select class="ui clearable search dropdown" id="exam">
@@ -127,7 +154,7 @@
                             </div>
                         </div>
 
-                        <div class="five fields marks-dates-actions-row">
+                        <div class="exam-assign-details-grid marks-dates-actions-row">
                             <div class="field">
                                 <label>Full Mark</label>
                                 <input type="number" name="fmark" placeholder="Full Mark" id="fmark">
@@ -159,7 +186,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="field action-buttons" style="padding-top: 2.2em;">
+                            <div class="field action-buttons">
                                 <button type="button" id="saveBtn" class="ui mini green button saveBtn"
                                         onclick="addData()">
                                     <i class="icon plus square"></i>
@@ -186,7 +213,11 @@
                 </div>
 
 
-                <div class="row" style="padding-left: 5px; padding-right: 5px">
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Assigned exam list
+                    </h4>
                     <div class="wide">
                         <div class="ui tiny form" id="tableFilterForm" style="margin-bottom: 0.65rem;">
                             <div class="fields">

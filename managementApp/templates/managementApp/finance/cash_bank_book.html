@@ -3,6 +3,8 @@
 {% block title %}
     <title>Cash & Bank Book</title>
 {% endblock %}
+{% block page_title %}Cash & Bank Book{% endblock %}
+{% block page_subtitle %}Review posted debit and credit movement for finance asset accounts with opening and closing balances.{% endblock %}
 
 {% block css %}
     {% include 'managementApp/finance/_shared_styles.html' %}
@@ -11,25 +13,14 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">
-                    Cash &amp; Bank Book
-                </div>
-                <div style=" position: absolute;right: 1.5rem;top: 18px;">
-                    <i class="info circle icon finance-page-intro"
-                       data-inverted=""
-                       data-tooltip="Review posted debit and credit movement for finance asset accounts, with opening and closing balances shown in a clear, book-style report."
-                       data-position="bottom center"></i>
-                </div>
-            </div>
-            <div class="ui tab finance-shell" data-tab="user">
-        <section>
-            <div class="finance-panel-header">
-                <div>
-                    <h3 class="finance-panel-title">Book Filters</h3>
+            <div class="ui tab active finance-shell" data-tab="user">
+        <div class="ui segment">
+            <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Book Filters
+                    </h4>
                     <div class="finance-panel-subtitle">Choose the cash or bank account and optional date range to build the book.</div>
-                </div>
-            </div>
+
             <form class="ui tiny form">
                 {% csrf_token %}
                 <div class="finance-filter-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
@@ -71,7 +62,7 @@
                     </button>
                 </div>
             </form>
-        </section>
+        </div>
 
         <section class="finance-summary-grid" id="cashBankSummary" style="display:none;">
             <div class="finance-summary-item">
@@ -92,13 +83,13 @@
             </div>
         </section>
 
-        <section class="finance-table-panel" id="cashBankTableWrap" style="display:none;">
-            <div class="finance-table-head">
-                <div>
-                    <h3 class="finance-panel-title">Book Entries</h3>
+        <div class="ui segment finance-table-panel" id="cashBankTableWrap" style="display:none;">
+            <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Book Entries
+                    </h4>
                     <div class="finance-panel-subtitle" id="bookTitle">Cash &amp; Bank Book</div>
-                </div>
-            </div>
+
             <div class="finance-table-wrap">
                 <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="cashBankTable" style="width:100%;">
                     <thead>
@@ -117,7 +108,7 @@
                     <tbody></tbody>
                 </table>
             </div>
-        </section>
+        </div>
             </div>
         </div>
     </div>

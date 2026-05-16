@@ -3,6 +3,8 @@
 {% block title %}
     <title>Add Student</title>
 {% endblock %}
+{% block page_title %}Add Student{% endblock %}
+{% block page_subtitle %}Create a new student record or import from the previous session{% endblock %}
 {% block css %}
     <style>
         .import-student-panel {
@@ -414,24 +416,23 @@
                 justify-content: center;
             }
         }
+
+        .student-form-actions {
+            margin-top: 2rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+        }
+
+        .student-form-actions .ui.button {
+            margin: 0.25rem !important;
+        }
     </style>
 {% endblock %}
 {% block body %}
 
     <div class="ui basic  grid">
         <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Add Student
-                </div>
-                {% comment %} <div style=" position: absolute;right: 1.5rem;top: 18px;">
-                    <button class="ui green mini plus button right" onclick="showClassModal()">
-                        <i class="plus square outline icon"></i>
-                        Add Class
-                    </button>
-                </div>{% endcomment %}
-            </div>
-            <div class="ui tab " data-tab="user">
+            <div class="ui tab active" data-tab="user">
                 <form class="ui form segment tiny" id="addForm" enctype="multipart/form-data"> {% csrf_token %}
                     <input type="hidden" id="importedPreviousStudentID" name="importedPreviousStudentID" value="">
                     <div class="import-student-panel">
@@ -1050,7 +1051,7 @@
 
 
                 </form>
-                <div class="ui segment center aligned">
+                <div class="ui segment center aligned student-form-actions">
                     <button type="button" id="saveBtn" class="ui mini green button saveBtn"
                             onclick="addStudentData()">
                         <i class="icon plus square"></i>

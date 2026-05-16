@@ -4,6 +4,8 @@
 {% block title %}
     <title>Progress Report Cards</title>
 {% endblock %}
+{% block page_title %}Progress Report Cards{% endblock %}
+{% block page_subtitle %}Generate, review, publish, and print student progress reports{% endblock %}
 
 {% block css %}
     <style>
@@ -993,11 +995,11 @@
 {% block body %}
     <div class="report-page ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active">Progress Report Cards</div>
-            </div>
-
             <div class="ui segment filter-segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="filter icon"></i>
+                    Report card filter
+                </h4>
                 <form class="ui tiny form" method="get" id="filterForm">
                     <div class="three fields">
                         <div class="field required">

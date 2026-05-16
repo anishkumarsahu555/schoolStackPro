@@ -3,18 +3,51 @@
 {% block title %}
     <title>Leave Applications</title>
 {% endblock %}
+{% block page_title %}Leave Applications{% endblock %}
+{% block page_subtitle %}Review, approve, and track student and teacher leave requests{% endblock %}
 
 {% block body %}
+    <style>
+        .leave-application-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+            gap: 0.9rem 1rem;
+            align-items: end;
+        }
+
+        .leave-application-filter-grid .field {
+            margin: 0 !important;
+            min-width: 0;
+        }
+
+        .leave-application-filter-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 767px) {
+            .leave-application-filter-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .leave-application-filter-actions {
+                grid-column: span 2;
+                justify-content: center;
+            }
+        }
+    </style>
+
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
             <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-            <div class="ui pointing secondary menu">
-                <div class="item active">Leave Applications</div>
-            </div>
 
-            <div class="ui tiny form segment">
-                <div class="fields">
-                    <div class="three wide field">
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="filter icon"></i>
+                    Filter leave applications
+                </h4>
+                <div class="ui tiny form leave-application-filter-grid">
+                    <div class="field">
                         <label>Role</label>
                         <select class="ui dropdown" id="roleFilter">
                             <option value="">All</option>
@@ -22,7 +55,7 @@
                             <option value="student">Student</option>
                         </select>
                     </div>
-                    <div class="three wide field">
+                    <div class="field">
                         <label>Status</label>
                         <select class="ui dropdown" id="statusFilter">
                             <option value="">All</option>
@@ -32,32 +65,38 @@
                             <option value="cancelled">Cancelled</option>
                         </select>
                     </div>
-                    <div class="two wide field" style="padding-top:1.8rem;">
+                    <div class="field leave-application-filter-actions">
                         <button class="ui mini blue button" type="button" onclick="reloadLeaveTable()"><i class="search icon"></i>Filter</button>
                     </div>
                 </div>
             </div>
 
-            <div class="row" style="padding-left: 5px; padding-right: 5px;">
-                <table class="ui unstackable tiny sortable celled nowrap very compact table" id="leaveAppTable" style="width:100%;">
-                    <thead>
-                    <tr>
-                        <th>Role</th>
-                        <th>Applicant</th>
-                        <th>Leave Type</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Total Days</th>
-                        <th>Duration</th>
-                        <th>Status</th>
-                        <th>Attachment</th>
-                        <th>Reason</th>
-                        <th>EditedBy</th>
-                        <th>Updated On</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                </table>
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="clipboard list icon"></i>
+                    Leave application list
+                </h4>
+                <div class="row" style="padding-left: 5px; padding-right: 5px;">
+                    <table class="ui unstackable tiny sortable celled nowrap very compact table" id="leaveAppTable" style="width:100%;">
+                        <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Applicant</th>
+                            <th>Leave Type</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Total Days</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                            <th>Attachment</th>
+                            <th>Reason</th>
+                            <th>EditedBy</th>
+                            <th>Updated On</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

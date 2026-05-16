@@ -7944,27 +7944,27 @@ class FinanceReceiptListJson(BaseDatatableView):
             action_parts = [
                 f'<a target="_blank" href="/management/finance/receipt/{item.id}/" '
                 f'data-inverted="" data-tooltip="Print Receipt" data-position="left center" data-variation="mini" '
-                f'style="font-size:10px;" class="ui circular blue icon button">'
+                f'class="ui mini circular blue icon button">'
                 f'<i class="print icon"></i></a>',
                 f'<button type="button" onclick="openReceiptAdjustments({item.id}, \'{escape(item.receiptNo or "")}\')" '
                 f'data-inverted="" data-tooltip="Adjustment History" data-position="left center" data-variation="mini" '
-                f'style="font-size:10px; margin-left: 3px;" class="ui circular teal icon button">'
+                f'class="ui mini circular teal icon button">'
                 f'<i class="history icon"></i></button>',
             ]
             if item.status == 'confirmed':
                 action_parts.append(
                     f'<button type="button" onclick="openRefundReceiptModal({item.id}, \'{escape(item.receiptNo or "")}\')" '
                     f'data-inverted="" data-tooltip="Create Refund" data-position="left center" data-variation="mini" '
-                    f'style="font-size:10px; margin-left: 3px;" class="ui circular orange icon button">'
+                    f'class="ui mini circular orange icon button">'
                     f'<i class="reply icon"></i></button>'
                 )
                 action_parts.append(
                     f'<button type="button" onclick="openReverseReceiptModal({item.id}, \'{escape(item.receiptNo or "")}\')" '
                     f'data-inverted="" data-tooltip="Reverse Receipt" data-position="left center" data-variation="mini" '
-                    f'style="font-size:10px; margin-left: 3px;" class="ui circular red icon button">'
+                    f'class="ui mini circular red icon button">'
                     f'<i class="undo icon"></i></button>'
                 )
-            action = ''.join(action_parts)
+            action = '<div class="finance-row-actions">' + ''.join(action_parts) + '</div>'
             json_data.append([
                 escape(item.receiptDate.strftime('%d-%m-%Y') if item.receiptDate else 'N/A'),
                 f'<strong>{escape(item.receiptNo or "")}</strong>',

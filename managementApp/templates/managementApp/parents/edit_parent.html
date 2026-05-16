@@ -4,20 +4,35 @@
 {% block title %}
     <title>Edit Parent</title>
 {% endblock %}
+{% block page_title %}Edit Parent{% endblock %}
+{% block page_subtitle %}Update parent, guardian, and family contact details{% endblock %}
+{% block page_actions %}
+    <a href="{% url 'managementApp:parent_detail' parent.id %}" class="ui mini button">
+        <i class="arrow left icon"></i>
+        <span class="desktop-label">Parent Detail</span>
+        <span class="mobile-label">Detail</span>
+    </a>
+{% endblock %}
 
 {% block body %}
+    <style>
+        .parent-edit-actions {
+            display: flex;
+            gap: 0.65rem;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem !important;
+            padding-top: 1rem;
+        }
+
+        .parent-edit-actions .ui.button {
+            margin: 0.25rem !important;
+        }
+    </style>
+
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active">Edit Parent Details</div>
-                <div style="margin-left: auto;">
-                    <a href="{% url 'managementApp:parent_detail' parent.id %}" class="ui mini button">
-                        <i class="arrow left icon"></i>
-                        Back to Parent Detail
-                    </a>
-                </div>
-            </div>
-
             <form class="ui form segment" method="post">
                 {% csrf_token %}
 
@@ -118,11 +133,13 @@
                 </div>
 
                 <div class="ui divider"></div>
-                <button class="ui blue button" type="submit">
-                    <i class="save icon"></i>
-                    Save Changes
-                </button>
-                <a href="{% url 'managementApp:parent_detail' parent.id %}" class="ui button">Cancel</a>
+                <div class="parent-edit-actions">
+                    <button class="ui blue button" type="submit">
+                        <i class="save icon"></i>
+                        Save Changes
+                    </button>
+                    <a href="{% url 'managementApp:parent_detail' parent.id %}" class="ui button">Cancel</a>
+                </div>
             </form>
         </div>
     </div>

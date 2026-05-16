@@ -3,6 +3,8 @@
 {% block title %}
     <title>Finance Reports</title>
 {% endblock %}
+{% block page_title %}Finance Reports{% endblock %}
+{% block page_subtitle %}Run ledger-based accounting summaries for trial balance, income and expenditure, and balance sheet totals.{% endblock %}
 
 {% block css %}
     {% include 'managementApp/finance/_shared_styles.html' %}
@@ -11,25 +13,14 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">
-                    Finance Reports
-                </div>
-                <div style=" position: absolute;right: 1.5rem;top: 18px;">
-                    <i class="info circle icon finance-page-intro"
-                       data-inverted=""
-                       data-tooltip="Run ledger-based accounting summaries for the selected date range and review trial balance, income & expenditure, and balance sheet totals from one place."
-                       data-position="bottom center"></i>
-                </div>
-            </div>
-            <div class="ui tab finance-shell" data-tab="user">
-                <section>
-                    <div class="finance-panel-header">
-                        <div>
-                            <h3 class="finance-panel-title">Report Filters</h3>
-                            <div class="finance-panel-subtitle">Choose an optional period to calculate accounting reports from posted finance entries.</div>
-                        </div>
-                    </div>
+            <div class="ui tab active finance-shell" data-tab="user">
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Report Filters
+                    </h4>
+                    <div class="finance-panel-subtitle">Choose an optional period to calculate accounting reports from posted finance entries.</div>
+
                     <form class="ui tiny form">
                         {% csrf_token %}
                         <div class="finance-filter-grid">
@@ -81,7 +72,7 @@
                             </button>
                         </div>
                     </form>
-                </section>
+                </div>
 
                 <section class="finance-summary-grid" id="financeReportSummary" style="display:none;">
                     <div class="finance-summary-item">
@@ -106,13 +97,13 @@
                     </div>
                 </section>
 
-                <section class="finance-table-panel">
-                    <div class="finance-table-head">
-                        <div>
-                            <h3 class="finance-panel-title">Trial Balance</h3>
-                            <div class="finance-panel-subtitle">Account-wise debit and credit closing balances from posted ledger entries.</div>
-                        </div>
-                    </div>
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Trial Balance
+                    </h4>
+                    <div class="finance-panel-subtitle">Account-wise debit and credit closing balances from posted ledger entries.</div>
+
                     <div class="finance-table-wrap">
                         <table class="ui unstackable tiny sortable celled very compact table" id="trialBalanceTable" style="width:100%;">
                             <thead>
@@ -131,17 +122,17 @@
                             </tbody>
                         </table>
                     </div>
-                </section>
+                </div>
 
                 <div class="ui stackable two column grid" style="margin:0;">
                     <div class="column">
-                        <section class="finance-table-panel" style="height:100%;">
-                            <div class="finance-table-head">
-                                <div>
-                                    <h3 class="finance-panel-title">Income &amp; Expenditure</h3>
-                                    <div class="finance-panel-subtitle">Operating result from income and expense accounts.</div>
-                                </div>
-                            </div>
+                        <div class="ui segment finance-table-panel" style="height:100%;">
+                            <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Income &amp; Expenditure
+                    </h4>
+                    <div class="finance-panel-subtitle">Operating result from income and expense accounts.</div>
+
                             <div class="finance-table-wrap">
                                 <table class="ui unstackable tiny celled very compact table" style="width:100%;">
                                     <thead>
@@ -184,16 +175,16 @@
                                     </tfoot>
                                 </table>
                             </div>
-                        </section>
+                        </div>
                     </div>
                     <div class="column">
-                        <section class="finance-table-panel" style="height:100%;">
-                            <div class="finance-table-head">
-                                <div>
-                                    <h3 class="finance-panel-title">Balance Sheet</h3>
-                                    <div class="finance-panel-subtitle">Asset, liability, and equity balances from the selected period.</div>
-                                </div>
-                            </div>
+                        <div class="ui segment finance-table-panel" style="height:100%;">
+                            <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Balance Sheet
+                    </h4>
+                    <div class="finance-panel-subtitle">Asset, liability, and equity balances from the selected period.</div>
+
                             <div class="finance-table-wrap">
                                 <table class="ui unstackable tiny celled very compact table" style="width:100%;">
                                     <thead>
@@ -232,17 +223,17 @@
                                     </tfoot>
                                 </table>
                             </div>
-                        </section>
+                        </div>
                     </div>
                 </div>
 
-                <section class="finance-table-panel">
-                    <div class="finance-table-head">
-                        <div>
-                            <h3 class="finance-panel-title">General Ledger</h3>
-                            <div class="finance-panel-subtitle" id="generalLedgerTitle">Select an account to review detailed ledger movement and closing balance.</div>
-                        </div>
-                    </div>
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        General Ledger
+                    </h4>
+                    <div class="finance-panel-subtitle" id="generalLedgerTitle">Select an account to review detailed ledger movement and closing balance.</div>
+
                     <div class="finance-table-wrap">
                         <table class="ui unstackable tiny celled very compact table" style="width:100%;">
                             <thead>
@@ -268,7 +259,7 @@
                             </tfoot>
                         </table>
                     </div>
-                </section>
+                </div>
             </div>
         </div>
     </div>

@@ -3,6 +3,14 @@
 {% block title %}
     <title>Payroll</title>
 {% endblock %}
+{% block page_title %}Payroll{% endblock %}
+{% block page_subtitle %}Generate payroll, post salary accruals, and record salary payments from one screen.{% endblock %}
+{% block page_actions %}
+    <button type="button" class="ui green button class-page-action" onclick="openPayrollRunModal()">
+        <i class="plus icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Generate Run</span><span class="mobile-label">Run</span></span>
+    </button>
+{% endblock %}
 
 {% block css %}
     {% include 'managementApp/finance/_shared_styles.html' %}
@@ -11,29 +19,14 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">
-                    Payroll
-                </div>
-                <div style=" position: absolute;right: 1.5rem;top: 18px; display:flex; gap:0.55rem; align-items:center;">
-                    <button type="button" class="ui green mini plus button" onclick="openPayrollRunModal()">
-                        <i class="plus square outline icon"></i>
-                        Generate Run
-                    </button>
-                    <i class="info circle icon finance-page-intro"
-                       data-inverted=""
-                       data-tooltip="Generate payroll from active teacher salaries, post salary accruals into finance, and record individual salary payments from one screen."
-                       data-position="bottom center"></i>
-                </div>
-            </div>
-            <div class="ui tab finance-shell" data-tab="user">
-                <section>
-                    <div class="finance-panel-header">
-                        <div>
-                            <h3 class="finance-panel-title">Payroll Filters</h3>
-                            <div class="finance-panel-subtitle">Filter salary runs by month and year, then open a run to review or complete payments.</div>
-                        </div>
-                    </div>
+            <div class="ui tab active finance-shell" data-tab="user">
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Payroll Filters
+                    </h4>
+                    <div class="finance-panel-subtitle">Filter salary runs by month and year, then open a run to review or complete payments.</div>
+
                     <form class="ui tiny form">
                         {% csrf_token %}
                         <div class="finance-filter-grid">
@@ -71,7 +64,7 @@
                             </button>
                         </div>
                     </form>
-                </section>
+                </div>
 
                 <section class="finance-summary-grid" id="payrollSummary" style="display:none;">
                     <div class="finance-summary-item">
@@ -96,13 +89,13 @@
                     </div>
                 </section>
 
-                <section class="finance-table-panel">
-                    <div class="finance-table-head">
-                        <div>
-                            <h3 class="finance-panel-title">Payroll Runs</h3>
-                            <div class="finance-panel-subtitle">Run generation uses the active teacher salary records in the current school session.</div>
-                        </div>
-                    </div>
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Payroll Runs
+                    </h4>
+                    <div class="finance-panel-subtitle">Run generation uses the active teacher salary records in the current school session.</div>
+
                     <div class="finance-table-wrap">
                         <table class="ui unstackable tiny sortable celled very compact table" style="width:100%;">
                             <thead>
@@ -123,17 +116,17 @@
                             </tbody>
                         </table>
                     </div>
-                </section>
+                </div>
 
-                <section class="finance-table-panel" id="payrollDetailSection" style="display:none;">
-                    <div class="finance-table-head">
-                        <div>
-                            <h3 class="finance-panel-title">Run Details</h3>
-                            <div class="finance-panel-subtitle" id="payrollDetailSubtitle">Review salary lines and record salary payments.</div>
-                        </div>
+                <div class="ui segment finance-table-panel" id="payrollDetailSection" style="display:none;">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Run Details
+                    </h4>
+                    <div class="finance-panel-subtitle" id="payrollDetailSubtitle">Review salary lines and record salary payments.</div>
                         <div style="display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap;">
                             <div class="finance-summary-item" style="min-width:150px; padding:0.75rem 0.9rem;">
-                                <div class="value" id="selectedPayrollPending">Rs 0.00</div>
+                                <div class="value" id="selectedPayrollPending">Rs 0.00
                                 <div class="label">Pending</div>
                             </div>
                             <button type="button" class="ui blue button" id="postPayrollRunButton" style="display:none;" onclick="postSelectedPayrollRun()">
@@ -188,7 +181,7 @@
                             </tbody>
                         </table>
                     </div>
-                </section>
+                </div>
             </div>
         </div>
     </div>

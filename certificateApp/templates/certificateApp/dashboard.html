@@ -68,12 +68,7 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active" data-tab="user">Certificates</div>
-            </div>
-
-                <div class="ui tab active" data-tab="user">
-                    <div class="ui three stackable cards">
+            <div class="ui three stackable cards">
                     <div class="card">
                         <div class="content">
                             <div class="header">{{ certificate_types_count }}</div>
@@ -95,9 +90,9 @@
                             <div class="description">Generated for the current school and active session.</div>
                         </div>
                     </div>
-                </div>
+            </div>
 
-                {% if duplicate_certificate_groups %}
+            {% if duplicate_certificate_groups %}
                     <div class="ui segment duplicate-certificate-panel">
                         <h4 class="ui header">
                             <i class="exclamation triangle red icon"></i>
@@ -153,11 +148,11 @@
                             </div>
                         {% endfor %}
                     </div>
-                {% endif %}
+            {% endif %}
 
-                <div class="ui segment">
-                    <h4 class="ui header">Certificate Issue Register</h4>
-                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="certificateIssueTable" style="width:100%;">
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">Certificate Issue Register</h4>
+                <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="certificateIssueTable" style="width:100%;">
                         <thead>
                         <tr>
                             <th>Certificate No.</th>

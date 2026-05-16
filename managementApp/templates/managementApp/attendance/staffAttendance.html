@@ -3,6 +3,8 @@
 {% block title %}
     <title>Take Staff Attendance</title>
 {% endblock %}
+{% block page_title %}Staff Attendance{% endblock %}
+{% block page_subtitle %}Take staff attendance by date and save attendance in bulk{% endblock %}
 {% block css %}
 {% endblock %}
 {% block body %}
@@ -34,6 +36,16 @@
             justify-content: flex-end;
             margin: 0.35rem 0 0.45rem;
             flex-wrap: wrap;
+        }
+
+        .attendance-filter-actions {
+            display: flex !important;
+            gap: 0.45rem !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            margin-top: 2rem !important;
+            padding-top: 0 !important;
+            white-space: nowrap !important;
         }
 
         @media (max-width: 767px) {
@@ -68,18 +80,18 @@
                 width: 100%;
                 min-height: 34px;
             }
+
+            .attendance-filter-actions {
+                justify-content: center !important;
+                margin-top: 1rem !important;
+                width: 100% !important;
+            }
         }
     </style>
 
     <div class="ui left aligned basic  grid">
         <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Add Staff Attendance
-                </div>
-
-            </div>
-            <div class="ui tab " data-tab="user">
+            <div class="ui tab active" data-tab="user">
 
 
                 <div class="ui segment" id="classFormDiv" >
@@ -101,7 +113,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="field" style="padding-top: 2.2em;">
+                            <div class="field attendance-filter-actions">
                                 <button type="button" class="ui mini green button"
                                         onclick="searchData()">
                                     <i class="icon search"></i>
@@ -119,7 +131,11 @@
                     </form>
                 </div>
 
-                <div class="row" style="padding-left: 5px; padding-right: 5px;display: none;" id="AttendanceTableDiv">
+                <div class="ui segment" style="display: none;" id="AttendanceTableDiv">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Staff attendance list
+                    </h4>
                     <div class="wide">
                         <div class="bulk-attendance-actions">
                             <button type="button" class="ui mini basic green button" onclick="markAllAttendance(true)">

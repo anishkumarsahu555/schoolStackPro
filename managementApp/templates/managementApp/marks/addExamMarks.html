@@ -3,6 +3,8 @@
 {% block title %}
     <title>Add Students Marks</title>
 {% endblock %}
+{% block page_title %}Student Marks{% endblock %}
+{% block page_subtitle %}Enter marks by class, exam, subject, and component rules{% endblock %}
 {% block css %}
 {% endblock %}
 {% block body %}
@@ -131,6 +133,26 @@
 
         .policy-checkboxes .ui.checkbox label {
             font-size: .88rem !important;
+        }
+
+        .marks-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+            gap: 0.9rem 1rem;
+            align-items: end;
+        }
+
+        .marks-filter-grid .field {
+            margin: 0 !important;
+            min-width: 0;
+        }
+
+        .marks-filter-actions {
+            display: flex;
+            gap: 0.45rem;
+            justify-content: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .component-rule-table td,
@@ -371,18 +393,25 @@
             .policy-checkboxes {
                 gap: 10px;
             }
+
+            .marks-filter-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .marks-filter-subject-field {
+                grid-column: span 2;
+            }
+
+            .marks-filter-actions {
+                grid-column: span 2;
+                justify-content: center;
+            }
         }
     </style>
 
     <div class="ui left aligned basic  grid">
         <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Add Student Mark
-                </div>
-
-            </div>
-            <div class="ui tab " data-tab="user">
+            <div class="ui tab active" data-tab="user">
 
 
                 <div class="ui segment" id="classFormDiv">
@@ -392,7 +421,7 @@
                     </h4>
                     <form class="ui tiny form" id="addFormByClass">{% csrf_token %}
 
-                        <div class="four fields">
+                        <div class="marks-filter-grid">
                             <div class="field required">
 
                                 <label>Class-Section</label>
@@ -415,7 +444,7 @@
                                     <option value="">Search By Subject</option>
                                 </select>
                             </div>
-                                <div class="field" style="padding-top: 2.2em;">
+                                <div class="field marks-filter-actions">
                                     <button type="button" class="ui mini green button"
                                             onclick="searchData()">
                                         <i class="icon search"></i>
@@ -566,7 +595,11 @@
                 </div>
 
                 <div class="row" style="padding-left: 5px; padding-right: 5px;display: none;" id="AttendanceTableDiv">
-                    <div class="wide">
+                    <div class="ui segment wide">
+                        <h4 class="ui horizontal left aligned divider header">
+                            <i class="list alternate outline icon"></i>
+                            Student marks list
+                        </h4>
 
                         <table class="ui unstackable tiny sortable celled very nowrap very compact table"
                                id="SubjectTable"

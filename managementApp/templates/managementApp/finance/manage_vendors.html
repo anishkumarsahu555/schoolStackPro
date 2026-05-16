@@ -3,6 +3,14 @@
 {% block title %}
     <title>Vendors</title>
 {% endblock %}
+{% block page_title %}Vendors{% endblock %}
+{% block page_subtitle %}Maintain vendor master records used by expenses, payables, and outgoing finance postings.{% endblock %}
+{% block page_actions %}
+    <button class="ui green button class-page-action" type="button" onclick="openVendorModal()">
+        <i class="plus icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Add Vendor</span><span class="mobile-label">Add</span></span>
+    </button>
+{% endblock %}
 
 {% block css %}
     {% include 'managementApp/finance/_shared_styles.html' %}
@@ -11,22 +19,7 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">
-                    Vendors
-                </div>
-                <div style=" position: absolute;right: 1.5rem;top: 18px;">
-                    <i class="info circle icon finance-page-intro"
-                       data-inverted=""
-                       data-tooltip="Maintain vendor master records used by expense vouchers, payables, and outgoing finance postings."
-                       data-position="bottom center"></i>
-                    <button class="ui green mini plus button right" type="button" onclick="openVendorModal()">
-                        <i class="plus square outline icon"></i>
-                        Add Vendor
-                    </button>
-                </div>
-            </div>
-            <div class="ui tab finance-shell" data-tab="user">
+            <div class="ui tab active finance-shell" data-tab="user">
                 <section class="finance-summary-grid" id="vendorSummary">
                     <div class="finance-summary-item">
                         <div class="value" id="vendorCount">0</div>
@@ -46,13 +39,13 @@
                     </div>
                 </section>
 
-                <section class="finance-table-panel">
-                    <div class="finance-table-head">
-                        <div>
-                            <h3 class="finance-panel-title">Vendor Master</h3>
-                            <div class="finance-panel-subtitle">Create and maintain vendor details for expense and payable workflows.</div>
-                        </div>
-                    </div>
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Vendor Master
+                    </h4>
+                    <div class="finance-panel-subtitle">Create and maintain vendor details for expense and payable workflows.</div>
+
                     <div class="finance-table-wrap">
                         <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="vendorTable" style="width:100%;">
                             <thead>
@@ -69,7 +62,7 @@
                             <tbody></tbody>
                         </table>
                     </div>
-                </section>
+                </div>
 
                 <div class="ui modal" id="vendorModal">
                     <i class="close icon"></i>

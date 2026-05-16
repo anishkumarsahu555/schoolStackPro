@@ -3,6 +3,8 @@
 {% block title %}
     <title>Reconciliation</title>
 {% endblock %}
+{% block page_title %}Reconciliation{% endblock %}
+{% block page_subtitle %}Find finance mismatches and run safe repair checks for receipts, charges, vouchers, and payroll postings.{% endblock %}
 
 {% block css %}
     {% include 'managementApp/finance/_shared_styles.html' %}
@@ -11,24 +13,13 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">
-                    Reconciliation
-                </div>
-                <div style=" position: absolute;right: 1.5rem;top: 18px;">
-                    <i class="info circle icon finance-page-intro"
-                       data-inverted=""
-                       data-tooltip="Find common finance mismatches and run safe repair actions against receipts, charges, vouchers, and payroll postings."
-                       data-position="bottom center"></i>
-                </div>
-            </div>
-            <div class="ui tab finance-shell" data-tab="user">
-                <section class="finance-filter-actions" style="margin-top:0;">
+            <div class="ui tab active finance-shell" data-tab="user">
+                <div class="ui segment finance-filter-actions" style="margin-top:0;">
                     <button type="button" class="ui green button" onclick="loadReconciliation()">
                         <i class="sync icon"></i>
                         Run Checks
                     </button>
-                </section>
+                </div>
 
                 <section class="finance-summary-grid" id="reconciliationSummary" style="display:none;">
                     <div class="finance-summary-item">
@@ -49,13 +40,13 @@
                     </div>
                 </section>
 
-                <section class="finance-table-panel">
-                    <div class="finance-table-head">
-                        <div>
-                            <h3 class="finance-panel-title">Receipts Missing Ledger</h3>
-                            <div class="finance-panel-subtitle">Confirmed receipts that do not currently have a finance transaction tied to their source reference.</div>
-                        </div>
-                    </div>
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Receipts Missing Ledger
+                    </h4>
+                    <div class="finance-panel-subtitle">Confirmed receipts that do not currently have a finance transaction tied to their source reference.</div>
+
                     <div class="finance-table-wrap">
                         <table class="ui unstackable tiny celled very compact table" id="reconReceiptTable" style="width:100%;">
                             <thead>
@@ -73,15 +64,15 @@
                             </tbody>
                         </table>
                     </div>
-                </section>
+                </div>
 
-                <section class="finance-table-panel">
-                    <div class="finance-table-head">
-                        <div>
-                            <h3 class="finance-panel-title">Charge Balance Mismatches</h3>
-                            <div class="finance-panel-subtitle">Charges where stored paid and balance amounts do not match allocations and refunds.</div>
-                        </div>
-                    </div>
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Charge Balance Mismatches
+                    </h4>
+                    <div class="finance-panel-subtitle">Charges where stored paid and balance amounts do not match allocations and refunds.</div>
+
                     <div class="finance-table-wrap">
                         <table class="ui unstackable tiny celled very compact table" id="reconChargeTable" style="width:100%;">
                             <thead>
@@ -100,15 +91,15 @@
                             </tbody>
                         </table>
                     </div>
-                </section>
+                </div>
 
-                <section class="finance-table-panel">
-                    <div class="finance-table-head">
-                        <div>
-                            <h3 class="finance-panel-title">Expense Voucher Posting Issues</h3>
-                            <div class="finance-panel-subtitle">Approved or paid vouchers missing their accrual or payment ledger postings.</div>
-                        </div>
-                    </div>
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Expense Voucher Posting Issues
+                    </h4>
+                    <div class="finance-panel-subtitle">Approved or paid vouchers missing their accrual or payment ledger postings.</div>
+
                     <div class="finance-table-wrap">
                         <table class="ui unstackable tiny celled very compact table" id="reconVoucherTable" style="width:100%;">
                             <thead>
@@ -126,15 +117,15 @@
                             </tbody>
                         </table>
                     </div>
-                </section>
+                </div>
 
-                <section class="finance-table-panel">
-                    <div class="finance-table-head">
-                        <div>
-                            <h3 class="finance-panel-title">Payroll Payment Issues</h3>
-                            <div class="finance-panel-subtitle">Paid payroll lines that do not yet have a linked salary payment transaction.</div>
-                        </div>
-                    </div>
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Payroll Payment Issues
+                    </h4>
+                    <div class="finance-panel-subtitle">Paid payroll lines that do not yet have a linked salary payment transaction.</div>
+
                     <div class="finance-table-wrap">
                         <table class="ui unstackable tiny celled very compact table" id="reconPayrollTable" style="width:100%;">
                             <thead>
@@ -150,7 +141,7 @@
                             </tbody>
                         </table>
                     </div>
-                </section>
+                </div>
             </div>
         </div>
     </div>

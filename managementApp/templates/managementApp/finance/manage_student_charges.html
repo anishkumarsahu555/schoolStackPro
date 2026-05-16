@@ -3,6 +3,8 @@
 {% block title %}
     <title>Student Charges</title>
 {% endblock %}
+{% block page_title %}Student Charges{% endblock %}
+{% block page_subtitle %}Review charged, paid, and pending dues across admission, tuition, and miscellaneous heads.{% endblock %}
 
 {% block css %}
     {% include 'managementApp/finance/_shared_styles.html' %}
@@ -11,25 +13,14 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">
-                    Student Charges
-                </div>
-                <div style=" position: absolute;right: 1.5rem;top: 18px;">
-                    <i class="info circle icon finance-page-intro"
-                       data-inverted=""
-                       data-tooltip="Review the dues side of finance across admission, monthly tuition, and miscellaneous heads. This gives the accounts team a clean view of what has been charged, what is already paid, and what is still pending."
-                       data-position="bottom center"></i>
-                </div>
-            </div>
-            <div class="ui tab finance-shell" data-tab="user">
-        <section>
-            <div class="finance-panel-header">
-                <div>
-                    <h3 class="finance-panel-title">Filter Charges</h3>
+            <div class="ui tab active finance-shell" data-tab="user">
+        <div class="ui segment">
+            <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Filter Charges
+                    </h4>
                     <div class="finance-panel-subtitle">Slice finance-backed dues by class, student, status, and charge date.</div>
-                </div>
-            </div>
+
             <form class="ui tiny form">
                 {% csrf_token %}
                 <div class="finance-filter-grid">
@@ -76,7 +67,7 @@
                     </button>
                 </div>
             </form>
-        </section>
+        </div>
 
         <section class="finance-summary-grid" id="chargeSummary" style="display:none;">
             <div class="finance-summary-item">
@@ -97,13 +88,13 @@
             </div>
         </section>
 
-        <section class="finance-table-panel">
-            <div class="finance-table-head">
-                <div>
-                    <h3 class="finance-panel-title">Charge Register</h3>
+        <div class="ui segment finance-table-panel">
+            <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Charge Register
+                    </h4>
                     <div class="finance-panel-subtitle">A finance-centered list of all posted student dues and their balances.</div>
-                </div>
-            </div>
+
             <div class="finance-table-wrap">
                 <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="chargeTable" style="width:100%;">
                     <thead>
@@ -124,7 +115,7 @@
                     <tbody></tbody>
                 </table>
             </div>
-        </section>
+        </div>
             </div>
         </div>
     </div>

@@ -636,12 +636,15 @@ def bootstrap_expense_categories(*, school_id, session_id, user_obj=None):
     }
     categories = {}
     for code, (name, expense_account) in category_specs.items():
+        # ExpenseCategory is unique by school + code, not by session. Keep the
+        # bootstrap lookup aligned with that constraint so re-opening finance
+        # pages remains idempotent across sessions.
         category, created = ExpenseCategory.objects.get_or_create(
             schoolID_id=school_id,
-            sessionID_id=session_id,
             code=code,
             isDeleted=False,
             defaults={
+                'sessionID_id': session_id,
                 'name': name,
                 'expenseAccountID': expense_account,
                 'payableAccountID': setup['accounts']['EXPENSE_PAYABLE'],
@@ -652,6 +655,9 @@ def bootstrap_expense_categories(*, school_id, session_id, user_obj=None):
         )
         if not created:
             changed = []
+            if category.sessionID_id != session_id:
+                category.sessionID_id = session_id
+                changed.append('sessionID')
             if category.name != name:
                 category.name = name
                 changed.append('name')

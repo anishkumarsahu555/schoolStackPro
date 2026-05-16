@@ -4,6 +4,15 @@
 {% block title %}
     <title>Exam Time Table Preview</title>
 {% endblock %}
+{% block page_title %}Exam Time Table Preview{% endblock %}
+{% block page_subtitle %}Review and print the class-wise examination schedule{% endblock %}
+{% block page_actions %}
+    <a class="ui mini button" href="{% url 'managementApp:manage_exam_timetable' %}">
+        <i class="left arrow icon"></i>
+        <span class="desktop-label">Timetable</span>
+        <span class="mobile-label">Back</span>
+    </a>
+{% endblock %}
 
 {% block body %}
     <style>
@@ -91,9 +100,25 @@
 
         .exam-preview .preview-filter-bar {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 0.6rem;
-            margin-bottom: 0.75rem;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) auto auto;
+            gap: 0.9rem 1rem;
+            align-items: end;
+            margin-bottom: 0.9rem;
+            padding: 0.8rem;
+            border: 1px solid var(--app-border);
+            border-radius: 12px;
+            background: var(--app-card, var(--app-surface));
+        }
+
+        .exam-preview .preview-filter-bar .field {
+            margin: 0 !important;
+            min-width: 0;
+        }
+
+        .exam-preview .preview-filter-action {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
         }
 
         .exam-preview .summary-line {
@@ -216,6 +241,8 @@
             .ui.top.fixed.menu,
             .ui.sidebar,
             .ui.pointing.secondary.menu,
+            .app-title-bar,
+            .universal-back-bar,
             .exam-preview .preview-filter-bar,
             .exam-preview .summary-line,
             .exam-preview .empty-note,
@@ -223,9 +250,31 @@
                 display: none !important;
             }
 
+            body,
+            .exam-preview-page.ui.grid,
+            .exam-preview-page .sixteen.wide.column {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            html,
+            body,
+            .pusher,
+            .main-content,
+            .exam-preview-page.ui.grid,
+            .exam-preview-page .sixteen.wide.column {
+                display: block !important;
+                overflow: visible !important;
+            }
+
             .main-content {
                 margin: 0 !important;
                 padding: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
             }
 
             .exam-preview,
@@ -233,6 +282,47 @@
                 border: 0 !important;
                 box-shadow: none !important;
                 background: #ffffff !important;
+            }
+
+            .exam-preview {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .exam-preview .preview-sheet-header {
+                border: 0 !important;
+                border-radius: 0 !important;
+                background: #ffffff !important;
+                margin: 0 0 8px !important;
+                padding: 0 0 8px !important;
+                overflow: hidden !important;
+            }
+
+            .exam-preview .school-head {
+                display: block !important;
+                max-width: 100% !important;
+                margin: 0 0 6px !important;
+                text-align: center !important;
+            }
+
+            .exam-preview .school-logo {
+                display: block !important;
+                width: 42px !important;
+                height: 42px !important;
+                margin: 0 auto 5px !important;
+            }
+
+            .exam-preview .school-name,
+            .exam-preview .school-address,
+            .exam-preview .preview-title,
+            .exam-preview .preview-subtitle {
+                max-width: 100% !important;
+                text-align: center !important;
+                white-space: normal !important;
+                overflow-wrap: anywhere !important;
+                word-break: normal !important;
             }
 
             .exam-preview .table-wrap {
@@ -292,7 +382,11 @@
 
         @media (max-width: 640px) {
             .exam-preview .preview-filter-bar {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .exam-preview .preview-filter-action {
+                justify-content: center;
             }
 
             .exam-preview .school-head {
@@ -310,14 +404,6 @@
 
     <div class="exam-preview-page ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <a class="item" href="{% url 'managementApp:manage_exam_timetable' %}">
-                    <i class="left arrow icon"></i>
-                    Back
-                </a>
-                <div style="cursor: pointer;" class="item active">Exam-wise Interactive Preview</div>
-            </div>
-
             <div class="exam-preview">
                 {% regroup timetable_rows by standardID as class_groups %}
                 {% regroup timetable_rows by examID as exam_groups %}
@@ -342,12 +428,12 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="field" style="padding-top: 1.95rem;">
+                        <div class="field preview-filter-action">
                             <button class="ui mini red button" type="button" id="previewClearBtn">
                                 <i class="times icon"></i> Clear
                             </button>
                         </div>
-                        <div class="field print-hide" style="padding-top: 1.95rem;">
+                        <div class="field print-hide preview-filter-action">
                             <button class="ui mini blue button" type="button" id="previewPrintBtn">
                                 <i class="print icon"></i> Print
                             </button>

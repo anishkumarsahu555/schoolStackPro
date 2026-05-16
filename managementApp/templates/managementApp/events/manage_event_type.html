@@ -4,6 +4,8 @@
 {% block title %}
     <title>Manage Event Type</title>
 {% endblock %}
+{% block page_title %}Manage Event Types{% endblock %}
+{% block page_subtitle %}Create and maintain event categories for management, teacher, and student apps{% endblock %}
 
 {% block body %}
     <style>
@@ -24,14 +26,61 @@
         input[type=search] {
             width: 100px !important;
         }
+
+        .event-type-form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+            gap: 0.9rem 1rem;
+            align-items: end;
+        }
+
+        .event-type-form-grid .field {
+            margin: 0 !important;
+            min-width: 0;
+        }
+
+        .event-type-actions {
+            display: flex;
+            gap: 0.45rem;
+            align-items: center;
+            justify-content: flex-end;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 991px) {
+            .event-type-form-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .event-type-name-field {
+                grid-column: span 2;
+            }
+
+            .event-type-description-field {
+                grid-column: span 2;
+            }
+
+            .event-type-actions {
+                grid-column: span 2;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .event-type-form-grid {
+                gap: 0.75rem;
+            }
+
+            .event-type-actions .ui.button {
+                min-width: 0;
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+        }
     </style>
 
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active">Manage Event Type</div>
-            </div>
-
             <div class="ui segment">
                 <h4 class="ui horizontal left aligned divider header">
                     <i class="left align icon"></i>
@@ -40,12 +89,12 @@
 
                 <form class="ui tiny form" id="eventTypeForm">{% csrf_token %}
                     <input type="hidden" id="type_editID">
-                    <div class="three fields">
-                        <div class="field required">
+                    <div class="event-type-form-grid">
+                        <div class="field required event-type-name-field">
                             <label>Name</label>
                             <input type="text" id="type_name" placeholder="Event Type Name">
                         </div>
-                        <div class="field required">
+                        <div class="field required event-type-audience-field">
                             <label>Audience</label>
                             <select class="ui search dropdown" id="type_audience">
                                 <option value="">Select Audience</option>
@@ -56,45 +105,51 @@
                                 <option value="all_apps">All Apps</option>
                             </select>
                         </div>
-                        <div class="field">
+                        <div class="field event-type-description-field">
                             <label>Description</label>
                             <input type="text" id="type_description" placeholder="Description">
                         </div>
-                    </div>
-                    <div class="field">
-                        <button type="button" id="typeSaveBtn" class="ui mini green button" onclick="addEventType()">
-                            <i class="icon plus square"></i>
-                            Add
-                        </button>
-                        <button type="button" id="typeUpdateBtn" style="display:none;" class="ui mini orange button" onclick="updateEventType()">
-                            <i class="icon redo"></i>
-                            Update
-                        </button>
-                        <button type="button" class="ui mini red button" onclick="clearEventTypeForm()">
-                            <i class="icon times circle"></i>
-                            Clear
-                        </button>
+                        <div class="field event-type-actions">
+                            <button type="button" id="typeSaveBtn" class="ui mini green button" onclick="addEventType()">
+                                <i class="icon plus square"></i>
+                                Add
+                            </button>
+                            <button type="button" id="typeUpdateBtn" style="display:none;" class="ui mini orange button" onclick="updateEventType()">
+                                <i class="icon redo"></i>
+                                Update
+                            </button>
+                            <button type="button" class="ui mini red button" onclick="clearEventTypeForm()">
+                                <i class="icon times circle"></i>
+                                Clear
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
 
-            <div class="row" style="padding-left: 5px; padding-right: 5px">
-                <div class="wide">
-                    <table class="ui unstackable tiny sortable celled very nowrap very compact table"
-                           id="EventTypeTable"
-                           style="margin-top: 5px;width: 100%">
-                        <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Audience</th>
-                            <th>Description</th>
-                            <th>EditedBy</th>
-                            <th>UpdatedOn</th>
-                            <th>Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="list alternate outline icon"></i>
+                    Event type list
+                </h4>
+                <div class="row" style="padding-left: 5px; padding-right: 5px">
+                    <div class="wide">
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                               id="EventTypeTable"
+                               style="margin-top: 5px;width: 100%">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Audience</th>
+                                <th>Description</th>
+                                <th>EditedBy</th>
+                                <th>UpdatedOn</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
