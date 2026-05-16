@@ -5,6 +5,14 @@
     <title>Exam Time Table</title>
 {% endblock %}
 
+{% block page_title %}
+    Exam Timetable
+{% endblock %}
+
+{% block page_subtitle %}
+    View exam schedules for your assigned classes
+{% endblock %}
+
 {% block css %}
     <style>
         .exam-page .sheet-shell {
@@ -337,46 +345,49 @@
 {% block body %}
     <div class="exam-page ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active">Exam Time Table</div>
-            </div>
-
-            <div class="sheet-shell">
+            <div class="ui tab active" data-tab="user">
+                <div class="sheet-shell">
                 {% if timetable_rows %}
                     {% regroup timetable_rows by standardID as class_groups %}
 
-                    <div class="ui tiny form filter-bar">
-                        <div class="field">
-                            <label>Class</label>
-                            <select class="ui search dropdown" id="classFilter" data-default="{{ default_class_id }}">
-                                <option value="">All Classes</option>
-                                {% for cls in class_options %}
-                                    <option value="{{ cls.id }}" {% if default_class_id and default_class_id == cls.id|stringformat:"s" %}selected{% endif %}>
-                                        {{ cls.label }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="field">
-                            <label>Exam</label>
-                            <select class="ui search dropdown" id="examFilter" data-default="{{ default_exam_id }}">
-                                <option value="">All Exams</option>
-                                {% for ex in exam_options %}
-                                    <option value="{{ ex.id }}" {% if default_exam_id and default_exam_id == ex.id|stringformat:"s" %}selected{% endif %}>{{ ex.label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="field" style="padding-top: 1.95rem;">
-                            <button class="ui mini red button" type="button" id="clearFilterBtn">
-                                <i class="times icon"></i>
-                                Clear
-                            </button>
-                        </div>
-                        <div class="field print-hide" style="padding-top: 1.95rem;">
-                            <button class="ui mini blue button" type="button" id="printBtn">
-                                <i class="print icon"></i>
-                                Print
-                            </button>
+                    <div class="ui segment print-hide">
+                        <h4 class="ui horizontal left aligned divider header">
+                            <i class="filter icon"></i>
+                            Timetable filter
+                        </h4>
+                        <div class="ui tiny form filter-bar">
+                            <div class="field">
+                                <label>Class</label>
+                                <select class="ui search dropdown" id="classFilter" data-default="{{ default_class_id }}">
+                                    <option value="">All Classes</option>
+                                    {% for cls in class_options %}
+                                        <option value="{{ cls.id }}" {% if default_class_id and default_class_id == cls.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ cls.label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Exam</label>
+                                <select class="ui search dropdown" id="examFilter" data-default="{{ default_exam_id }}">
+                                    <option value="">All Exams</option>
+                                    {% for ex in exam_options %}
+                                        <option value="{{ ex.id }}" {% if default_exam_id and default_exam_id == ex.id|stringformat:"s" %}selected{% endif %}>{{ ex.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field" style="padding-top: 1.95rem;">
+                                <button class="ui mini red button" type="button" id="clearFilterBtn">
+                                    <i class="times icon"></i>
+                                    Clear
+                                </button>
+                            </div>
+                            <div class="field print-hide" style="padding-top: 1.95rem;">
+                                <button class="ui mini blue button" type="button" id="printBtn">
+                                    <i class="print icon"></i>
+                                    Print
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -460,6 +471,7 @@
                 {% else %}
                     <div class="empty-note" style="display:block;">No exam timetable available for your assigned classes.</div>
                 {% endif %}
+                </div>
             </div>
         </div>
     </div>

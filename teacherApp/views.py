@@ -520,6 +520,7 @@ def teacher_marks_details(request):
     return render(request, 'managementApp/marks/examMarksDetails.html', {
         'base_template': 'teacherApp/index.html',
         'is_class_teacher': is_class_teacher,
+        'is_teacher_context': True,
     })
 
 

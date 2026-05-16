@@ -5,6 +5,14 @@
     <title>Assigned Class</title>
 {% endblock %}
 
+{% block page_title %}
+    Assigned Class
+{% endblock %}
+
+{% block page_subtitle %}
+    View your assigned class roster and student fee details
+{% endblock %}
+
 {% block css %}
     <style>
         #AssignedStudentsTable_length, #StudentFeeDetailTable_length {
@@ -34,9 +42,6 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">Assigned Class</div>
-            </div>
             <div class="ui tab active" data-tab="user">
                 {% if not is_class_teacher %}
                     <div class="ui warning message">
@@ -45,6 +50,10 @@
                     </div>
                 {% else %}
                     <div class="ui segment">
+                        <h4 class="ui horizontal left aligned divider header">
+                            <i class="filter icon"></i>
+                            Class filter
+                        </h4>
                         <form class="ui tiny form" id="assignedClassForm">
                             <div class="three fields">
                                 <div class="four wide field required">
@@ -63,29 +72,34 @@
                         </form>
                     </div>
 
-                    <div class="row" style="padding-left: 5px; padding-right: 5px;">
-                        <div class="wide">
-                            <table class="ui unstackable tiny sortable celled very nowrap very compact table"
-                                   id="AssignedStudentsTable"
-                                   style="margin-top: 5px;width: 100%">
-                                <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Roll</th>
-                                    <th>Class-Section</th>
-                                    <th>Gender</th>
-                                    <th>Phone</th>
-                                    <th>Email</th>
-                                    <th>Actions</th>
-                                </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
+                    <div class="ui segment">
+                        <h4 class="ui horizontal left aligned divider header">
+                            <i class="users icon"></i>
+                            Assigned students
+                        </h4>
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                               id="AssignedStudentsTable"
+                               style="margin-top: 5px;width: 100%">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Roll</th>
+                                <th>Class-Section</th>
+                                <th>Gender</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
 
                     <div id="feeDetailSection" class="ui segment" style="margin-top: 12px;">
-                        <h4 class="ui header" id="feeDetailHeader">Fee Details</h4>
+                        <h4 class="ui horizontal left aligned divider header" id="feeDetailHeader">
+                            <i class="money bill alternate outline icon"></i>
+                            Fee details
+                        </h4>
                         <table class="ui unstackable tiny sortable celled very nowrap very compact table"
                                id="StudentFeeDetailTable"
                                style="margin-top: 5px; width: 100%!important;">

@@ -4,6 +4,14 @@
     <title>Subject Notes</title>
 {% endblock %}
 
+{% block page_title %}
+    Subject Notes
+{% endblock %}
+
+{% block page_subtitle %}
+    Create, organize, and publish notes for your assigned subjects
+{% endblock %}
+
 {% block body %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/suneditor@2.47.8/dist/css/suneditor.min.css">
     <style>
@@ -297,57 +305,68 @@
 
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active">Subject Notes</div>
-            </div>
-
-            <div class="stat-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Total</div>
-                    <div class="stat-value" id="statTotal">{{ notes_total|default:0 }}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Draft</div>
-                    <div class="stat-value" id="statDraft">{{ notes_draft|default:0 }}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Published</div>
-                    <div class="stat-value" id="statPublished">{{ notes_published|default:0 }}</div>
-                </div>
-            </div>
-
-            <div class="note-shell">
-                <div class="note-panel">
-                    <div class="ui tiny form">
-                        <div class="field">
-                            <label>Search</label>
-                            <input type="text" id="searchInput" placeholder="Search title or content">
+            <div class="ui tab active" data-tab="user">
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="chart bar outline icon"></i>
+                        Notes summary
+                    </h4>
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total</div>
+                            <div class="stat-value" id="statTotal">{{ notes_total|default:0 }}</div>
                         </div>
-                        <div class="field">
-                            <label>Status</label>
-                            <select id="statusFilter" class="ui dropdown">
-                                <option value="">All</option>
-                                <option value="draft">Draft</option>
-                                <option value="published">Published</option>
-                            </select>
+                        <div class="stat-card">
+                            <div class="stat-label">Draft</div>
+                            <div class="stat-value" id="statDraft">{{ notes_draft|default:0 }}</div>
                         </div>
-                        <div class="field">
-                            <label>Assigned Subject</label>
-                            <select id="filterAssignment" class="ui search dropdown">
-                                <option value="">All Assigned Subjects</option>
-                            </select>
-                        </div>
-                        <div class="ui two buttons">
-                            <button class="ui tiny button btn-apply" onclick="loadNotes()"><i class="filter icon"></i>Apply</button>
-                            <button class="ui tiny button btn-reset" onclick="resetFilters()"><i class="undo icon"></i>Reset</button>
+                        <div class="stat-card">
+                            <div class="stat-label">Published</div>
+                            <div class="stat-value" id="statPublished">{{ notes_published|default:0 }}</div>
                         </div>
                     </div>
-
-                    <div class="note-list" id="noteList"></div>
                 </div>
 
-                <div class="editor-panel">
-                    <form id="noteForm" class="ui tiny form" onsubmit="return false;">
+                <div class="note-shell">
+                    <div class="note-panel">
+                        <h4 class="ui horizontal left aligned divider header">
+                            <i class="filter icon"></i>
+                            Notes filter
+                        </h4>
+                        <div class="ui tiny form">
+                            <div class="field">
+                                <label>Search</label>
+                                <input type="text" id="searchInput" placeholder="Search title or content">
+                            </div>
+                            <div class="field">
+                                <label>Status</label>
+                                <select id="statusFilter" class="ui dropdown">
+                                    <option value="">All</option>
+                                    <option value="draft">Draft</option>
+                                    <option value="published">Published</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Assigned Subject</label>
+                                <select id="filterAssignment" class="ui search dropdown">
+                                    <option value="">All Assigned Subjects</option>
+                                </select>
+                            </div>
+                            <div class="ui two buttons">
+                                <button class="ui tiny button btn-apply" onclick="loadNotes()"><i class="filter icon"></i>Apply</button>
+                                <button class="ui tiny button btn-reset" onclick="resetFilters()"><i class="undo icon"></i>Reset</button>
+                            </div>
+                        </div>
+
+                        <div class="note-list" id="noteList"></div>
+                    </div>
+
+                    <div class="editor-panel">
+                        <h4 class="ui horizontal left aligned divider header">
+                            <i class="edit outline icon"></i>
+                            Note editor
+                        </h4>
+                        <form id="noteForm" class="ui tiny form" onsubmit="return false;">
                         <input type="hidden" id="noteId">
                         <div class="fields">
                             <div class="ten wide field required">
@@ -397,7 +416,8 @@
                             <button type="button" class="ui button btn-publish" onclick="saveNote('published')"><i class="paper plane outline icon"></i>Publish</button>
                         </div>
                         <button type="button" class="ui tiny red button" onclick="resetForm()" style="margin-left: 0.5rem;"><i class="times icon"></i>Clear</button>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

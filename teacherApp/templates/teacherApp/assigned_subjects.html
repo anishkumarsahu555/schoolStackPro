@@ -5,6 +5,14 @@
     <title>Assigned Subjects</title>
 {% endblock %}
 
+{% block page_title %}
+    Assigned Subjects
+{% endblock %}
+
+{% block page_subtitle %}
+    Review your subject allocations across classes and sections
+{% endblock %}
+
 {% block body %}
     <style>
         .subject-shell {
@@ -73,6 +81,10 @@
             border: 1px solid var(--dm-border, #d8e2f0);
             background: var(--dm-card-bg, #ffffff);
             padding: 0.75rem;
+        }
+
+        .subject-list-section {
+            border-radius: 14px;
         }
 
         .subject-wrap {
@@ -149,6 +161,7 @@
 
         html[data-theme="dark"] .stat-box,
         html[data-theme="dark"] .subject-filter,
+        html[data-theme="dark"] .subject-list-section,
         html[data-theme="dark"] .subject-card,
         html[data-theme="dark"] .subject-empty {
             background: #111a2b !important;
@@ -268,70 +281,84 @@
 
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">Assigned Subjects</div>
-            </div>
-
-            <div class="subject-shell">
-                <div class="subject-stats">
-                    <div class="stat-box total">
-                        <div class="stat-label">Total Assigned</div>
-                        <div class="stat-value" id="statTotal">{{ assigned_subjects|length }}</div>
-                    </div>
-                    <div class="stat-box classes">
-                        <div class="stat-label">Classes</div>
-                        <div class="stat-value" id="statClasses">0</div>
-                    </div>
-                    <div class="stat-box subjects">
-                        <div class="stat-label">Subjects</div>
-                        <div class="stat-value" id="statSubjects">0</div>
-                    </div>
-                </div>
-
-                <div class="subject-filter ui tiny form">
-                    <div class="fields">
-                        <div class="twelve wide field">
-                            <label>Search</label>
-                            <input type="text" id="subjectSearch" placeholder="Search class, section, subject">
-                        </div>
-                        <div class="four wide field" style="padding-top:2em;">
-                            <button class="ui mini red button fluid" type="button" id="clearSubjectSearch">
-                                <i class="times icon"></i>
-                                Clear
-                            </button>
+            <div class="ui tab active" data-tab="user">
+                <div class="subject-shell">
+                    <div class="ui segment">
+                        <h4 class="ui horizontal left aligned divider header">
+                            <i class="chart bar outline icon"></i>
+                            Assignment summary
+                        </h4>
+                        <div class="subject-stats">
+                            <div class="stat-box total">
+                                <div class="stat-label">Total Assigned</div>
+                                <div class="stat-value" id="statTotal">{{ assigned_subjects|length }}</div>
+                            </div>
+                            <div class="stat-box classes">
+                                <div class="stat-label">Classes</div>
+                                <div class="stat-value" id="statClasses">0</div>
+                            </div>
+                            <div class="stat-box subjects">
+                                <div class="stat-label">Subjects</div>
+                                <div class="stat-value" id="statSubjects">0</div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {% if assigned_subjects %}
-                    <div class="subject-wrap" id="subjectWrap">
-                        {% for row in assigned_subjects %}
-                            {% with class_name=row.assignedSubjectID.standardID.name|default:'N/A' section_name=row.assignedSubjectID.standardID.section|default:'' %}
-                                <div class="subject-card"
-                                     data-subject="{{ row.assignedSubjectID.subjectID.name|default:'N/A'|lower|escape }}"
-                                     data-class="{{ class_name|lower|escape }}"
-                                     data-section="{{ section_name|lower|escape }}"
-                                     data-class-key="{{ class_name|lower|escape }}|{{ section_name|lower|escape }}"
-                                     data-class-label="{% if section_name %}{{ class_name|escape }} - {{ section_name|escape }}{% else %}{{ class_name|escape }}{% endif %}"
-                                     data-month="{{ row.datetime|date:'Y-m' }}">
-                                    <div class="subject-date">
-                                        <div class="subject-name">{{ row.assignedSubjectID.subjectID.name|default:'N/A' }}</div>
-                                    </div>
-                                    <div class="subject-content">
-                                        <div class="subject-meta">
-                                            <div><b>Class:</b> {% if section_name %}{{ class_name }} - {{ section_name }}{% else %}{{ class_name }}{% endif %}</div>
-                                            <div><b>Assigned On:</b> {{ row.datetime|date:'d M Y, h:i A'|default:'N/A' }}</div>
+                    <div class="subject-filter ui segment ui tiny form">
+                        <h4 class="ui horizontal left aligned divider header">
+                            <i class="filter icon"></i>
+                            Subject filter
+                        </h4>
+                        <div class="fields">
+                            <div class="twelve wide field">
+                                <label>Search</label>
+                                <input type="text" id="subjectSearch" placeholder="Search class, section, subject">
+                            </div>
+                            <div class="four wide field" style="padding-top:2em;">
+                                <button class="ui mini red button fluid" type="button" id="clearSubjectSearch">
+                                    <i class="times icon"></i>
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ui segment subject-list-section">
+                        <h4 class="ui horizontal left aligned divider header">
+                            <i class="book icon"></i>
+                            Assigned subjects
+                        </h4>
+                        {% if assigned_subjects %}
+                            <div class="subject-wrap" id="subjectWrap">
+                                {% for row in assigned_subjects %}
+                                    {% with class_name=row.assignedSubjectID.standardID.name|default:'N/A' section_name=row.assignedSubjectID.standardID.section|default:'' %}
+                                        <div class="subject-card"
+                                             data-subject="{{ row.assignedSubjectID.subjectID.name|default:'N/A'|lower|escape }}"
+                                             data-class="{{ class_name|lower|escape }}"
+                                             data-section="{{ section_name|lower|escape }}"
+                                             data-class-key="{{ class_name|lower|escape }}|{{ section_name|lower|escape }}"
+                                             data-class-label="{% if section_name %}{{ class_name|escape }} - {{ section_name|escape }}{% else %}{{ class_name|escape }}{% endif %}"
+                                             data-month="{{ row.datetime|date:'Y-m' }}">
+                                            <div class="subject-date">
+                                                <div class="subject-name">{{ row.assignedSubjectID.subjectID.name|default:'N/A' }}</div>
+                                            </div>
+                                            <div class="subject-content">
+                                                <div class="subject-meta">
+                                                    <div><b>Class:</b> {% if section_name %}{{ class_name }} - {{ section_name }}{% else %}{{ class_name }}{% endif %}</div>
+                                                    <div><b>Assigned On:</b> {{ row.datetime|date:'d M Y, h:i A'|default:'N/A' }}</div>
+                                                </div>
+                                                <div class="subject-desc">Subject allocation for the current academic session.</div>
+                                            </div>
                                         </div>
-                                        <div class="subject-desc">Subject allocation for the current academic session.</div>
-                                    </div>
-                                </div>
-                            {% endwith %}
-                        {% endfor %}
+                                    {% endwith %}
+                                {% endfor %}
+                            </div>
+                            <div class="subject-empty" id="subjectEmpty" style="display:none;">No assigned subjects match the selected filters.</div>
+                        {% else %}
+                            <div class="subject-empty">No subjects assigned yet.</div>
+                        {% endif %}
                     </div>
-                    <div class="subject-empty" id="subjectEmpty" style="display:none;">No assigned subjects match the selected filters.</div>
-                {% else %}
-                    <div class="subject-empty">No subjects assigned yet.</div>
-                {% endif %}
+                </div>
             </div>
         </div>
     </div>

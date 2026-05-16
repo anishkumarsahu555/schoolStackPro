@@ -4,14 +4,22 @@
     <title>My Leave Applications</title>
 {% endblock %}
 
+{% block page_title %}
+    Leave Applications
+{% endblock %}
+
+{% block page_subtitle %}
+    Apply for leave and track approval status
+{% endblock %}
+
 {% block body %}
     <style>
         #leaveFormContainer {
             border-radius: 14px;
         }
 
-        #updateBtn {
-            display: none;
+        #updateBtn:not(.is-active) {
+            display: none !important;
         }
 
         #updateBtn.is-active {
@@ -375,11 +383,12 @@
 
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active">My Leave Applications</div>
-            </div>
-
+            <div class="ui tab active" data-tab="user">
             <div class="ui segment" id="leaveFormContainer">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="edit outline icon"></i>
+                    Leave application
+                </h4>
                 <form class="ui tiny form" id="leaveForm">{% csrf_token %}
                     <input type="hidden" id="editID">
                     <div class="fields">
@@ -430,7 +439,11 @@
                 </form>
             </div>
 
-            <div class="teacher-leave-desktop row" style="padding-left:5px; padding-right:5px;">
+            <div class="teacher-leave-desktop ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="list alternate outline icon"></i>
+                    Leave list
+                </h4>
                 <table class="ui unstackable tiny sortable celled nowrap very compact table" id="leaveTable" style="width:100%;">
                     <thead>
                     <tr>
@@ -450,7 +463,11 @@
                 </table>
             </div>
 
-            <div class="teacher-leave-mobile" style="padding-left:5px; padding-right:5px;">
+            <div class="teacher-leave-mobile ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="chart bar outline icon"></i>
+                    Leave summary
+                </h4>
                 <div class="leave-stats">
                     <div class="leave-stat pending">
                         <div class="label">Pending</div>
@@ -507,6 +524,7 @@
                 {% else %}
                     <div class="leave-empty">No leave applications found.</div>
                 {% endif %}
+            </div>
             </div>
         </div>
     </div>

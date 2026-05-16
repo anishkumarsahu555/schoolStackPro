@@ -5,6 +5,14 @@
     <title>Teacher Progress Report Cards</title>
 {% endblock %}
 
+{% block page_title %}
+    Progress Report Cards
+{% endblock %}
+
+{% block page_subtitle %}
+    Review report cards, remarks, and publishing status for assigned students
+{% endblock %}
+
 {% block css %}
     <style>
         .report-page .filter-segment {
@@ -694,11 +702,12 @@
 {% block body %}
     <div class="report-page ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active">Progress Report Cards</div>
-            </div>
-
+            <div class="ui tab active" data-tab="user">
             <div class="ui segment filter-segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="filter icon"></i>
+                    Report filter
+                </h4>
                 <form class="ui tiny form" method="get" id="filterForm">
                     <div class="three fields">
                         <div class="field required">
@@ -731,7 +740,11 @@
                 </form>
             </div>
 
-            <div id="reportContent">
+            <div class="ui segment" id="reportContent">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="file alternate outline icon"></i>
+                    Report cards
+                </h4>
             {% if selected_student %}
                 <div class="student-banner">
                     <h3>{{ selected_student.name|default:'N/A' }}</h3>
@@ -960,6 +973,7 @@
                     <div class="ui cancel button">Cancel</div>
                     <button class="ui teal button" type="button" id="saveTermRemarkModalBtn" onclick="saveTermRemarkFromModal()">Save</button>
                 </div>
+            </div>
             </div>
         </div>
     </div>

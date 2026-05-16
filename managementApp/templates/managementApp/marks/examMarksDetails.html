@@ -4,8 +4,8 @@
 {% block title %}
     <title>Student Marks Details</title>
 {% endblock %}
-{% block page_title %}Student Marks Details{% endblock %}
-{% block page_subtitle %}Search marks by class or review a student-wise marks history{% endblock %}
+{% block page_title %}{% if is_teacher_context %}Marks Details{% else %}Student Marks Details{% endif %}{% endblock %}
+{% block page_subtitle %}{% if is_teacher_context %}Review marks by class or student for your assigned teaching records{% else %}Search marks by class or review a student-wise marks history{% endif %}{% endblock %}
 
 {% block css %}
     <style>

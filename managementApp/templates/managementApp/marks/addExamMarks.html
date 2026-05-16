@@ -3,8 +3,8 @@
 {% block title %}
     <title>Add Students Marks</title>
 {% endblock %}
-{% block page_title %}Student Marks{% endblock %}
-{% block page_subtitle %}Enter marks by class, exam, subject, and component rules{% endblock %}
+{% block page_title %}{% if is_teacher_context %}Add Marks{% else %}Student Marks{% endif %}{% endblock %}
+{% block page_subtitle %}{% if is_teacher_context %}Enter marks for your assigned classes and subjects{% else %}Enter marks by class, exam, subject, and component rules{% endif %}{% endblock %}
 {% block css %}
 {% endblock %}
 {% block body %}
