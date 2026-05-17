@@ -5,6 +5,14 @@
     <title>Events</title>
 {% endblock %}
 
+{% block page_title %}
+    Events
+{% endblock %}
+
+{% block page_subtitle %}
+    View school events with filters by type, month, and status
+{% endblock %}
+
 {% block body %}
     <style>
         .events-shell {
@@ -346,27 +354,34 @@
 
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">Events</div>
-            </div>
-
+            <div class="ui tab active" data-tab="user">
             <div class="events-shell">
-                <div class="events-stats">
-                    <div class="stat-box total">
-                        <div class="stat-label">Total Events</div>
-                        <div class="stat-value" id="statTotal">0</div>
-                    </div>
-                    <div class="stat-box upcoming">
-                        <div class="stat-label">Upcoming</div>
-                        <div class="stat-value" id="statUpcoming">0</div>
-                    </div>
-                    <div class="stat-box ongoing">
-                        <div class="stat-label">Ongoing</div>
-                        <div class="stat-value" id="statOngoing">0</div>
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="chart bar outline icon"></i>
+                        Event summary
+                    </h4>
+                    <div class="events-stats">
+                        <div class="stat-box total">
+                            <div class="stat-label">Total Events</div>
+                            <div class="stat-value" id="statTotal">0</div>
+                        </div>
+                        <div class="stat-box upcoming">
+                            <div class="stat-label">Upcoming</div>
+                            <div class="stat-value" id="statUpcoming">0</div>
+                        </div>
+                        <div class="stat-box ongoing">
+                            <div class="stat-label">Ongoing</div>
+                            <div class="stat-value" id="statOngoing">0</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="events-filter ui tiny form">
+                <div class="events-filter ui segment ui tiny form">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Event filter
+                    </h4>
                     <div class="fields">
                         <div class="five wide field">
                             <label>Search</label>
@@ -402,10 +417,15 @@
                     </div>
                 </div>
 
-                {% if events %}
-                    <div class="events-wrap" id="eventsWrap">
-                        {% for row in events %}
-                            <div class="event-card"
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="calendar alternate outline icon"></i>
+                        Event list
+                    </h4>
+                    {% if events %}
+                        <div class="events-wrap" id="eventsWrap">
+                            {% for row in events %}
+                                <div class="event-card"
                                  data-event-id="{{ row.id }}"
                                  data-title="{{ row.title|default:'Untitled Event'|lower }}"
                                  data-message="{{ row.message|default:''|lower }}"
@@ -430,13 +450,15 @@
                                     </div>
                                     <div class="event-desc">{{ row.message|default:'No description available.' }}</div>
                                 </div>
-                            </div>
-                        {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="event-empty" id="eventEmpty" style="display:none;">No events match the selected filters.</div>
+                    {% else %}
+                        <div class="event-empty">No events available.</div>
+                    {% endif %}
                     </div>
-                    <div class="event-empty" id="eventEmpty" style="display:none;">No events match the selected filters.</div>
-                {% else %}
-                    <div class="event-empty">No events available.</div>
-                {% endif %}
+                </div>
             </div>
         </div>
     </div>

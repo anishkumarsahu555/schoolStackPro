@@ -11,7 +11,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
-from homeApp.models import SchoolDetail
 from homeApp.push_service import send_chat_push_notifications
 from homeApp.utils import login_required
 from managementApp.models import AssignSubjectsToClass, AssignSubjectsToTeacher, Standard, Student, TeacherDetail
@@ -260,7 +259,7 @@ def _add_participants(room, users, read_only_students=False):
         )
 
 
-def _conversation_targets(request, role, session_id, school_id):
+def _conversation_target_queryset(request, role, session_id, school_id):
     users = User.objects.none()
     if role == 'admin':
         teachers = User.objects.filter(
@@ -276,6 +275,8 @@ def _conversation_targets(request, role, session_id, school_id):
         users = (teachers | students).exclude(pk=request.user.pk).distinct()
     elif role == 'teacher':
         teacher = TeacherDetail.objects.filter(userID_id=request.user.id, isDeleted=False).order_by('-datetime').first()
+        if not teacher:
+            return users
         assigned_class_ids = AssignSubjectsToTeacher.objects.filter(
             teacherID=teacher,
             sessionID_id=session_id,
@@ -287,20 +288,20 @@ def _conversation_targets(request, role, session_id, school_id):
             sessionID_id=session_id,
             isDeleted=False,
         ).values_list('id', flat=True)
-        teacher_class_ids = list(assigned_class_ids) + list(class_teacher_ids)
-        school = SchoolDetail.objects.filter(pk=school_id, isDeleted=False).first()
-        owner_ids = []
-        if school and school.ownerID_id:
-            owner_ids.append(school.ownerID.userID_id)
-        if school:
-            owner_ids.extend(school.owners.filter(userID__isnull=False).values_list('userID_id', flat=True))
+        teacher_class_ids = list(set(list(assigned_class_ids) + list(class_teacher_ids)))
         users = User.objects.filter(
             Q(
+                student__schoolID_id=school_id,
                 student__standardID_id__in=teacher_class_ids,
                 student__sessionID_id=session_id,
                 student__isDeleted=False,
             )
-            | Q(pk__in=owner_ids)
+            | Q(
+                teacherdetail__schoolID_id=school_id,
+                teacherdetail__sessionID_id=session_id,
+                teacherdetail__isDeleted=False,
+                teacherdetail__userID__isnull=False,
+            )
             | Q(groups__name__in=['Admin', 'Owner'])
         ).exclude(pk=request.user.pk).distinct()
     elif role == 'student':
@@ -310,10 +311,17 @@ def _conversation_targets(request, role, session_id, school_id):
             teacher_users = User.objects.filter(
                 Q(teacherdetail__id=student.standardID.classTeacher_id)
                 | Q(teacherdetail__assignsubjectstoteacher__assignedSubjectID__standardID_id=student.standardID_id),
+                teacherdetail__schoolID_id=school_id,
                 teacherdetail__sessionID_id=session_id,
                 teacherdetail__isDeleted=False,
+                teacherdetail__userID__isnull=False,
             ).distinct()
         users = teacher_users.exclude(pk=request.user.pk)
+    return users
+
+
+def _conversation_targets(request, role, session_id, school_id):
+    users = _conversation_target_queryset(request, role, session_id, school_id)
     return [
         _conversation_target_payload(user, session_id)
         for user in users.order_by('first_name', 'username')
@@ -758,8 +766,11 @@ def _clean_filename(value):
     return '-'.join(part for part in safe.split('-') if part)[:80] or 'export'
 
 
-def _create_direct_room(request, target_user_id, session_id, school_id):
-    target = get_object_or_404(User, pk=target_user_id)
+def _create_direct_room(request, role, target_user_id, session_id, school_id):
+    target = get_object_or_404(
+        _conversation_target_queryset(request, role, session_id, school_id),
+        pk=target_user_id,
+    )
     existing = ChatRoom.objects.filter(
         roomType=ChatRoom.ROOM_TYPE_DIRECT,
         sessionID_id=session_id,
@@ -876,7 +887,7 @@ def inbox(request, room_id=None):
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'create_direct':
-            room = _create_direct_room(request, request.POST.get('target_user_id'), session_id, school_id)
+            room = _create_direct_room(request, role, request.POST.get('target_user_id'), session_id, school_id)
             return redirect(_room_route_name_for_request(request), room_id=room.id)
         if action == 'create_group' and role in {'admin', 'teacher'}:
             room = _create_group_room(request, role, session_id, school_id)
@@ -933,7 +944,10 @@ def inbox(request, room_id=None):
                 target_participant.delete()
             return redirect(_room_route_name_for_request(request), room_id=active_room.id)
         if action == 'participant_add' and active_room and _is_room_manager(request, active_room):
-            target = get_object_or_404(User, pk=request.POST.get('target_user_id'))
+            target = get_object_or_404(
+                _conversation_target_queryset(request, role, session_id, school_id),
+                pk=request.POST.get('target_user_id'),
+            )
             ChatParticipant.objects.get_or_create(
                 roomID=active_room,
                 userID=target,
@@ -1306,7 +1320,13 @@ def participant_add_api(request, room_id):
     room = get_object_or_404(rooms_for_user(request.user), pk=room_id)
     if not _is_room_manager(request, room):
         return JsonResponse({'ok': False, 'error': 'You cannot manage this room.'}, status=403)
-    target = get_object_or_404(User, pk=request.POST.get('target_user_id'))
+    role = _user_role(request)
+    session_id = room.sessionID_id or _current_session_id(request)
+    school_id = room.schoolID_id or _current_school_id(request)
+    target = get_object_or_404(
+        _conversation_target_queryset(request, role, session_id, school_id),
+        pk=request.POST.get('target_user_id'),
+    )
     participant, _ = ChatParticipant.objects.get_or_create(
         roomID=room,
         userID=target,

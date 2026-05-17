@@ -5,6 +5,14 @@
     <title>Exam Time Table</title>
 {% endblock %}
 
+{% block page_title %}
+    Exams
+{% endblock %}
+
+{% block page_subtitle %}
+    View your exam timetable and download a PDF copy
+{% endblock %}
+
 {% block css %}
     <style>
         .exam-page .sheet-shell {
@@ -403,32 +411,35 @@
 {% block body %}
     <div class="exam-page ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active">Exam Time Table</div>
-            </div>
-
+            <div class="ui tab active" data-tab="user">
             <div class="sheet-shell">
                 {% if timetable_rows %}
-                    <div class="ui tiny form filter-bar">
-                        <div class="field">
-                            <label>Exam</label>
-                            <select class="ui search dropdown" id="examFilter" data-default="{{ default_exam_id }}">
-                                <option value="">All Exams</option>
-                                {% for ex in exam_options %}
-                                    <option value="{{ ex.id }}" {% if default_exam_id and default_exam_id == ex.id|stringformat:"s" %}selected{% endif %}>{{ ex.label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="field exam-action-buttons">
-                            <label>&nbsp;</label>
-                            <button class="ui mini red button filter-clear-btn" type="button" id="clearFilterBtn">
-                                <i class="times icon"></i>
-                                Clear
-                            </button>
-                            <button class="ui mini blue button filter-apply-btn" type="button" id="downloadBtn">
-                                <i class="file pdf outline icon"></i>
-                                Download PDF
-                            </button>
+                    <div class="ui segment print-hide">
+                        <h4 class="ui horizontal left aligned divider header">
+                            <i class="filter icon"></i>
+                            Exam filter
+                        </h4>
+                        <div class="ui tiny form filter-bar">
+                            <div class="field">
+                                <label>Exam</label>
+                                <select class="ui search dropdown" id="examFilter" data-default="{{ default_exam_id }}">
+                                    <option value="">All Exams</option>
+                                    {% for ex in exam_options %}
+                                        <option value="{{ ex.id }}" {% if default_exam_id and default_exam_id == ex.id|stringformat:"s" %}selected{% endif %}>{{ ex.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field exam-action-buttons">
+                                <label>&nbsp;</label>
+                                <button class="ui mini red button filter-clear-btn" type="button" id="clearFilterBtn">
+                                    <i class="times icon"></i>
+                                    Clear
+                                </button>
+                                <button class="ui mini blue button filter-apply-btn" type="button" id="downloadBtn">
+                                    <i class="file pdf outline icon"></i>
+                                    Download PDF
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -503,6 +514,7 @@
                 {% else %}
                     <div class="empty-note" style="display:block;">No timetable available.</div>
                 {% endif %}
+            </div>
             </div>
         </div>
     </div>

@@ -5,6 +5,14 @@
     <title>My ID Card</title>
 {% endblock %}
 
+{% block page_title %}
+    My ID Card
+{% endblock %}
+
+{% block page_subtitle %}
+    View and download your student identity card
+{% endblock %}
+
 {% block body %}
     <style>
         .id-page-shell {
@@ -89,11 +97,12 @@
 
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active">My ID Card</div>
-            </div>
-
+            <div class="ui tab active" data-tab="user">
             <div class="id-page-shell">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="id card outline icon"></i>
+                    Student ID card
+                </h4>
                 <div class="id-actions">
                     <button class="ui mini teal button" id="downloadJpegBtn" onclick="downloadStudentCardJpeg()">
                         <i class="download icon"></i>
@@ -104,6 +113,7 @@
                 <div class="id-shell">
                     {% include 'managementApp/student/student_id_card_embed.html' %}
                 </div>
+            </div>
             </div>
         </div>
     </div>

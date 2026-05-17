@@ -11,7 +11,7 @@
 {% block css %}
     <style>
         .main-content {
-            margin-bottom: 100px;
+            margin-bottom: 16px;
             overscroll-behavior: none;
             touch-action: pan-y;
         }
@@ -522,8 +522,10 @@
 
         .chat-search {
             border-bottom: 1px solid var(--app-border);
-            padding: 0.58rem 0.75rem;
-            background: var(--app-surface);
+            padding: 0.64rem 0.82rem;
+            background:
+                linear-gradient(135deg, rgba(26, 115, 232, 0.055), rgba(16, 185, 129, 0.035)),
+                var(--app-surface);
         }
 
         .pinned-strip {
@@ -617,49 +619,126 @@
         .chat-search-row {
             display: grid;
             grid-template-columns: minmax(180px, 1fr) auto auto;
-            gap: 0.45rem;
+            gap: 0.55rem;
             align-items: center;
         }
 
-        .chat-search .ui.input input,
         .composer textarea {
             border-radius: 12px !important;
         }
 
+        .chat-search-input.ui.input {
+            align-items: center;
+            background: rgba(248, 250, 252, 0.86);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 999px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+            min-height: 2.55rem;
+            overflow: hidden;
+            transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+        }
+
+        .chat-search-input.ui.input:focus-within {
+            background: var(--app-surface);
+            border-color: rgba(26, 115, 232, 0.34);
+            box-shadow: 0 10px 26px rgba(26, 115, 232, 0.1);
+        }
+
         .chat-search-input.ui.input > input {
-            background: rgba(148, 163, 184, 0.08) !important;
+            background: transparent !important;
+            border: 0 !important;
             border-color: transparent !important;
-            min-height: 2.35rem;
+            border-radius: 999px !important;
+            color: var(--app-text) !important;
+            min-height: 2.55rem;
+            padding-left: 3rem !important;
             padding-right: 2.1rem !important;
         }
 
         .chat-search-input.ui.input > input:focus {
-            background: var(--app-surface) !important;
-            border-color: rgba(26, 115, 232, 0.32) !important;
+            background: transparent !important;
+            border-color: transparent !important;
+        }
+
+        .chat-search-input.ui.input > input::placeholder {
+            color: rgba(100, 116, 139, 0.72);
+        }
+
+        .chat-search-input.ui.left.icon.input > i.icon {
+            align-items: center;
+            background: rgba(26, 115, 232, 0.09);
+            border-radius: 999px;
+            color: var(--app-brand);
+            display: flex;
+            height: 1.75rem;
+            justify-content: center;
+            left: 0.48rem;
+            margin: 0;
+            opacity: 1;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1.75rem;
         }
 
         .chat-search-toggle {
-            border: 1px solid var(--app-border);
+            border: 1px solid rgba(148, 163, 184, 0.24);
             border-radius: 999px;
-            min-height: 2.25rem;
-            padding: 0 0.7rem;
+            min-height: 2.5rem;
+            padding: 0 0.85rem;
             display: inline-flex;
             align-items: center;
-            background: rgba(148, 163, 184, 0.06);
+            background: rgba(255, 255, 255, 0.72);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
             white-space: nowrap;
+            transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+        }
+
+        .chat-search-toggle:hover,
+        .chat-search-toggle:focus-within {
+            border-color: rgba(26, 115, 232, 0.28);
+            background: rgba(26, 115, 232, 0.08);
         }
 
         .chat-search-toggle label {
-            color: var(--app-muted) !important;
-            font-size: 0.76rem !important;
-            font-weight: 800;
+            color: var(--app-text) !important;
+            font-size: 0.8rem !important;
+            font-weight: 900;
             padding-left: 1.75rem !important;
         }
 
+        .chat-search-toggle.ui.checkbox input:checked ~ label {
+            color: var(--app-brand) !important;
+        }
+
         .chat-search-clear {
+            align-items: center;
+            background: rgba(255, 255, 255, 0.72) !important;
+            border: 1px solid rgba(148, 163, 184, 0.22) !important;
             border-radius: 999px !important;
-            height: 2.25rem;
-            width: 2.25rem;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+            color: var(--app-muted) !important;
+            display: inline-flex !important;
+            height: 2.5rem;
+            justify-content: center;
+            padding: 0 !important;
+            transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+            width: 2.5rem;
+        }
+
+        .chat-search-clear i.icon {
+            font-size: 0.95rem;
+            height: auto;
+            line-height: 1;
+            margin: 0 !important;
+            width: auto;
+        }
+
+        .chat-search-clear:hover,
+        .chat-search-clear:focus {
+            background: rgba(239, 68, 68, 0.08) !important;
+            border-color: rgba(239, 68, 68, 0.22) !important;
+            color: #dc2626 !important;
+            transform: translateY(-1px);
         }
 
         .chat-search-results {
@@ -749,6 +828,69 @@
             background:
                 radial-gradient(circle at top left, rgba(26, 115, 232, 0.1), transparent 30%),
                 linear-gradient(180deg, rgba(18, 22, 29, 0.35), rgba(26, 31, 40, 0.55));
+        }
+
+        html[data-theme="dark"] .chat-search {
+            background:
+                linear-gradient(135deg, rgba(96, 165, 250, 0.08), rgba(45, 212, 191, 0.05)),
+                #111827;
+        }
+
+        html[data-theme="dark"] .chat-search-input.ui.input {
+            background: rgba(31, 41, 55, 0.82);
+            border-color: rgba(148, 163, 184, 0.16);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+
+        html[data-theme="dark"] .chat-search-input.ui.input:focus-within {
+            background: rgba(31, 41, 55, 0.96);
+            border-color: rgba(96, 165, 250, 0.42);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+        }
+
+        html[data-theme="dark"] .chat-search-input.ui.input > input {
+            color: var(--app-text) !important;
+        }
+
+        html[data-theme="dark"] .chat-search-input.ui.input > input::placeholder {
+            color: rgba(203, 213, 225, 0.58);
+        }
+
+        html[data-theme="dark"] .chat-search-input.ui.left.icon.input > i.icon {
+            background: rgba(96, 165, 250, 0.16);
+            color: #93c5fd;
+        }
+
+        html[data-theme="dark"] .chat-search-toggle,
+        html[data-theme="dark"] .chat-search-clear {
+            background: rgba(31, 41, 55, 0.82) !important;
+            border-color: rgba(148, 163, 184, 0.16) !important;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+        }
+
+        html[data-theme="dark"] .chat-search-toggle label {
+            color: var(--app-text) !important;
+        }
+
+        html[data-theme="dark"] .chat-search-toggle:hover,
+        html[data-theme="dark"] .chat-search-toggle:focus-within {
+            background: rgba(37, 99, 235, 0.16) !important;
+            border-color: rgba(96, 165, 250, 0.3) !important;
+        }
+
+        html[data-theme="dark"] .chat-search-toggle.ui.checkbox input:checked ~ label {
+            color: #93c5fd !important;
+        }
+
+        html[data-theme="dark"] .chat-search-clear {
+            color: rgba(203, 213, 225, 0.76) !important;
+        }
+
+        html[data-theme="dark"] .chat-search-clear:hover,
+        html[data-theme="dark"] .chat-search-clear:focus {
+            background: rgba(248, 113, 113, 0.14) !important;
+            border-color: rgba(248, 113, 113, 0.28) !important;
+            color: #fca5a5 !important;
         }
 
         .message-row {
@@ -2373,22 +2515,27 @@
             }
 
             .chat-search {
-                padding: 0.32rem 0.5rem;
+                padding: 0.38rem 0.52rem;
             }
 
             .chat-search-row {
                 grid-template-columns: 1fr auto auto;
-                gap: 0.28rem;
+                gap: 0.32rem;
+            }
+
+            .chat-search-input.ui.input {
+                min-height: 2.28rem;
             }
 
             .chat-search-input.ui.input > input {
-                min-height: 2rem;
+                min-height: 2.28rem;
                 font-size: 0.78rem;
+                padding-left: 2.7rem !important;
             }
 
             .chat-search-toggle {
-                min-height: 2rem;
-                padding: 0 0.42rem;
+                min-height: 2.28rem;
+                padding: 0 0.46rem;
             }
 
             .chat-search-toggle label {
@@ -2396,9 +2543,15 @@
                 padding-left: 1.18rem !important;
             }
 
+            .chat-search-input.ui.left.icon.input > i.icon {
+                height: 1.55rem;
+                left: 0.42rem;
+                width: 1.55rem;
+            }
+
             .chat-search-clear {
-                height: 2rem;
-                width: 2rem;
+                height: 2.18rem;
+                width: 2.18rem;
             }
 
             .message-list {
@@ -2496,7 +2649,7 @@
                 box-shadow: none;
                 left: auto;
                 margin-bottom: 0;
-                padding: 0.46rem 0.52rem calc(0.52rem + env(safe-area-inset-bottom, 0px));
+                padding: 0.72rem 0.52rem calc(0.28rem + env(safe-area-inset-bottom, 0px));
                 position: relative;
                 right: auto;
                 bottom: auto;
@@ -3414,7 +3567,7 @@
                 var browserBottomInset = window.visualViewport
                     ? Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop)
                     : 0;
-                var mobileToolbarReserve = Math.max(50, browserBottomInset);
+                var mobileToolbarReserve = Math.max(8, browserBottomInset);
                 var top = app.getBoundingClientRect().top;
                 var usableHeight = Math.max(320, Math.floor(viewportHeight - top - mobileToolbarReserve - 8));
                 app.style.setProperty('--chat-mobile-height', usableHeight + 'px');

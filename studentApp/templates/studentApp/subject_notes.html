@@ -4,6 +4,14 @@
     <title>Subject Notes</title>
 {% endblock %}
 
+{% block page_title %}
+    Subject Notes
+{% endblock %}
+
+{% block page_subtitle %}
+    Read notes published for your class and subjects
+{% endblock %}
+
 {% block body %}
     <style>
         .notes-shell {
@@ -332,12 +340,13 @@
 
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active">Subject Notes</div>
-            </div>
-
+            <div class="ui tab active" data-tab="user">
             <div class="notes-shell">
-                <div class="notes-header">
+                <div class="notes-header ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Notes filter
+                    </h4>
                     <div class="ui tiny form">
                         <div class="fields">
                             <div class="six wide field">
@@ -360,6 +369,10 @@
                         </div>
                     </div>
 
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="chart bar outline icon"></i>
+                        Notes summary
+                    </h4>
                     <div class="notes-stats">
                         <div class="stat-card">
                             <div class="stat-label">Published</div>
@@ -379,9 +392,14 @@
                 {% if student_not_found %}
                     <div class="notes-empty">Student profile/session not found.</div>
                 {% elif notes %}
-                    <div class="notes-grid" id="notesGrid">
-                        {% for row in notes %}
-                            <div class="note-card"
+                    <div class="ui segment">
+                        <h4 class="ui horizontal left aligned divider header">
+                            <i class="book open icon"></i>
+                            Published notes
+                        </h4>
+                        <div class="notes-grid" id="notesGrid">
+                            {% for row in notes %}
+                                <div class="note-card"
                                  data-subject-id="{{ row.subjectID_id|default:'' }}"
                                  data-subject-name="{{ row.subjectID.name|default:''|lower|escape }}"
                                  data-subject-label="{{ row.subjectID.name|default:'N/A'|escape }}"
@@ -406,14 +424,16 @@
                                         <i class="book open icon"></i>Read
                                     </button>
                                 </div>
-                            </div>
-                            <div id="note-full-{{ row.id }}" style="display:none;">{{ row.contentHtml|safe }}</div>
-                        {% endfor %}
+                                </div>
+                                <div id="note-full-{{ row.id }}" style="display:none;">{{ row.contentHtml|safe }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="notes-empty" id="notesEmpty" style="display:none;">No notes match selected filters.</div>
                     </div>
-                    <div class="notes-empty" id="notesEmpty" style="display:none;">No notes match selected filters.</div>
                 {% else %}
                     <div class="notes-empty">No published notes available yet for your class.</div>
                 {% endif %}
+            </div>
             </div>
         </div>
     </div>

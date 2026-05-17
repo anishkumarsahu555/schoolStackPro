@@ -5,6 +5,14 @@
     <title>{{ page_title|default:'Holiday List' }}</title>
 {% endblock %}
 
+{% block page_title %}
+    {{ page_title|default:'Holiday List' }}
+{% endblock %}
+
+{% block page_subtitle %}
+    View school holidays with filters by type, month, and status
+{% endblock %}
+
 {% block body %}
     <style>
         .holiday-shell {
@@ -259,27 +267,34 @@
 
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="holiday">Holiday List</div>
-            </div>
-
+            <div class="ui tab active" data-tab="holiday">
             <div class="holiday-shell">
-                <div class="holiday-stats">
-                    <div class="holiday-stat total">
-                        <div class="holiday-stat-label">Total</div>
-                        <div class="holiday-stat-value" id="statTotal">0</div>
-                    </div>
-                    <div class="holiday-stat upcoming">
-                        <div class="holiday-stat-label">Upcoming</div>
-                        <div class="holiday-stat-value" id="statUpcoming">0</div>
-                    </div>
-                    <div class="holiday-stat ongoing">
-                        <div class="holiday-stat-label">Ongoing</div>
-                        <div class="holiday-stat-value" id="statOngoing">0</div>
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="chart bar outline icon"></i>
+                        Holiday summary
+                    </h4>
+                    <div class="holiday-stats">
+                        <div class="holiday-stat total">
+                            <div class="holiday-stat-label">Total</div>
+                            <div class="holiday-stat-value" id="statTotal">0</div>
+                        </div>
+                        <div class="holiday-stat upcoming">
+                            <div class="holiday-stat-label">Upcoming</div>
+                            <div class="holiday-stat-value" id="statUpcoming">0</div>
+                        </div>
+                        <div class="holiday-stat ongoing">
+                            <div class="holiday-stat-label">Ongoing</div>
+                            <div class="holiday-stat-value" id="statOngoing">0</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="holiday-filter ui tiny form">
+                <div class="holiday-filter ui segment ui tiny form">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Holiday filter
+                    </h4>
                     <div class="fields">
                         <div class="five wide field">
                             <label>Search</label>
@@ -315,10 +330,15 @@
                     </div>
                 </div>
 
-                {% if holidays %}
-                    <div class="holiday-wrap" id="holidayWrap">
-                        {% for row in holidays %}
-                            <div class="holiday-card"
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="calendar alternate outline icon"></i>
+                        Holidays
+                    </h4>
+                    {% if holidays %}
+                        <div class="holiday-wrap" id="holidayWrap">
+                            {% for row in holidays %}
+                                <div class="holiday-card"
                                  data-title="{{ row.title|default:'Holiday'|lower }}"
                                  data-description="{{ row.description|default:''|lower }}"
                                  data-type="{{ row.get_holidayType_display|default:'General'|lower }}"
@@ -342,13 +362,15 @@
                                     </div>
                                     <div class="holiday-desc">{{ row.description|default:'No description available.' }}</div>
                                 </div>
-                            </div>
-                        {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="holiday-empty" id="holidayEmpty" style="display:none;">No holidays match the selected filters.</div>
+                    {% else %}
+                        <div class="holiday-empty">No holidays available.</div>
+                    {% endif %}
                     </div>
-                    <div class="holiday-empty" id="holidayEmpty" style="display:none;">No holidays match the selected filters.</div>
-                {% else %}
-                    <div class="holiday-empty">No holidays available.</div>
-                {% endif %}
+                </div>
             </div>
         </div>
     </div>
