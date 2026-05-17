@@ -4,6 +4,8 @@
 {% block title %}
     <title>Student Marks Details</title>
 {% endblock %}
+{% block page_title %}{% if is_teacher_context %}Marks Details{% else %}Student Marks Details{% endif %}{% endblock %}
+{% block page_subtitle %}{% if is_teacher_context %}Review marks by class or student for your assigned teaching records{% else %}Search marks by class or review a student-wise marks history{% endif %}{% endblock %}
 
 {% block css %}
     <style>
@@ -26,16 +28,42 @@
         input[type=search] {
             width: 100px !important;
         }
+
+        .marks-detail-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+            gap: 0.9rem 1rem;
+            align-items: end;
+        }
+
+        .marks-detail-filter-grid .field {
+            margin: 0 !important;
+            min-width: 0;
+        }
+
+        .marks-detail-actions {
+            display: flex;
+            gap: 0.45rem;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 767px) {
+            .marks-detail-filter-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .marks-detail-actions {
+                grid-column: span 2;
+                justify-content: center;
+            }
+        }
     </style>
 {% endblock %}
 
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active">Student Marks Details</div>
-            </div>
-
             <div class="ui top attached tabular menu">
                 <a class="item active" data-tab="byClass">By Class</a>
                 <a class="item" data-tab="byStudent">By Student</a>
@@ -43,8 +71,12 @@
 
             <div class="ui bottom attached tab segment active" data-tab="byClass">
                 <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Class marks filter
+                    </h4>
                     <form class="ui tiny form">
-                        <div class="three fields">
+                        <div class="marks-detail-filter-grid">
                             <div class="field required">
                                 <label>Class-Section</label>
                                 <select class="ui search dropdown" id="standard" onchange="getExamList()">
@@ -57,7 +89,7 @@
                                     <option value="">Search By Exam</option>
                                 </select>
                             </div>
-                            <div class="field" style="padding-top: 2.2em;">
+                            <div class="field marks-detail-actions">
                                 <button type="button" class="ui mini green button" onclick="searchByClass()">
                                     <i class="icon search"></i>
                                     Search
@@ -71,7 +103,11 @@
                     </form>
                 </div>
 
-                <div class="row" style="padding-left: 5px; padding-right: 5px; display: none;" id="MarksTableDiv">
+                <div class="ui segment" style="display: none;" id="MarksTableDiv">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Class marks list
+                    </h4>
                     <div class="wide">
                         <table class="ui unstackable tiny sortable celled very nowrap very compact table"
                                id="MarksDetailTable"
@@ -85,8 +121,12 @@
 
             <div class="ui bottom attached tab segment" data-tab="byStudent">
                 <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Student marks filter
+                    </h4>
                     <form class="ui tiny form">
-                        <div class="three fields">
+                        <div class="marks-detail-filter-grid">
                             <div class="field required">
                                 <label>Class-Section</label>
                                 <select class="ui search dropdown" id="standardByStudent" onchange="getStudentList()">
@@ -99,7 +139,7 @@
                                     <option value="">Search By Student</option>
                                 </select>
                             </div>
-                            <div class="field" style="padding-top: 2.2em;">
+                            <div class="field marks-detail-actions">
                                 <button type="button" class="ui mini green button" onclick="searchByStudent()">
                                     <i class="icon search"></i>
                                     Search
@@ -113,7 +153,11 @@
                     </form>
                 </div>
 
-                <div class="row" style="padding-left: 5px; padding-right: 5px; display: none;" id="MarksByStudentDiv">
+                <div class="ui segment" style="display: none;" id="MarksByStudentDiv">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Student marks list
+                    </h4>
                     <div class="wide">
                         <table class="ui unstackable tiny sortable celled very nowrap very compact table"
                                id="MarksByStudentTable"

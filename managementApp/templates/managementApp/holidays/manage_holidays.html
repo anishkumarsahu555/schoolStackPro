@@ -25,13 +25,109 @@
         input[type=search] {
             width: 100px !important;
         }
+
+        .holiday-form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.9rem 1rem;
+            align-items: end;
+        }
+
+        .holiday-form-grid .field {
+            margin: 0 !important;
+            min-width: 0;
+        }
+
+        .holiday-form-actions {
+            display: flex;
+            gap: 0.45rem;
+            align-items: center;
+            justify-content: flex-end;
+            white-space: nowrap;
+        }
+
+        .holiday-title-field {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .holiday-type-field {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .holiday-start-date-field {
+            grid-column: 3;
+            grid-row: 1;
+        }
+
+        .holiday-end-date-field {
+            grid-column: 4;
+            grid-row: 1;
+        }
+
+        .holiday-applies-field {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .holiday-description-field {
+            grid-column: 2 / span 2;
+            grid-row: 2;
+        }
+
+        .holiday-form-actions {
+            grid-column: 4;
+            grid-row: 2;
+        }
+
+        @media (max-width: 991px) {
+            .holiday-form-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .holiday-type-field,
+            .holiday-applies-field,
+            .holiday-start-date-field,
+            .holiday-end-date-field {
+                grid-column: auto;
+                grid-row: auto;
+            }
+
+            .holiday-title-field {
+                grid-column: span 2;
+                grid-row: auto;
+            }
+
+            .holiday-description-field {
+                grid-column: span 2;
+                grid-row: auto;
+            }
+
+            .holiday-form-actions {
+                grid-column: span 2;
+                grid-row: auto;
+                justify-content: center;
+                padding-top: 0.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .holiday-form-grid {
+                gap: 0.75rem;
+            }
+
+            .holiday-form-actions .ui.button {
+                min-width: 0;
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+        }
+
     </style>
 
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="holiday">Manage Holidays</div>
-            </div>
             <div class="ui tab active" data-tab="holiday">
                 <div class="ui segment">
                     <h4 class="ui horizontal left aligned divider header">
@@ -41,13 +137,13 @@
                     <form class="ui tiny form" id="addForm">{% csrf_token %}
                         <input type="hidden" id="editID">
 
-                        <div class="six fields">
-                            <div class="field required">
+                        <div class="holiday-form-grid">
+                            <div class="field required holiday-title-field">
                                 <label>Holiday Title</label>
                                 <input type="text" name="title" id="title" placeholder="Holiday Title">
                             </div>
 
-                            <div class="field required">
+                            <div class="field required holiday-type-field">
                                 <label>Holiday Type</label>
                                 <select class="ui search dropdown" id="holiday_type">
                                     <option value="">Select Type</option>
@@ -60,7 +156,7 @@
                                 </select>
                             </div>
 
-                            <div class="field required">
+                            <div class="field required holiday-applies-field">
                                 <label>Applies To</label>
                                 <select class="ui search dropdown" id="applies_to">
                                     <option value="">Select Audience</option>
@@ -70,7 +166,7 @@
                                 </select>
                             </div>
 
-                            <div class="field required">
+                            <div class="field required holiday-start-date-field">
                                 <label>Start Date</label>
                                 <div class="ui calendar" id="start_dateCal">
                                     <div class="ui input left icon">
@@ -80,7 +176,7 @@
                                 </div>
                             </div>
 
-                            <div class="field required">
+                            <div class="field required holiday-end-date-field">
                                 <label>End Date</label>
                                 <div class="ui calendar" id="end_dateCal">
                                     <div class="ui input left icon">
@@ -90,7 +186,12 @@
                                 </div>
                             </div>
 
-                            <div class="field" style="padding-top: 2em;">
+                            <div class="field holiday-description-field">
+                                <label>Description</label>
+                                <input type="text" name="description" id="description" placeholder="Description">
+                            </div>
+
+                            <div class="field holiday-form-actions">
                                 <button type="button" id="saveBtn" class="ui mini green button saveBtn" onclick="addData()">
                                     <i class="icon plus square"></i>
                                     Add
@@ -109,36 +210,35 @@
                                 </button>
                             </div>
                         </div>
-
-                        <div class="one fields">
-                            <div class="field">
-                                <label>Description</label>
-                                <input type="text" name="description" id="description" placeholder="Description">
-                            </div>
-                        </div>
                     </form>
                 </div>
 
-                <div class="row" style="padding-left: 5px; padding-right: 5px">
-                    <div class="wide">
-                        <table class="ui unstackable tiny sortable celled very nowrap very compact table"
-                               id="HolidayTable"
-                               style="margin-top: 5px;width: 100%">
-                            <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Type</th>
-                                <th>Applies To</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                                <th>Description</th>
-                                <th>EditedBy</th>
-                                <th>UpdatedOn</th>
-                                <th>Actions</th>
-                            </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="calendar outline icon"></i>
+                        Holiday list
+                    </h4>
+                    <div class="row" style="padding-left: 5px; padding-right: 5px">
+                        <div class="wide">
+                            <table class="ui unstackable tiny sortable celled very nowrap very compact table"
+                                   id="HolidayTable"
+                                   style="margin-top: 5px;width: 100%">
+                                <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Type</th>
+                                    <th>Applies To</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Description</th>
+                                    <th>EditedBy</th>
+                                    <th>UpdatedOn</th>
+                                    <th>Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 

@@ -3,6 +3,14 @@
 {% block title %}
     <title>Manage Class</title>
 {% endblock %}
+{% block page_title %}Manage Classes{% endblock %}
+{% block page_subtitle %}Create and maintain class sections and roll ranges{% endblock %}
+{% block page_actions %}
+    <button class="ui green button class-page-action" type="button" onclick="showClassModal()">
+        <i class="plus icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Add Class</span><span class="mobile-label">Add</span></span>
+    </button>
+{% endblock %}
 {% block css %}
 {% endblock %}
 {% block body %}
@@ -51,32 +59,55 @@
             float: right;
         }
 
-        .dt-buttons {
-            position: absolute;
-            left: 174px;
+        #ClassTable_wrapper .dt-buttons {
+            display: none;
         }
 
         input[type=search] {
             width: 100px !important;
         }
+
+        .class-modal-actions {
+            align-items: center;
+            display: flex;
+            gap: 0.65rem;
+            justify-content: flex-end;
+            margin-top: 2rem !important;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+
+        .class-modal-actions .ui.button {
+            border-radius: 10px !important;
+            min-width: 104px;
+            white-space: nowrap;
+        }
+
+        .class-modal-actions .ui.button i.icon {
+            margin: 0 0 0 0.45rem !important;
+        }
+
+        @media (max-width: 767px) {
+            .class-modal-actions {
+                justify-content: center;
+            }
+
+            .class-modal-actions .ui.button {
+                min-width: 96px;
+            }
+        }
+
     </style>
 
     <div class="ui right aligned basic  grid">
         <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Class List
-                </div>
-                <div style=" position: absolute;right: 1.5rem;top: 18px;">
-                    <button class="ui green mini plus button right" onclick="showClassModal()">
-                        <i class="plus square outline icon"></i>
-                        Add Class
-                    </button>
-                </div>
-            </div>
-            <div class="ui tab " data-tab="user">
+            <div class="ui tab active" data-tab="user">
 
-                <div class="row" style="padding-left: 5px; padding-right: 5px">
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Class list
+                    </h4>
                     <div class="wide">
 
                         <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="ClassTable"
@@ -161,13 +192,13 @@
 
                             </form>
 
-                            <div class="actions" style="padding-top: 20px; padding-bottom: 20px ;float: right">
+                            <div class="actions class-modal-actions">
                                 <div class="ui cancel button">Cancel</div>
-                                <button class="ui right labeled icon button green saveBtn" onclick="addData()">
+                                <button class="ui green button saveBtn" onclick="addData()">
                                     Submit
                                     <i class="checkmark icon"></i>
                                 </button>
-                                <button style="display: none" class="ui right labeled icon button green saveBtnLoad" >
+                                <button style="display: none" class="ui green button saveBtnLoad" >
                                     Saving ...
                                     <i class="checkmark icon"></i>
                                 </button>
@@ -247,13 +278,13 @@
                             <input type="hidden" id="dataIDEdit">
                         </form>
 
-                        <div class="actions" style="padding-top: 20px; padding-bottom: 20px ;float: right">
+                        <div class="actions class-modal-actions">
                             <div class="ui cancel button">Cancel</div>
-                            <button class="ui right labeled icon button green saveBtn" onclick="updateData()">
+                            <button class="ui green button saveBtn" onclick="updateData()">
                                 Update
                                 <i class="checkmark icon"></i>
                             </button>
-                            <button style="display: none" class="ui right labeled icon button green saveBtnLoad" >
+                            <button style="display: none" class="ui green button saveBtnLoad" >
                                     Saving ...
                                     <i class="checkmark icon"></i>
                                 </button>

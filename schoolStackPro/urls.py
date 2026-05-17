@@ -27,6 +27,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(('homeApp.urls', 'homeApp'), namespace='homeApp')),
     path('api/', include(('homeApp.api.urls_api', 'homeApp'), namespace='homeAppAPI')),
+    path('chat/', include(('chatApp.urls', 'chatApp'), namespace='chatApp')),
     path('certificates/', include(('certificateApp.urls', 'certificateApp'), namespace='certificateApp')),
     path('certificates/api/', include(('certificateApp.api.urls_api', 'certificateApp'), namespace='certificateAppAPI')),
     path('management/', include(('managementApp.urls', 'managementApp'), namespace='managementApp')),

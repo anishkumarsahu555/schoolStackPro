@@ -1379,6 +1379,10 @@
         </div>
 
         <div class="student-mobile-grid" id="studentMobileGrid">
+            <a class="student-mobile-tile" data-cat="study" href="{% url 'studentApp:student_chat' %}">
+                <div class="student-mobile-icon-wrap"><i class="comments outline icon"></i></div>
+                <div class="student-mobile-tile-label">Chat</div>
+            </a>
             <a class="student-mobile-tile" data-cat="study" href="{% url 'studentApp:attendance_history' %}">
                 <div class="student-mobile-icon-wrap"><i class="calendar alternate outline icon"></i></div>
                 <div class="student-mobile-tile-label">My Attendance</div>
@@ -1678,6 +1682,7 @@
                 </div>
             </div>
         </div>
+        {% include 'chatApp/partials/recent_chat_widget.html' %}
     </div>
 </div>
 {% endblock %}

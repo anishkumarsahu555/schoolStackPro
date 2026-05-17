@@ -5,6 +5,14 @@
     <title>Fee Details</title>
 {% endblock %}
 
+{% block page_title %}
+    Fee Details
+{% endblock %}
+
+{% block page_subtitle %}
+    Track paid and due fee records by month
+{% endblock %}
+
 {% block css %}
     <style>
         .fee-shell {
@@ -263,31 +271,38 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">Fee Details</div>
-            </div>
-
+            <div class="ui tab active" data-tab="user">
             <div class="fee-shell">
-                <div class="fee-stats">
-                    <div class="stat-box">
-                        <div class="stat-label">Total Months</div>
-                        <div class="stat-value" id="statTotal">0</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Paid</div>
-                        <div class="stat-value" id="statPaid">0</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Due</div>
-                        <div class="stat-value" id="statDue">0</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">Collected</div>
-                        <div class="stat-value" id="statCollected">0</div>
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="chart bar outline icon"></i>
+                        Fee summary
+                    </h4>
+                    <div class="fee-stats">
+                        <div class="stat-box">
+                            <div class="stat-label">Total Months</div>
+                            <div class="stat-value" id="statTotal">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Paid</div>
+                            <div class="stat-value" id="statPaid">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Due</div>
+                            <div class="stat-value" id="statDue">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Collected</div>
+                            <div class="stat-value" id="statCollected">0</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="fee-filter ui tiny form">
+                <div class="fee-filter ui segment ui tiny form">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Fee filter
+                    </h4>
                     <div class="fields">
                         <div class="six wide field">
                             <label>Search</label>
@@ -316,8 +331,15 @@
                     </div>
                 </div>
 
-                <div class="fee-wrap" id="feeWrap"></div>
-                <div class="fee-empty" id="feeEmpty" style="display:none;">No fee records match the selected filters.</div>
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="money bill alternate outline icon"></i>
+                        Fee records
+                    </h4>
+                    <div class="fee-wrap" id="feeWrap"></div>
+                    <div class="fee-empty" id="feeEmpty" style="display:none;">No fee records match the selected filters.</div>
+                </div>
+            </div>
             </div>
         </div>
     </div>

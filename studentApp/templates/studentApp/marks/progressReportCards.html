@@ -5,6 +5,14 @@
     <title>My Progress Report Cards</title>
 {% endblock %}
 
+{% block page_title %}
+    Progress Report Cards
+{% endblock %}
+
+{% block page_subtitle %}
+    Review your published marks, grades, and teacher remarks
+{% endblock %}
+
 {% block css %}
     <style>
         .report-page .filter-segment {
@@ -501,14 +509,15 @@
 {% block body %}
     <div class="report-page ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active">My Progress Report Cards</div>
-            </div>
-
+            <div class="ui tab active" data-tab="user">
             {% if student_not_found %}
                 <div class="ui warning message">Student profile not found for current session.</div>
             {% else %}
                 <div class="ui segment filter-segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Report filter
+                    </h4>
                     <form class="ui tiny form" method="get" id="filterForm">
                         <div class="two fields">
                             <div class="field">
@@ -532,29 +541,40 @@
                     </form>
                 </div>
 
-                <div class="student-banner">
-                    <h3>{{ student.name|default:'N/A' }}</h3>
-                    <div class="meta">
-                        Roll: {{ student.roll|default:'N/A' }}
-                        {% if student.standardID %}
-                            | Class: {{ student.standardID.name }}{% if student.standardID.section %} - {{ student.standardID.section }}{% endif %}
-                        {% endif %}
-                    </div>
-                    <div class="meta">
-                        School:
-                        {% if student.schoolID and student.schoolID.schoolName %}
-                            {{ student.schoolID.schoolName }}
-                        {% elif student.schoolID and student.schoolID.name %}
-                            {{ student.schoolID.name }}
-                        {% else %}
-                            School Name
-                        {% endif %}
-                        {% if student.schoolID and student.schoolID.address %}
-                            | {{ student.schoolID.address }}
-                        {% endif %}
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="user graduate icon"></i>
+                        Student summary
+                    </h4>
+                    <div class="student-banner">
+                        <h3>{{ student.name|default:'N/A' }}</h3>
+                        <div class="meta">
+                            Roll: {{ student.roll|default:'N/A' }}
+                            {% if student.standardID %}
+                                | Class: {{ student.standardID.name }}{% if student.standardID.section %} - {{ student.standardID.section }}{% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="meta">
+                            School:
+                            {% if student.schoolID and student.schoolID.schoolName %}
+                                {{ student.schoolID.schoolName }}
+                            {% elif student.schoolID and student.schoolID.name %}
+                                {{ student.schoolID.name }}
+                            {% else %}
+                                School Name
+                            {% endif %}
+                            {% if student.schoolID and student.schoolID.address %}
+                                | {{ student.schoolID.address }}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
 
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="file alternate outline icon"></i>
+                        Report cards
+                    </h4>
                 {% if report_cards %}
                     <div class="cards-wrap" id="reportCardsWrap">
                         {% for card in report_cards %}
@@ -686,7 +706,9 @@
                 {% else %}
                     <div class="ui message">No report card data found.</div>
                 {% endif %}
+                </div>
             {% endif %}
+            </div>
         </div>
     </div>
 {% endblock %}

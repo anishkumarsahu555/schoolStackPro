@@ -3,6 +3,18 @@
 {% block title %}
     <title>Certificates</title>
 {% endblock %}
+{% block page_title %}Certificates{% endblock %}
+{% block page_subtitle %}Generate certificates, manage designs, and review issued records{% endblock %}
+{% block page_actions %}
+    <a class="ui primary button" href="{% url 'certificateApp:create_design' %}">
+        <i class="paint brush icon"></i>
+        <span><span class="desktop-label">Design</span><span class="mobile-label">Design</span></span>
+    </a>
+    <a class="ui green button" href="{% url 'certificateApp:generator' %}">
+        <i class="plus icon"></i>
+        <span><span class="desktop-label">Generate</span><span class="mobile-label">New</span></span>
+    </a>
+{% endblock %}
 
 {% block css %}
     <style>
@@ -15,9 +27,8 @@
             float: right;
         }
 
-        .dt-buttons {
-            position: absolute;
-            left: 174px;
+        #certificateIssueTable_wrapper .dt-buttons {
+            display: none;
         }
 
         input[type=search] {
@@ -57,22 +68,7 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active" data-tab="user">Certificates</div>
-                <div style="margin-left:auto;">
-                    <a class="ui mini green button" href="{% url 'certificateApp:generator' %}">
-                        <i class="plus square icon"></i>
-                        Generate
-                    </a>
-                    <a class="ui mini blue button" href="{% url 'certificateApp:create_design' %}">
-                        <i class="paint brush icon"></i>
-                        Design
-                    </a>
-                </div>
-            </div>
-
-                <div class="ui tab active" data-tab="user">
-                    <div class="ui three stackable cards">
+            <div class="ui three stackable cards">
                     <div class="card">
                         <div class="content">
                             <div class="header">{{ certificate_types_count }}</div>
@@ -94,9 +90,9 @@
                             <div class="description">Generated for the current school and active session.</div>
                         </div>
                     </div>
-                </div>
+            </div>
 
-                {% if duplicate_certificate_groups %}
+            {% if duplicate_certificate_groups %}
                     <div class="ui segment duplicate-certificate-panel">
                         <h4 class="ui header">
                             <i class="exclamation triangle red icon"></i>
@@ -152,11 +148,11 @@
                             </div>
                         {% endfor %}
                     </div>
-                {% endif %}
+            {% endif %}
 
-                <div class="ui segment">
-                    <h4 class="ui header">Certificate Issue Register</h4>
-                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="certificateIssueTable" style="width:100%;">
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">Certificate Issue Register</h4>
+                <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="certificateIssueTable" style="width:100%;">
                         <thead>
                         <tr>
                             <th>Certificate No.</th>

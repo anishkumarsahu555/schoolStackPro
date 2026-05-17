@@ -443,6 +443,9 @@
                     </div>
                 </div>
                 <div class="column">
+                    {% include 'chatApp/partials/recent_chat_widget.html' %}
+                </div>
+                <div class="column">
                     <div class="ui segment block-card">
                         <h4 class="ui header">
                             <i class="chart bar icon"></i>
@@ -470,6 +473,8 @@
                             <a href="{% url 'managementApp:manage_parents' %}" class="ui primary button">Parents</a>
                             <a href="{% url 'managementApp:manage_event' %}" class="ui primary button">Events</a>
                             <a href="{% url 'managementApp:finance_dashboard' %}" class="ui teal button">Finance Dashboard</a>
+                            <a href="{% url 'chatApp:inbox' %}" class="ui teal button">Chat</a>
+                            <a href="{% url 'chatApp:moderation' %}" class="ui button">Moderation</a>
                         </div>
                     </div>
                 </div>

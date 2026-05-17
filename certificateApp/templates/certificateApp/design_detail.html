@@ -3,6 +3,40 @@
 {% block title %}
     <title>{{ design.name }}</title>
 {% endblock %}
+{% block page_title %}{{ design.name }}{% endblock %}
+{% block page_subtitle %}{{ design.certificateTypeID.name }} · {{ design.get_pageSize_display }} {{ design.get_orientation_display|lower }} · {{ design.status|default:'published'|title }}{% endblock %}
+{% block page_actions %}
+    {% if design.isActive %}
+        <a class="ui green button" href="{% url 'certificateApp:generator' %}?design={{ design.id }}">
+            <i class="file alternate outline icon"></i>
+            <span><span class="desktop-label">Use In Generator</span><span class="mobile-label">Use</span></span>
+        </a>
+    {% endif %}
+    {% if design.isCustom %}
+        <a class="ui orange button" href="{% url 'certificateApp:edit_design' design.id %}">
+            <i class="edit outline icon"></i>
+            <span><span class="desktop-label">Edit Design</span><span class="mobile-label">Edit</span></span>
+        </a>
+    {% else %}
+        <form method="post" action="{% url 'certificateApp:duplicate_design' design.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" name="save_action" value="draft" class="ui primary button">
+                <i class="copy outline icon"></i>
+                <span><span class="desktop-label">Customize Copy</span><span class="mobile-label">Copy</span></span>
+            </button>
+        </form>
+    {% endif %}
+    {% if design.isActive and not design.isDefaultForType %}
+        <form method="post" action="{% url 'certificateApp:set_default_design' design.id %}" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" class="ui button">
+                <i class="star outline icon"></i>
+                <span><span class="desktop-label">Set Default</span><span class="mobile-label">Default</span></span>
+            </button>
+        </form>
+    {% endif %}
+{% endblock %}
 
 {% block css %}
     <style>
@@ -81,6 +115,10 @@
             gap: 1rem;
             flex-wrap: wrap;
             margin-top: 1rem;
+        }
+
+        .design-detail-toolbar > div:last-child {
+            display: none;
         }
 
         .design-detail-chip-row {
@@ -548,17 +586,6 @@
 
 {% block body %}
     <div class="ui left aligned basic grid design-detail-grid">
-        <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active" data-tab="user">Design Detail</div>
-                <div style="margin-left:auto;">
-                    <a class="ui mini blue button" href="{% url 'certificateApp:create_design' %}">
-                        <i class="paint brush icon"></i>
-                        New Design
-                    </a>
-                </div>
-            </div>
-        </div>
         <div class="sixteen wide column">
             <div class="design-detail-hero">
                 <div class="design-detail-kicker">

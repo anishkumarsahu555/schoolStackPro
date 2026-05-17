@@ -3,6 +3,18 @@
 {% block title %}
     <title>Expense Vouchers</title>
 {% endblock %}
+{% block page_title %}Expense Vouchers{% endblock %}
+{% block page_subtitle %}Set up expense categories, record vouchers, and review outgoing finance activity.{% endblock %}
+{% block page_actions %}
+    <button class="ui blue button class-page-action" type="button" onclick="openExpenseCategoryModal()">
+        <i class="plus icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Add Category</span><span class="mobile-label">Category</span></span>
+    </button>
+    <button class="ui green button class-page-action" type="button" onclick="openExpenseVoucherModal()">
+        <i class="plus icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Add Voucher</span><span class="mobile-label">Voucher</span></span>
+    </button>
+{% endblock %}
 
 {% block css %}
     {% include 'managementApp/finance/_shared_styles.html' %}
@@ -152,26 +164,7 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">
-                    Expense Vouchers
-                </div>
-                <div style=" position: absolute;right: 1.5rem;top: 18px;">
-                    <i class="info circle icon finance-page-intro"
-                       data-inverted=""
-                       data-tooltip="Set up expense categories, record vouchers, and review outgoing finance activity in one management-style workspace. The finance posting rules stay the same; this just makes the workflow much easier to use."
-                       data-position="bottom center"></i>
-                    <button class="ui green mini plus button right" type="button" onclick="openExpenseVoucherModal()">
-                        <i class="plus square outline icon"></i>
-                        Add Voucher
-                    </button>
-                    <button class="ui blue mini button right" type="button" onclick="openExpenseCategoryModal()">
-                        <i class="plus square outline icon"></i>
-                        Add Category
-                    </button>
-                </div>
-            </div>
-            <div class="ui tab finance-shell" data-tab="user">
+            <div class="ui tab active finance-shell" data-tab="user">
 
         <section class="finance-summary-grid" id="expenseSummary">
             <div class="finance-summary-item">
@@ -192,25 +185,13 @@
             </div>
         </section>
 
-        <section>
-            <div class="finance-panel-header">
-                <div>
-                    <h3 class="finance-panel-title">Expense Categories</h3>
-                    <div class="finance-panel-subtitle">Define the expense buckets and accounts used by vouchers through a standard management modal.</div>
-                </div>
-            </div>
-            <div class="finance-empty" style="padding: 0.5rem 0;">
-                Use <strong>Add Category</strong> or the row edit action to manage categories in a modal.
-            </div>
-        </section>
-
-        <section class="finance-table-panel">
-            <div class="finance-table-head">
-                <div>
-                    <h3 class="finance-panel-title">Category List</h3>
+        <div class="ui segment finance-table-panel">
+            <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Category List
+                    </h4>
                     <div class="finance-panel-subtitle">Configured expense heads and the accounts they post into.</div>
-                </div>
-            </div>
+
             <div class="finance-table-wrap">
                 <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="expenseCategoryTable" style="width:100%;">
                     <thead>
@@ -227,27 +208,27 @@
                     <tbody></tbody>
                 </table>
             </div>
-        </section>
+        </div>
 
-        <section>
-            <div class="finance-panel-header">
-                <div>
-                    <h3 class="finance-panel-title">Expense Voucher Entry</h3>
+        <div class="ui segment">
+            <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Expense Voucher Entry
+                    </h4>
                     <div class="finance-panel-subtitle">Record vendor or operational payments with the same add/edit modal flow used in management.</div>
-                </div>
-            </div>
+
             <div class="finance-empty" style="padding: 0.5rem 0;">
                 Use <strong>Add Voucher</strong> or the row edit action to open the expense voucher modal.
             </div>
-        </section>
+        </div>
 
-        <section class="finance-table-panel">
-            <div class="finance-table-head">
-                <div>
-                    <h3 class="finance-panel-title">Expense Voucher List</h3>
+        <div class="ui segment finance-table-panel">
+            <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Expense Voucher List
+                    </h4>
                     <div class="finance-panel-subtitle">Recent outgoing entries with payment context and status.</div>
-                </div>
-            </div>
+
             <div class="finance-table-wrap">
                 <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="expenseVoucherTable" style="width:100%;">
                     <thead>
@@ -266,7 +247,7 @@
                     <tbody></tbody>
                 </table>
             </div>
-        </section>
+        </div>
 
         <div class="ui modal" id="expenseCategoryModal">
             <i class="close icon"></i>

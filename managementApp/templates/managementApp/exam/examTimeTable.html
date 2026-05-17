@@ -4,6 +4,8 @@
 {% block title %}
     <title>Exam Time Table</title>
 {% endblock %}
+{% block page_title %}Exam Time Table{% endblock %}
+{% block page_subtitle %}Schedule exam subjects with dates, time slots, rooms, and preview view{% endblock %}
 
 {% block body %}
     <style>
@@ -23,6 +25,47 @@
 
         input[type=search] {
             width: 110px !important;
+        }
+
+        .exam-timetable-primary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.9rem 1rem;
+            align-items: end;
+        }
+
+        .exam-timetable-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 0.9rem 1rem;
+            align-items: end;
+            margin-top: 0.9rem;
+        }
+
+        .exam-timetable-primary-grid .field,
+        .exam-timetable-detail-grid .field,
+        .exam-timetable-list-filter .field {
+            margin: 0 !important;
+            min-width: 0;
+        }
+
+        .exam-timetable-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            align-items: center;
+            justify-content: center;
+            margin-top: 2rem !important;
+            padding-top: 0 !important;
+            clear: both;
+        }
+
+        .exam-timetable-list-filter {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+            gap: 0.9rem 1rem;
+            align-items: end;
+            margin-bottom: 0.65rem;
         }
 
         #deleteDataModal.ui.modal {
@@ -341,6 +384,18 @@
         }
 
         @media (max-width: 640px) {
+            .exam-timetable-primary-grid,
+            .exam-timetable-detail-grid,
+            .exam-timetable-list-filter {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .exam-timetable-subject-field,
+            .exam-timetable-note-field,
+            .exam-timetable-filter-actions {
+                grid-column: span 2;
+            }
+
             .exam-preview .preview-filter-bar {
                 grid-template-columns: 1fr;
             }
@@ -360,14 +415,14 @@
 
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active">Exam Time Table</div>
-            </div>
-
             <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="calendar alternate outline icon"></i>
+                    Add/Edit Timetable Entry
+                </h4>
                 <form class="ui tiny form" id="addForm">{% csrf_token %}
                     <input type="hidden" id="editID">
-                    <div class="three fields">
+                    <div class="exam-timetable-primary-grid">
                         <div class="field required">
                             <label>Class - Section</label>
                             <select class="ui search dropdown" id="standard">
@@ -380,7 +435,7 @@
                                 <option value="">Search By Exam Name</option>
                             </select>
                         </div>
-                        <div class="field required">
+                        <div class="field required exam-timetable-subject-field">
                             <label>Subject</label>
                             <select class="ui search dropdown" id="subject">
                                 <option value="">Search By Subject Name</option>
@@ -388,7 +443,7 @@
                         </div>
                     </div>
 
-                    <div class="five fields">
+                    <div class="exam-timetable-detail-grid">
                         <div class="field required">
                             <label>Exam Date</label>
                             <div class="ui calendar" id="examDateCalendar">
@@ -420,13 +475,13 @@
                             <label>Room No</label>
                             <input type="text" id="roomNo" placeholder="Room / Hall No">
                         </div>
-                        <div class="field">
+                        <div class="field exam-timetable-note-field">
                             <label>Note</label>
                             <input type="text" id="note" placeholder="Additional note (optional)">
                         </div>
                     </div>
 
-                    <div class="field" style="padding-top: .4em;">
+                    <div class="field exam-timetable-actions">
                         <button type="button" id="saveBtn" class="ui mini green button" onclick="addData()">
                             <i class="icon plus square"></i>
                             Add
@@ -447,23 +502,26 @@
                 </form>
             </div>
 
-            <div class="row" style="padding-left: 5px; padding-right: 5px">
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="list alternate outline icon"></i>
+                    Timetable list
+                </h4>
                 <div class="wide">
-                    <div class="ui tiny form" style="margin-bottom: .55rem;">
-                        <div class="fields">
-                            <div class="four wide field">
+                    <div class="ui tiny form exam-timetable-list-filter">
+                            <div class="field">
                                 <label>Filter Class</label>
                                 <select class="ui search dropdown" id="listStandardFilter">
                                     <option value="">All Classes</option>
                                 </select>
                             </div>
-                            <div class="four wide field">
+                            <div class="field">
                                 <label>Filter Exam</label>
                                 <select class="ui search dropdown" id="listExamFilter">
                                     <option value="">All Exams</option>
                                 </select>
                             </div>
-                            <div class="four wide field" style="padding-top: 1.95rem;">
+                            <div class="field exam-timetable-actions exam-timetable-filter-actions" style="margin-top:0;">
                                 <button class="ui mini blue button" type="button" id="filterListBtn">
                                     <i class="search icon"></i>
                                     Filter
@@ -473,7 +531,6 @@
                                     Clear
                                 </button>
                             </div>
-                        </div>
                     </div>
                     <table class="ui unstackable tiny sortable celled very nowrap very compact table"
                            id="ExamTimeTable"

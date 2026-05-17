@@ -1,0 +1,72 @@
+<style>
+    .chat-widget-card {
+        border: 1px solid var(--app-border) !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+        margin-top: 1rem !important;
+    }
+
+    .chat-widget-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.8rem;
+        padding: 0.6rem 0;
+        border-bottom: 1px dashed rgba(128, 145, 170, 0.28);
+    }
+
+    .chat-widget-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .chat-widget-title {
+        color: var(--app-text);
+        font-weight: 700;
+    }
+
+    .chat-widget-meta {
+        color: var(--app-muted);
+        font-size: 0.84rem;
+        margin-top: 0.18rem;
+    }
+
+    .chat-widget-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-shrink: 0;
+    }
+</style>
+
+<div class="ui segment chat-widget-card">
+    <h4 class="ui header">
+        <i class="comments outline icon"></i>
+        <div class="content">Recent Chats</div>
+    </h4>
+    {% if chat_recent_rooms %}
+        <div>
+            {% for card in chat_recent_rooms %}
+                <div class="chat-widget-row">
+                    <div>
+                        <div class="chat-widget-title">{{ card.room.title }}</div>
+                        <div class="chat-widget-meta">
+                            {% if card.last_message %}
+                                {{ card.last_sender }}: {{ card.last_message.body|default:'Attachment'|truncatechars:56 }}
+                            {% else %}
+                                No messages yet
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="chat-widget-actions">
+                        {% if card.unread_count %}
+                            <span class="ui red tiny label">{{ card.unread_count }}</span>
+                        {% endif %}
+                        <a href="{% url 'chatApp:room' card.room.id %}" class="ui tiny button">Open</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="chat-widget-meta">No chat activity yet.</div>
+    {% endif %}
+</div>

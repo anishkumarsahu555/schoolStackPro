@@ -3,6 +3,25 @@
 {% block title %}
     <title>Generate Certificate</title>
 {% endblock %}
+{% block page_title %}Generate Certificate{% endblock %}
+{% block page_subtitle %}{% if preselected_design %}Issue certificates using {{ preselected_design.name }}{% else %}Compose, preview, and issue polished certificates from one focused workspace{% endif %}{% endblock %}
+{% block page_actions %}
+    <a class="ui primary button" href="{% url 'certificateApp:design_library' %}">
+        <i class="clone outline icon"></i>
+        <span><span class="desktop-label">Design Library</span><span class="mobile-label">Library</span></span>
+    </a>
+    {% if preselected_design %}
+        <a class="ui blue button" href="{% url 'certificateApp:design_detail' preselected_design.id %}">
+            <i class="eye icon"></i>
+            <span><span class="desktop-label">Design Detail</span><span class="mobile-label">Detail</span></span>
+        </a>
+    {% else %}
+        <a class="ui green button" href="{% url 'certificateApp:create_design' %}">
+            <i class="paint brush icon"></i>
+            <span><span class="desktop-label">New Design</span><span class="mobile-label">New</span></span>
+        </a>
+    {% endif %}
+{% endblock %}
 
 {% block css %}
     <style>
@@ -1597,7 +1616,7 @@
             justify-content: space-between;
             gap: 1rem;
             flex-wrap: wrap;
-            margin-top: 1.2rem;
+            margin-top: 2rem;
             padding: 1rem 1.05rem;
             border-radius: 22px;
             background: linear-gradient(180deg, rgba(255,255,255,0.86), rgba(248,250,252,0.74));
@@ -1841,17 +1860,15 @@
     <div class="ui left aligned basic grid certificate-generator-grid{% if preselected_design %} generator-design-specific{% endif %}">
         <div class="sixteen wide column">
             {% if preselected_design %}
-                <div class="ui pointing secondary menu">
-                    <div class="item active">Generate Certificate</div>
-                    <div style="position:absolute;right:1.5rem;top:18px;">
-                        <a class="ui mini basic button" href="{% url 'certificateApp:design_library' %}">
-                            <i class="clone outline icon"></i>
-                            Design Library
-                        </a>
-                        <a class="ui mini blue button" href="{% url 'certificateApp:design_detail' preselected_design.id %}">
-                            <i class="eye icon"></i>
-                            Design Detail
-                        </a>
+                <div class="generator-topbar">
+                    <div class="generator-topbar-title">
+                        <div class="generator-topbar-mark">
+                            <i class="file alternate outline icon"></i>
+                        </div>
+                        <div class="generator-topbar-copy">
+                            <h2>{{ preselected_design.name }}</h2>
+                            <p>Template selected. Enter recipient details and review the live output before issue.</p>
+                        </div>
                     </div>
                 </div>
             {% else %}
@@ -1864,16 +1881,6 @@
                             <h2>Certificate Generator</h2>
                             <p>Compose, preview, and issue polished certificates from one focused workspace.</p>
                         </div>
-                    </div>
-                    <div class="generator-topbar-actions">
-                        <a class="ui mini basic button" href="{% url 'certificateApp:design_library' %}">
-                            <i class="clone outline icon"></i>
-                            Design Library
-                        </a>
-                        <a class="ui mini blue button" href="{% url 'certificateApp:create_design' %}">
-                            <i class="paint brush icon"></i>
-                            New Design
-                        </a>
                     </div>
                 </div>
             {% endif %}

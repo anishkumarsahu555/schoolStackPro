@@ -5,6 +5,14 @@
     <title>Students Attendance History</title>
 {% endblock %}
 
+{% block page_title %}
+    Attendance History
+{% endblock %}
+
+{% block page_subtitle %}
+    Review your subject-wise and daily attendance records
+{% endblock %}
+
 {% block css %}
     <style>
         .attendance-shell {
@@ -450,12 +458,13 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active">Student Attendance History</div>
-            </div>
-
+            <div class="ui tab active" data-tab="user">
             <div class="attendance-shell">
                 <div class="ui segment" id="subjectFormDiv">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Attendance filter
+                    </h4>
                     <form class="ui tiny form" id="addForm">{% csrf_token %}
                         <div class="four fields">
                             <div class="three wide field required">
@@ -494,32 +503,39 @@
                     </form>
                 </div>
 
-                <div class="ui mini four item pointing secondary menu" id="attendanceViewTabs">
-                    <a class="active item" data-view="calendar">Calendar View</a>
-                    <a class="item" data-view="month">Month View</a>
-                    <a class="item" data-view="daily">Daily View</a>
-                    <a class="item" data-view="subject">Subject Wise</a>
-                </div>
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="calendar check outline icon"></i>
+                        Attendance records
+                    </h4>
+                    <div class="ui mini four item secondary menu" id="attendanceViewTabs">
+                        <a class="active item" data-view="calendar">Calendar View</a>
+                        <a class="item" data-view="month">Month View</a>
+                        <a class="item" data-view="daily">Daily View</a>
+                        <a class="item" data-view="subject">Subject Wise</a>
+                    </div>
 
-                <div class="attendance-tab-pane active" id="calendarViewPane">
-                    <div class="calendar-wrap" id="attendanceCalendarWrap"></div>
-                    <div class="attendance-empty" id="attendanceCalendarEmpty" style="display:none;">No attendance data available for calendar view.</div>
-                </div>
+                    <div class="attendance-tab-pane active" id="calendarViewPane">
+                        <div class="calendar-wrap" id="attendanceCalendarWrap"></div>
+                        <div class="attendance-empty" id="attendanceCalendarEmpty" style="display:none;">No attendance data available for calendar view.</div>
+                    </div>
 
-                <div class="attendance-tab-pane" id="dailyViewPane">
-                    <div class="attendance-grid" id="dailyAttendanceGrid"></div>
-                    <div class="attendance-empty" id="dailyAttendanceEmpty" style="display:none;">No daily attendance found.</div>
-                </div>
+                    <div class="attendance-tab-pane" id="dailyViewPane">
+                        <div class="attendance-grid" id="dailyAttendanceGrid"></div>
+                        <div class="attendance-empty" id="dailyAttendanceEmpty" style="display:none;">No daily attendance found.</div>
+                    </div>
 
-                <div class="attendance-tab-pane" id="monthViewPane">
-                    <div class="attendance-grid" id="monthAttendanceGrid"></div>
-                    <div class="attendance-empty" id="monthAttendanceEmpty" style="display:none;">No month-wise attendance found.</div>
-                </div>
+                    <div class="attendance-tab-pane" id="monthViewPane">
+                        <div class="attendance-grid" id="monthAttendanceGrid"></div>
+                        <div class="attendance-empty" id="monthAttendanceEmpty" style="display:none;">No month-wise attendance found.</div>
+                    </div>
 
-                <div class="attendance-tab-pane" id="subjectViewPane">
-                    <div class="attendance-grid" id="subjectAttendanceGrid"></div>
-                    <div class="attendance-empty" id="subjectAttendanceEmpty" style="display:none;">No subject-wise attendance found.</div>
+                    <div class="attendance-tab-pane" id="subjectViewPane">
+                        <div class="attendance-grid" id="subjectAttendanceGrid"></div>
+                        <div class="attendance-empty" id="subjectAttendanceEmpty" style="display:none;">No subject-wise attendance found.</div>
+                    </div>
                 </div>
+            </div>
             </div>
         </div>
     </div>

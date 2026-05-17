@@ -3,6 +3,8 @@
 {% block title %}
     <title>Manage Subjects</title>
 {% endblock %}
+{% block page_title %}Manage Subjects{% endblock %}
+{% block page_subtitle %}Create and maintain subject names for the academic session{% endblock %}
 {% block css %}
 {% endblock %}
 {% block body %}
@@ -27,17 +29,43 @@
         input[type=search] {
             width: 100px !important;
         }
+
+        .subject-form-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.9rem 1rem;
+            align-items: end;
+        }
+
+        .subject-form-grid .field {
+            margin: 0 !important;
+            min-width: 0;
+        }
+
+        .subject-form-actions {
+            display: flex;
+            gap: 0.45rem;
+            align-items: center;
+            justify-content: flex-end;
+            margin-top: 2rem !important;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 767px) {
+            .subject-form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .subject-form-actions {
+                justify-content: center;
+                white-space: normal;
+            }
+        }
     </style>
 
     <div class="ui left aligned basic  grid">
         <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Manage Subjects
-                </div>
-
-            </div>
-            <div class="ui tab " data-tab="user">
+            <div class="ui tab active" data-tab="user">
                 <div class="ui segment">
                     <h4 class="ui horizontal left aligned divider header">
                         <i class="left align icon"></i>
@@ -46,7 +74,7 @@
                     <form class="ui tiny form" id="addForm">{% csrf_token %}
                         <input type="hidden" id="editID">
 
-                        <div class="five fields">
+                        <div class="subject-form-grid">
 
                             <div class="field">
                                 <label>Subject Name</label>
@@ -55,7 +83,7 @@
                             </div>
 
 
-                            <div class="field" style="padding-top: 2em;">
+                            <div class="field subject-form-actions">
                                 <button type="button" id="saveBtn" class="ui mini green button saveBtn"
                                         onclick="addData()">
                                     <i class="icon plus square"></i>
@@ -82,7 +110,11 @@
                 </div>
 
 
-                <div class="row" style="padding-left: 5px; padding-right: 5px">
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Subject list
+                    </h4>
                     <div class="wide">
 
                         <table class="ui unstackable tiny sortable celled very nowrap very compact table"

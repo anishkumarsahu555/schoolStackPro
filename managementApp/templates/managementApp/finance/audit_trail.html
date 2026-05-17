@@ -3,6 +3,8 @@
 {% block title %}
     <title>Audit Trail</title>
 {% endblock %}
+{% block page_title %}Audit Trail{% endblock %}
+{% block page_subtitle %}Review finance transactions with source references, status, user trail, and ledger entries.{% endblock %}
 
 {% block css %}
     {% include 'managementApp/finance/_shared_styles.html' %}
@@ -11,25 +13,14 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">
-                    Audit Trail
-                </div>
-                <div style=" position: absolute;right: 1.5rem;top: 18px;">
-                    <i class="info circle icon finance-page-intro"
-                       data-inverted=""
-                       data-tooltip="Review finance transactions with source references, status, user trail, and underlying ledger entries."
-                       data-position="bottom center"></i>
-                </div>
-            </div>
-            <div class="ui tab finance-shell" data-tab="user">
-                <section>
-                    <div class="finance-panel-header">
-                        <div>
-                            <h3 class="finance-panel-title">Audit Filters</h3>
-                            <div class="finance-panel-subtitle">Filter finance transactions by date, type, source module, status, or free text.</div>
-                        </div>
-                    </div>
+            <div class="ui tab active finance-shell" data-tab="user">
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Audit Filters
+                    </h4>
+                    <div class="finance-panel-subtitle">Filter finance transactions by date, type, source module, status, or free text.</div>
+
                     <form class="ui tiny form">
                         <div class="finance-filter-grid">
                             <div class="field">
@@ -92,7 +83,7 @@
                             </button>
                         </div>
                     </form>
-                </section>
+                </div>
 
                 <section class="finance-summary-grid" id="auditSummary" style="display:none;">
                     <div class="finance-summary-item">
@@ -109,13 +100,13 @@
                     </div>
                 </section>
 
-                <section class="finance-table-panel">
-                    <div class="finance-table-head">
-                        <div>
-                            <h3 class="finance-panel-title">Audit Transactions</h3>
-                            <div class="finance-panel-subtitle">Paged finance transaction history with ledger entry summaries.</div>
-                        </div>
-                    </div>
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Audit Transactions
+                    </h4>
+                    <div class="finance-panel-subtitle">Paged finance transaction history with ledger entry summaries.</div>
+
                     <div class="finance-table-wrap">
                         <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="auditTrailTable" style="width:100%;">
                             <thead>
@@ -135,7 +126,7 @@
                             <tbody></tbody>
                         </table>
                     </div>
-                </section>
+                </div>
             </div>
         </div>
     </div>

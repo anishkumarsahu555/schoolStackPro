@@ -1,7 +1,15 @@
-    {% extends 'managementApp/index.html' %}
+{% extends 'managementApp/index.html' %}
 
 {% block title %}
     <title>{% if is_editing_design %}Edit{% else %}Create{% endif %} Certificate Design</title>
+{% endblock %}
+{% block page_title %}{% if is_editing_design %}Edit Certificate Design{% else %}Create Certificate Design{% endif %}{% endblock %}
+{% block page_subtitle %}{% if is_editing_design %}Refine {{ design.name }} while keeping the certificate layout reusable{% else %}Build reusable certificate layouts for students, teachers, and school records{% endif %}{% endblock %}
+{% block page_actions %}
+    <a class="ui primary button" href="{% url 'certificateApp:design_library' %}">
+        <i class="images outline icon"></i>
+        <span><span class="desktop-label">Design Library</span><span class="mobile-label">Library</span></span>
+    </a>
 {% endblock %}
 
 {% block css %}
@@ -563,7 +571,8 @@
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
-            margin-top: 1.2rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
             flex-wrap: wrap;
         }
 
@@ -1714,17 +1723,6 @@
 {% block body %}
     <div class="ui left aligned basic grid certificate-design-layout">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">Design Studio</div>
-                <div style="position: absolute; right: 1.5rem; top: 18px;">
-                    <a class="ui blue mini button" href="{% url 'certificateApp:design_library' %}">
-                        <i class="images outline icon"></i>
-                        Design Library
-                    </a>
-                </div>
-            </div>
-        </div>
-        <div class="sixteen wide column ui tab" data-tab="user">
             <div class="ui left aligned basic grid certificate-studio-shell" id="certificateStudioShell">
         <div class="three wide large screen four wide computer sixteen wide tablet sixteen wide mobile column" id="studioSidebarColumn">
             <div class="ui segment studio-sidebar-panel">

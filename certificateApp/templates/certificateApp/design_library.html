@@ -3,6 +3,14 @@
 {% block title %}
     <title>Certificate Designs</title>
 {% endblock %}
+{% block page_title %}Certificate Designs{% endblock %}
+{% block page_subtitle %}Browse reusable templates, school designs, and certificate artwork{% endblock %}
+{% block page_actions %}
+    <a class="ui green button" href="{% url 'certificateApp:create_design' %}">
+        <i class="paint brush icon"></i>
+        <span><span class="desktop-label">Add Custom Design</span><span class="mobile-label">Add</span></span>
+    </a>
+{% endblock %}
 
 {% block css %}
     <style>
@@ -1486,18 +1494,6 @@
 
 {% block body %}
     <div class="ui left aligned basic grid design-library-wrap">
-        <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div class="item active" data-tab="user">Design Library</div>
-                <div style="margin-left:auto;">
-                    <a class="ui mini green button" href="{% url 'certificateApp:create_design' %}">
-                        <i class="paint brush icon"></i>
-                        Add Custom Design
-                    </a>
-                </div>
-            </div>
-        </div>
-
         <div class="sixteen wide column">
             <div class="design-library-hero">
                 <div class="design-library-kicker">

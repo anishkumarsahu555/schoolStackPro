@@ -3,40 +3,181 @@
 {% block title %}
     <title>Receipts</title>
 {% endblock %}
+{% block page_title %}Receipt Register{% endblock %}
+{% block page_subtitle %}Review finance-backed receipts, filter collections, and open printable receipt views.{% endblock %}
+{% block page_actions %}
+    <button type="button" class="ui green button class-page-action" onclick="openManualReceiptModal()">
+        <i class="plus icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Add Receipt</span><span class="mobile-label">Add</span></span>
+    </button>
+{% endblock %}
 
 {% block css %}
     {% include 'managementApp/finance/_shared_styles.html' %}
+    <style>
+        #receiptTable_wrapper .dt-buttons {
+            float: right;
+            margin-left: 8px;
+        }
+
+        #receiptTable_wrapper .dt-buttons .button {
+            padding: .55em .9em;
+            font-size: .78rem;
+            border-radius: 6px;
+        }
+
+        #receiptTable_filter {
+            float: right;
+            margin-bottom: 8px;
+        }
+
+        #receiptTable_length {
+            float: left;
+            margin-bottom: 8px;
+        }
+
+        .receipt-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 0.9rem 1rem;
+            align-items: end;
+        }
+
+        .receipt-filter-grid .field {
+            margin: 0 !important;
+            min-width: 0;
+            width: auto !important;
+        }
+
+        .receipt-filter-actions {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 1.25rem;
+        }
+
+        .receipt-row-actions,
+        .finance-row-actions {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            white-space: nowrap;
+        }
+
+        .finance-row-actions .ui.icon.button {
+            width: 2.15rem;
+            height: 2.15rem;
+            min-width: 2.15rem;
+            padding: 0 !important;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px !important;
+            box-shadow: none !important;
+        }
+
+        .receipt-modal.ui.modal > .header {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-weight: 800;
+        }
+
+        .receipt-modal.ui.modal > .header i.icon {
+            margin: 0;
+            color: #2563eb;
+        }
+
+        .receipt-modal .actions {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            padding-top: 1rem !important;
+        }
+
+        .receipt-allocation-list.ui.divided.list > .item {
+            padding: 0.9rem 0 !important;
+        }
+
+        .receipt-allocation-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.85rem;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .receipt-allocation-title {
+            font-weight: 800;
+            color: var(--app-text);
+        }
+
+        .receipt-allocation-meta {
+            color: var(--app-muted);
+            margin-top: 0.2rem;
+            line-height: 1.4;
+        }
+
+        .receipt-allocation-submeta {
+            font-size: 0.82rem;
+            color: var(--app-muted);
+            margin-top: 0.15rem;
+        }
+
+        .receipt-allocation-control {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .receipt-allocation-control .ui.input {
+            width: 130px;
+        }
+
+        @media (max-width: 767px) {
+            .receipt-filter-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.75rem;
+            }
+
+            .receipt-filter-actions .button,
+            .receipt-modal .actions .button {
+                flex: 1 1 0;
+                margin: 0 !important;
+            }
+
+            .receipt-allocation-row {
+                display: grid;
+                grid-template-columns: 1fr;
+            }
+
+            .receipt-allocation-control {
+                width: 100%;
+            }
+
+            .receipt-allocation-control .ui.input {
+                flex: 1 1 auto;
+                width: auto;
+            }
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">
-                    Receipt Register
-                </div>
-                <div style=" position: absolute;right: 1.5rem;top: 18px; display:flex; gap:0.55rem; align-items:center;">
-                    <button type="button" class="ui green mini plus button" onclick="openManualReceiptModal()">
-                        <i class="plus square outline icon"></i>
-                        Add Receipt
-                    </button>
-                    <i class="info circle icon finance-page-intro"
-                       data-inverted=""
-                       data-tooltip="Review all finance-backed receipts in one place, filter by class or student, and move directly to printable receipt views without leaving the finance workspace."
-                       data-position="bottom center"></i>
-                </div>
-            </div>
-            <div class="ui tab finance-shell" data-tab="user">
-        <section>
-            <div class="finance-panel-header">
-                <div>
-                    <h3 class="finance-panel-title">Filter Receipts</h3>
-                    <div class="finance-panel-subtitle">Narrow the register by academic, student, status, and date.</div>
-                </div>
-            </div>
+            <div class="ui tab active finance-shell" data-tab="user">
+        <div class="ui segment">
+            <h4 class="ui horizontal left aligned divider header">
+                <i class="filter icon"></i>
+                Filter Receipts
+            </h4>
             <form class="ui tiny form">
                 {% csrf_token %}
-                <div class="finance-filter-grid">
+                <div class="receipt-filter-grid">
                     <div class="field">
                         <label>Class - Section</label>
                         <select class="ui search dropdown" id="receiptStandard">
@@ -78,8 +219,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="finance-filter-actions">
-                    <button type="button" class="ui green button" onclick="loadReceipts()">
+                <div class="finance-filter-actions receipt-filter-actions">
+                    <button type="button" class="ui mini blue button" onclick="loadReceipts()">
                         <i class="search icon"></i>
                         Load Receipts
                     </button>
@@ -89,7 +230,7 @@
                     </button>
                 </div>
             </form>
-        </section>
+        </div>
 
         <section class="finance-summary-grid" id="receiptSummary" style="display:none;">
             <div class="finance-summary-item">
@@ -110,14 +251,12 @@
             </div>
         </section>
 
-        <section class="finance-table-panel">
-            <div class="finance-table-head">
-                <div>
-                    <h3 class="finance-panel-title">Receipt Register</h3>
-                    <div class="finance-panel-subtitle">Finance-backed incoming transactions with allocation visibility.</div>
-                </div>
-            </div>
-            <div class="finance-table-wrap">
+        <div class="ui segment">
+            <h4 class="ui horizontal left aligned divider header">
+                <i class="receipt icon"></i>
+                Receipt Register
+            </h4>
+            <div class="row" style="padding-left: 5px; padding-right: 5px;">
                 <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="receiptTable" style="width:100%;">
                     <thead>
                     <tr>
@@ -137,15 +276,14 @@
                     <tbody></tbody>
                 </table>
             </div>
-        </section>
+        </div>
 
-        <section class="finance-table-panel" id="receiptAdjustmentSection" style="display:none;">
-            <div class="finance-table-head">
-                <div>
-                    <h3 class="finance-panel-title">Receipt Adjustments</h3>
-                    <div class="finance-panel-subtitle" id="receiptAdjustmentTitle">Refunds and reversal history for the selected receipt.</div>
-                </div>
-            </div>
+        <div class="ui segment" id="receiptAdjustmentSection" style="display:none;">
+            <h4 class="ui horizontal left aligned divider header">
+                <i class="history icon"></i>
+                Receipt Adjustments
+            </h4>
+            <div class="finance-panel-subtitle" id="receiptAdjustmentTitle" style="margin-bottom:1rem;">Refunds and reversal history for the selected receipt.</div>
             <div class="finance-summary-grid" style="margin-bottom:1rem;">
                 <div class="finance-summary-item">
                     <div class="value" id="receiptAdjustmentAmount">Rs 0.00</div>
@@ -160,7 +298,7 @@
                     <div class="label">Receipt Status</div>
                 </div>
             </div>
-            <div class="finance-table-wrap">
+            <div class="row" style="padding-left: 5px; padding-right: 5px;">
                 <table class="ui unstackable tiny celled very compact table" style="width:100%;">
                     <thead>
                     <tr>
@@ -177,14 +315,17 @@
                     </tbody>
                 </table>
             </div>
-        </section>
+        </div>
             </div>
         </div>
     </div>
 
-    <div class="ui small modal" id="manualReceiptModal">
+    <div class="ui small modal receipt-modal" id="manualReceiptModal">
         <i class="close icon"></i>
-        <div class="header">Add Receipt</div>
+        <div class="header">
+            <i class="receipt icon"></i>
+            Add Receipt
+        </div>
         <div class="content">
             <form class="ui tiny form" id="manualReceiptForm">
                 {% csrf_token %}
@@ -244,7 +385,7 @@
                         <div class="label">Receipt Total</div>
                     </div>
                 </div>
-                <div id="manualReceiptCharges" class="ui relaxed divided list">
+                <div id="manualReceiptCharges" class="ui relaxed divided list receipt-allocation-list">
                     <div class="item">
                         <div class="content" style="color:var(--app-muted);">Select a student to load outstanding charges.</div>
                     </div>
@@ -260,9 +401,12 @@
         </div>
     </div>
 
-    <div class="ui tiny modal" id="reverseReceiptModal">
+    <div class="ui tiny modal receipt-modal" id="reverseReceiptModal">
         <i class="close icon"></i>
-        <div class="header">Reverse Receipt</div>
+        <div class="header">
+            <i class="undo icon"></i>
+            Reverse Receipt
+        </div>
         <div class="content">
             <p id="reverseReceiptLabel" style="margin-bottom:0.75rem;"></p>
             <div class="ui tiny form">
@@ -281,9 +425,12 @@
         </div>
     </div>
 
-    <div class="ui small modal" id="refundReceiptModal">
+    <div class="ui small modal receipt-modal" id="refundReceiptModal">
         <i class="close icon"></i>
-        <div class="header">Create Refund</div>
+        <div class="header">
+            <i class="reply icon"></i>
+            Create Refund
+        </div>
         <div class="content">
             <p id="refundReceiptLabel" style="margin-bottom:0.75rem;"></p>
             <form class="ui tiny form" id="refundReceiptForm">
@@ -323,7 +470,7 @@
                         <div class="label">Refund Total</div>
                     </div>
                 </div>
-                <div id="refundReceiptCharges" class="ui relaxed divided list">
+                <div id="refundReceiptCharges" class="ui relaxed divided list receipt-allocation-list">
                     <div class="item">
                         <div class="content" style="color:var(--app-muted);">Select a receipt to load refundable allocations.</div>
                     </div>
@@ -498,15 +645,15 @@
                 return `
                     <div class="item" data-charge-id="${row.ID}">
                         <div class="content">
-                            <div style="display:flex; justify-content:space-between; gap:0.75rem; align-items:flex-start; flex-wrap:wrap;">
+                            <div class="receipt-allocation-row">
                                 <div style="min-width:0;">
-                                    <div style="font-weight:700; color:var(--app-text);">${row.FeeHead}</div>
-                                    <div style="color:var(--app-muted); margin-top:0.2rem;">${row.Title}</div>
-                                    <div style="font-size:0.82rem; color:var(--app-muted); margin-top:0.15rem;">${row.ChargeDate} | Balance ${money(row.BalanceAmount)}</div>
+                                    <div class="receipt-allocation-title">${row.FeeHead}</div>
+                                    <div class="receipt-allocation-meta">${row.Title}</div>
+                                    <div class="receipt-allocation-submeta">${row.ChargeDate} | Balance ${money(row.BalanceAmount)}</div>
                                 </div>
-                                <div style="display:flex; gap:0.5rem; align-items:center;">
+                                <div class="receipt-allocation-control">
                                     <button type="button" class="ui mini basic button" onclick="fillFullReceiptAmount(${row.ID}, ${Number(row.BalanceAmount)})">Full</button>
-                                    <div class="ui tiny input" style="width:130px;">
+                                    <div class="ui tiny input">
                                         <input type="number" min="0" step="0.01" max="${row.BalanceAmount}" data-charge-input="${row.ID}" placeholder="0.00">
                                     </div>
                                 </div>
@@ -627,15 +774,15 @@
                 return `
                     <div class="item">
                         <div class="content">
-                            <div style="display:flex; justify-content:space-between; gap:0.75rem; align-items:flex-start; flex-wrap:wrap;">
+                            <div class="receipt-allocation-row">
                                 <div style="min-width:0;">
-                                    <div style="font-weight:700; color:var(--app-text);">${row.FeeHead}</div>
-                                    <div style="color:var(--app-muted); margin-top:0.2rem;">${row.Title}</div>
-                                    <div style="font-size:0.82rem; color:var(--app-muted); margin-top:0.15rem;">Allocated ${money(row.AllocatedAmount)} | Already Refunded ${money(row.RefundedAmount)}</div>
+                                    <div class="receipt-allocation-title">${row.FeeHead}</div>
+                                    <div class="receipt-allocation-meta">${row.Title}</div>
+                                    <div class="receipt-allocation-submeta">Allocated ${money(row.AllocatedAmount)} | Already Refunded ${money(row.RefundedAmount)}</div>
                                 </div>
-                                <div style="display:flex; gap:0.5rem; align-items:center;">
+                                <div class="receipt-allocation-control">
                                     <button type="button" class="ui mini basic button" onclick="fillFullRefundAmount(${row.ID}, ${Number(row.RefundableAmount)})">Full</button>
-                                    <div class="ui tiny input" style="width:130px;">
+                                    <div class="ui tiny input">
                                         <input type="number" min="0" step="0.01" max="${row.RefundableAmount}" data-refund-input="${row.ID}" placeholder="0.00">
                                     </div>
                                 </div>

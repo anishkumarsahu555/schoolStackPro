@@ -3,6 +3,8 @@
 {% block title %}
     <title>Finance Settings</title>
 {% endblock %}
+{% block page_title %}Finance Settings{% endblock %}
+{% block page_subtitle %}Manage default accounts, receipt text, and document numbering rules.{% endblock %}
 
 {% block css %}
     {% include 'managementApp/finance/_shared_styles.html' %}
@@ -11,18 +13,7 @@
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="ui pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user">
-                    Finance Settings
-                </div>
-                <div style=" position: absolute;right: 1.5rem;top: 18px; display:flex; gap:0.55rem; align-items:center;">
-                    <i class="info circle icon finance-page-intro"
-                       data-inverted=""
-                       data-tooltip="Manage default finance accounts, receipt text, and the document numbering rules used across receipts, vouchers, refunds, and ledger transactions."
-                       data-position="bottom center"></i>
-                </div>
-            </div>
-            <div class="ui tab finance-shell" data-tab="user">
+            <div class="ui tab active finance-shell" data-tab="user">
                 <section class="finance-summary-grid" id="financeSettingsSummary" style="display:none;">
                     <div class="finance-summary-item">
                         <div class="value" id="previewReceiptNo">-</div>
@@ -47,13 +38,13 @@
                 </section>
 
                 <form class="ui tiny form" id="financeSettingsForm">
-                <section class="finance-table-panel">
-                    <div class="finance-table-head">
-                        <div>
-                            <h3 class="finance-panel-title">Receipt Branding</h3>
-                            <div class="finance-panel-subtitle">Set the receipt title and footer text used in the finance receipt print view.</div>
-                        </div>
-                    </div>
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Receipt Branding
+                    </h4>
+                    <div class="finance-panel-subtitle">Set the receipt title and footer text used in the finance receipt print view.</div>
+
                     <div class="finance-form-shell">
                         <div class="two fields">
                             <div class="field required">
@@ -79,15 +70,15 @@
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <section class="finance-table-panel">
-                    <div class="finance-table-head">
-                        <div>
-                            <h3 class="finance-panel-title">Default Accounts</h3>
-                            <div class="finance-panel-subtitle">These defaults are used to keep finance payment modes and receipt flows aligned with your preferred cash and bank accounts.</div>
-                        </div>
-                    </div>
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Default Accounts
+                    </h4>
+                    <div class="finance-panel-subtitle">These defaults are used to keep finance payment modes and receipt flows aligned with your preferred cash and bank accounts.</div>
+
                     <div class="finance-form-shell">
                         <div class="two fields">
                             <div class="field">
@@ -100,15 +91,15 @@
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <section class="finance-table-panel">
-                    <div class="finance-table-head">
-                        <div>
-                            <h3 class="finance-panel-title">Numbering Rules</h3>
-                            <div class="finance-panel-subtitle">Prefixes are applied when new finance documents are created. Existing document numbers remain unchanged.</div>
-                        </div>
-                    </div>
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Numbering Rules
+                    </h4>
+                    <div class="finance-panel-subtitle">Prefixes are applied when new finance documents are created. Existing document numbers remain unchanged.</div>
+
                     <div class="finance-form-shell">
                         <div class="five fields">
                             <div class="field required">
@@ -147,7 +138,7 @@
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
                 </form>
             </div>
         </div>

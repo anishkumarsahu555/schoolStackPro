@@ -4,6 +4,18 @@
 {% block title %}
     <title>Receipt {{ receipt.receiptNo }}</title>
 {% endblock %}
+{% block page_title %}Receipt {{ receipt.receiptNo }}{% endblock %}
+{% block page_subtitle %}Review receipt details, allocation summary, and printable copy{% endblock %}
+{% block page_actions %}
+    <a class="ui primary button" href="{% url 'managementApp:manage_receipts' %}">
+        <i class="arrow left icon"></i>
+        <span><span class="desktop-label">Back to Receipts</span><span class="mobile-label">Back</span></span>
+    </a>
+    <button type="button" class="ui green button" onclick="window.print()">
+        <i class="print icon"></i>
+        <span><span class="desktop-label">Print Receipt</span><span class="mobile-label">Print</span></span>
+    </button>
+{% endblock %}
 
 {% block css %}
     {% include 'managementApp/finance/_shared_styles.html' %}
@@ -20,32 +32,6 @@
 
         .print-only {
             display: none !important;
-        }
-
-        .receipt-page .finance-shell > .ui.pointing.secondary.menu {
-            border: 1px solid rgba(148, 163, 184, 0.16) !important;
-            border-radius: 18px 18px 0 0 !important;
-            background:
-                linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98)) !important;
-            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
-        }
-
-        .receipt-page .finance-shell > .ui.pointing.secondary.menu .item.active {
-            background: linear-gradient(180deg, #60a5fa, #3b82f6) !important;
-            color: #eff6ff !important;
-            box-shadow: inset 0 -4px 0 #93c5fd;
-        }
-
-        .receipt-page .finance-shell > .ui.pointing.secondary.menu .item.active i.icon {
-            color: #eff6ff !important;
-        }
-
-        .receipt-page .finance-page-intro {
-            color: #64748b !important;
-        }
-
-        .receipt-page .finance-page-intro:hover {
-            color: #334155 !important;
         }
 
         .receipt-shell {
@@ -356,20 +342,6 @@
                 radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.08), transparent 26%),
                 linear-gradient(180deg, rgba(20, 28, 39, 0.99), rgba(21, 30, 44, 0.98));
             box-shadow: 0 28px 50px rgba(2, 8, 23, 0.36);
-        }
-
-        html[data-theme="dark"] .receipt-page .finance-shell > .ui.pointing.secondary.menu {
-            border-color: rgba(148, 163, 184, 0.14) !important;
-            background: linear-gradient(180deg, rgba(29, 36, 48, 0.98), rgba(20, 27, 38, 0.98)) !important;
-            box-shadow: inset 0 -1px 0 rgba(148, 163, 184, 0.12);
-        }
-
-        html[data-theme="dark"] .receipt-page .finance-page-intro {
-            color: #dbeafe !important;
-        }
-
-        html[data-theme="dark"] .receipt-page .finance-page-intro:hover {
-            color: #ffffff !important;
         }
 
         html[data-theme="dark"] .receipt-brand {
@@ -810,28 +782,6 @@
 
 {% block body %}
     <div class="receipt-page">
-        <div class="print-hide finance-shell" style="margin-bottom: 1rem;">
-            <div class="ui pointing secondary menu">
-                <div class="item active">
-                    <i class="print icon"></i>
-                    Receipt Detail
-                </div>
-                <div class="finance-page-actions">
-                    <a class="ui blue mini button right" href="{% url 'managementApp:manage_receipts' %}">
-                        <i class="arrow left icon"></i>
-                        Back to Receipts
-                    </a>
-                    <button type="button" class="ui green mini plus button right" onclick="window.print()">
-                        <i class="plus square outline icon"></i>
-                        Print Receipt
-                    </button>
-                </div>
-            </div>
-            <div class="finance-page-intro">
-                Review the receipt details, then print or share the allocation summary directly from the finance module.
-            </div>
-        </div>
-
         <div class="receipt-shell">
             <div class="receipt-print-header print-only">
                 <div class="receipt-print-logo">

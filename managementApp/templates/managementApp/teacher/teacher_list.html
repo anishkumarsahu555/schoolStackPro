@@ -3,6 +3,14 @@
 {% block title %}
     <title>Teacher List</title>
 {% endblock %}
+{% block page_title %}Teacher List{% endblock %}
+{% block page_subtitle %}Manage teacher and staff profiles, contact details, and status{% endblock %}
+{% block page_actions %}
+    <a class="ui green button" href="{% url 'managementApp:add_teacher' %}">
+        <i class="plus icon"></i>
+        <span><span class="desktop-label">Add Teacher/Staff</span><span class="mobile-label">Add</span></span>
+    </a>
+{% endblock %}
 {% block css %}
 {% endblock %}
 {% block body %}
@@ -20,9 +28,8 @@
             float: right;
         }
 
-        .dt-buttons {
-            position: absolute;
-            left: 174px;
+        #TeacherTable_wrapper .dt-buttons {
+            display: none;
         }
 
         input[type=search] {
@@ -32,20 +39,13 @@
 
     <div class="ui right aligned basic  grid">
         <div class="sixteen wide column">
-            <div class="ui  pointing secondary menu">
-                <div style="cursor: pointer;" class="item active" data-tab="user"
-                >Teacher List
-                </div>
-                <div style=" position: absolute;right: 1.5rem;top: 18px;">
-                    <a class="ui green mini plus button right" href="{% url 'managementApp:add_teacher' %}">
-                        <i class="plus square outline icon"></i>
-                        Add Teacher/Staff
-                    </a>
-                </div>
-            </div>
-            <div class="ui tab " data-tab="user">
+            <div class="ui tab active" data-tab="user">
 
-                <div class="row" style="padding-left: 5px; padding-right: 5px">
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="list alternate outline icon"></i>
+                        Teacher list
+                    </h4>
                     <div class="wide">
 
                         <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="TeacherTable"
