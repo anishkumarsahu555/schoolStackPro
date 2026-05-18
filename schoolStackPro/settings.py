@@ -109,7 +109,7 @@ WSGI_APPLICATION = 'schoolStackPro.wsgi.application'
 USE_MYSQL = os.getenv('USE_MYSQL', 'false').lower() == 'true'
 DB_CONN_MAX_AGE = int(os.getenv('DB_CONN_MAX_AGE', '0'))
 
-if USE_MYSQL:
+if os.getenv('db') =="mysql":
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -117,11 +117,23 @@ if USE_MYSQL:
             'USER': os.getenv('DB_USER', 'root'),
             'PASSWORD': os.getenv('DB_PASSWORD', 'pass'),
             'HOST': os.getenv('DB_HOST', 'localhost'),
-            'PORT': '3306',
+            'PORT': os.getenv('DB_PORT', '3306'),
             'CONN_MAX_AGE': DB_CONN_MAX_AGE,
             'OPTIONS': {
                 'charset': 'utf8mb4',
             },
+        }
+    }
+elif os.getenv('db') =="postgres":
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'schoolsstack'),
+            'USER': os.environ.get('DB_USER', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'pass'),
+            'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+            'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', '0')),
         }
     }
 else:
