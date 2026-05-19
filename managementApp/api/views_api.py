@@ -2606,23 +2606,30 @@ def add_student_api(request):
 @login_required
 def get_student_list_by_class_api(request):
     standard = request.GET.get('standard')
+    rows = Student.objects.select_related('standardID').filter(
+        isDeleted=False,
+        sessionID_id=_current_session_id(request),
+    )
     try:
         standard_id = int(standard)
     except (TypeError, ValueError):
-        return _api_response({'status': 'success', 'data': [], 'color': 'success'}, safe=False)
-    rows = Student.objects.filter(
-        isDeleted=False,
-        sessionID_id=_current_session_id(request),
-        standardID_id=standard_id
-    ).values('id', 'name', 'roll').order_by('roll')
+        standard_id = None
+    if standard_id:
+        rows = rows.filter(standardID_id=standard_id)
+    rows = rows.order_by('name', 'roll')
     data = []
     for row in rows:
-        roll = row.get('roll')
+        roll = row.roll
         try:
             roll_label = str(int(float(roll)))
         except Exception:
             roll_label = str(roll or 'N/A')
-        data.append({'ID': row['id'], 'Name': f"{row.get('name') or 'N/A'} - {roll_label}"})
+        class_label = 'N/A'
+        if row.standardID:
+            class_label = row.standardID.name or 'N/A'
+            if row.standardID.section:
+                class_label = f'{class_label} {row.standardID.section}'
+        data.append({'ID': row.id, 'Name': f"{row.name or 'N/A'} - Roll {roll_label} - Class {class_label}"})
     return _api_response(
         {'status': 'success', 'data': data,
          'color': 'success'}, safe=False)
@@ -5116,20 +5123,32 @@ class FeeByStudentJson(BaseDatatableView):
             student = self.request.GET.get("student")
             standard = self.request.GET.get("standard")
             session_id = self.request.session["current_session"]["Id"]
+            student_id = int(student)
+            try:
+                standard_id = int(standard)
+            except (TypeError, ValueError):
+                student_obj = Student.objects.filter(
+                    id=student_id,
+                    isDeleted=False,
+                    sessionID_id=session_id,
+                ).only('id', 'standardID').first()
+                standard_id = student_obj.standardID_id if student_obj else None
+            if not standard_id:
+                return StudentFee.objects.none()
             for month_name, year_value, month_no, period_start, period_end in _session_month_rows(session_id):
                 fee_obj = StudentFee.objects.filter(
-                    studentID_id=int(student),
+                    studentID_id=student_id,
                     month__iexact=month_name,
-                    standardID_id=int(standard),
+                    standardID_id=standard_id,
                     isDeleted=False,
                     sessionID_id=session_id,
                 ).order_by('id').first()
 
                 if not fee_obj:
                     fee_obj = StudentFee.objects.create(
-                        studentID_id=int(student),
+                        studentID_id=student_id,
                         month=month_name,
-                        standardID_id=int(standard),
+                        standardID_id=standard_id,
                         feeMonth=month_no,
                         feeYear=year_value,
                         periodStartDate=period_start,
@@ -5158,8 +5177,8 @@ class FeeByStudentJson(BaseDatatableView):
                         fee_obj.save(update_fields=update_fields + ['lastUpdatedOn'])
 
             fee_qs = StudentFee.objects.select_related().filter(
-                studentID_id=int(student),
-                standardID_id=int(standard),
+                studentID_id=student_id,
+                standardID_id=standard_id,
                 isDeleted=False,
                 sessionID_id=session_id,
             )
@@ -5213,10 +5232,14 @@ class FeeByStudentJson(BaseDatatableView):
             </div>
                         '''.format(item.pk, item.pk, item.amount)
 
-            if item.payDate:
-                payDate = item.payDate.strftime('%d-%m-%Y')
-            else:
-                payDate = 'N/A'
+            pay_date_value = item.payDate.strftime('%d/%m/%Y') if item.payDate else ''
+            payDate = '''<div class="ui calendar fee-pay-date-calendar" id="payDateCal{}">
+              <div class="ui tiny input fluid left icon">
+                <i class="calendar alternate outline icon"></i>
+                <input type="text" placeholder="Paid Date" name="payDate{}" id="payDate{}" value="{}">
+              </div>
+            </div>
+                        '''.format(item.pk, item.pk, item.pk, pay_date_value)
 
             json_data.append([
                 escape(_fee_month_label(item)),
@@ -5242,6 +5265,7 @@ def add_student_fee_api(request):
         isPresent = request.POST.get("isPresent")
         reason = request.POST.get("reason")
         amount = request.POST.get("amount")
+        payDate = request.POST.get("payDate")
         try:
             instance = StudentFee.objects.get(pk=int(id))
             if isPresent == 'true':
@@ -5251,7 +5275,17 @@ def add_student_fee_api(request):
             instance.isPaid = isPresent
             instance.note = reason
             instance.amount = float(amount)
-            instance.payDate = datetime.today().date()
+            if isPresent:
+                parsed_pay_date = None
+                for date_format in ('%Y-%m-%d', '%d-%m-%Y', '%d/%m/%Y'):
+                    try:
+                        parsed_pay_date = datetime.strptime(payDate, date_format).date()
+                        break
+                    except (TypeError, ValueError):
+                        pass
+                instance.payDate = parsed_pay_date or timezone.localdate()
+            else:
+                instance.payDate = None
             pre_save_with_user.send(sender=StudentFee, instance=instance, user=request.user.pk)
             instance.save()
             try:
@@ -5273,10 +5307,16 @@ class StudentFeeDetailsByClassJson(BaseDatatableView):
     def get_initial_queryset(self):
         try:
             standard = self.request.GET.get("standard")
-
-            return Student.objects.select_related().filter(isDeleted__exact=False, standardID_id=int(standard),
-                                                           sessionID_id=self.request.session["current_session"][
-                                                               "Id"]).order_by('roll')
+            qs = Student.objects.select_related().filter(
+                isDeleted__exact=False,
+                sessionID_id=self.request.session["current_session"]["Id"]
+            )
+            try:
+                standard_id = int(standard)
+            except (TypeError, ValueError):
+                return Student.objects.none()
+            qs = qs.filter(standardID_id=standard_id)
+            return qs.order_by('standardID__name', 'standardID__section', 'roll', 'name')
         except:
             return Student.objects.none()
 
@@ -5354,10 +5394,22 @@ class StudentFeeDetailsByStudentJson(BaseDatatableView):
             student = self.request.GET.get("student")
 
             session_id = self.request.session["current_session"]["Id"]
+            student_id = int(student)
+            try:
+                standard_id = int(standardByStudent)
+            except (TypeError, ValueError):
+                student_obj = Student.objects.filter(
+                    id=student_id,
+                    isDeleted=False,
+                    sessionID_id=session_id,
+                ).only('id', 'standardID').first()
+                standard_id = student_obj.standardID_id if student_obj else None
+            if not standard_id:
+                return StudentFee.objects.none()
             fee_qs = StudentFee.objects.select_related().filter(
                 isDeleted__exact=False,
-                studentID_id=int(student),
-                standardID_id=int(standardByStudent),
+                studentID_id=student_id,
+                standardID_id=standard_id,
                 sessionID_id=session_id,
             )
             return _restrict_fee_queryset_to_session_months(fee_qs, session_id).order_by('feeYear', 'feeMonth', 'id')

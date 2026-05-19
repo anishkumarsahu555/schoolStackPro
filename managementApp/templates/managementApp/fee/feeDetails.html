@@ -124,18 +124,19 @@
 
                                 <div class="four fields">
 
-                                    <div class="four wide field required">
+                                    <div class="four wide field">
 
                                         <label>Class-Section</label>
                                         <select class="ui search dropdown" id="standardByStudent" onchange="getStudentList()"
                                                 >
-                                            <option value="">Search By Class Name</option>
+                                            <option value="">All</option>
                                         </select>
                                     </div>
                                     <div class="three wide field required">
 
                                         <label>Student</label>
                                         <select class="ui search dropdown" id="student">
+                                            <option value="">Search By Student Name</option>
                                         </select>
                                     </div>
 
@@ -200,7 +201,10 @@
     <script>
 
 
-        $(getStandardList());
+        $(function () {
+            getStandardList();
+            getStudentList();
+        });
         const feeMonthCount = {{ fee_month_headers|length }};
         const classMonthTargets = Array.from({length: feeMonthCount}, (_, idx) => idx + 3);
         const classExportColumns = Array.from({length: feeMonthCount + 2}, (_, idx) => idx + 1);
@@ -233,7 +237,7 @@
                     $('#standard').html('');
                     $('#standardByStudent').html('');
                     $('#standard').append(' <option value="">Search By Class Name</option>');
-                    $('#standardByStudent').append(' <option value="">Search By Class Name</option>');
+                    $('#standardByStudent').append(' <option value="">All</option>');
                     var j;
                     for (j = 0; j < response.data.length; j++) {
 
@@ -241,6 +245,8 @@
                         $('#standardByStudent').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
 
                     }
+                    $('#standard').dropdown('refresh');
+                    $('#standardByStudent').dropdown('refresh');
 
                 },
 
@@ -269,12 +275,14 @@
 
                     $('#student').dropdown('clear');
                     $('#student').html('');
+                    $('#student').append(' <option value="">Search By Student Name</option>');
                     var j;
                     for (j = 0; j < response.data.length; j++) {
 
                         $('#student').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
 
                     }
+                    $('#student').dropdown('refresh');
 
                 },
 
@@ -304,16 +312,16 @@
                 if (standard === '') {
                     requiredFieldError();
                 } else {
-                    subjectTab.ajax.url('{% url 'managementAppAPI:StudentFeeDetailsByClassJson' %}?standard=' + standard ).load();
+                    subjectTab.ajax.url('{% url 'managementAppAPI:StudentFeeDetailsByClassJson' %}?standard=' + encodeURIComponent(standard)).load();
                 }
             } else if (mode === 'ByStudent') {
                 let standardByStudent = $('#standardByStudent').val();
                 let student = $('#student').val();
 
-                if ( standardByStudent === ''|| student === '') {
+                if (student === '') {
                     requiredFieldError();
                 } else {
-                    byStudentTab.ajax.url('{% url 'managementAppAPI:StudentFeeDetailsByStudentJson' %}?student=' + student + '&standardByStudent=' + standardByStudent).load();
+                    byStudentTab.ajax.url('{% url 'managementAppAPI:StudentFeeDetailsByStudentJson' %}?student=' + encodeURIComponent(student) + '&standardByStudent=' + encodeURIComponent(standardByStudent)).load();
 
 
                 }
@@ -402,7 +410,7 @@
             $('#standard').dropdown('clear');
             $('#standardByStudent').val('');
             $('#standardByStudent').dropdown('clear');
-            $('#student').html('');
+            getStudentList();
             $('#student').dropdown('clear');
             $('#addFormByClass .field, #addForm .field').removeClass('error');
             subjectTab.clear().draw();

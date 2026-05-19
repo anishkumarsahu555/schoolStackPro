@@ -62,19 +62,19 @@
                     <form class="ui tiny form" id="addFormByClass">{% csrf_token %}
 
                         <div class="four fields">
-                            <div class="field required">
+                            <div class="field">
 
                                 <label>Class-Section</label>
                                 <select class="ui search dropdown" id="standard" onchange="getStudentList()">
-                                    <option value="">Search By Class Name-Section</option>
+                                    <option value="">All</option>
                                 </select>
                             </div>
 
-                                 <div class="field required">
+                            <div class="field required">
 
                                 <label>Student</label>
                                 <select class="ui search dropdown" id="student">
-                                    <option value="">Search By Student Name-Roll</option>
+                                    <option value="">Search By Student Name</option>
                                 </select>
                             </div>
                                 <div class="field fee-filter-actions">
@@ -135,8 +135,12 @@
 {% block js %}
     <script>
 
-        $(getStandardList());
-              function getStandardList() {
+        $(function () {
+            getStandardList();
+            getStudentList();
+        });
+
+        function getStandardList() {
 
             $.ajax({
                 type: 'get',
@@ -145,13 +149,14 @@
                 success: function (response) {
 
                     $('#standard').html('');
-                    $('#standard').append(' <option value="">Search By Class Name</option>');
+                    $('#standard').append(' <option value="">All</option>');
                     var j;
                     for (j = 0; j < response.data.length; j++) {
 
                         $('#standard').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
 
                     }
+                    $('#standard').dropdown('refresh');
 
                 },
 
@@ -168,7 +173,7 @@
 
         }
 
-                function getStudentList() {
+        function getStudentList() {
 
             $.ajax({
                 type: 'get',
@@ -181,13 +186,14 @@
 
                     $('#student').dropdown('clear');
                     $('#student').html('');
-                    $('#student').append(' <option value="">Search By Student Name-Roll</option>');
+                    $('#student').append(' <option value="">Search By Student Name</option>');
                     var j;
                     for (j = 0; j < response.data.length; j++) {
 
                         $('#student').append('<option value="' + response.data[j]['ID'] + '" >' + response.data[j]['Name'] + '</option>');
 
                     }
+                    $('#student').dropdown('refresh');
 
                 },
 
@@ -206,23 +212,23 @@
 
 
 
-        let today = new Date();
-        $('#date')
-            .calendar({
-                    monthFirst: false,
-                    type: 'date',
-                    formatter: {
-                        date: function (date, settings) {
+        function formatCalendarDate(date) {
+            if (!date) return '';
+            var day = String(date.getDate());
+            var month = String(date.getMonth() + 1);
+            var year = date.getFullYear();
+            return day + '/' + month + '/' + year;
+        }
 
-                            if (!date) return '';
-                            var day = String(date.getDate());
-                            var month = String(date.getMonth() + 1);
-                            var year = date.getFullYear();
-                            return day + '/' + month + '/' + year;
-                        }
-                    }
+        function initFeeDateCalendars() {
+            $('.fee-pay-date-calendar').calendar({
+                monthFirst: false,
+                type: 'date',
+                formatter: {
+                    date: formatCalendarDate
                 }
-            );
+            });
+        }
 
 
         let subjectTab
@@ -232,13 +238,13 @@
             let standard = $('#standard').val();
             let student = $('#student').val();
 
-            if (standard === '' || student === '') {
+            if (student === '') {
                 requiredFieldError();
                 $('#AttendanceTableDiv').css('display', 'none');
             } else {
                 $('#AttendanceTableDiv').css('display', 'block');
 
-                subjectTab.ajax.url('{% url 'managementAppAPI:FeeByStudentJson' %}?standard=' + standard+ '&student=' + student).load();
+                subjectTab.ajax.url('{% url 'managementAppAPI:FeeByStudentJson' %}?standard=' + encodeURIComponent(standard) + '&student=' + encodeURIComponent(student)).load();
 
             }
         }
@@ -247,7 +253,7 @@
 
             $('#standard').val('');
             $('#standard').dropdown('clear');
-            $('#student').html('<option value="">Search By Student Name-Roll</option>');
+            getStudentList();
             $('#student').dropdown('clear');
             $('#addFormByClass .field').removeClass('error');
             $('#AttendanceTableDiv').css('display', 'none');
@@ -287,7 +293,10 @@
             "pageLength": 100,
             "processing": true,
             "serverSide": true,
-            "ajax": "{% url 'managementAppAPI:FeeByStudentJson' %}"
+            "ajax": "{% url 'managementAppAPI:FeeByStudentJson' %}",
+            "drawCallback": function () {
+                initFeeDateCalendars();
+            }
         });
 
 
@@ -295,11 +304,13 @@
             let isPresent = $('#isPresent' + id).prop('checked');
             let reason = $('#reason' + id).val();
             let amount = $('#amount' + id).val();
+            let payDate = $('#payDate' + id).val();
             let data = new FormData();
             data.append('id', id);
             data.append('isPresent', isPresent);
             data.append('reason', reason);
             data.append('amount', amount);
+            data.append('payDate', payDate);
             data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
             $.ajax({
                 type: 'post',
