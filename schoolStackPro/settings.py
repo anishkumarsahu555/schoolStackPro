@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "financeApp",
     "managementApp",
     "studentApp",
+    "transportApp",
     "pwa",
     "teacherApp",
 
@@ -58,6 +59,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.http.ConditionalGetMiddleware',
+    'homeApp.audit.AuditContextMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'homeApp.middleware.RoleSessionBootstrapMiddleware',

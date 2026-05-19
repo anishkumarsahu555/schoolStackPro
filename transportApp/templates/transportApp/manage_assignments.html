@@ -1,0 +1,256 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Transport Assignments</title>{% endblock %}
+{% block page_title %}Transport Assignments{% endblock %}
+{% block page_subtitle %}Assign transport routes and stops to students and teachers{% endblock %}
+{% block page_actions %}
+    <button class="ui green button class-page-action" type="button" onclick="showAssignmentModal()">
+        <i class="plus icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Add Assignment</span><span class="mobile-label">Add</span></span>
+    </button>
+{% endblock %}
+{% block body %}
+{% include 'transportApp/_management_table_styles.html' %}
+<style>
+    .transport-fee-source {
+        align-items: center;
+        background: rgba(33, 133, 208, 0.08);
+        border: 1px solid rgba(33, 133, 208, 0.18);
+        border-radius: 6px;
+        color: #1f5f99;
+        display: flex;
+        font-size: 12px;
+        font-weight: 700;
+        gap: 0.45rem;
+        min-height: 38px;
+        padding: 0.65rem 0.75rem;
+    }
+    .transport-fee-source.manual {
+        background: rgba(251, 189, 8, 0.1);
+        border-color: rgba(251, 189, 8, 0.26);
+        color: #8a5a00;
+    }
+    .transport-fee-source.empty {
+        background: rgba(148, 163, 184, 0.08);
+        border-color: rgba(148, 163, 184, 0.2);
+        color: #667085;
+    }
+    body.dark .transport-fee-source,
+    .dark-mode .transport-fee-source {
+        background: rgba(96, 165, 250, 0.13);
+        border-color: rgba(96, 165, 250, 0.24);
+        color: #bfdbfe;
+    }
+    body.dark .transport-fee-source.manual,
+    .dark-mode .transport-fee-source.manual {
+        background: rgba(251, 191, 36, 0.14);
+        border-color: rgba(251, 191, 36, 0.25);
+        color: #fde68a;
+    }
+</style>
+<div class="ui right aligned basic  grid">
+    <div class="sixteen wide column">
+        <div class="ui tab active" data-tab="user">
+            <div class="ui segment">
+                <form class="ui tiny form">
+                    <div class="three fields">
+                        <div class="field"><label>Assignee Type</label><select class="ui fluid search selection dropdown" id="filterAssigneeType"><option value="">All</option><option value="student">Student</option><option value="teacher">Teacher</option></select></div>
+                        <div class="field" style="padding-top:1.55rem;"><button type="button" class="ui mini green button" onclick="reloadAssignments()"><i class="search icon"></i>Search</button><button type="button" class="ui mini red button" onclick="clearFilter()"><i class="times circle icon"></i>Clear</button></div>
+                        <div class="field"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header"><i class="users icon"></i>Assignment list</h4>
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="AssignmentTable" style="margin-top: 5px;width:100%">
+                        <thead><tr><th>Type</th><th>Name</th><th>Route</th><th>Pickup</th><th>Drop</th><th>Vehicle</th><th>Fee</th><th>Mode</th><th>Status</th><th>Actions</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="ui modal" id="assignmentModal">
+    <i class="close icon"></i><div class="header">Transport Assignment</div>
+    <div class="content"><form class="ui tiny form" id="assignmentForm">{% csrf_token %}
+        <input type="hidden" id="assignmentID">
+        <div class="transport-modal-section">
+            <div class="transport-modal-section-title"><i class="user icon"></i>Assignee</div>
+            <div class="three fields">
+                <div class="field required"><label>Assignee Type</label><select class="ui fluid search selection dropdown" id="assigneeType" onchange="loadAssignees(); applyFeeMapping();"><option value="student">Student</option><option value="teacher">Teacher</option></select></div>
+                <div class="field required"><label>Student</label><select class="ui fluid search dropdown" id="studentID"></select></div>
+                <div class="field required"><label>Teacher</label><select class="ui fluid search dropdown" id="teacherID"></select></div>
+            </div>
+        </div>
+        <div class="transport-modal-section">
+            <div class="transport-modal-section-title"><i class="route icon"></i>Route & Trip</div>
+            <div class="four fields">
+                <div class="field required">
+                    <label>Route</label>
+                    <div class="ui fluid search selection dropdown route-options" id="assignmentRouteDropdown">
+                        <input type="hidden" id="assignmentRouteID">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">Select Route</div>
+                        <div class="menu"></div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Pickup Point</label>
+                    <div class="ui fluid search selection dropdown stop-options" id="pickupStopDropdown">
+                        <input type="hidden" id="pickupStopID">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">Select Pickup Point</div>
+                        <div class="menu"></div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Drop Point</label>
+                    <div class="ui fluid search selection dropdown stop-options" id="dropStopDropdown">
+                        <input type="hidden" id="dropStopID">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">Select Drop Point</div>
+                        <div class="menu"></div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Vehicle</label>
+                    <div class="ui fluid search selection dropdown vehicle-options" id="vehicleDropdown">
+                        <input type="hidden" id="vehicleID">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">Select Vehicle</div>
+                        <div class="menu"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="three fields">
+                <div class="field"><label>Trip Type</label><select class="ui fluid search selection dropdown" id="tripType"><option value="both">Pickup & Drop</option><option value="pickup">Pickup</option><option value="drop">Drop</option></select></div>
+                <div class="field"><label>Start Date</label><div class="ui calendar transport-date-calendar" id="startDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" id="startDate" placeholder="YYYY-MM-DD"></div></div></div>
+                <div class="field"><label>End Date</label><div class="ui calendar transport-date-calendar" id="endDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" id="endDate" placeholder="YYYY-MM-DD"></div></div></div>
+            </div>
+        </div>
+        <div class="transport-modal-section">
+            <div class="transport-modal-section-title"><i class="rupee sign icon"></i>Applied Fee / Override</div>
+            <div class="three fields">
+                <div class="field"><label>Applied Fee Mode</label><select class="ui fluid search selection dropdown" id="feeMode"><option value="student_fee">Student Fee</option><option value="free">Free</option><option value="payroll_deduction">Payroll Deduction</option><option value="staff_receivable">Staff Receivable</option><option value="informational">Informational Only</option></select></div>
+                <div class="field"><label>Final Monthly Fee</label><input type="number" step="0.01" id="assignmentMonthlyFee" value="0"></div>
+                <div class="field"><div class="transport-active-row"><div class="ui checkbox"><input type="checkbox" id="assignmentIsActive" checked><label>Active</label></div></div></div>
+            </div>
+            <div class="field">
+                <div class="transport-fee-source empty" id="assignmentFeeSource"><i class="info circle icon"></i><span>Select route and point to apply default fee.</span></div>
+            </div>
+        </div>
+    </form></div>
+    <div class="actions transport-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button" onclick="saveAssignment()">Submit<i class="checkmark icon"></i></button></div>
+</div>
+<div class="ui basic modal custom" id="deleteAssignmentModal">
+    <div class="ui icon header">
+        <i class="trash alternate icon red"></i>
+        Assignment Details will be Deleted
+    </div>
+    <div class="content">
+        <p style="text-align: center">The Transport Assignment will be deleted, are you sure to delete this Assignment?</p>
+    </div>
+    <div class="actions">
+        <div class="ui red basic cancel inverted button">
+            <i class="remove icon"></i>
+            No
+        </div>
+        <input type="hidden" id="deleteAssignmentID">
+        <div class="ui green ok inverted button" onclick="deleteAssignment()">
+            <i class="checkmark icon"></i>
+            Yes
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block js %}
+<script>
+let assignmentTable, applyingFeeDefaults = false, transportOptions = {stops: [], vehicles: []};
+$(function(){
+    $('.ui.dropdown').dropdown({fullTextSearch: true}); $('.ui.checkbox').checkbox(); initTransportCalendars(); loadTransportOptions(); loadAssignees();
+    $('#assignmentMonthlyFee').on('input', function(){ if(!applyingFeeDefaults) setFeeSource('manual', 'Manual override'); });
+    $('#feeMode').on('change', function(){ if(!applyingFeeDefaults) setFeeSource('manual', 'Manual override'); });
+    assignmentTable = $('#AssignmentTable').DataTable({
+        dom: 'Blfrtip', scrollX: true, stateSave: true, processing: true, serverSide: true,
+        aaSorting: [[1, 'asc']], pageLength: 10,
+        ajax:{url:"{% url 'transportAppAPI:AssignmentListJson' %}", data:function(d){ d.assigneeType = $('#filterAssigneeType').val(); }},
+        columnDefs:[
+            {"name":"assigneeType","targets":0},{"name":"assigneeName","targets":1},{"name":"route","targets":2},
+            {"name":"pickupStop","targets":3},{"name":"dropStop","targets":4},{"name":"vehicle","targets":5},
+            {"name":"monthlyFee","targets":6},{"name":"feeMode","targets":7},{"name":"isActive","targets":8},
+            {"name":"actions","targets":9,"orderable":false}
+        ]
+    });
+});
+function initTransportCalendars(){
+    $('.transport-date-calendar').calendar({
+        monthFirst: false,
+        type: 'date',
+        formatter: { date: function(date){ if(!date) return ''; const m=String(date.getMonth()+1).padStart(2,'0'); const d=String(date.getDate()).padStart(2,'0'); return date.getFullYear()+'-'+m+'-'+d; } }
+    });
+}
+function reloadAssignments(){ assignmentTable.ajax.reload(null,false); }
+function clearFilter(){ $('#filterAssigneeType').dropdown('clear'); reloadAssignments(); }
+function dropdownItem(value, text, extraAttrs){
+    return '<div class="item" data-value="' + value + '" ' + (extraAttrs || '') + '>' + text + '</div>';
+}
+function initAssignmentSearchDropdown(dropdownID, onChange){
+    $(dropdownID).dropdown('destroy').dropdown({
+        fullTextSearch: true,
+        forceSelection: false,
+        clearable: true,
+        match: 'both',
+        onChange: onChange || function(){}
+    });
+}
+function loadTransportOptions(){ $.get("{% url 'transportAppAPI:transport_options_api' %}", function(r){ const d=r.data||{}; transportOptions=d; const routeMenu=$('#assignmentRouteDropdown .menu').empty(); (d.routes||[]).forEach(i => routeMenu.append(dropdownItem(i.id, i.text))); const vehicleMenu=$('#vehicleDropdown .menu').empty(); (d.vehicles||[]).forEach(i => vehicleMenu.append(dropdownItem(i.id, i.text))); initAssignmentSearchDropdown('#assignmentRouteDropdown', function(){ filterStops(true); }); initAssignmentSearchDropdown('#vehicleDropdown'); filterStops(false); $('.ui.dropdown').not('#assignmentRouteDropdown, #pickupStopDropdown, #dropStopDropdown, #vehicleDropdown').dropdown({fullTextSearch: true}).dropdown('refresh'); }); }
+function filterStops(clearSelected){ const routeID = $('#assignmentRouteID').val(); const pickupMenu=$('#pickupStopDropdown .menu').empty(); const dropMenu=$('#dropStopDropdown .menu').empty(); (transportOptions.stops||[]).filter(i => !routeID || String(i.routeID) === String(routeID)).forEach(i => { const item = dropdownItem(i.id, i.text, 'data-fee="'+i.monthlyFee+'"'); pickupMenu.append(item); dropMenu.append(item); }); initAssignmentSearchDropdown('#pickupStopDropdown', applyFeeMapping); initAssignmentSearchDropdown('#dropStopDropdown', applyFeeMapping); if(clearSelected){ $('#pickupStopDropdown').dropdown('clear'); $('#dropStopDropdown').dropdown('clear'); } applyFeeMapping(); }
+function selectedStopFee(dropdownID, value){
+    if(!value) return undefined;
+    return $(dropdownID + ' .menu .item[data-value="' + value + '"]').data('fee');
+}
+function setFeeSource(type, text){
+    const source = $('#assignmentFeeSource');
+    source.removeClass('manual empty');
+    if(type === 'manual') source.addClass('manual');
+    if(type === 'empty') source.addClass('empty');
+    source.html('<i class="' + (type === 'manual' ? 'edit outline' : 'info circle') + ' icon"></i><span>' + text + '</span>');
+}
+function applyFeeMapping(){
+    const routeID = $('#assignmentRouteID').val();
+    const assigneeType = $('#assigneeType').val() || 'student';
+    const stopID = $('#pickupStopID').val() || $('#dropStopID').val() || '';
+    if(!routeID){
+        setFeeSource('empty', 'Select route and point to apply default fee.');
+        return;
+    }
+    const mappings = (transportOptions.feeMappings || []).filter(i => String(i.routeID) === String(routeID) && (i.assigneeType === assigneeType || i.assigneeType === 'both'));
+    const stopMapping = mappings.find(i => stopID && String(i.stopID || '') === String(stopID));
+    const routeMapping = mappings.find(i => !i.stopID);
+    const mapping = stopMapping || routeMapping;
+    if(mapping){
+        applyingFeeDefaults = true;
+        $('#assignmentMonthlyFee').val(mapping.monthlyFee);
+        $('#feeMode').dropdown('set selected', mapping.feeMode);
+        applyingFeeDefaults = false;
+        setFeeSource('mapping', stopMapping ? 'Applied from stop fee mapping' : 'Applied from route fee mapping');
+        return;
+    }
+    const stopFee = selectedStopFee('#pickupStopDropdown', $('#pickupStopID').val()) || selectedStopFee('#dropStopDropdown', $('#dropStopID').val());
+    if(stopFee !== undefined && stopFee !== ''){
+        applyingFeeDefaults = true;
+        $('#assignmentMonthlyFee').val(stopFee);
+        applyingFeeDefaults = false;
+        setFeeSource('mapping', 'Applied from pickup/drop point default');
+        return;
+    }
+    setFeeSource('empty', 'No default fee found for this selection.');
+}
+function loadAssignees(){ const type = $('#assigneeType').val() || 'student'; $('#studentID').closest('.field').toggle(type === 'student'); $('#teacherID').closest('.field').toggle(type === 'teacher'); $.get("{% url 'transportAppAPI:assignee_options_api' %}", {assigneeType:type}, function(r){ const target = type === 'teacher' ? '#teacherID' : '#studentID'; $(target).html('<option value="">Select '+type+'</option>'); (r.data||[]).forEach(i => $(target).append('<option value="'+i.id+'">'+i.text+'</option>')); $(target).dropdown({fullTextSearch: true}).dropdown('refresh'); if(type === 'teacher') $('#feeMode').dropdown('set selected','informational'); else $('#feeMode').dropdown('set selected','student_fee'); }); }
+function showAssignmentModal(){ $('#assignmentForm').trigger('reset'); $('#assignmentID').val(''); $('#assignmentRouteDropdown').dropdown('clear'); $('#pickupStopDropdown').dropdown('clear'); $('#dropStopDropdown').dropdown('clear'); $('#vehicleDropdown').dropdown('clear'); $('#tripType').dropdown('set selected','both'); $('#assignmentIsActive').prop('checked', true); $('#assigneeType').dropdown('set selected','student'); setFeeSource('empty', 'Select route and point to apply default fee.'); loadAssignees(); $('#assignmentModal').modal('show'); }
+function saveAssignment(){ const data = new FormData(); ['assignmentID','assigneeType','studentID','teacherID','pickupStopID','dropStopID','vehicleID','tripType','feeMode','startDate','endDate'].forEach(id => data.append(id === 'assignmentID' ? 'id' : id, $('#'+id).val())); data.append('routeID',$('#assignmentRouteID').val()); data.append('monthlyFee',$('#assignmentMonthlyFee').val()); data.append('isActive',$('#assignmentIsActive').is(':checked')); data.append('csrfmiddlewaretoken',$("input[name='csrfmiddlewaretoken']").val()); $.ajax({url:"{% url 'transportAppAPI:assignments_api' %}", type:'POST', data:data, contentType:false, processData:false, success:r=>{ if(r.success){ addSuccessNotification(r.message,'green'); $('#assignmentModal').modal('hide'); assignmentTable.ajax.reload(null,false); } else addErrorNotification(r.message); }, error:x=>addErrorNotification((x.responseJSON||{}).message||'Unable to save assignment.')}); }
+function editAssignment(id){ $.get("{% url 'transportAppAPI:assignment_detail_api' %}", {id:id}, function(r){ const d=r.data||{}; $('#assignmentID').val(d.id); $('#assigneeType').dropdown('set selected', d.assigneeType); loadAssignees(); setTimeout(function(){ $('#studentID').dropdown('set selected', String(d.studentID || '')); $('#teacherID').dropdown('set selected', String(d.teacherID || '')); }, 300); $('#assignmentRouteDropdown').dropdown('set selected', String(d.routeID || '')); filterStops(false); $('#pickupStopDropdown').dropdown('set selected', String(d.pickupStopID || '')); $('#dropStopDropdown').dropdown('set selected', String(d.dropStopID || '')); $('#vehicleDropdown').dropdown('set selected', String(d.vehicleID || '')); $('#tripType').dropdown('set selected', d.tripType); applyingFeeDefaults = true; $('#feeMode').dropdown('set selected', d.feeMode); $('#assignmentMonthlyFee').val(d.monthlyFee); applyingFeeDefaults = false; setFeeSource('manual', 'Saved assignment fee'); $('#startDate').val(d.startDate); $('#endDate').val(d.endDate); $('#assignmentIsActive').prop('checked', !!d.isActive); $('#assignmentModal').modal('show'); }); }
+function confirmDeleteAssignment(id){ $('#deleteAssignmentID').val(id); $('#deleteAssignmentModal').modal('show'); }
+function deleteAssignment(){ const data=new FormData(); data.append('id',$('#deleteAssignmentID').val()); data.append('csrfmiddlewaretoken',$("input[name='csrfmiddlewaretoken']").val()); $.ajax({url:"{% url 'transportAppAPI:delete_assignment_api' %}", type:'POST', data:data, contentType:false, processData:false, success:r=>{ if(r.success){ addSuccessNotification(r.message,'green'); $('#deleteAssignmentModal').modal('hide'); assignmentTable.ajax.reload(null,false); } else addErrorNotification(r.message); }}); }
+</script>
+{% endblock %}

@@ -2,6 +2,7 @@ from django.db import models
 from datetime import date
 from stdimage import StdImageField
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from utils.utils import UPLOAD_TO_PATTERNS
 
 
@@ -171,4 +172,38 @@ class WebPushSubscription(models.Model):
         indexes = [
             models.Index(fields=['schoolID', 'appName', 'isActive'], name='wps_school_app_active_idx'),
             models.Index(fields=['userID', 'isActive'], name='wps_user_active_idx'),
+        ]
+
+
+class AuditLog(models.Model):
+    ACTION_CHOICES = (
+        ('create', 'Create'),
+        ('update', 'Update'),
+        ('delete', 'Delete'),
+        ('soft_delete', 'Soft Delete'),
+        ('restore', 'Restore'),
+    )
+
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveBigIntegerField()
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    changes = models.JSONField(default=dict, blank=True)
+    snapshot = models.JSONField(default=dict, blank=True)
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.SET_NULL)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.SET_NULL)
+    userID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL)
+    path = models.CharField(max_length=500, blank=True, null=True)
+    ipAddress = models.GenericIPAddressField(blank=True, null=True)
+    userAgent = models.TextField(blank=True, null=True)
+    datetime = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.content_type} #{self.object_id} {self.action}'
+
+    class Meta:
+        verbose_name_plural = 'f) Audit Logs.'
+        indexes = [
+            models.Index(fields=['content_type', 'object_id'], name='audit_object_idx'),
+            models.Index(fields=['schoolID', 'sessionID', 'datetime'], name='audit_school_sess_dt_idx'),
+            models.Index(fields=['action', 'datetime'], name='audit_action_dt_idx'),
         ]

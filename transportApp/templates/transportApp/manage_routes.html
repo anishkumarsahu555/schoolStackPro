@@ -1,0 +1,224 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Routes & Stops</title>{% endblock %}
+{% block page_title %}Routes & Stops{% endblock %}
+{% block page_subtitle %}Create transport routes and route-wise pickup/drop stops{% endblock %}
+{% block page_actions %}
+    <button class="ui green button class-page-action" type="button" onclick="showRouteModal()">
+        <i class="plus icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Add Route</span><span class="mobile-label">Route</span></span>
+    </button>
+    <button class="ui teal button class-page-action" type="button" onclick="showStopModal()">
+        <i class="map marker alternate icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Add Stop</span><span class="mobile-label">Stop</span></span>
+    </button>
+{% endblock %}
+{% block body %}
+{% include 'transportApp/_management_table_styles.html' %}
+<div class="ui right aligned basic  grid">
+    <div class="sixteen wide column">
+        <div class="ui tab active" data-tab="user">
+            <div class="ui top attached tabular menu">
+                <a class="item active" data-tab="routesTab">Routes</a>
+                <a class="item" data-tab="stopsTab">Pickup/Drop Points</a>
+            </div>
+            <div class="ui bottom attached tab segment active" data-tab="routesTab">
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="RouteTable" style="margin-top: 5px;width:100%">
+                        <thead><tr><th>Code</th><th>Name</th><th>Start</th><th>End</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+            <div class="ui bottom attached tab segment" data-tab="stopsTab">
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="StopTable" style="margin-top: 5px;width:100%">
+                        <thead><tr><th>Route</th><th>Pickup/Drop Point</th><th>Pickup</th><th>Drop</th><th>Default Fee</th><th>Order</th><th>Status</th><th>Actions</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ui modal" id="routeModal">
+    <i class="close icon"></i>
+    <div class="header">Route Detail</div>
+    <div class="content">
+        <form class="ui tiny form" id="routeForm">{% csrf_token %}
+            <input type="hidden" id="routeID">
+            <div class="transport-modal-section">
+                <div class="transport-modal-section-title"><i class="route icon"></i>Route Information</div>
+                <div class="two fields">
+                    <div class="field required"><label>Route Code</label><input id="routeCode" placeholder="R-01"></div>
+                    <div class="field required"><label>Route Name</label><input id="routeName" placeholder="North Route"></div>
+                </div>
+            </div>
+            <div class="transport-modal-section">
+                <div class="transport-modal-section-title"><i class="map signs icon"></i>Route Path</div>
+                <div class="two fields">
+                    <div class="field"><label>Start Point</label><input id="startPoint"></div>
+                    <div class="field"><label>End Point</label><input id="endPoint"></div>
+                </div>
+                <div class="field"><label>Description</label><textarea id="description" rows="2"></textarea></div>
+                <div class="field"><div class="ui checkbox"><input type="checkbox" id="routeIsActive" checked><label>Active</label></div></div>
+            </div>
+        </form>
+        <div class="actions class-modal-actions">
+            <div class="ui cancel button">Cancel</div>
+            <button class="ui green button" onclick="saveRoute()">Submit<i class="checkmark icon"></i></button>
+        </div>
+    </div>
+</div>
+
+<div class="ui modal" id="stopModal">
+    <i class="close icon"></i>
+    <div class="header">Stop Detail</div>
+    <div class="content">
+        <form class="ui tiny form" id="stopForm">{% csrf_token %}
+            <input type="hidden" id="stopID">
+            <div class="transport-modal-section">
+                <div class="transport-modal-section-title"><i class="map marker alternate icon"></i>Pickup/Drop Point</div>
+                <div class="two fields">
+                    <div class="field required">
+                        <label>Route</label>
+                        <div class="ui fluid search selection dropdown route-options" id="stopRouteDropdown">
+                            <input type="hidden" id="stopRouteID">
+                            <i class="dropdown icon"></i>
+                            <div class="default text">Select Route</div>
+                            <div class="menu"></div>
+                        </div>
+                    </div>
+                    <div class="field required"><label>Stop Name</label><input id="stopName" placeholder="Pickup/drop point name"></div>
+                </div>
+            </div>
+            <div class="transport-modal-section">
+                <div class="transport-modal-section-title"><i class="clock outline icon"></i>Timing & Fee</div>
+                <div class="four fields">
+                    <div class="field"><label>Pickup Time</label><div class="ui calendar transport-time-calendar" id="pickupTimeCal"><div class="ui input left icon"><i class="clock icon"></i><input id="pickupTime" type="text" placeholder="HH:MM"></div></div></div>
+                    <div class="field"><label>Drop Time</label><div class="ui calendar transport-time-calendar" id="dropTimeCal"><div class="ui input left icon"><i class="clock icon"></i><input id="dropTime" type="text" placeholder="HH:MM"></div></div></div>
+                    <div class="field"><label>Monthly Fee</label><input id="monthlyFee" type="number" step="0.01" value="0"></div>
+                    <div class="field"><label>Display Order</label><input id="displayOrder" type="number" value="0"></div>
+                </div>
+                <div class="field"><div class="ui checkbox"><input type="checkbox" id="stopIsActive" checked><label>Active</label></div></div>
+            </div>
+        </form>
+        <div class="actions class-modal-actions">
+            <div class="ui cancel button">Cancel</div>
+            <button class="ui green button" onclick="saveStop()">Submit<i class="checkmark icon"></i></button>
+        </div>
+    </div>
+</div>
+
+<div class="ui basic modal custom" id="deleteModal">
+    <div class="ui icon header">
+        <i class="trash alternate icon red"></i>
+        <span id="deleteTitle">Transport Details will be Deleted</span>
+    </div>
+    <div class="content">
+        <p style="text-align: center" id="deleteMessage">The transport detail will be deleted, are you sure to delete this record?</p>
+    </div>
+    <div class="actions">
+        <div class="ui red basic cancel inverted button">
+            <i class="remove icon"></i>
+            No
+        </div>
+        <input type="hidden" id="deleteKind">
+        <input type="hidden" id="deleteID">
+        <div class="ui green ok inverted button" onclick="deleteSelected()">
+            <i class="checkmark icon"></i>
+            Yes
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block js %}
+<script>
+let routeTable, stopTable;
+$(function () {
+    $('.menu .item').tab();
+    $('.ui.dropdown').dropdown();
+    $('.ui.checkbox').checkbox();
+    initTransportTimeCalendars();
+    routeTable = $('#RouteTable').DataTable({
+        dom: 'Blfrtip', scrollX: true, stateSave: true, processing: true, serverSide: true,
+        aaSorting: [[5, 'desc']], pageLength: 10,
+        ajax: "{% url 'transportAppAPI:RouteListJson' %}",
+        columnDefs: [
+            {"name":"routeCode","targets":0},{"name":"routeName","targets":1},{"name":"startPoint","targets":2},
+            {"name":"endPoint","targets":3},{"name":"isActive","targets":4},{"name":"lastUpdatedOn","targets":5},
+            {"name":"actions","targets":6,"orderable":false}
+        ]
+    });
+    stopTable = $('#StopTable').DataTable({
+        dom: 'Blfrtip', scrollX: true, stateSave: true, processing: true, serverSide: true,
+        aaSorting: [[5, 'asc']], pageLength: 10,
+        ajax: "{% url 'transportAppAPI:StopListJson' %}",
+        columnDefs: [
+            {"name":"route","targets":0},{"name":"stopName","targets":1},{"name":"pickupTime","targets":2},
+            {"name":"dropTime","targets":3},{"name":"monthlyFee","targets":4},{"name":"displayOrder","targets":5},
+            {"name":"isActive","targets":6},{"name":"actions","targets":7,"orderable":false}
+        ]
+    });
+    loadTransportOptions();
+});
+function formDataFrom(formID, mapping) {
+    const data = new FormData();
+    Object.keys(mapping).forEach(function (key) {
+        const selector = mapping[key], elm = $(selector);
+        data.append(key, elm.attr('type') === 'checkbox' ? elm.is(':checked') : elm.val());
+    });
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+    return data;
+}
+function timeFormatter(date) {
+    if (!date) return '';
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return hours + ':' + minutes;
+}
+function initTransportTimeCalendars() {
+    $('.transport-time-calendar').calendar({
+        type: 'time',
+        ampm: false,
+        formatter: { time: timeFormatter }
+    });
+}
+function loadTransportOptions() {
+    $.get("{% url 'transportAppAPI:transport_options_api' %}", function (response) {
+        const routes = (response.data || {}).routes || [];
+        const menu = $('#stopRouteDropdown .menu').empty();
+        routes.forEach(item => menu.append('<div class="item" data-value="' + item.id + '">' + item.text + '</div>'));
+        $('#stopRouteDropdown').dropdown('destroy').dropdown({fullTextSearch: true, forceSelection: false});
+    });
+}
+function showRouteModal(){ $('#routeForm').trigger('reset'); $('#routeID').val(''); $('#routeIsActive').prop('checked', true); $('#routeModal').modal('show'); }
+function showStopModal(){ $('#stopForm').trigger('reset'); $('#stopID').val(''); $('#stopRouteDropdown').dropdown('clear'); $('#stopIsActive').prop('checked', true); $('#stopModal').modal('show'); }
+function saveRoute(){
+    const data = formDataFrom('routeForm', {id:'#routeID', routeCode:'#routeCode', routeName:'#routeName', startPoint:'#startPoint', endPoint:'#endPoint', description:'#description', isActive:'#routeIsActive'});
+    $.ajax({url:"{% url 'transportAppAPI:routes_api' %}", type:'POST', data:data, contentType:false, processData:false,
+        success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); $('#routeModal').modal('hide'); routeTable.ajax.reload(null,false); loadTransportOptions(); } else addErrorNotification(r.message); },
+        error:function(x){ addErrorNotification((x.responseJSON || {}).message || 'Unable to save route.'); }});
+}
+function editRoute(id){ $.get("{% url 'transportAppAPI:route_detail_api' %}", {id:id}, function(r){ const d=r.data||{}; $('#routeID').val(d.id); $('#routeCode').val(d.routeCode); $('#routeName').val(d.routeName); $('#startPoint').val(d.startPoint); $('#endPoint').val(d.endPoint); $('#description').val(d.description); $('#routeIsActive').prop('checked', !!d.isActive); $('#routeModal').modal('show'); }); }
+function confirmDeleteRoute(id){ $('#deleteKind').val('route'); $('#deleteID').val(id); $('#deleteTitle').text('Route Details will be Deleted'); $('#deleteMessage').text('The Route will be deleted, are you sure to delete this Route?'); $('#deleteModal').modal('show'); }
+function saveStop(){
+    if(!$('#stopRouteID').val()){
+        addErrorNotification('Please select route before saving pickup/drop point.');
+        $('#stopRouteID').closest('.field').addClass('error');
+        return;
+    }
+    $('#stopRouteID').closest('.field').removeClass('error');
+    const data = formDataFrom('stopForm', {id:'#stopID', routeID:'#stopRouteID', stopName:'#stopName', pickupTime:'#pickupTime', dropTime:'#dropTime', monthlyFee:'#monthlyFee', displayOrder:'#displayOrder', isActive:'#stopIsActive'});
+    $.ajax({url:"{% url 'transportAppAPI:stops_api' %}", type:'POST', data:data, contentType:false, processData:false,
+        success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); $('#stopModal').modal('hide'); stopTable.ajax.reload(null,false); loadTransportOptions(); } else addErrorNotification(r.message); },
+        error:function(x){ addErrorNotification((x.responseJSON || {}).message || 'Unable to save stop.'); }});
+}
+function editStop(id){ $.get("{% url 'transportAppAPI:stop_detail_api' %}", {id:id}, function(r){ const d=r.data||{}; $('#stopID').val(d.id); $('#stopRouteDropdown').dropdown('set selected', String(d.routeID)); $('#stopName').val(d.stopName); $('#pickupTime').val(d.pickupTime); $('#dropTime').val(d.dropTime); $('#monthlyFee').val(d.monthlyFee); $('#displayOrder').val(d.displayOrder); $('#stopIsActive').prop('checked', !!d.isActive); $('#stopModal').modal('show'); }); }
+function confirmDeleteStop(id){ $('#deleteKind').val('stop'); $('#deleteID').val(id); $('#deleteTitle').text('Pickup/Drop Point Details will be Deleted'); $('#deleteMessage').text('The Pickup/Drop Point will be deleted, are you sure to delete this Pickup/Drop Point?'); $('#deleteModal').modal('show'); }
+function deleteSelected(){
+    let url = "{% url 'transportAppAPI:delete_stop_api' %}";
+    if($('#deleteKind').val() === 'route') url = "{% url 'transportAppAPI:delete_route_api' %}";
+    const data = new FormData(); data.append('id', $('#deleteID').val()); data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+    $.ajax({url:url, type:'POST', data:data, contentType:false, processData:false, success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); routeTable.ajax.reload(null,false); stopTable.ajax.reload(null,false); $('#deleteModal').modal('hide'); loadTransportOptions(); } else addErrorNotification(r.message); }});
+}
+</script>
+{% endblock %}

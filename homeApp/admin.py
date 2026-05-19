@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 from .license import build_license_context
-from .models import SchoolDetail, SchoolOwner, SchoolSession, SchoolSocialLink, WebPushSubscription
+from .models import AuditLog, SchoolDetail, SchoolOwner, SchoolSession, SchoolSocialLink, WebPushSubscription
 
 
 def _all_concrete_fields(model):
@@ -39,6 +39,14 @@ class AllFieldsAdmin(admin.ModelAdmin):
 @admin.register(SchoolOwner)
 class SchoolOwnerAdmin(AllFieldsAdmin):
     search_fields = ('=id', 'name', 'email', 'username', 'phoneNumber')
+
+
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    list_display = ('datetime', 'content_type', 'object_id', 'action', 'userID', 'schoolID', 'sessionID', 'ipAddress')
+    list_filter = ('action', 'content_type', 'schoolID', 'sessionID')
+    search_fields = ('=object_id', 'path', 'userID__username', 'content_type__app_label', 'content_type__model')
+    readonly_fields = ('datetime',)
 
 
 @admin.register(SchoolDetail)

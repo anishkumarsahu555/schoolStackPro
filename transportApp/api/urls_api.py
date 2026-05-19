@@ -1,0 +1,41 @@
+from django.urls import path
+
+from transportApp.api import views_api
+
+
+urlpatterns = [
+    path('dashboard_summary', views_api.dashboard_summary, name='dashboard_summary'),
+    path('report_summary', views_api.transport_report_summary_api, name='transport_report_summary_api'),
+    path('passenger_manifest_csv', views_api.passenger_manifest_csv, name='passenger_manifest_csv'),
+    path('RouteListJson', views_api.TransportRouteListJson.as_view(), name='RouteListJson'),
+    path('StopListJson', views_api.TransportStopListJson.as_view(), name='StopListJson'),
+    path('DriverListJson', views_api.TransportDriverListJson.as_view(), name='DriverListJson'),
+    path('FeeMappingListJson', views_api.TransportFeeMappingListJson.as_view(), name='FeeMappingListJson'),
+    path('VehicleListJson', views_api.TransportVehicleListJson.as_view(), name='VehicleListJson'),
+    path('AssignmentListJson', views_api.TransportAssignmentListJson.as_view(), name='AssignmentListJson'),
+    path('FeeRecordListJson', views_api.TransportFeeRecordListJson.as_view(), name='FeeRecordListJson'),
+    path('routes', views_api.routes_api, name='routes_api'),
+    path('route_detail', views_api.route_detail_api, name='route_detail_api'),
+    path('delete_route', views_api.delete_route_api, name='delete_route_api'),
+    path('stops', views_api.stops_api, name='stops_api'),
+    path('stop_detail', views_api.stop_detail_api, name='stop_detail_api'),
+    path('delete_stop', views_api.delete_stop_api, name='delete_stop_api'),
+    path('drivers', views_api.drivers_api, name='drivers_api'),
+    path('driver_detail', views_api.driver_detail_api, name='driver_detail_api'),
+    path('delete_driver', views_api.delete_driver_api, name='delete_driver_api'),
+    path('fee_mappings', views_api.fee_mappings_api, name='fee_mappings_api'),
+    path('fee_mapping_detail', views_api.fee_mapping_detail_api, name='fee_mapping_detail_api'),
+    path('delete_fee_mapping', views_api.delete_fee_mapping_api, name='delete_fee_mapping_api'),
+    path('vehicles', views_api.vehicles_api, name='vehicles_api'),
+    path('vehicle_detail', views_api.vehicle_detail_api, name='vehicle_detail_api'),
+    path('delete_vehicle', views_api.delete_vehicle_api, name='delete_vehicle_api'),
+    path('assignments', views_api.assignments_api, name='assignments_api'),
+    path('assignment_detail', views_api.assignment_detail_api, name='assignment_detail_api'),
+    path('delete_assignment', views_api.delete_assignment_api, name='delete_assignment_api'),
+    path('generate_fee_records', views_api.generate_transport_fee_records_api, name='generate_transport_fee_records_api'),
+    path('fee_record_detail', views_api.transport_fee_record_detail_api, name='transport_fee_record_detail_api'),
+    path('record_fee_payment', views_api.record_transport_fee_payment_api, name='record_transport_fee_payment_api'),
+    path('update_fee_status', views_api.update_transport_fee_status_api, name='update_transport_fee_status_api'),
+    path('options', views_api.transport_options_api, name='transport_options_api'),
+    path('assignee_options', views_api.assignee_options_api, name='assignee_options_api'),
+]

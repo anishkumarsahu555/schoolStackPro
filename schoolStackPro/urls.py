@@ -36,6 +36,8 @@ urlpatterns = [
     path('teacher/api/', include(('teacherApp.api.urls_api', 'teacherApp'), namespace='teacherAppAPI')),
     path('student/', include(('studentApp.urls', 'studentApp'), namespace='studentApp')),
     path('student/api/', include(('studentApp.api.urls_api', 'studentApp'), namespace='studentAppAPI')),
+    path('transport/', include(('transportApp.urls', 'transportApp'), namespace='transportApp')),
+    path('transport/api/', include(('transportApp.api.urls_api', 'transportApp'), namespace='transportAppAPI')),
     path('', include('pwa.urls')),  # You MUST use an empty string as the URL prefix
     path('management/api/cached/', include(('managementApp.cached_api.cached_urls', 'managementApp'), namespace='managementAppCachedAPI')),
 

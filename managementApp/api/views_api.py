@@ -4,6 +4,7 @@ import json
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction, IntegrityError, connection
 from django.db.models import Q, Prefetch, Sum, DecimalField, Value
@@ -34,7 +35,7 @@ from financeApp.models import (
     PaymentReceipt,
     StudentCharge,
 )
-from homeApp.models import SchoolDetail, SchoolSession
+from homeApp.models import AuditLog, SchoolDetail, SchoolSession
 from homeApp.owner_access import school_owner_user_q
 from homeApp.session_utils import get_session_month_sequence
 from homeApp.push_service import send_event_push_notifications
@@ -262,6 +263,234 @@ def _management_edit_delete_buttons(*, edit_handler, delete_handler=None):
             )
         )
     return ''.join(actions)
+
+
+@login_required
+def audit_log_list_api(request):
+    try:
+        school_id = _current_school_id(request)
+        session_id = _current_session_id(request)
+        logs = AuditLog.objects.select_related('content_type', 'userID', 'schoolID', 'sessionID').order_by('-datetime')
+        if school_id:
+            logs = logs.filter(Q(schoolID_id=school_id) | Q(schoolID__isnull=True))
+        if session_id:
+            logs = logs.filter(Q(sessionID_id=session_id) | Q(sessionID__isnull=True))
+
+        action = (request.GET.get('action') or '').strip()
+        model_label = (request.GET.get('model') or '').strip()
+        search = (request.GET.get('search') or '').strip()
+        if action:
+            logs = logs.filter(action=action)
+        if model_label:
+            app_label, _, model_name = model_label.partition('.')
+            logs = logs.filter(content_type__app_label=app_label, content_type__model=model_name.lower())
+        if search:
+            search_q = (
+                Q(action__icontains=search)
+                | Q(userID__username__icontains=search)
+                | Q(path__icontains=search)
+                | Q(content_type__app_label__icontains=search)
+                | Q(content_type__model__icontains=search)
+            )
+            if search.isdigit():
+                search_q |= Q(object_id=int(search))
+            logs = logs.filter(search_q)
+
+        rows = []
+        for item in logs[:500]:
+            model_name = f'{item.content_type.app_label}.{item.content_type.model}'
+            user_label = item.userID.get_full_name() or item.userID.username if item.userID else 'System'
+            changed_fields = ', '.join((item.changes or {}).keys()) or 'Snapshot'
+            rows.append({
+                'id': item.id,
+                'datetime': item.datetime.strftime('%d-%m-%Y %I:%M %p') if item.datetime else '',
+                'model': model_name,
+                'objectID': item.object_id,
+                'action': item.get_action_display(),
+                'changedFields': changed_fields,
+                'user': user_label,
+                'path': item.path or 'N/A',
+                'ipAddress': item.ipAddress or 'N/A',
+                'actions': (
+                    f'<button data-tooltip="View Changes" data-position="left center" data-variation="mini" '
+                    f'onclick="viewAuditDetail({item.id})" class="ui circular blue icon button">'
+                    f'<i class="eye icon"></i></button>'
+                ),
+            })
+
+        model_options = [
+            {'id': f'{ct.app_label}.{ct.model}', 'text': f'{ct.app_label}.{ct.model}'}
+            for ct in ContentType.objects.filter(app_label__in=[
+                'homeApp', 'managementApp', 'financeApp', 'certificateApp',
+                'teacherApp', 'studentApp', 'chatApp', 'transportApp',
+            ]).order_by('app_label', 'model')
+        ]
+        logger.info(f'Audit log list fetched count={len(rows)} school={school_id} session={session_id}')
+        return SuccessResponse('Audit logs loaded.', data={'rows': rows, 'modelOptions': model_options}).to_json_response()
+    except Exception as exc:
+        logger.exception(f'Error fetching audit logs: {exc}')
+        return ErrorResponse('Unable to load audit logs.', status_code=500).to_json_response()
+
+
+class AuditLogListJson(BaseDatatableView):
+    order_columns = ['datetime', 'content_type__app_label', 'object_id', 'action', 'changes', 'userID__username', 'path', 'ipAddress']
+
+    def get_initial_queryset(self):
+        school_id = _current_school_id(self.request)
+        session_id = _current_session_id(self.request)
+        logs = AuditLog.objects.select_related('content_type', 'userID', 'schoolID', 'sessionID').order_by('-datetime')
+        if school_id:
+            logs = logs.filter(Q(schoolID_id=school_id) | Q(schoolID__isnull=True))
+        if session_id:
+            logs = logs.filter(Q(sessionID_id=session_id) | Q(sessionID__isnull=True))
+        action = (self.request.GET.get('action') or '').strip()
+        model_label = (self.request.GET.get('model') or '').strip()
+        if action:
+            logs = logs.filter(action=action)
+        if model_label:
+            app_label, _, model_name = model_label.partition('.')
+            logs = logs.filter(content_type__app_label=app_label, content_type__model=model_name.lower())
+        return logs
+
+    def filter_queryset(self, qs):
+        search = self.request.GET.get('search[value]', None)
+        extra_search = (self.request.GET.get('auditSearch') or '').strip()
+        search = extra_search or search
+        if search:
+            search_q = (
+                Q(action__icontains=search)
+                | Q(userID__username__icontains=search)
+                | Q(path__icontains=search)
+                | Q(content_type__app_label__icontains=search)
+                | Q(content_type__model__icontains=search)
+            )
+            if str(search).isdigit():
+                search_q |= Q(object_id=int(search))
+            qs = qs.filter(search_q)
+        return qs
+
+    def prepare_results(self, qs):
+        rows = []
+        for item in qs:
+            model_name = f'{item.content_type.app_label}.{item.content_type.model}'
+            user_label = item.userID.get_full_name() or item.userID.username if item.userID else 'System'
+            changed_fields = ', '.join((item.changes or {}).keys()) or 'Snapshot'
+            action = (
+                f'<button data-inverted="" data-tooltip="View Changes" data-position="left center" '
+                f'data-variation="mini" style="font-size:10px;" onclick="viewAuditDetail({item.id})" '
+                f'class="ui circular facebook icon button blue"><i class="eye icon"></i></button>'
+            )
+            rows.append([
+                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p') if item.datetime else 'N/A'),
+                escape(model_name),
+                escape(item.object_id),
+                escape(item.get_action_display()),
+                escape(changed_fields),
+                escape(user_label),
+                escape(item.path or 'N/A'),
+                escape(item.ipAddress or 'N/A'),
+                action,
+            ])
+        return rows
+
+
+def _audit_display_value(value):
+    if value is None:
+        return ''
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, indent=2, ensure_ascii=False)
+    return str(value)
+
+
+def _audit_comparison_rows(audit_log):
+    changes = audit_log.changes or {}
+    snapshot = audit_log.snapshot or {}
+    rows = []
+
+    if audit_log.action in {'update', 'soft_delete', 'restore'}:
+        for field_name, values in changes.items():
+            if isinstance(values, dict) and ('old' in values or 'new' in values):
+                old_value = values.get('old')
+                new_value = values.get('new')
+            else:
+                old_value = snapshot.get(field_name)
+                new_value = values
+            rows.append({
+                'field': field_name,
+                'oldValue': _audit_display_value(old_value),
+                'newValue': _audit_display_value(new_value),
+                'changed': old_value != new_value,
+            })
+        return rows
+
+    if audit_log.action == 'create':
+        source = changes or snapshot
+        for field_name, value in source.items():
+            rows.append({
+                'field': field_name,
+                'oldValue': '',
+                'newValue': _audit_display_value(value),
+                'changed': True,
+            })
+        return rows
+
+    if audit_log.action == 'delete':
+        for field_name, value in snapshot.items():
+            rows.append({
+                'field': field_name,
+                'oldValue': _audit_display_value(value),
+                'newValue': '',
+                'changed': True,
+            })
+        return rows
+
+    for field_name, value in snapshot.items():
+        rows.append({
+            'field': field_name,
+            'oldValue': _audit_display_value(value),
+            'newValue': _audit_display_value(value),
+            'changed': False,
+        })
+    return rows
+
+
+@login_required
+def audit_log_detail_api(request):
+    try:
+        school_id = _current_school_id(request)
+        session_id = _current_session_id(request)
+        audit_id = request.GET.get('id')
+        log = AuditLog.objects.select_related('content_type', 'userID', 'schoolID', 'sessionID').filter(pk=audit_id).first()
+        if not log:
+            logger.error(f'Audit log detail not found id={audit_id}')
+            return ErrorResponse('Audit log not found.', status_code=404).to_json_response()
+        if school_id and log.schoolID_id and log.schoolID_id != school_id:
+            logger.warning(f'Audit log access denied id={audit_id} user={request.user.id}')
+            return ErrorResponse('Audit log not found.', status_code=404).to_json_response()
+        if session_id and log.sessionID_id and log.sessionID_id != session_id:
+            logger.warning(f'Audit log session access denied id={audit_id} user={request.user.id}')
+            return ErrorResponse('Audit log not found.', status_code=404).to_json_response()
+
+        model_name = f'{log.content_type.app_label}.{log.content_type.model}'
+        user_label = log.userID.get_full_name() or log.userID.username if log.userID else 'System'
+        data = {
+            'id': log.id,
+            'datetime': log.datetime.strftime('%d-%m-%Y %I:%M %p') if log.datetime else '',
+            'model': model_name,
+            'objectID': log.object_id,
+            'action': log.get_action_display(),
+            'rawAction': log.action,
+            'user': user_label,
+            'path': log.path or 'N/A',
+            'ipAddress': log.ipAddress or 'N/A',
+            'userAgent': log.userAgent or 'N/A',
+            'comparisonRows': _audit_comparison_rows(log),
+        }
+        logger.info(f'Audit log detail fetched id={log.id} model={model_name} object={log.object_id}')
+        return SuccessResponse('Audit log detail loaded.', data=data).to_json_response()
+    except Exception as exc:
+        logger.exception(f'Error fetching audit log detail: {exc}')
+        return ErrorResponse('Unable to load audit log detail.', status_code=500).to_json_response()
 
 
 def _safe_int(value, default=0):

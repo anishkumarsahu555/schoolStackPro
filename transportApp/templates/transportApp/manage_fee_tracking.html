@@ -1,0 +1,145 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Transport Fee Tracking</title>{% endblock %}
+{% block page_title %}Transport Fee Tracking{% endblock %}
+{% block page_subtitle %}Generate monthly transport dues and track pending, paid, waived, or cancelled fees{% endblock %}
+{% block page_actions %}
+    <button class="ui green button class-page-action" type="button" onclick="generateFeeRecords()">
+        <i class="sync icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Generate Monthly Fees</span><span class="mobile-label">Generate</span></span>
+    </button>
+{% endblock %}
+{% block body %}
+{% include 'transportApp/_management_table_styles.html' %}
+<div class="ui right aligned basic  grid">
+    <div class="sixteen wide column">
+        <div class="ui tab active" data-tab="user">
+            <div class="ui segment">
+                <form class="ui tiny form">{% csrf_token %}
+                    <div class="five fields">
+                        <div class="field"><label>Month</label><select class="ui fluid search selection dropdown" id="filterFeeMonth"></select></div>
+                        <div class="field"><label>Year</label><input id="filterFeeYear" type="number"></div>
+                        <div class="field"><label>Status</label><select class="ui fluid search selection dropdown" id="filterStatus"><option value="">All</option><option value="pending">Pending</option><option value="partial">Partial</option><option value="paid">Paid</option><option value="waived">Waived</option><option value="cancelled">Cancelled</option></select></div>
+                        <div class="field"><label>Type</label><select class="ui fluid search selection dropdown" id="filterAssigneeType"><option value="">All</option><option value="student">Student</option><option value="teacher">Staff</option></select></div>
+                        <div class="field" style="padding-top:1.55rem;"><button type="button" class="ui mini green button" onclick="reloadFeeRecords()"><i class="search icon"></i>Search</button><button type="button" class="ui mini red button" onclick="clearFeeFilters()"><i class="times circle icon"></i>Clear</button></div>
+                    </div>
+                </form>
+            </div>
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header"><i class="money bill alternate outline icon"></i>Transport fee list</h4>
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="FeeRecordTable" style="margin-top: 5px;width:100%">
+                        <thead><tr><th>Period</th><th>Type</th><th>Name</th><th>Route</th><th>Point</th><th>Net</th><th>Paid</th><th>Due</th><th>Status</th><th>Due Date</th><th>Actions</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ui modal" id="paymentModal">
+    <i class="close icon"></i>
+    <div class="header">Record Transport Fee Payment</div>
+    <div class="content">
+        <form class="ui tiny form" id="paymentForm">{% csrf_token %}
+            <input type="hidden" id="feeRecordID">
+            <div class="ui small message" id="feeRecordSummary"></div>
+            <div class="transport-modal-section">
+                <div class="transport-modal-section-title"><i class="money bill alternate outline icon"></i>Payment Detail</div>
+                <div class="four fields">
+                    <div class="field required"><label>Paid Amount</label><input id="paidAmount" type="number" step="0.01" value="0"></div>
+                    <div class="field"><label>Payment Date</label><div class="ui calendar transport-date-calendar" id="paymentDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input id="paymentDate" type="text" placeholder="YYYY-MM-DD"></div></div></div>
+                    <div class="field"><label>Payment Mode</label><input id="paymentMode" placeholder="Cash / UPI / Bank"></div>
+                    <div class="field"><label>Reference No</label><input id="referenceNo"></div>
+                </div>
+            </div>
+            <div class="transport-modal-section">
+                <div class="transport-modal-section-title"><i class="sticky note outline icon"></i>Notes</div>
+                <div class="field"><label>Notes</label><textarea id="paymentNotes" rows="2"></textarea></div>
+            </div>
+        </form>
+        <div class="actions class-modal-actions">
+            <div class="ui cancel button">Cancel</div>
+            <button class="ui green button" onclick="recordPayment()">Submit<i class="checkmark icon"></i></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block js %}
+<script>
+let feeRecordTable;
+const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+$(function(){
+    const today = new Date();
+    for(let i=1;i<=12;i++) $('#filterFeeMonth').append('<option value="'+i+'">'+monthNames[i-1]+'</option>');
+    $('#filterFeeMonth').dropdown({fullTextSearch: true});
+    $('#filterStatus').dropdown({fullTextSearch: true});
+    $('#filterAssigneeType').dropdown({fullTextSearch: true});
+    initTransportCalendars();
+    $('#filterFeeMonth').dropdown('set selected', String(today.getMonth()+1));
+    $('#filterFeeYear').val(today.getFullYear());
+    feeRecordTable = $('#FeeRecordTable').DataTable({
+        dom: 'Blfrtip', scrollX: true, stateSave: true, processing: true, serverSide: true,
+        aaSorting: [[0, 'desc']], pageLength: 10,
+        ajax:{url:"{% url 'transportAppAPI:FeeRecordListJson' %}", data:function(d){ d.feeMonth=$('#filterFeeMonth').val(); d.feeYear=$('#filterFeeYear').val(); d.status=$('#filterStatus').val(); d.assigneeType=$('#filterAssigneeType').val(); }},
+        columnDefs:[
+            {"name":"period","targets":0},{"name":"assigneeType","targets":1},{"name":"assigneeName","targets":2},
+            {"name":"route","targets":3},{"name":"point","targets":4},{"name":"netAmount","targets":5},
+            {"name":"paidAmount","targets":6},{"name":"balanceAmount","targets":7},{"name":"status","targets":8},
+            {"name":"dueDate","targets":9},{"name":"actions","targets":10,"orderable":false}
+        ]
+    });
+});
+function initTransportCalendars(){
+    $('.transport-date-calendar').calendar({
+        monthFirst: false,
+        type: 'date',
+        formatter: { date: function(date){ if(!date) return ''; const m=String(date.getMonth()+1).padStart(2,'0'); const d=String(date.getDate()).padStart(2,'0'); return date.getFullYear()+'-'+m+'-'+d; } }
+    });
+}
+function reloadFeeRecords(){ feeRecordTable.ajax.reload(null,false); }
+function clearFeeFilters(){ $('#filterStatus').dropdown('clear'); $('#filterAssigneeType').dropdown('clear'); reloadFeeRecords(); }
+function generateFeeRecords(){
+    const data = new FormData();
+    data.append('feeMonth', $('#filterFeeMonth').val());
+    data.append('feeYear', $('#filterFeeYear').val());
+    data.append('assigneeType', $('#filterAssigneeType').val());
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+    $.ajax({url:"{% url 'transportAppAPI:generate_transport_fee_records_api' %}", type:'POST', data:data, contentType:false, processData:false,
+        success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); reloadFeeRecords(); } else addErrorNotification(r.message); },
+        error:function(x){ addErrorNotification((x.responseJSON||{}).message || 'Unable to generate transport fee records.'); }});
+}
+function showPaymentModal(id){
+    $.get("{% url 'transportAppAPI:transport_fee_record_detail_api' %}", {id:id}, function(r){
+        if(!r.success){ addErrorNotification(r.message); return; }
+        const d = r.data || {};
+        $('#feeRecordID').val(d.id);
+        $('#feeRecordSummary').html('<b>'+d.assigneeName+'</b> / '+d.period+'<br>Net: '+d.netAmount+' | Paid: '+d.paidAmount+' | Due: '+d.balanceAmount);
+        $('#paidAmount').val(d.balanceAmount || d.netAmount || 0);
+        $('#paymentDate').val(new Date().toISOString().slice(0,10));
+        $('#paymentMode').val(d.paymentMode || 'Cash');
+        $('#referenceNo').val(d.referenceNo || '');
+        $('#paymentNotes').val(d.notes || '');
+        $('#paymentModal').modal('show');
+    });
+}
+function recordPayment(){
+    const data = new FormData();
+    ['feeRecordID','paidAmount','paymentDate','paymentMode','referenceNo'].forEach(id => data.append(id === 'feeRecordID' ? 'id' : id, $('#'+id).val()));
+    data.append('notes', $('#paymentNotes').val());
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+    $.ajax({url:"{% url 'transportAppAPI:record_transport_fee_payment_api' %}", type:'POST', data:data, contentType:false, processData:false,
+        success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); $('#paymentModal').modal('hide'); reloadFeeRecords(); } else addErrorNotification(r.message); },
+        error:function(x){ addErrorNotification((x.responseJSON||{}).message || 'Unable to record payment.'); }});
+}
+function updateFeeStatus(id, status){
+    const data = new FormData();
+    data.append('id', id);
+    data.append('status', status);
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+    $.ajax({url:"{% url 'transportAppAPI:update_transport_fee_status_api' %}", type:'POST', data:data, contentType:false, processData:false,
+        success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); reloadFeeRecords(); } else addErrorNotification(r.message); }});
+}
+function waiveFeeRecord(id){ updateFeeStatus(id, 'waived'); }
+function cancelFeeRecord(id){ updateFeeStatus(id, 'cancelled'); }
+</script>
+{% endblock %}

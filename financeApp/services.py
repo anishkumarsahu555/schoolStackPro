@@ -561,6 +561,7 @@ def bootstrap_school_finance(*, school_id, session_id, user_obj=None):
     fee_head_specs = {
         'ADMISSION_FEE': ('Admission Fee', 'admission', accounts['ADMISSION_FEE_INCOME']),
         'MONTHLY_STUDENT_FEE': ('Monthly Student Fee', 'tuition', accounts['TUITION_FEE_INCOME']),
+        'TRANSPORT_FEE': ('Transport Fee', 'transport', accounts['MISC_FEE_INCOME']),
         'MISC_FEE': ('Misc Fee', 'misc', accounts['MISC_FEE_INCOME']),
     }
     fee_heads = {}

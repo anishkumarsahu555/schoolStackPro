@@ -69,6 +69,73 @@
     <div class="nav-group">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
+                <span>Audit Manager</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'audit_manager' %}active{% endif %}"
+               href="{% url 'managementApp:audit_manager' %}">
+                <i class="history icon"></i>
+                <span>Audit Logs</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Manage Transport</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.namespace == 'transportApp' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+               href="{% url 'transportApp:dashboard' %}">
+                <i class="bus icon"></i>
+                <span>Transport Dashboard</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'transportApp' and request.resolver_match.url_name == 'manage_routes' %}active{% endif %}"
+               href="{% url 'transportApp:manage_routes' %}">
+                <i class="route icon"></i>
+                <span>Routes &amp; Stops</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'transportApp' and request.resolver_match.url_name == 'manage_vehicles' %}active{% endif %}"
+               href="{% url 'transportApp:manage_vehicles' %}">
+                <i class="shuttle van icon"></i>
+                <span>Vehicles</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'transportApp' and request.resolver_match.url_name == 'manage_drivers' %}active{% endif %}"
+               href="{% url 'transportApp:manage_drivers' %}">
+                <i class="id card icon"></i>
+                <span>Drivers</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'transportApp' and request.resolver_match.url_name == 'manage_assignments' %}active{% endif %}"
+               href="{% url 'transportApp:manage_assignments' %}">
+                <i class="users icon"></i>
+                <span>Assignments</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'transportApp' and request.resolver_match.url_name == 'manage_fee_mapping' %}active{% endif %}"
+               href="{% url 'transportApp:manage_fee_mapping' %}">
+                <i class="rupee sign icon"></i>
+                <span>Fee Mapping</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'transportApp' and request.resolver_match.url_name == 'manage_fee_tracking' %}active{% endif %}"
+               href="{% url 'transportApp:manage_fee_tracking' %}">
+                <i class="money bill alternate outline icon"></i>
+                <span>Fee Tracking</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'transportApp' and request.resolver_match.url_name == 'manage_reports' %}active{% endif %}"
+               href="{% url 'transportApp:manage_reports' %}">
+                <i class="chart bar icon"></i>
+                <span>Reports</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
                 <span>Classes</span>
             </span>
             <i class="chevron down icon nav-section-chevron"></i>

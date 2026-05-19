@@ -1,0 +1,935 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Transport Reports</title>{% endblock %}
+{% block page_title %}Transport Reports{% endblock %}
+{% block page_subtitle %}Route capacity, vehicle utilization, and passenger manifest{% endblock %}
+{% block page_actions %}
+    <button class="ui blue button class-page-action" type="button" onclick="printManifest()">
+        <i class="print icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Print Manifest</span><span class="mobile-label">Print</span></span>
+    </button>
+    <button class="ui green button class-page-action" type="button" onclick="exportManifest()">
+        <i class="download icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Export CSV</span><span class="mobile-label">Export</span></span>
+    </button>
+{% endblock %}
+{% block body %}
+{% include 'transportApp/_management_table_styles.html' %}
+<style>
+    .transport-reports {
+        display: grid;
+        gap: 1rem;
+        margin: 0 auto;
+        max-width: 1460px;
+        text-align: left;
+    }
+    .transport-report-panel {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+        border: 1px solid var(--app-border, rgba(34, 36, 38, .10));
+        border-radius: var(--app-radius-md, 14px);
+        box-shadow: var(--app-shadow-sm, 0 6px 18px rgba(15, 23, 42, 0.06));
+        padding: 1rem 1.05rem;
+    }
+    .transport-report-panel-head {
+        align-items: center;
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+    .transport-report-title {
+        align-items: center;
+        color: #1f2937;
+        display: flex;
+        font-size: 14px;
+        font-weight: 850;
+        gap: 0.45rem;
+        margin: 0;
+    }
+    .transport-report-note {
+        color: #667085;
+        font-size: 12px;
+        font-weight: 750;
+    }
+    .transport-report-filter-grid {
+        display: grid;
+        gap: 0.8rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .transport-report-filter-grid .field {
+        margin: 0 !important;
+        min-width: 0;
+        width: auto !important;
+    }
+    .transport-report-filter-grid .ui.dropdown,
+    .transport-report-filter-grid select {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+    .transport-report-filter-grid .ui.dropdown > .text {
+        max-width: calc(100% - 2rem);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .transport-filter-actions {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin-top: 0.95rem;
+    }
+    .transport-report-summary {
+        display: grid;
+        gap: 0.8rem;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        text-align: left;
+    }
+    .transport-report-metric {
+        align-items: flex-start;
+        background: #fff;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: var(--app-radius-md, 14px);
+        display: grid;
+        gap: 0.7rem;
+        grid-template-columns: auto 1fr;
+        min-height: 96px;
+        padding: 0.9rem 0.95rem;
+    }
+    .transport-report-metric .icon-wrap {
+        align-items: center;
+        background: rgba(33, 133, 208, 0.10);
+        border-radius: 6px;
+        color: #2185d0;
+        display: flex;
+        height: 34px;
+        justify-content: center;
+        width: 34px;
+    }
+    .transport-report-metric .label {
+        color: #667085;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+    .transport-report-metric .value {
+        color: #111827;
+        font-size: 24px;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-top: 4px;
+    }
+    .transport-report-metric .sub {
+        color: #667085;
+        font-size: 11px;
+        font-weight: 700;
+        margin-top: 3px;
+    }
+    .transport-report-table-wrap {
+        border: 1px solid rgba(34, 36, 38, .12);
+        border-radius: 6px;
+        max-height: 420px;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .transport-report-table-wrap table {
+        margin: 0 !important;
+    }
+    .transport-report-table-wrap thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #f9fafb !important;
+        color: #475467 !important;
+        font-size: 11px;
+        font-weight: 850 !important;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+    .transport-report-table-wrap tbody td {
+        color: #1f2937;
+        font-weight: 700;
+        vertical-align: middle;
+    }
+    .transport-report-empty {
+        align-items: center;
+        color: #667085;
+        display: flex;
+        font-size: 13px;
+        font-weight: 750;
+        justify-content: center;
+        min-height: 62px;
+    }
+    .transport-manifest-name {
+        min-width: 150px;
+    }
+    .transport-type-pill {
+        border-radius: 999px;
+        display: inline-flex;
+        font-size: 11px;
+        font-weight: 850;
+        padding: 4px 9px;
+        text-transform: uppercase;
+    }
+    .transport-type-pill.student {
+        background: rgba(33, 133, 208, .10);
+        color: #1f6fb2;
+    }
+    .transport-type-pill.teacher {
+        background: rgba(33, 186, 69, .12);
+        color: #168334;
+    }
+    .transport-progress {
+        min-width: 120px;
+    }
+    .transport-progress-track {
+        height: 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e5e7eb;
+    }
+    .transport-progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: #21ba45;
+    }
+    .transport-progress-fill.warning { background: #fbbd08; }
+    .transport-progress-fill.danger { background: #db2828; }
+    .transport-progress-text {
+        color: #4b5563;
+        font-size: 11px;
+        font-weight: 700;
+        margin-top: 3px;
+    }
+    .transport-print-manifest {
+        display: none;
+    }
+    .print-manifest-header {
+        border-bottom: 2px solid #111827;
+        display: grid;
+        gap: 0.35rem;
+        padding-bottom: 10px;
+        text-align: center;
+    }
+    .print-manifest-title {
+        color: #111827;
+        font-size: 20px;
+        font-weight: 850;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+    .print-manifest-subtitle {
+        color: #374151;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .print-manifest-meta,
+    .print-manifest-summary {
+        display: grid;
+        gap: 0;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-top: 10px;
+    }
+    .print-meta-item,
+    .print-summary-item {
+        border: 1px solid #d1d5db;
+        min-height: 44px;
+        padding: 6px 8px;
+    }
+    .print-meta-label,
+    .print-summary-label {
+        color: #6b7280;
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .print-meta-value,
+    .print-summary-value {
+        color: #111827;
+        font-size: 12px;
+        font-weight: 800;
+        margin-top: 3px;
+    }
+    .print-manifest-table {
+        border-collapse: collapse;
+        margin-top: 12px;
+        width: 100%;
+    }
+    .print-manifest-table th,
+    .print-manifest-table td {
+        border: 1px solid #d1d5db;
+        color: #111827;
+        font-size: 10px;
+        line-height: 1.3;
+        padding: 5px 6px;
+        text-align: left;
+        vertical-align: top;
+    }
+    .print-manifest-table th {
+        background: #f3f4f6;
+        font-size: 9px;
+        font-weight: 850;
+        text-transform: uppercase;
+    }
+    .print-passenger-name {
+        font-weight: 850;
+    }
+    .print-passenger-sub {
+        color: #4b5563;
+        font-size: 9px;
+        margin-top: 2px;
+    }
+    .print-signature-grid {
+        display: grid;
+        gap: 24px;
+        grid-template-columns: repeat(3, 1fr);
+        margin-top: 34px;
+    }
+    .print-signature-line {
+        border-top: 1px solid #111827;
+        color: #374151;
+        font-size: 10px;
+        font-weight: 800;
+        padding-top: 6px;
+        text-align: center;
+    }
+    html[data-theme="dark"] .transport-report-panel,
+    html[data-theme="dark"] .transport-report-metric,
+    body.dark .transport-report-metric,
+    body.dark .transport-report-panel,
+    .dark-mode .transport-report-panel,
+    .dark-mode .transport-report-metric {
+        background: #111827;
+        border-color: #334155;
+    }
+    html[data-theme="dark"] .transport-report-title,
+    html[data-theme="dark"] .transport-report-metric .value,
+    body.dark .transport-report-metric .value,
+    body.dark .transport-report-title,
+    .dark-mode .transport-report-title,
+    .dark-mode .transport-report-metric .value {
+        color: #f8fafc;
+    }
+    html[data-theme="dark"] .transport-report-note,
+    html[data-theme="dark"] .transport-report-metric .label,
+    html[data-theme="dark"] .transport-report-metric .sub,
+    html[data-theme="dark"] .transport-progress-text,
+    html[data-theme="dark"] .transport-report-empty,
+    html[data-theme="dark"] .transport-report-filters .field > label,
+    body.dark .transport-report-metric .label,
+    body.dark .transport-report-metric .sub,
+    body.dark .transport-report-note,
+    body.dark .transport-report-empty,
+    body.dark .transport-report-filters .field > label,
+    .dark-mode .transport-report-metric .label,
+    .dark-mode .transport-report-metric .sub,
+    .dark-mode .transport-report-note,
+    .dark-mode .transport-report-empty,
+    .dark-mode .transport-report-filters .field > label,
+    body.dark .transport-progress-text,
+    .dark-mode .transport-progress-text {
+        color: #cbd5e1;
+    }
+    html[data-theme="dark"] .transport-report-table-wrap,
+    body.dark .transport-report-table-wrap,
+    .dark-mode .transport-report-table-wrap {
+        border-color: #334155;
+    }
+    html[data-theme="dark"] .transport-report-table-wrap table.ui.table,
+    body.dark .transport-report-table-wrap table.ui.table,
+    .dark-mode .transport-report-table-wrap table.ui.table {
+        background: #0f172a;
+        color: #e5e7eb;
+    }
+    html[data-theme="dark"] .transport-report-table-wrap thead th,
+    body.dark .transport-report-table-wrap thead th,
+    .dark-mode .transport-report-table-wrap thead th {
+        background: #172033 !important;
+        color: #cbd5e1 !important;
+    }
+    html[data-theme="dark"] .transport-report-table-wrap tbody td,
+    body.dark .transport-report-table-wrap tbody td,
+    .dark-mode .transport-report-table-wrap tbody td {
+        background: #0f172a;
+        color: #e5e7eb;
+    }
+    html[data-theme="dark"] .transport-report-table-wrap table.ui.celled.table tr td,
+    html[data-theme="dark"] .transport-report-table-wrap table.ui.celled.table tr th,
+    body.dark .transport-report-table-wrap table.ui.celled.table tr td,
+    body.dark .transport-report-table-wrap table.ui.celled.table tr th,
+    .dark-mode .transport-report-table-wrap table.ui.celled.table tr td,
+    .dark-mode .transport-report-table-wrap table.ui.celled.table tr th {
+        border-color: #334155;
+    }
+    html[data-theme="dark"] .transport-report-table-wrap tbody tr:hover td,
+    body.dark .transport-report-table-wrap tbody tr:hover td,
+    .dark-mode .transport-report-table-wrap tbody tr:hover td {
+        background: #172033;
+    }
+    html[data-theme="dark"] .transport-progress-track,
+    body.dark .transport-progress-track,
+    .dark-mode .transport-progress-track {
+        background: #334155;
+    }
+    html[data-theme="dark"] .transport-report-metric .icon-wrap,
+    body.dark .transport-report-metric .icon-wrap,
+    .dark-mode .transport-report-metric .icon-wrap {
+        background: rgba(59, 130, 246, 0.18);
+        color: #93c5fd;
+    }
+    html[data-theme="dark"] .transport-report-filters .ui.selection.dropdown,
+    html[data-theme="dark"] .transport-report-filters .ui.selection.dropdown .menu,
+    html[data-theme="dark"] .transport-report-filters .ui.input > input,
+    body.dark .transport-report-filters .ui.selection.dropdown,
+    body.dark .transport-report-filters .ui.selection.dropdown .menu,
+    body.dark .transport-report-filters .ui.input > input,
+    .dark-mode .transport-report-filters .ui.selection.dropdown,
+    .dark-mode .transport-report-filters .ui.selection.dropdown .menu,
+    .dark-mode .transport-report-filters .ui.input > input {
+        background: #0f172a;
+        border-color: #334155;
+        color: #f8fafc;
+    }
+    html[data-theme="dark"] .transport-report-filters .ui.selection.dropdown .text,
+    html[data-theme="dark"] .transport-report-filters .ui.selection.dropdown .menu > .item,
+    body.dark .transport-report-filters .ui.selection.dropdown .text,
+    body.dark .transport-report-filters .ui.selection.dropdown .menu > .item,
+    .dark-mode .transport-report-filters .ui.selection.dropdown .text,
+    .dark-mode .transport-report-filters .ui.selection.dropdown .menu > .item {
+        color: #f8fafc;
+    }
+    html[data-theme="dark"] .transport-report-filters .ui.selection.dropdown .menu > .item:hover,
+    html[data-theme="dark"] .transport-report-filters .ui.selection.dropdown .menu > .active.item,
+    body.dark .transport-report-filters .ui.selection.dropdown .menu > .item:hover,
+    body.dark .transport-report-filters .ui.selection.dropdown .menu > .active.item,
+    .dark-mode .transport-report-filters .ui.selection.dropdown .menu > .item:hover,
+    .dark-mode .transport-report-filters .ui.selection.dropdown .menu > .active.item {
+        background: #172033;
+        color: #f8fafc;
+    }
+    html[data-theme="dark"] .transport-type-pill.student,
+    body.dark .transport-type-pill.student,
+    .dark-mode .transport-type-pill.student {
+        background: rgba(59, 130, 246, .18);
+        color: #93c5fd;
+    }
+    html[data-theme="dark"] .transport-type-pill.teacher,
+    body.dark .transport-type-pill.teacher,
+    .dark-mode .transport-type-pill.teacher {
+        background: rgba(34, 197, 94, .18);
+        color: #86efac;
+    }
+    @media (max-width: 1024px) {
+        .transport-report-filter-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    @media (max-width: 767px) {
+        .ui.left.aligned.basic.grid {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+        .ui.left.aligned.basic.grid > .column {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        .transport-reports {
+            gap: 0.75rem;
+            max-width: 100%;
+            width: 100%;
+        }
+        .transport-report-panel,
+        .transport-report-metric {
+            border-radius: 12px !important;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+        }
+        .transport-report-panel {
+            padding: 0.85rem;
+        }
+        .transport-report-panel-head {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.55rem;
+            margin-bottom: 0.8rem;
+        }
+        .transport-report-filter-grid,
+        .transport-report-summary {
+            grid-template-columns: 1fr 1fr !important;
+        }
+        .transport-filter-actions {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 0.5rem;
+            width: 100%;
+        }
+        .transport-filter-actions .ui.button {
+            flex: 1 1 0;
+            margin: 0 !important;
+            min-width: 0;
+            padding-left: 0.65rem;
+            padding-right: 0.65rem;
+            width: auto;
+        }
+        .transport-report-table-wrap {
+            border-radius: 10px;
+            margin-left: -0.2rem;
+            margin-right: -0.2rem;
+            max-height: 58vh;
+            overflow-x: auto;
+            overflow-y: auto;
+            width: calc(100% + 0.4rem);
+        }
+        .transport-report-table-wrap table {
+            display: table;
+            min-width: 760px;
+            width: 760px !important;
+        }
+    }
+    @media (max-width: 560px) {
+        .transport-report-filter-grid,
+        .transport-report-summary {
+            grid-template-columns: 1fr 1fr !important;
+        }
+        .transport-report-panel {
+            padding: 0.75rem;
+        }
+        .transport-report-title {
+            font-size: 13px;
+        }
+        .transport-report-metric {
+            min-height: auto;
+            padding: 0.8rem;
+        }
+        .transport-report-note {
+            font-size: 11px;
+        }
+        .transport-filter-actions {
+            justify-content: center;
+        }
+        .transport-filter-actions .ui.button {
+            flex: 0 1 auto;
+            min-width: 96px;
+            width: auto;
+        }
+    }
+    @media (max-width: 380px) {
+        .transport-filter-actions {
+            align-items: center;
+            flex-direction: row;
+            justify-content: center;
+        }
+        .transport-filter-actions .ui.button {
+            width: auto;
+        }
+    }
+    @media print {
+        @page {
+            margin: 12mm 10mm;
+            size: A4 landscape;
+        }
+        html,
+        body {
+            background: #ffffff !important;
+            color: #111827 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+        body > #sidebar,
+        body > #mobileSidebarBackdrop,
+        body > nav.ui.top.fixed.menu,
+        body > .student-mobile-bottom-nav,
+        body > .app-notice-stack,
+        .ui.top.fixed.menu,
+        .ui.sidebar,
+        .sidebar-menu-toggler,
+        .no-print,
+        #printArea {
+            display: none !important;
+        }
+        body,
+        body.pushable,
+        body.pushable > .pusher,
+        body > .pusher,
+        body > .pusher > .main-content,
+        .main-content,
+        .transport-reports {
+            background: #ffffff !important;
+            box-shadow: none !important;
+            height: auto !important;
+            margin: 0 !important;
+            max-width: none !important;
+            min-height: auto !important;
+            overflow: visible !important;
+            padding: 0 !important;
+            transform: none !important;
+            width: 100% !important;
+        }
+        #printManifestArea {
+            background: #fff !important;
+            color: #111827 !important;
+            display: block !important;
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0 !important;
+            padding: 0;
+            position: static !important;
+            width: 100% !important;
+        }
+        .ui.left.aligned.basic.grid,
+        .ui.left.aligned.basic.grid > .column {
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            text-align: left !important;
+            width: 100% !important;
+        }
+        .print-manifest-table thead {
+            display: table-header-group;
+        }
+        .print-manifest-table tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+    }
+</style>
+<div class="ui left aligned basic grid">
+    <div class="sixteen wide column">
+        <div class="transport-reports">
+            <div class="transport-report-panel no-print">
+                <div class="transport-report-panel-head">
+                    <h4 class="transport-report-title"><i class="filter icon"></i>Report Filters</h4>
+                    <span class="transport-report-note">Manifest exports use the same filters</span>
+                </div>
+                <form class="ui tiny form transport-report-filters">
+                    <div class="transport-report-filter-grid">
+                        <div class="field">
+                            <label>Route</label>
+                            <div class="ui fluid search selection dropdown report-route-dropdown" id="filterRouteDropdown">
+                                <input type="hidden" id="filterRouteID">
+                                <i class="dropdown icon"></i>
+                                <div class="default text">All Routes</div>
+                                <div class="menu"></div>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Vehicle</label>
+                            <div class="ui fluid search selection dropdown report-vehicle-dropdown" id="filterVehicleDropdown">
+                                <input type="hidden" id="filterVehicleID">
+                                <i class="dropdown icon"></i>
+                                <div class="default text">All Vehicles</div>
+                                <div class="menu"></div>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Assignee Type</label>
+                            <select class="ui fluid search selection dropdown" id="filterAssigneeType">
+                                <option value="">All</option>
+                                <option value="student">Student</option>
+                                <option value="teacher">Teacher</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="transport-filter-actions">
+                        <button type="button" class="ui green button" onclick="loadReport()"><i class="search icon"></i>Search</button>
+                        <button type="button" class="ui mini red button" onclick="clearReportFilters()"><i class="times circle icon"></i>Clear</button>
+                    </div>
+                </form>
+            </div>
+            <div id="printArea">
+                <div class="transport-report-panel">
+                    <div class="transport-report-panel-head">
+                        <h4 class="transport-report-title"><i class="chart bar icon"></i>Capacity Summary</h4>
+                        <span class="transport-report-note" id="reportGeneratedAt"></span>
+                    </div>
+                    <div class="transport-report-summary">
+                        <div class="transport-report-metric">
+                            <div class="icon-wrap"><i class="route icon"></i></div>
+                            <div><div class="label">Routes</div><div class="value" data-summary="routes">0</div><div class="sub">filtered active routes</div></div>
+                        </div>
+                        <div class="transport-report-metric">
+                            <div class="icon-wrap"><i class="bus icon"></i></div>
+                            <div><div class="label">Vehicles</div><div class="value" data-summary="vehicles">0</div><div class="sub">available in selection</div></div>
+                        </div>
+                        <div class="transport-report-metric">
+                            <div class="icon-wrap"><i class="users icon"></i></div>
+                            <div><div class="label">Assigned</div><div class="value" data-summary="assigned">0</div><div class="sub"><span data-summary="students">0</span> students / <span data-summary="teachers">0</span> teachers</div></div>
+                        </div>
+                        <div class="transport-report-metric">
+                            <div class="icon-wrap"><i class="chair icon"></i></div>
+                            <div><div class="label">Capacity</div><div class="value" data-summary="capacity">0</div><div class="sub"><span data-summary="vacant">0</span> vacant / <span data-summary="overCapacity">0</span> over</div></div>
+                        </div>
+                        <div class="transport-report-metric">
+                            <div class="icon-wrap"><i class="tachometer alternate icon"></i></div>
+                            <div><div class="label">Occupancy</div><div class="value"><span data-summary="occupancyPercent">0</span>%</div><div class="sub">seat utilization</div></div>
+                        </div>
+                        <div class="transport-report-metric">
+                            <div class="icon-wrap"><i class="rupee sign icon"></i></div>
+                            <div><div class="label">Monthly Fee</div><div class="value" data-summary="monthlyFee">0.00</div><div class="sub">assignment value</div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="transport-report-panel">
+                    <div class="transport-report-panel-head">
+                        <h4 class="transport-report-title"><i class="route icon"></i>Route Utilization</h4>
+                        <span class="transport-report-note">Capacity is based on filtered vehicles</span>
+                    </div>
+                    <div class="transport-report-table-wrap">
+                        <table class="ui unstackable tiny celled very compact table">
+                            <thead><tr><th>Route</th><th>Vehicles</th><th>Capacity</th><th>Assigned</th><th>Students</th><th>Teachers</th><th>Vacant</th><th>Usage</th></tr></thead>
+                            <tbody id="routeReportBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="transport-report-panel">
+                    <div class="transport-report-panel-head">
+                        <h4 class="transport-report-title"><i class="shuttle van icon"></i>Vehicle Utilization</h4>
+                        <span class="transport-report-note">Driver and load view</span>
+                    </div>
+                    <div class="transport-report-table-wrap">
+                        <table class="ui unstackable tiny celled very compact table">
+                            <thead><tr><th>Vehicle</th><th>Route</th><th>Driver</th><th>Capacity</th><th>Assigned</th><th>Vacant</th><th>Usage</th></tr></thead>
+                            <tbody id="vehicleReportBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="transport-report-panel">
+                    <div class="transport-report-panel-head">
+                        <h4 class="transport-report-title"><i class="users icon"></i>Passenger Manifest</h4>
+                        <span class="transport-report-note">Showing latest 500 rows on screen</span>
+                    </div>
+                    <div class="transport-report-table-wrap">
+                        <table class="ui unstackable tiny celled very compact table">
+                            <thead><tr><th>Type</th><th>Name</th><th>Class/Role</th><th>Phone</th><th>Route</th><th>Pickup</th><th>Drop</th><th>Vehicle</th><th>Fee</th></tr></thead>
+                            <tbody id="manifestReportBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="transport-print-manifest" id="printManifestArea">
+                <div class="print-manifest-header">
+                    <div class="print-manifest-title">Transport Passenger Manifest</div>
+                    <div class="print-manifest-subtitle">Route-wise student and staff transport allocation</div>
+                    <div class="print-manifest-subtitle" id="printGeneratedAt">Generated: -</div>
+                </div>
+                <div class="print-manifest-meta">
+                    <div class="print-meta-item"><div class="print-meta-label">Route</div><div class="print-meta-value" id="printRouteFilter">All Routes</div></div>
+                    <div class="print-meta-item"><div class="print-meta-label">Vehicle</div><div class="print-meta-value" id="printVehicleFilter">All Vehicles</div></div>
+                    <div class="print-meta-item"><div class="print-meta-label">Assignee Type</div><div class="print-meta-value" id="printAssigneeFilter">All</div></div>
+                    <div class="print-meta-item"><div class="print-meta-label">Prepared By</div><div class="print-meta-value">Transport Office</div></div>
+                </div>
+                <div class="print-manifest-summary">
+                    <div class="print-summary-item"><div class="print-summary-label">Passengers</div><div class="print-summary-value" id="printAssignedSummary">0</div></div>
+                    <div class="print-summary-item"><div class="print-summary-label">Students</div><div class="print-summary-value" id="printStudentsSummary">0</div></div>
+                    <div class="print-summary-item"><div class="print-summary-label">Staff</div><div class="print-summary-value" id="printTeachersSummary">0</div></div>
+                    <div class="print-summary-item"><div class="print-summary-label">Vehicles</div><div class="print-summary-value" id="printVehiclesSummary">0</div></div>
+                </div>
+                <table class="print-manifest-table">
+                    <thead>
+                    <tr>
+                        <th style="width:4%;">#</th>
+                        <th style="width:8%;">Type</th>
+                        <th style="width:17%;">Passenger</th>
+                        <th style="width:12%;">Class / Role</th>
+                        <th style="width:11%;">Phone</th>
+                        <th style="width:14%;">Route</th>
+                        <th style="width:12%;">Pickup</th>
+                        <th style="width:12%;">Drop</th>
+                        <th style="width:10%;">Vehicle</th>
+                    </tr>
+                    </thead>
+                    <tbody id="printManifestBody"></tbody>
+                </table>
+                <div class="print-signature-grid">
+                    <div class="print-signature-line">Transport Incharge</div>
+                    <div class="print-signature-line">Driver Signature</div>
+                    <div class="print-signature-line">Principal / Admin</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block js %}
+<script>
+let reportOptions = {routes: [], vehicles: []};
+$(function(){
+    $('.ui.dropdown').dropdown({fullTextSearch: true});
+    loadReportOptions();
+});
+function escapeHtml(value){
+    return $('<div/>').text(value === null || value === undefined || value === '' ? 'N/A' : value).html();
+}
+function numberText(value){
+    const num = Number(String(value || 0).replace(/,/g, ''));
+    return Number.isFinite(num) ? num.toLocaleString('en-IN') : '0';
+}
+function moneyText(value){
+    const num = Number(String(value || 0).replace(/,/g, ''));
+    return Number.isFinite(num) ? num.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00';
+}
+function dropdownItem(value, text, extraAttrs){
+    return '<div class="item" data-value="' + escapeHtml(value) + '" ' + (extraAttrs || '') + '>' + escapeHtml(text) + '</div>';
+}
+function initReportSearchDropdown(dropdownID, onChange){
+    $(dropdownID).dropdown('destroy').dropdown({
+        fullTextSearch: true,
+        forceSelection: false,
+        clearable: true,
+        match: 'both',
+        onChange: onChange || function(){}
+    });
+}
+function filterParams(){
+    return {
+        routeID: $('#filterRouteID').val(),
+        vehicleID: $('#filterVehicleID').val(),
+        assigneeType: $('#filterAssigneeType').val(),
+        activeOnly: 'true'
+    };
+}
+function progressCell(percent, overCapacity){
+    const safePercent = Math.max(0, Math.min(Number(percent || 0), 100));
+    const tone = overCapacity > 0 ? 'danger' : (safePercent >= 85 ? 'warning' : '');
+    return '<div class="transport-progress"><div class="transport-progress-track"><div class="transport-progress-fill '+tone+'" style="width:'+safePercent+'%"></div></div><div class="transport-progress-text">'+escapeHtml(percent)+'%'+(overCapacity > 0 ? ' / Over '+escapeHtml(overCapacity) : '')+'</div></div>';
+}
+function selectedDropdownText(dropdownID, fallback){
+    const text = $(dropdownID + ' .text').first().text().trim();
+    return text || fallback;
+}
+function updatePrintManifestMeta(summary, generatedAt){
+    summary = summary || {};
+    $('#printGeneratedAt').text(generatedAt ? 'Generated: ' + generatedAt : 'Generated: -');
+    $('#printRouteFilter').text(selectedDropdownText('#filterRouteDropdown', 'All Routes'));
+    $('#printVehicleFilter').text(selectedDropdownText('#filterVehicleDropdown', 'All Vehicles'));
+    $('#printAssigneeFilter').text($('#filterAssigneeType option:selected').text() || 'All');
+    $('#printAssignedSummary').text(numberText(summary.assigned));
+    $('#printStudentsSummary').text(numberText(summary.students));
+    $('#printTeachersSummary').text(numberText(summary.teachers));
+    $('#printVehiclesSummary').text(numberText(summary.vehicles));
+}
+function loadReportOptions(){
+    $.get("{% url 'transportAppAPI:transport_options_api' %}", function(response){
+        reportOptions = response.data || {};
+        renderRouteFilterOptions();
+        renderVehicleFilterOptions(false);
+        initReportSearchDropdown('#filterRouteDropdown', function(){ renderVehicleFilterOptions(true); loadReport(); });
+        initReportSearchDropdown('#filterVehicleDropdown', loadReport);
+        $('#filterAssigneeType').dropdown({fullTextSearch: true, clearable: true, onChange: loadReport}).dropdown('refresh');
+        loadReport();
+    }).fail(function(){
+        addErrorNotification('Unable to load report filters.');
+    });
+}
+function renderRouteFilterOptions(){
+    const routeMenu = $('#filterRouteDropdown .menu').empty();
+    (reportOptions.routes || []).forEach(item => routeMenu.append(dropdownItem(item.id, item.text)));
+}
+function renderVehicleFilterOptions(clearSelected){
+    const routeID = $('#filterRouteID').val();
+    const vehicleMenu = $('#filterVehicleDropdown .menu').empty();
+    (reportOptions.vehicles || [])
+        .filter(item => !routeID || String(item.routeID || '') === String(routeID))
+        .forEach(item => vehicleMenu.append(dropdownItem(item.id, item.text)));
+    initReportSearchDropdown('#filterVehicleDropdown', loadReport);
+    if(clearSelected){
+        $('#filterVehicleDropdown').dropdown('clear');
+    }
+}
+function loadReport(){
+    $.get("{% url 'transportAppAPI:transport_report_summary_api' %}", filterParams(), function(response){
+        if(!response.success){
+            addErrorNotification(response.message || 'Unable to load report.');
+            return;
+        }
+        const data = response.data || {};
+        const summary = data.summary || {};
+        Object.keys(summary).forEach(function(key){
+            const value = key === 'monthlyFee' ? moneyText(summary[key]) : numberText(summary[key]);
+            $('[data-summary="'+key+'"]').text(value);
+        });
+        $('#reportGeneratedAt').text(data.generatedAt ? 'Generated ' + data.generatedAt : '');
+        updatePrintManifestMeta(summary, data.generatedAt);
+        renderRouteRows(data.routes || []);
+        renderVehicleRows(data.vehicles || []);
+        renderManifestRows(data.assignments || []);
+    }).fail(function(){
+        addErrorNotification('Unable to load transport report.');
+    });
+}
+function renderRouteRows(rows){
+    const body = $('#routeReportBody').empty();
+    if(!rows.length){ body.append('<tr><td colspan="8"><div class="transport-report-empty">No route data found for the selected filters.</div></td></tr>'); return; }
+    rows.forEach(row => body.append('<tr><td><b>'+escapeHtml(row.routeCode)+'</b><br><span class="text-muted">'+escapeHtml(row.routeName)+'</span></td><td>'+escapeHtml(row.vehicles)+'</td><td>'+escapeHtml(row.capacity)+'</td><td>'+escapeHtml(row.assigned)+'</td><td>'+escapeHtml(row.students)+'</td><td>'+escapeHtml(row.teachers)+'</td><td>'+escapeHtml(row.vacant)+'</td><td>'+progressCell(row.occupancyPercent, row.overCapacity)+'</td></tr>'));
+}
+function renderVehicleRows(rows){
+    const body = $('#vehicleReportBody').empty();
+    if(!rows.length){ body.append('<tr><td colspan="7"><div class="transport-report-empty">No vehicle data found for the selected filters.</div></td></tr>'); return; }
+    rows.forEach(row => body.append('<tr><td><b>'+escapeHtml(row.vehicleNumber)+'</b></td><td>'+escapeHtml(row.route)+'</td><td>'+escapeHtml(row.driver)+'</td><td>'+escapeHtml(row.capacity)+'</td><td>'+escapeHtml(row.assigned)+'</td><td>'+escapeHtml(row.vacant)+'</td><td>'+progressCell(row.occupancyPercent, row.overCapacity)+'</td></tr>'));
+}
+function renderManifestRows(rows){
+    const body = $('#manifestReportBody').empty();
+    const printBody = $('#printManifestBody').empty();
+    if(!rows.length){
+        body.append('<tr><td colspan="9"><div class="transport-report-empty">No assignments found for the selected filters.</div></td></tr>');
+        printBody.append('<tr><td colspan="9" style="text-align:center;">No assignments found for the selected filters.</td></tr>');
+        return;
+    }
+    rows.forEach(function(row, index){
+        const type = (row.type || '').toLowerCase();
+        body.append('<tr><td><span class="transport-type-pill '+escapeHtml(type)+'">'+escapeHtml(row.type)+'</span></td><td class="transport-manifest-name"><b>'+escapeHtml(row.name)+'</b><br><span class="text-muted">'+escapeHtml(row.roll)+'</span></td><td>'+escapeHtml(row.classOrRole)+'</td><td>'+escapeHtml(row.phone)+'</td><td>'+escapeHtml(row.route)+'</td><td>'+escapeHtml(row.pickupStop)+'</td><td>'+escapeHtml(row.dropStop)+'</td><td>'+escapeHtml(row.vehicle)+'</td><td>'+moneyText(row.monthlyFee)+'</td></tr>');
+        printBody.append('<tr><td>'+(index + 1)+'</td><td>'+escapeHtml(row.type)+'</td><td><div class="print-passenger-name">'+escapeHtml(row.name)+'</div><div class="print-passenger-sub">'+escapeHtml(row.roll)+'</div></td><td>'+escapeHtml(row.classOrRole)+'</td><td>'+escapeHtml(row.phone)+'</td><td>'+escapeHtml(row.route)+'</td><td>'+escapeHtml(row.pickupStop)+'</td><td>'+escapeHtml(row.dropStop)+'</td><td>'+escapeHtml(row.vehicle)+'</td></tr>');
+    });
+}
+function clearReportFilters(){
+    $('#filterRouteDropdown').dropdown('clear');
+    renderVehicleFilterOptions(false);
+    $('#filterVehicleDropdown').dropdown('clear');
+    $('#filterAssigneeType').dropdown('clear');
+    loadReport();
+}
+function exportManifest(){
+    const params = $.param(filterParams());
+    window.location.href = "{% url 'transportAppAPI:passenger_manifest_csv' %}" + '?' + params;
+}
+function manifestPrintCss(){
+    return '@page{size:A4 landscape;margin:12mm 10mm;}' +
+        '*{box-sizing:border-box;}' +
+        'html,body{background:#fff;color:#111827;font-family:Arial,Helvetica,sans-serif;margin:0;padding:0;width:100%;}' +
+        '.transport-print-manifest{display:block;width:100%;}' +
+        '.print-manifest-header{border-bottom:2px solid #111827;display:grid;gap:4px;padding-bottom:10px;text-align:center;}' +
+        '.print-manifest-title{color:#111827;font-size:20px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;}' +
+        '.print-manifest-subtitle{color:#374151;font-size:11px;font-weight:700;}' +
+        '.print-manifest-meta,.print-manifest-summary{display:grid;gap:0;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:10px;}' +
+        '.print-meta-item,.print-summary-item{border:1px solid #d1d5db;min-height:44px;padding:6px 8px;}' +
+        '.print-meta-label,.print-summary-label{color:#6b7280;font-size:9px;font-weight:800;text-transform:uppercase;}' +
+        '.print-meta-value,.print-summary-value{color:#111827;font-size:12px;font-weight:800;margin-top:3px;}' +
+        '.print-manifest-table{border-collapse:collapse;margin-top:12px;width:100%;}' +
+        '.print-manifest-table thead{display:table-header-group;}' +
+        '.print-manifest-table tr{break-inside:avoid;page-break-inside:avoid;}' +
+        '.print-manifest-table th,.print-manifest-table td{border:1px solid #d1d5db;color:#111827;font-size:10px;line-height:1.3;padding:5px 6px;text-align:left;vertical-align:top;}' +
+        '.print-manifest-table th{background:#f3f4f6;font-size:9px;font-weight:800;text-transform:uppercase;}' +
+        '.print-passenger-name{font-weight:800;}' +
+        '.print-passenger-sub{color:#4b5563;font-size:9px;margin-top:2px;}' +
+        '.print-signature-grid{display:grid;gap:24px;grid-template-columns:repeat(3,1fr);margin-top:34px;}' +
+        '.print-signature-line{border-top:1px solid #111827;color:#374151;font-size:10px;font-weight:800;padding-top:6px;text-align:center;}';
+}
+function printManifest(){
+    updatePrintManifestMeta({
+        assigned: $('[data-summary="assigned"]').first().text(),
+        students: $('[data-summary="students"]').first().text(),
+        teachers: $('[data-summary="teachers"]').first().text(),
+        vehicles: $('[data-summary="vehicles"]').first().text()
+    }, ($('#reportGeneratedAt').text() || '').replace('Generated ', ''));
+    const printWindow = window.open('', '_blank', 'width=1200,height=800');
+    if(!printWindow){
+        addErrorNotification('Please allow pop-ups to print the manifest.');
+        return;
+    }
+    const manifestHtml = $('#printManifestArea').prop('outerHTML');
+    printWindow.document.open();
+    printWindow.document.write('<!doctype html><html><head><title>Transport Passenger Manifest</title><style>' + manifestPrintCss() + '</style></head><body>' + manifestHtml + '<script>window.onload=function(){setTimeout(function(){window.focus();window.print();},120);};<\/script></body></html>');
+    printWindow.document.close();
+}
+</script>
+{% endblock %}
