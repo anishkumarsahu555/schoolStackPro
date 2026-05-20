@@ -1,6 +1,6 @@
 import csv
 import calendar
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth.decorators import login_required
@@ -46,6 +46,21 @@ def _decimal(value):
         return Decimal(str(value or '0')).quantize(Decimal('0.01'))
     except (InvalidOperation, TypeError, ValueError):
         return Decimal('0.00')
+
+
+def _time(value):
+    value = _clean_form_value(value)
+    if not value:
+        return None
+    parsed = parse_time(value)
+    if parsed:
+        return parsed
+    for fmt in ('%I:%M %p', '%I:%M%p', '%I %p', '%H:%M'):
+        try:
+            return datetime.strptime(value.upper(), fmt).time()
+        except ValueError:
+            continue
+    raise ValueError(f'Invalid time value: {value}')
 
 
 def _clean_form_value(value):
@@ -123,6 +138,20 @@ def _dt_actions(edit_fn, delete_fn, obj_id):
     )
 
 
+def _route_dt_actions(obj_id):
+    return (
+        f'<button data-inverted="" data-tooltip="View Stops" data-position="left center" '
+        f'data-variation="mini" style="font-size:10px;" onclick="viewRouteDetail({obj_id})" '
+        f'class="ui circular teal icon button"><i class="eye icon"></i></button>'
+        f'<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" '
+        f'data-variation="mini" style="font-size:10px; margin-left:3px;" onclick="editRoute({obj_id})" '
+        f'class="ui circular facebook icon button green"><i class="pen icon"></i></button>'
+        f'<button data-inverted="" data-tooltip="Delete" data-position="left center" '
+        f'data-variation="mini" style="font-size:10px; margin-left:3px;" onclick="confirmDeleteRoute({obj_id})" '
+        f'class="ui circular youtube icon button"><i class="trash alternate icon"></i></button>'
+    )
+
+
 def _fee_record_actions(obj_id):
     return (
         f'<button data-inverted="" data-tooltip="Record Payment" data-position="left center" '
@@ -162,7 +191,7 @@ class TransportRouteListJson(BaseDatatableView):
             escape(item.endPoint or 'N/A'),
             _status_pill(item.isActive),
             escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
-            _dt_actions('editRoute', 'confirmDeleteRoute', item.id),
+            _route_dt_actions(item.id),
         ] for item in qs]
 
 
@@ -897,6 +926,7 @@ def route_detail_api(request):
     if not route:
         logger.error(f'Transport route not found id={request.GET.get("id")}')
         return ErrorResponse('Route not found.', status_code=404).to_json_response()
+    stops = _scoped_for_request(request, TransportStop).filter(routeID=route).order_by('displayOrder', 'stopName')
     logger.info(f'Transport route detail fetched id={route.id}')
     return SuccessResponse('Route detail loaded.', data={
         'id': route.id,
@@ -906,6 +936,15 @@ def route_detail_api(request):
         'endPoint': route.endPoint or '',
         'description': route.description or '',
         'isActive': route.isActive,
+        'stops': [{
+            'id': stop.id,
+            'stopName': stop.stopName,
+            'pickupTime': stop.pickupTime.strftime('%I:%M %p') if stop.pickupTime else '',
+            'dropTime': stop.dropTime.strftime('%I:%M %p') if stop.dropTime else '',
+            'monthlyFee': str(stop.monthlyFee),
+            'displayOrder': stop.displayOrder,
+            'isActive': stop.isActive,
+        } for stop in stops],
     }).to_json_response()
 
 
@@ -929,8 +968,8 @@ def stops_api(request):
             return ErrorResponse('Stop not found.', status_code=404).to_json_response()
         stop.routeID_id = _ensure_scoped_fk(request, TransportRoute, request.POST.get('routeID'), 'Route')
         stop.stopName = (request.POST.get('stopName') or '').strip()
-        stop.pickupTime = parse_time(request.POST.get('pickupTime') or '')
-        stop.dropTime = parse_time(request.POST.get('dropTime') or '')
+        stop.pickupTime = _time(request.POST.get('pickupTime'))
+        stop.dropTime = _time(request.POST.get('dropTime'))
         stop.monthlyFee = _decimal(request.POST.get('monthlyFee'))
         stop.displayOrder = int(request.POST.get('displayOrder') or 0)
         stop.isActive = _bool(request.POST.get('isActive', 'true'))
@@ -957,8 +996,8 @@ def stop_detail_api(request):
         'id': stop.id,
         'routeID': stop.routeID_id,
         'stopName': stop.stopName,
-        'pickupTime': stop.pickupTime.strftime('%H:%M') if stop.pickupTime else '',
-        'dropTime': stop.dropTime.strftime('%H:%M') if stop.dropTime else '',
+        'pickupTime': stop.pickupTime.strftime('%I:%M %p') if stop.pickupTime else '',
+        'dropTime': stop.dropTime.strftime('%I:%M %p') if stop.dropTime else '',
         'monthlyFee': str(stop.monthlyFee),
         'displayOrder': stop.displayOrder,
         'isActive': stop.isActive,
