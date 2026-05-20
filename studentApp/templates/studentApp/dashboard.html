@@ -1395,6 +1395,10 @@
                 <div class="student-mobile-icon-wrap"><i class="credit card outline icon"></i></div>
                 <div class="student-mobile-tile-label">Fee Details</div>
             </a>
+            <a class="student-mobile-tile" data-cat="account" href="{% url 'studentApp:student_my_transport' %}">
+                <div class="student-mobile-icon-wrap"><i class="bus icon"></i></div>
+                <div class="student-mobile-tile-label">My Transport</div>
+            </a>
             <a class="student-mobile-tile" data-cat="account" href="{% url 'studentApp:student_school_detail' %}">
                 <div class="student-mobile-icon-wrap"><i class="school icon"></i></div>
                 <div class="student-mobile-tile-label">School</div>
@@ -1607,6 +1611,9 @@
                 </a>
                 <a class="student-feature-item" href="{% url 'studentApp:fee_detail' %}">
                     <i class="money bill alternate outline icon"></i><span>Fee Details</span>
+                </a>
+                <a class="student-feature-item" href="{% url 'studentApp:student_my_transport' %}">
+                    <i class="bus icon"></i><span>My Transport</span>
                 </a>
                 <a class="student-feature-item" href="{% url 'studentApp:student_exam_details' %}">
                     <i class="clipboard outline icon"></i><span>Exam Time Table</span>

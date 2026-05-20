@@ -112,6 +112,22 @@
     <div class="nav-group">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
+                <span>Transport</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'student_my_transport' %}active{% endif %}"
+               href="{% url 'studentApp:student_my_transport' %}">
+                <i class="bus icon"></i>
+                <span>My Transport</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
                 <span>Holidays</span>
             </span>
             <i class="chevron down icon nav-section-chevron"></i>

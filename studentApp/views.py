@@ -13,7 +13,9 @@ from managementApp.models import *
 from managementApp.reporting import build_report_cards_for_student
 from managementApp.services.id_cards import build_id_card_context
 from teacherApp.models import SubjectNote
+from transportApp.portal_services import build_my_transport_context
 from utils.custom_decorators import check_groups
+from utils.logger import logger
 
 
 # Create your views here.
@@ -94,6 +96,27 @@ def student_school_detail(request):
     return render(request, 'studentApp/school_detail.html', {
         'school': school,
     })
+
+
+@login_required
+@check_groups('Student')
+def student_my_transport(request):
+    student, current_session_id = _bootstrap_student_context(request)
+    context = {
+        'profile_missing': not bool(student and current_session_id),
+        'portal_role': 'student',
+    }
+    if student and current_session_id:
+        context.update(build_my_transport_context('student', student, current_session_id))
+    else:
+        context.update({
+            'assignment': None,
+            'recent_fee_records': [],
+            'current_fee_record': None,
+            'fee_summary': {'net': 0, 'paid': 0, 'due': 0},
+        })
+    logger.info(f'Student transport page opened user={request.user.id} student={student.id if student else None}')
+    return render(request, 'studentApp/my_transport.html', context)
 
 
 @login_required

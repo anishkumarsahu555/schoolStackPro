@@ -24,6 +24,7 @@ from managementApp.models import (
 )
 from managementApp.reporting import build_report_cards_for_student
 from teacherApp.models import SubjectNote
+from transportApp.portal_services import build_my_transport_context
 from utils.custom_decorators import check_groups
 from utils.logger import logger
 
@@ -116,6 +117,28 @@ def teacher_school_detail(request):
         'school': school,
         'is_class_teacher': is_class_teacher,
     })
+
+
+@login_required
+@check_groups('Teaching')
+def teacher_my_transport(request):
+    teacher, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
+    context = {
+        'profile_missing': not bool(teacher and current_session_id),
+        'is_class_teacher': is_class_teacher,
+        'portal_role': 'teacher',
+    }
+    if teacher and current_session_id:
+        context.update(build_my_transport_context('teacher', teacher, current_session_id))
+    else:
+        context.update({
+            'assignment': None,
+            'recent_fee_records': [],
+            'current_fee_record': None,
+            'fee_summary': {'net': 0, 'paid': 0, 'due': 0},
+        })
+    logger.info(f'Teacher transport page opened user={request.user.id} teacher={teacher.id if teacher else None}')
+    return render(request, 'teacherApp/my_transport.html', context)
 
 
 @login_required
