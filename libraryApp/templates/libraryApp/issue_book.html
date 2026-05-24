@@ -1,0 +1,177 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Issue / Return Book</title>{% endblock %}
+{% block page_title %}Issue / Return Book{% endblock %}
+{% block page_subtitle %}Issue, return, renew, and calculate overdue fines{% endblock %}
+{% block page_actions %}
+    <button class="ui green button class-page-action" type="button" onclick="showIssueModal()">
+        <i class="plus icon"></i>
+        <span><span class="desktop-label">Issue Book</span><span class="mobile-label">Issue</span></span>
+    </button>
+{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="list alternate outline icon"></i>
+        Issued / return book list
+    </h4>
+    <form class="ui tiny form" id="issueHistoryFilterForm">
+        <div class="library-filter-grid">
+            <div class="field">
+                <label>Status</label>
+                <select class="ui dropdown" id="issueStatusFilter">
+                    <option value="issued" selected>Currently Issued</option>
+                    <option value="">All History</option>
+                    <option value="returned">Returned</option>
+                    <option value="lost">Lost</option>
+                    <option value="damaged">Damaged</option>
+                    <option value="overdue">Overdue</option>
+                </select>
+            </div>
+            <div class="field"></div>
+            <div class="field filter-actions" style="display:flex;align-items:flex-end;gap:0.45rem;">
+                <button class="ui mini green button" type="button" onclick="reloadIssueHistory()">
+                    <i class="filter icon"></i>
+                    Apply
+                </button>
+                <button class="ui mini red button" type="button" onclick="resetIssueHistory()">
+                    <i class="times circle icon"></i>
+                    Reset
+                </button>
+            </div>
+        </div>
+    </form>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="IssueTable" style="margin-top: 5px;width: 100%"><thead><tr><th>Book</th><th>Copy</th><th>Code</th><th>Member</th><th>Issue Date</th><th>Due Date</th><th>Status</th><th>Fine</th><th>Actions</th></tr></thead></table>
+    </div>
+</div>
+<div class="ui modal" id="issueModal">
+    <i class="close icon"></i>
+    <div class="header">Issue Book</div>
+    <div class="content">
+        <form class="ui tiny form" id="issueForm">{% csrf_token %}
+            <div class="library-form-grid">
+                <div class="field required"><label>Member</label><select class="ui search dropdown" name="member" id="issueMember"></select></div>
+                <div class="field required"><label>Available Copy</label><select class="ui search dropdown" name="copy" id="issueCopy"></select></div>
+                <div class="library-eligibility-panel" id="issueEligibilityPanel">
+                    <div class="summary" id="issueEligibilitySummary"></div>
+                    <div class="meta">
+                        <span id="issueEligibilityIssued"></span>
+                        <span id="issueEligibilitySlots"></span>
+                        <span id="issueEligibilityFine"></span>
+                        <span id="issueEligibilityLimit"></span>
+                    </div>
+                </div>
+                <div class="field"><label>Issue Date</label><div class="ui calendar library-date-calendar" id="issueDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="issueDate" id="issueDate" placeholder="YYYY-MM-DD"></div></div></div>
+                <div class="field"><label>Due Date</label><div class="ui calendar library-date-calendar" id="dueDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="dueDate" id="dueDate" placeholder="YYYY-MM-DD"></div></div></div>
+                <div class="field wide-field"><label>Notes</label><textarea rows="2" name="notes"></textarea></div>
+            </div>
+        </form>
+    </div>
+    <div class="actions library-modal-actions">
+        <div class="ui cancel button">Cancel</div>
+        <button class="ui green button class-page-action" type="button" onclick="issueBook()">
+            <span><span class="desktop-label">Submit</span><span class="mobile-label">Save</span></span>
+            <i class="check icon"></i>
+        </button>
+    </div>
+</div>
+{% include 'libraryApp/_return_modal.html' %}
+{% include 'libraryApp/_renew_modal.html' %}
+{% include 'libraryApp/_issue_detail_modal.html' %}
+<script>
+let issueTable;
+let issueMemberCanIssue = false;
+function resetIssueEligibility(){
+    issueMemberCanIssue = false;
+    $('#issueEligibilityPanel').removeClass('warning blocked').hide();
+    $('#issueEligibilitySummary,#issueEligibilityIssued,#issueEligibilitySlots,#issueEligibilityFine,#issueEligibilityLimit').text('');
+}
+function loadIssueOptions(){ $.get("{% url 'libraryAppAPI:library_options_api' %}", function(r){ let m='<option value="">Select</option>', c='<option value="">Select</option>'; (r.data.members||[]).forEach(x=>m+='<option value="'+x.id+'">'+x.name+'</option>'); (r.data.availableCopies||[]).forEach(x=>c+='<option value="'+x.id+'">'+x.name+'</option>'); $('#issueMember').html(m); $('#issueCopy').html(c); $('.ui.dropdown').dropdown('refresh'); resetIssueEligibility(); }); }
+function loadIssueMemberEligibility(){
+    const memberId = $('#issueMember').val();
+    resetIssueEligibility();
+    if (!memberId) return;
+    const panel = $('#issueEligibilityPanel');
+    panel.show();
+    $('#issueEligibilitySummary').text('Checking member eligibility...');
+    $.get("{% url 'libraryAppAPI:member_eligibility_api' %}", {member: memberId}, function(response){
+        const data = response.data || {};
+        const openFine = parseFloat(data.openFineBalance || '0');
+        issueMemberCanIssue = data.canIssue === true;
+        panel.removeClass('warning blocked');
+        if (!issueMemberCanIssue) {
+            panel.addClass('blocked');
+        } else if (openFine > 0) {
+            panel.addClass('warning');
+        }
+        $('#issueEligibilitySummary').text(issueMemberCanIssue ? (openFine > 0 ? 'Member has pending fine but can issue.' : 'Member can issue books.') : (data.blockedReason || 'Member cannot issue books.'));
+        $('#issueEligibilityIssued').text('Issued: '+(data.openIssues || 0)+'/'+(data.maxBooksAllowed || 0));
+        $('#issueEligibilitySlots').text('Remaining slots: '+(data.remainingBookSlots || 0));
+        $('#issueEligibilityFine').text('Pending fine: '+(data.openFineBalance || '0.00'));
+        $('#issueEligibilityLimit').text('Fine limit: '+(data.fineLimitLabel || data.fineLimit || '0.00'));
+    }).fail(function(xhr){
+        issueMemberCanIssue = false;
+        panel.addClass('blocked');
+        $('#issueEligibilitySummary').text(libraryValidationMessage(xhr));
+    });
+}
+function showIssueModal(){
+    $('#issueForm')[0].reset();
+    libraryClearValidation('#issueForm');
+    resetIssueEligibility();
+    loadIssueOptions();
+    $('#issueModal').modal('show');
+}
+function issueBook(){
+    if (!libraryValidateRequired('#issueForm', ['issueMember', 'issueCopy'])) return;
+    if (!issueMemberCanIssue) {
+        addErrorNotification($('#issueEligibilitySummary').text() || 'Please select an eligible member before issuing a book.');
+        return;
+    }
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:issue_book_api' %}", $('#issueForm').serialize(), function(response){
+        if (libraryHandleSuccess(response, 'Book issued successfully.')) {
+            $('#issueForm')[0].reset();
+            resetIssueEligibility();
+            $('#issueModal').modal('hide');
+            loadIssueOptions();
+            issueTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+function issueHistoryParams(d) {
+    const status = $('#issueStatusFilter').val();
+    if (status === 'overdue') {
+        d.overdue = '1';
+    } else if (status) {
+        d.status = status;
+    }
+}
+function reloadIssueHistory(){
+    issueTable.ajax.reload(null, false);
+}
+function resetIssueHistory(){
+    $('#issueStatusFilter').dropdown('set selected', 'issued');
+    reloadIssueHistory();
+}
+$(function(){
+    $('.ui.dropdown').dropdown();
+    loadIssueOptions();
+    issueTable = libraryDataTable('#IssueTable', {url:"{% url 'libraryAppAPI:IssueListJson' %}", data: issueHistoryParams}, [
+        { name: 'book', targets: 0 },
+        { name: 'copy', targets: 1 },
+        { name: 'memberCode', targets: 2 },
+        { name: 'memberName', targets: 3 },
+        { name: 'issueDate', targets: 4 },
+        { name: 'dueDate', targets: 5 },
+        { name: 'status', targets: 6 },
+        { name: 'fineAmount', targets: 7 },
+        { name: 'action', targets: 8, orderable: false, searchable: false }
+    ], 5);
+    $('#issueStatusFilter').on('change', reloadIssueHistory);
+    $('#issueMember').on('change', loadIssueMemberEligibility);
+});
+</script>
+{% endblock %}

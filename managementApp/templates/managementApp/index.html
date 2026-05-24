@@ -409,6 +409,82 @@
     <div class="nav-group">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
+                <span>Manage Library</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+               href="{% url 'libraryApp:dashboard' %}">
+                <i class="chart pie icon"></i>
+                <span>Library Dashboard</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'manage_books' %}active{% endif %}"
+               href="{% url 'libraryApp:manage_books' %}">
+                <i class="book icon"></i>
+                <span>Books</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'manage_categories' %}active{% endif %}"
+               href="{% url 'libraryApp:manage_categories' %}">
+                <i class="tags icon"></i>
+                <span>Categories</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'manage_authors' %}active{% endif %}"
+               href="{% url 'libraryApp:manage_authors' %}">
+                <i class="user edit icon"></i>
+                <span>Authors</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'manage_publishers' %}active{% endif %}"
+               href="{% url 'libraryApp:manage_publishers' %}">
+                <i class="building icon"></i>
+                <span>Publishers</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'manage_copies' %}active{% endif %}"
+               href="{% url 'libraryApp:manage_copies' %}">
+                <i class="copy icon"></i>
+                <span>Book Copies</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'manage_members' %}active{% endif %}"
+               href="{% url 'libraryApp:manage_members' %}">
+                <i class="users icon"></i>
+                <span>Members</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'issue_book' or request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'return_book' %}active{% endif %}"
+               href="{% url 'libraryApp:issue_book' %}">
+                <i class="exchange alternate icon"></i>
+                <span>Issue / Return</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'issue_history' %}active{% endif %}"
+               href="{% url 'libraryApp:issue_history' %}">
+                <i class="history icon"></i>
+                <span>Issue History</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'manage_reservations' %}active{% endif %}"
+               href="{% url 'libraryApp:manage_reservations' %}">
+                <i class="bookmark icon"></i>
+                <span>Reservations</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'manage_fines' %}active{% endif %}"
+               href="{% url 'libraryApp:manage_fines' %}">
+                <i class="rupee sign icon"></i>
+                <span>Fines</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'settings' %}active{% endif %}"
+               href="{% url 'libraryApp:settings' %}">
+                <i class="settings icon"></i>
+                <span>Settings</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'libraryApp' and request.resolver_match.url_name == 'reports' %}active{% endif %}"
+               href="{% url 'libraryApp:reports' %}">
+                <i class="file alternate icon"></i>
+                <span>Reports</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
                 <span>Manage Transport</span>
             </span>
             <i class="chevron down icon nav-section-chevron"></i>

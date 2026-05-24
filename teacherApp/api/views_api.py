@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+from decimal import Decimal
 import json
 
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q, Sum, F
+from django.db.models import Q, Sum, F, Count
 from django.http import JsonResponse
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -14,6 +15,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from homeApp.models import SchoolSession
 from homeApp.session_utils import get_session_month_sequence
+from libraryApp.models import LibraryBook, LibraryFine, LibraryIssue, LibraryMember
 from managementApp.models import (
     Student,
     TeacherDetail,
@@ -47,6 +49,7 @@ from utils.custom_decorators import check_groups
 from utils.custom_response import SuccessResponse, ErrorResponse
 from utils.image_utils import safe_image_url, avatar_image_html
 from utils.json_validator import validate_input
+from utils.logger import logger
 
 
 def _safe_image_url(image_field, fallback_path='images/default_avatar.svg'):
@@ -85,6 +88,212 @@ def _compact_fee_month(month_value, year_value):
 def _session_month_rows(session_id):
     session_obj = SchoolSession.objects.filter(pk=session_id, isDeleted=False).first() if session_id else None
     return get_session_month_sequence(session_obj)
+
+
+def _session_id(request):
+    return request.session.get('current_session', {}).get('Id')
+
+
+def _school_id(request):
+    return request.session.get('current_session', {}).get('SchoolID')
+
+
+def _teacher_library_member(request):
+    teacher = TeacherDetail.objects.filter(
+        isDeleted=False,
+        userID_id=request.user.id,
+        sessionID_id=_session_id(request),
+    ).first()
+    if not teacher:
+        return None
+    return LibraryMember.objects.select_related('staff').filter(
+        isDeleted=False,
+        isActive=True,
+        memberType='staff',
+        staff_id=teacher.id,
+        schoolID_id=_school_id(request),
+        sessionID_id=_session_id(request),
+    ).first()
+
+
+def _fine_balance(member):
+    if not member:
+        return Decimal('0.00')
+    total = member.fines.filter(isDeleted=False, status='pending').aggregate(total=Sum('amount'), paid=Sum('paidAmount'))
+    return (total.get('total') or Decimal('0.00')) - (total.get('paid') or Decimal('0.00'))
+
+
+def _status_pill(label, color='grey'):
+    return f'<span class="ui {color} tiny label">{escape(label)}</span>'
+
+
+def _issue_status_pill(status):
+    colors = {'issued': 'orange', 'returned': 'green', 'lost': 'red', 'damaged': 'yellow'}
+    return _status_pill(status.title(), colors.get(status, 'grey'))
+
+
+def _issue_overdue_days(issue):
+    if issue.status == 'issued' and issue.dueDate and issue.dueDate < date.today():
+        return (date.today() - issue.dueDate).days
+    return 0
+
+
+def _issue_due_date_cell(issue):
+    due_date = escape(issue.dueDate.strftime('%d-%m-%Y'))
+    if not _issue_overdue_days(issue):
+        return due_date
+    return f'<span class="ui red tiny label">{due_date}</span>'
+
+
+def _issue_status_cell(issue):
+    overdue_days = _issue_overdue_days(issue)
+    if overdue_days:
+        day_label = 'day' if overdue_days == 1 else 'days'
+        return _issue_status_pill(issue.status) + f' <span class="ui red tiny label">Overdue {overdue_days} {day_label}</span>'
+    return _issue_status_pill(issue.status)
+
+
+def _fine_status_pill(status):
+    colors = {'pending': 'orange', 'paid': 'green', 'waived': 'blue', 'cancelled': 'grey'}
+    return _status_pill(status.title(), colors.get(status, 'grey'))
+
+
+def _available_book_count(book):
+    return getattr(book, 'availableCopies', 0) or 0
+
+
+def _library_book_queryset(request):
+    return LibraryBook.objects.select_related('category', 'publisher').prefetch_related('authors').filter(
+        isDeleted=False,
+        isActive=True,
+        schoolID_id=_school_id(request),
+        sessionID_id=_session_id(request),
+    ).annotate(
+        availableCopies=Count('copies', filter=Q(copies__isDeleted=False, copies__isActive=True, copies__status='available'))
+    )
+
+
+@login_required
+@check_groups('Teaching')
+def teacher_library_summary_api(request):
+    try:
+        member = _teacher_library_member(request)
+        if not member:
+            logger.info(f'Teacher library summary unavailable user={request.user.id}')
+            return SuccessResponse('Library membership not found.', data={
+                'memberFound': False,
+                'memberId': '',
+                'memberCode': '',
+                'currentIssued': 0,
+                'overdue': 0,
+                'pendingFine': '0.00',
+                'historyCount': 0,
+            }).to_json_response()
+        issues = member.issues.filter(isDeleted=False)
+        today = date.today()
+        data = {
+            'memberFound': True,
+            'memberId': member.memberCode,
+            'memberCode': member.memberCode,
+            'currentIssued': issues.filter(status='issued').count(),
+            'overdue': issues.filter(status='issued', dueDate__lt=today).count(),
+            'pendingFine': str(_fine_balance(member)),
+            'historyCount': issues.count(),
+        }
+        logger.info(f'Teacher library summary fetched user={request.user.id} member={member.id}')
+        return SuccessResponse('Library summary fetched.', data=data).to_json_response()
+    except Exception as exc:
+        logger.exception(f'Error loading teacher library summary: {exc}')
+        return ErrorResponse('Unable to load library summary.').to_json_response()
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(check_groups('Teaching'), name='dispatch')
+class TeacherLibraryIssueListJson(BaseDatatableView):
+    order_columns = ['copy__book__title', 'copy__accessionNumber', 'issueDate', 'dueDate', 'returnDate', 'status', 'fineAmount']
+
+    def get_initial_queryset(self):
+        member = _teacher_library_member(self.request)
+        if not member:
+            return LibraryIssue.objects.none()
+        qs = member.issues.select_related('copy__book').filter(isDeleted=False)
+        if self.request.GET.get('current') == '1':
+            qs = qs.filter(status='issued')
+        return qs
+
+    def filter_queryset(self, qs):
+        search = self.request.GET.get('search[value]')
+        if search:
+            qs = qs.filter(Q(copy__book__title__icontains=search) | Q(copy__accessionNumber__icontains=search) | Q(status__icontains=search))
+        return qs
+
+    def prepare_results(self, qs):
+        return [[
+            escape(issue.copy.book.title),
+            escape(issue.copy.accessionNumber),
+            escape(issue.issueDate.strftime('%d-%m-%Y')),
+            _issue_due_date_cell(issue),
+            escape(issue.returnDate.strftime('%d-%m-%Y') if issue.returnDate else 'N/A'),
+            _issue_status_cell(issue),
+            escape(str(issue.fineAmount)),
+        ] for issue in qs]
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(check_groups('Teaching'), name='dispatch')
+class TeacherLibraryFineListJson(BaseDatatableView):
+    order_columns = ['reason', 'amount', 'paidAmount', 'paidAmount', 'paidDate', 'status']
+
+    def get_initial_queryset(self):
+        member = _teacher_library_member(self.request)
+        if not member:
+            return LibraryFine.objects.none()
+        return member.fines.select_related('issue').filter(isDeleted=False)
+
+    def filter_queryset(self, qs):
+        search = self.request.GET.get('search[value]')
+        if search:
+            qs = qs.filter(Q(reason__icontains=search) | Q(status__icontains=search) | Q(notes__icontains=search))
+        return qs
+
+    def prepare_results(self, qs):
+        return [[
+            escape(fine.reason.title()),
+            escape(str(fine.amount)),
+            escape(str(fine.paidAmount)),
+            escape(str(fine.balance)),
+            escape(fine.paidDate.strftime('%d-%m-%Y') if fine.paidDate else 'N/A'),
+            _fine_status_pill(fine.status),
+        ] for fine in qs]
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(check_groups('Teaching'), name='dispatch')
+class TeacherLibraryAvailableBookListJson(BaseDatatableView):
+    order_columns = ['title', 'isbn', 'category__name', 'title', 'publisher__name', 'shelfLocation', 'availableCopies']
+
+    def get_initial_queryset(self):
+        return _library_book_queryset(self.request)
+
+    def filter_queryset(self, qs):
+        search = self.request.GET.get('search[value]')
+        if search:
+            qs = qs.filter(Q(title__icontains=search) | Q(isbn__icontains=search) | Q(category__name__icontains=search) | Q(publisher__name__icontains=search) | Q(authors__name__icontains=search)).distinct()
+        return qs
+
+    def prepare_results(self, qs):
+        rows = []
+        for book in qs:
+            rows.append([
+                escape(book.title),
+                escape(book.isbn or 'N/A'),
+                escape(book.category.name if book.category_id else 'N/A'),
+                escape(', '.join(author.name for author in book.authors.all()) or 'N/A'),
+                escape(book.publisher.name if book.publisher_id else 'N/A'),
+                escape(book.shelfLocation or 'N/A'),
+                _status_pill(str(_available_book_count(book)), 'green' if _available_book_count(book) else 'grey'),
+            ])
+        return rows
 
 
 def _restrict_fee_queryset_to_session_months(qs, session_id):

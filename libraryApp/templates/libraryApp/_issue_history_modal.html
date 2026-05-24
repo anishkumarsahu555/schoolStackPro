@@ -1,0 +1,71 @@
+<div class="ui modal" id="issueHistoryModal">
+    <i class="close icon"></i>
+    <div class="header" id="issueHistoryTitle">Issue History</div>
+    <div class="content">
+        <div class="wide library-table-wrap">
+            <table class="ui unstackable tiny sortable celled very nowrap very compact table" style="margin-top: 5px;width: 100%">
+                <thead>
+                    <tr>
+                        <th>Book</th>
+                        <th>Copy</th>
+                        <th>Code</th>
+                        <th>Member</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Return Date</th>
+                        <th>Status</th>
+                        <th>Fine</th>
+                        <th>Renewals</th>
+                    </tr>
+                </thead>
+                <tbody id="issueHistoryRows"></tbody>
+            </table>
+        </div>
+    </div>
+    <div class="actions library-modal-actions">
+        <a class="ui teal button class-page-action" id="fullIssueHistoryLink" href="{% url 'libraryApp:issue_history' %}">
+            <span><span class="desktop-label">Full History</span><span class="mobile-label">History</span></span>
+            <i class="external alternate icon"></i>
+        </a>
+        <div class="ui cancel button">Close</div>
+    </div>
+</div>
+<script>
+function renderIssueHistoryRows(rows) {
+    if (!rows || !rows.length) {
+        $('#issueHistoryRows').html('<tr><td colspan="10" class="center aligned">No issue history found.</td></tr>');
+        return;
+    }
+    let html = '';
+    rows.forEach(function(row){
+        const cell = function(value){ return $('<div>').text(value == null ? '' : value).html(); };
+        html += '<tr>'
+            + '<td>' + cell(row.book) + '</td>'
+            + '<td>' + cell(row.copy) + '</td>'
+            + '<td>' + cell(row.memberCode) + '</td>'
+            + '<td>' + cell(row.memberName) + '</td>'
+            + '<td>' + cell(row.issueDate) + '</td>'
+            + '<td>' + cell(row.dueDate) + '</td>'
+            + '<td>' + cell(row.returnDate) + '</td>'
+            + '<td>' + cell(row.status) + '</td>'
+            + '<td>' + cell(row.fineAmount) + '</td>'
+            + '<td>' + cell(row.renewalCount) + '</td>'
+            + '</tr>';
+    });
+    $('#issueHistoryRows').html(html);
+}
+function loadIssueHistory(params, title) {
+    $('#issueHistoryTitle').text(title || 'Issue History');
+    $('#issueHistoryRows').html('<tr><td colspan="10" class="center aligned">Loading...</td></tr>');
+    params = params || {};
+    const queryParams = new URLSearchParams(params);
+    $('#fullIssueHistoryLink').attr('href', "{% url 'libraryApp:issue_history' %}" + (queryParams.toString() ? '?' + queryParams.toString() : ''));
+    $('#issueHistoryModal').modal('show');
+    $.get("{% url 'libraryAppAPI:issue_history_api' %}", Object.assign({limit: 20}, params), function(response){
+        renderIssueHistoryRows(response.data || []);
+    }).fail(function(xhr){
+        $('#issueHistoryRows').html('<tr><td colspan="10" class="center aligned">Unable to load issue history.</td></tr>');
+        addErrorNotification(libraryValidationMessage(xhr));
+    });
+}
+</script>

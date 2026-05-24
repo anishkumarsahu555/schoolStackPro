@@ -1,0 +1,111 @@
+<script>
+function libraryClearValidation(formSelector) {
+    $(formSelector).find('.field.error').removeClass('error');
+}
+
+function libraryMarkFieldError(fieldId) {
+    const field = $('#' + fieldId).closest('.field');
+    field.addClass('error');
+}
+
+function libraryValidateRequired(formSelector, requiredIds) {
+    libraryClearValidation(formSelector);
+    let hasError = false;
+    requiredIds.forEach(function(id) {
+        const element = $('#' + id);
+        const value = (element.val() || '').toString().trim();
+        if (!value) {
+            libraryMarkFieldError(id);
+            hasError = true;
+        }
+    });
+    if (hasError) {
+        requiredFieldError();
+        return false;
+    }
+    return true;
+}
+
+function libraryValidationMessage(xhr, fallback) {
+    let msg = fallback || 'Request failed. Please check your inputs.';
+    if (xhr && xhr.responseJSON) {
+        msg = xhr.responseJSON.message || xhr.responseJSON.error || msg;
+    } else if (xhr && xhr.responseText) {
+        try {
+            const parsed = JSON.parse(xhr.responseText);
+            msg = parsed.message || parsed.error || msg;
+        } catch (e) {
+            msg = xhr.responseText || msg;
+        }
+    }
+    return msg;
+}
+
+function libraryShowLoading() {
+    if (typeof showLoading === 'function') showLoading();
+}
+
+function libraryHideLoading() {
+    if (typeof hideLoading === 'function') hideLoading();
+}
+
+function libraryHandleSuccess(response, successMessage) {
+    if (response && response.success) {
+        addSuccessNotification(response.message || successMessage || 'Saved successfully.', response.color || 'green');
+        return true;
+    }
+    addErrorNotification((response && response.message) || 'Something went wrong.');
+    return false;
+}
+
+function libraryDataTable(tableSelector, ajaxConfig, columnDefs, defaultSortColumn) {
+    const table = $(tableSelector);
+    const lastColumnIndex = Math.max(table.find('thead th').length - 1, 0);
+    const exportColumns = [];
+    for (let i = 0; i < lastColumnIndex; i += 1) {
+        exportColumns.push(i);
+    }
+    return table.DataTable({
+        dom: 'Blfrtip',
+        scrollY: '350px',
+        scrollX: true,
+        stateSave: true,
+        fixedColumns: {
+            left: 1,
+            right: 1
+        },
+        buttons: [{
+            extend: 'excel',
+            exportOptions: {
+                columns: exportColumns
+            }
+        }],
+        columnDefs: columnDefs || [],
+        aaSorting: [[defaultSortColumn || 0, 'desc']],
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+        pageLength: 10,
+        processing: true,
+        serverSide: true,
+        ajax: ajaxConfig
+    });
+}
+
+$(document).on('input change', '.ui.form input, .ui.form select, .ui.form textarea', function() {
+    $(this).closest('.field').removeClass('error');
+});
+
+$(function() {
+    $('.library-date-calendar').calendar({
+        monthFirst: false,
+        type: 'date',
+        formatter: {
+            date: function(date) {
+                if (!date) return '';
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return date.getFullYear() + '-' + month + '-' + day;
+            }
+        }
+    });
+});
+</script>

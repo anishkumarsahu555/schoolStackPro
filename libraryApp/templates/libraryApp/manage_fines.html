@@ -1,0 +1,79 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Library Fines</title>{% endblock %}
+{% block page_title %}Library Fines{% endblock %}
+{% block page_subtitle %}Track overdue, lost, damaged, and manual fines{% endblock %}
+{% block page_actions %}<button class="ui green button class-page-action" onclick="showFineModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Fine</span><span class="mobile-label">Add</span></span></button>{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="list alternate outline icon"></i>
+        Fine list
+    </h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="FineTable" style="margin-top: 5px;width: 100%"><thead><tr><th>Code</th><th>Member</th><th>Reason</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Paid Date</th><th>Status</th><th>Actions</th></tr></thead></table>
+    </div>
+</div>
+<div class="ui modal" id="fineModal"><i class="close icon"></i><div class="header">Fine</div><div class="content"><form class="ui tiny form" id="fineForm">{% csrf_token %}<input type="hidden" name="id" id="fineId"><div class="library-form-grid"><div class="field required"><label>Member</label><select class="ui search dropdown" name="member" id="fineMember"></select></div><div class="field"><label>Linked Issue</label><select class="ui search dropdown" name="issue" id="fineIssue"><option value="">Manual / None</option></select></div><div class="field"><label>Reason</label><select class="ui dropdown" name="reason" id="fineReason"><option value="overdue">Overdue</option><option value="lost">Lost Book</option><option value="damaged">Damaged Book</option><option value="manual">Manual</option></select></div><div class="field"><label>Amount</label><input type="number" step="0.01" name="amount" id="fineAmount"></div><div class="field"><label>Paid Amount</label><input type="number" step="0.01" name="paidAmount" id="finePaid"></div><div class="field"><label>Paid Date</label><div class="ui calendar library-date-calendar" id="finePaidDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="paidDate" id="finePaidDate" placeholder="YYYY-MM-DD"></div></div></div><div class="field"><label>Status</label><select class="ui dropdown" name="status" id="fineStatus"><option value="pending">Pending</option><option value="paid">Paid</option><option value="waived">Waived</option><option value="cancelled">Cancelled</option></select></div><div class="field wide-field"><label>Notes</label><textarea rows="2" name="notes" id="fineNotes"></textarea></div></div></form></div><div class="actions library-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button class-page-action" onclick="saveFine()"><span><span class="desktop-label">Submit</span><span class="mobile-label">Save</span></span><i class="check icon"></i></button></div></div>
+<div class="ui modal" id="payFineModal"><i class="close icon"></i><div class="header">Pay Fine</div><div class="content"><form class="ui tiny form" id="payFineForm">{% csrf_token %}<input type="hidden" name="fine" id="payFineId"><div class="library-form-grid"><div class="field required"><label>Payment Amount</label><input type="number" step="0.01" min="0.01" name="amount" id="payFineAmount"></div><div class="field"><label>Payment Date</label><div class="ui calendar library-date-calendar" id="payFineDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="paidDate" id="payFineDate" placeholder="YYYY-MM-DD"></div></div></div><div class="field wide-field"><label>Notes</label><input name="notes" id="payFineNotes"></div></div></form></div><div class="actions library-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button class-page-action" onclick="saveFinePayment()"><span><span class="desktop-label">Pay</span><span class="mobile-label">Pay</span></span><i class="check icon"></i></button></div></div>
+<script>
+let fineTable; function fillFineOptions(done){ $.get("{% url 'libraryAppAPI:library_options_api' %}", function(r){ let m='<option value="">Select</option>', i='<option value="">Manual / None</option>'; (r.data.members||[]).forEach(x=>m+='<option value="'+x.id+'">'+x.name+'</option>'); (r.data.openIssues||[]).forEach(x=>i+='<option value="'+x.id+'">'+x.name+'</option>'); $('#fineMember').html(m); $('#fineIssue').html(i); $('.ui.dropdown').dropdown('refresh'); if(done) done(); }); }
+function showFineModal(){ $('#fineForm')[0].reset(); $('#fineId').val(''); fillFineOptions(); $('#fineModal').modal('show'); }
+function editFine(id){ $.get("{% url 'libraryAppAPI:detail_api' %}", {entity:'fine', id:id}, function(r){ const d=r.data; fillFineOptions(function(){ $('#fineId').val(d.id); $('#fineMember').dropdown('set selected', d.member); $('#fineIssue').dropdown('set selected', d.issue); $('#fineReason').dropdown('set selected', d.reason); $('#fineAmount').val(d.amount); $('#finePaid').val(d.paidAmount); $('#finePaidDate').val(d.paidDate); $('#fineStatus').dropdown('set selected', d.status); $('#fineNotes').val(d.notes); }); $('#fineModal').modal('show'); }); }
+function saveFine(){
+    if (!libraryValidateRequired('#fineForm', ['fineMember', 'fineAmount'])) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:fine_api' %}", $('#fineForm').serialize(), function(response){
+        if (libraryHandleSuccess(response, 'Fine saved successfully.')) {
+            $('#fineModal').modal('hide');
+            fineTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+function confirmDeleteFine(id){ if(confirm('Delete this fine?')) $.post("{% url 'libraryAppAPI:delete_api' %}", {entity:'fine', id:id}, function(){ fineTable.ajax.reload(); }); }
+function showPayFineModal(id){
+    $('#payFineForm')[0].reset();
+    $('#payFineId').val(id);
+    $.get("{% url 'libraryAppAPI:detail_api' %}", {entity:'fine', id:id}, function(response){
+        const d = response.data || {};
+        const balance = Math.max(parseFloat(d.amount || 0) - parseFloat(d.paidAmount || 0), 0).toFixed(2);
+        $('#payFineAmount').val(balance);
+    });
+    $('#payFineModal').modal('show');
+}
+function saveFinePayment(){
+    if (!libraryValidateRequired('#payFineForm', ['payFineId', 'payFineAmount'])) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:pay_fine_api' %}", $('#payFineForm').serialize(), function(response){
+        if (libraryHandleSuccess(response, 'Fine payment saved successfully.')) {
+            $('#payFineModal').modal('hide');
+            fineTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+function waiveFine(id){
+    if (!confirm('Waive this pending fine?')) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:waive_fine_api' %}", {fine:id}, function(response){
+        if (libraryHandleSuccess(response, 'Fine waived successfully.')) {
+            fineTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+$(function(){
+    $('.ui.dropdown').dropdown();
+    fineTable = libraryDataTable('#FineTable', "{% url 'libraryAppAPI:FineListJson' %}", [
+        { name: 'memberCode', targets: 0 },
+        { name: 'memberName', targets: 1 },
+        { name: 'reason', targets: 2 },
+        { name: 'amount', targets: 3 },
+        { name: 'paidAmount', targets: 4 },
+        { name: 'balance', targets: 5, orderable: false },
+        { name: 'paidDate', targets: 6 },
+        { name: 'status', targets: 7 },
+        { name: 'action', targets: 8, orderable: false, searchable: false }
+    ], 0);
+});
+</script>
+{% endblock %}

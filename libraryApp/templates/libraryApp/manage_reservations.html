@@ -1,0 +1,71 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Book Reservations</title>{% endblock %}
+{% block page_title %}Book Reservations{% endblock %}
+{% block page_subtitle %}Queue, fulfil, cancel, and expire reservations{% endblock %}
+{% block page_actions %}<button class="ui green button class-page-action" onclick="showReservationModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Reservation</span><span class="mobile-label">Add</span></span></button>{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="list alternate outline icon"></i>
+        Reservation list
+    </h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="ReservationTable" style="margin-top: 5px;width: 100%"><thead><tr><th>Book</th><th>Code</th><th>Member</th><th>Reserved On</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead></table>
+    </div>
+</div>
+<div class="ui modal" id="reservationModal"><i class="close icon"></i><div class="header">Reservation</div><div class="content"><form class="ui tiny form" id="reservationForm">{% csrf_token %}<input type="hidden" name="id" id="reservationId"><div class="library-form-grid"><div class="field required"><label>Member</label><select class="ui search dropdown" name="member" id="reservationMember"></select></div><div class="field required"><label>Book</label><select class="ui search dropdown" name="book" id="reservationBook"></select></div><div class="field"><label>Reservation Date</label><div class="ui calendar library-date-calendar" id="reservationDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="reservationDate" id="reservationDate" placeholder="YYYY-MM-DD"></div></div></div><div class="field"><label>Expiry Date</label><div class="ui calendar library-date-calendar" id="reservationExpiryCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="expiryDate" id="reservationExpiry" placeholder="YYYY-MM-DD"></div></div></div><div class="field"><label>Status</label><select class="ui dropdown" name="status" id="reservationStatus"><option value="pending">Pending</option><option value="fulfilled">Fulfilled</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option></select></div><div class="field wide-field"><label>Notes</label><textarea rows="2" name="notes" id="reservationNotes"></textarea></div></div></form></div><div class="actions library-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button class-page-action" onclick="saveReservation()"><span><span class="desktop-label">Submit</span><span class="mobile-label">Save</span></span><i class="check icon"></i></button></div></div>
+<div class="ui modal" id="issueReservationModal"><i class="close icon"></i><div class="header">Issue Reserved Book</div><div class="content"><form class="ui tiny form" id="issueReservationForm">{% csrf_token %}<input type="hidden" name="reservation" id="issueReservationId"><div class="library-form-grid"><div class="field required"><label>Available Copy</label><select class="ui search dropdown" name="copy" id="issueReservationCopy"></select></div><div class="field"><label>Issue Date</label><div class="ui calendar library-date-calendar" id="issueReservationDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="issueDate" id="issueReservationDate" placeholder="YYYY-MM-DD"></div></div></div><div class="field"><label>Due Date</label><div class="ui calendar library-date-calendar" id="issueReservationDueCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="dueDate" id="issueReservationDue" placeholder="YYYY-MM-DD"></div></div></div></div></form></div><div class="actions library-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button class-page-action" onclick="saveIssueReservation()"><span><span class="desktop-label">Issue</span><span class="mobile-label">Issue</span></span><i class="check icon"></i></button></div></div>
+<script>
+let reservationTable; function fillReservationOptions(done){ $.get("{% url 'libraryAppAPI:library_options_api' %}", function(r){ let m='<option value="">Select</option>', b='<option value="">Select</option>'; (r.data.members||[]).forEach(x=>m+='<option value="'+x.id+'">'+x.name+'</option>'); (r.data.books||[]).forEach(x=>b+='<option value="'+x.id+'">'+x.name+'</option>'); $('#reservationMember').html(m); $('#reservationBook').html(b); $('.ui.dropdown').dropdown('refresh'); if(done) done(); }); }
+function showReservationModal(){ $('#reservationForm')[0].reset(); $('#reservationId').val(''); fillReservationOptions(); $('#reservationModal').modal('show'); }
+function editReservation(id){ $.get("{% url 'libraryAppAPI:detail_api' %}", {entity:'reservation', id:id}, function(r){ const d=r.data; fillReservationOptions(function(){ $('#reservationId').val(d.id); $('#reservationMember').dropdown('set selected', d.member); $('#reservationBook').dropdown('set selected', d.book); $('#reservationDate').val(d.reservationDate); $('#reservationExpiry').val(d.expiryDate); $('#reservationStatus').dropdown('set selected', d.status); $('#reservationNotes').val(d.notes); }); $('#reservationModal').modal('show'); }); }
+function saveReservation(){
+    if (!libraryValidateRequired('#reservationForm', ['reservationMember', 'reservationBook'])) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:reservation_api' %}", $('#reservationForm').serialize(), function(response){
+        if (libraryHandleSuccess(response, 'Reservation saved successfully.')) {
+            $('#reservationModal').modal('hide');
+            reservationTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+function confirmDeleteReservation(id){ if(confirm('Delete this reservation?')) $.post("{% url 'libraryAppAPI:delete_api' %}", {entity:'reservation', id:id}, function(){ reservationTable.ajax.reload(); }); }
+function issueReservation(id){
+    $('#issueReservationForm')[0].reset();
+    $('#issueReservationId').val(id);
+    $('#issueReservationCopy').html('<option value="">Loading...</option>');
+    $('#issueReservationModal').modal('show');
+    $.get("{% url 'libraryAppAPI:available_copies_api' %}", {reservation:id}, function(response){
+        let opts = '<option value="">Select</option>';
+        (response.data || []).forEach(x => opts += '<option value="'+x.id+'">'+x.name+'</option>');
+        $('#issueReservationCopy').html(opts);
+        $('.ui.dropdown').dropdown('refresh');
+        if (!(response.data || []).length) addErrorNotification('No available copy found for this reservation.');
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); });
+}
+function saveIssueReservation(){
+    if (!libraryValidateRequired('#issueReservationForm', ['issueReservationId', 'issueReservationCopy'])) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:issue_reservation_api' %}", $('#issueReservationForm').serialize(), function(response){
+        if (libraryHandleSuccess(response, 'Reservation issued successfully.')) {
+            $('#issueReservationModal').modal('hide');
+            reservationTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+$(function(){
+    $('.ui.dropdown').dropdown();
+    reservationTable = libraryDataTable('#ReservationTable', "{% url 'libraryAppAPI:ReservationListJson' %}", [
+        { name: 'book', targets: 0 },
+        { name: 'memberCode', targets: 1 },
+        { name: 'memberName', targets: 2 },
+        { name: 'reservationDate', targets: 3 },
+        { name: 'expiryDate', targets: 4 },
+        { name: 'status', targets: 5 },
+        { name: 'action', targets: 6, orderable: false, searchable: false }
+    ], 3);
+});
+</script>
+{% endblock %}

@@ -19,6 +19,7 @@ AUDITED_APP_LABELS = {
     'studentApp',
     'chatApp',
     'transportApp',
+    'libraryApp',
 }
 AUDIT_EXCLUDED_MODELS = {
     ('homeApp', 'AuditLog'),

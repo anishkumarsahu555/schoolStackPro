@@ -1,0 +1,45 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Authors</title>{% endblock %}
+{% block page_title %}Authors{% endblock %}
+{% block page_subtitle %}Maintain author records used by books{% endblock %}
+{% block page_actions %}<button class="ui green button class-page-action" onclick="showAuthorModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Author</span><span class="mobile-label">Add</span></span></button>{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="list alternate outline icon"></i>
+        Author list
+    </h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="AuthorTable" style="margin-top: 5px;width: 100%"><thead><tr><th>Name</th><th>Country</th><th>Status</th><th>Edited By</th><th>Updated On</th><th>Actions</th></tr></thead></table>
+    </div>
+</div>
+<div class="ui modal" id="authorModal"><i class="close icon"></i><div class="header">Author</div><div class="content"><form class="ui tiny form" id="authorForm">{% csrf_token %}<input type="hidden" name="id" id="authorId"><div class="library-form-grid"><div class="field required"><label>Name</label><input name="name" id="authorName"></div><div class="field"><label>Country</label><input name="country" id="authorCountry"></div><div class="field"><label>Status</label><select class="ui dropdown" name="isActive" id="authorActive"><option value="true">Active</option><option value="false">Inactive</option></select></div><div class="field wide-field"><label>Bio</label><textarea rows="3" name="bio" id="authorBio"></textarea></div></div></form></div><div class="actions library-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button class-page-action" onclick="saveAuthor()"><span><span class="desktop-label">Submit</span><span class="mobile-label">Save</span></span><i class="check icon"></i></button></div></div>
+<script>
+let authorTable; function showAuthorModal(){ $('#authorForm')[0].reset(); $('#authorId').val(''); $('#authorModal').modal('show'); }
+function editAuthor(id){ $.get("{% url 'libraryAppAPI:detail_api' %}", {entity:'author', id:id}, function(r){ const d=r.data; $('#authorId').val(d.id); $('#authorName').val(d.name); $('#authorCountry').val(d.country); $('#authorBio').val(d.bio); $('#authorActive').val(String(d.isActive)); $('#authorModal').modal('show'); }); }
+function saveAuthor(){
+    if (!libraryValidateRequired('#authorForm', ['authorName'])) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:author_api' %}", $('#authorForm').serialize(), function(response){
+        if (libraryHandleSuccess(response, 'Author saved successfully.')) {
+            $('#authorModal').modal('hide');
+            authorTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+function confirmDeleteAuthor(id){ if(confirm('Delete this author?')) $.post("{% url 'libraryAppAPI:delete_api' %}", {entity:'author', id:id}, function(){ authorTable.ajax.reload(); }); }
+$(function(){
+    $('.ui.dropdown').dropdown();
+    authorTable = libraryDataTable('#AuthorTable', "{% url 'libraryAppAPI:AuthorListJson' %}", [
+        {"name": "name", "targets": 0, "orderable": true},
+        {"name": "country", "targets": 1, "orderable": true},
+        {"name": "isActive", "targets": 2, "orderable": true},
+        {"name": "lastEditedBy", "targets": 3, "orderable": true},
+        {"name": "lastUpdatedOn", "targets": 4, "orderable": true},
+        {"name": "action", "targets": 5, "orderable": false}
+    ], 4);
+});
+</script>
+{% endblock %}

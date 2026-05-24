@@ -25,6 +25,13 @@ private_key.pem
 public_key.pem
 managementApp/migrations/0025_leave_type_quota_days.py
 !certificateApp/migrations/
+!libraryApp/migrations/
+libraryApp/migrations/*.py
+!libraryApp/migrations/0001_initial.py
+!libraryApp/migrations/0002_librarysetting_defaultmaxbooksallowed_and_more.py
+!libraryApp/migrations/0003_libraryissue_lib_issue_copy_idx_and_more.py
+!libraryApp/migrations/0004_libraryfine_paiddate.py
+!libraryApp/migrations/0005_librarymembercarddesign.py
 certificateApp/migrations-ori
 homeApp/migrations-ori
 managementApp/migrations-ori

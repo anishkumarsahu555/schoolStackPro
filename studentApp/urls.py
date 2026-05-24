@@ -9,6 +9,8 @@ urlpatterns = [
     path('my-details/', student_my_details, name='student_my_details'),
     path('id-card/', student_id_card, name='student_id_card'),
     path('my-transport/', student_my_transport, name='student_my_transport'),
+    path('library/', student_library, name='student_library'),
+    path('library/id-card/', student_library_id_card, name='student_library_id_card'),
 
     #attendance
     path('attendance_history/', attendance_history, name='attendance_history'),

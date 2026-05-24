@@ -1,0 +1,46 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Publishers</title>{% endblock %}
+{% block page_title %}Publishers{% endblock %}
+{% block page_subtitle %}Maintain publisher contact and catalogue records{% endblock %}
+{% block page_actions %}<button class="ui green button class-page-action" onclick="showPublisherModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Publisher</span><span class="mobile-label">Add</span></span></button>{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="list alternate outline icon"></i>
+        Publisher list
+    </h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="PublisherTable" style="margin-top: 5px;width: 100%"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Status</th><th>Edited By</th><th>Updated On</th><th>Actions</th></tr></thead></table>
+    </div>
+</div>
+<div class="ui modal" id="publisherModal"><i class="close icon"></i><div class="header">Publisher</div><div class="content"><form class="ui tiny form" id="publisherForm">{% csrf_token %}<input type="hidden" name="id" id="publisherId"><div class="library-form-grid"><div class="field required"><label>Name</label><input name="name" id="publisherName"></div><div class="field"><label>Phone</label><input name="phoneNumber" id="publisherPhone"></div><div class="field"><label>Email</label><input name="email" id="publisherEmail"></div><div class="field"><label>Status</label><select class="ui dropdown" name="isActive" id="publisherActive"><option value="true">Active</option><option value="false">Inactive</option></select></div><div class="field wide-field"><label>Address</label><textarea rows="3" name="address" id="publisherAddress"></textarea></div></div></form></div><div class="actions library-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button class-page-action" onclick="savePublisher()"><span><span class="desktop-label">Submit</span><span class="mobile-label">Save</span></span><i class="check icon"></i></button></div></div>
+<script>
+let publisherTable; function showPublisherModal(){ $('#publisherForm')[0].reset(); $('#publisherId').val(''); $('#publisherModal').modal('show'); }
+function editPublisher(id){ $.get("{% url 'libraryAppAPI:detail_api' %}", {entity:'publisher', id:id}, function(r){ const d=r.data; $('#publisherId').val(d.id); $('#publisherName').val(d.name); $('#publisherPhone').val(d.phoneNumber); $('#publisherEmail').val(d.email); $('#publisherAddress').val(d.address); $('#publisherActive').val(String(d.isActive)); $('#publisherModal').modal('show'); }); }
+function savePublisher(){
+    if (!libraryValidateRequired('#publisherForm', ['publisherName'])) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:publisher_api' %}", $('#publisherForm').serialize(), function(response){
+        if (libraryHandleSuccess(response, 'Publisher saved successfully.')) {
+            $('#publisherModal').modal('hide');
+            publisherTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+function confirmDeletePublisher(id){ if(confirm('Delete this publisher?')) $.post("{% url 'libraryAppAPI:delete_api' %}", {entity:'publisher', id:id}, function(){ publisherTable.ajax.reload(); }); }
+$(function(){
+    $('.ui.dropdown').dropdown();
+    publisherTable = libraryDataTable('#PublisherTable', "{% url 'libraryAppAPI:PublisherListJson' %}", [
+        {"name": "name", "targets": 0, "orderable": true},
+        {"name": "phoneNumber", "targets": 1, "orderable": true},
+        {"name": "email", "targets": 2, "orderable": true},
+        {"name": "isActive", "targets": 3, "orderable": true},
+        {"name": "lastEditedBy", "targets": 4, "orderable": true},
+        {"name": "lastUpdatedOn", "targets": 5, "orderable": true},
+        {"name": "action", "targets": 6, "orderable": false}
+    ], 5);
+});
+</script>
+{% endblock %}

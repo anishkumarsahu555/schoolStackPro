@@ -1,0 +1,65 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Book Categories</title>{% endblock %}
+{% block page_title %}Book Categories{% endblock %}
+{% block page_subtitle %}Organize books by category and subcategory{% endblock %}
+{% block page_actions %}<button class="ui green button class-page-action" onclick="showCategoryModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Category</span><span class="mobile-label">Add</span></span></button>{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="list alternate outline icon"></i>
+        Category list
+    </h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="CategoryTable" style="margin-top: 5px;width: 100%">
+            <thead><tr><th>Name</th><th>Code</th><th>Parent</th><th>Status</th><th>Edited By</th><th>Updated On</th><th>Actions</th></tr></thead>
+        </table>
+    </div>
+</div>
+<div class="ui modal" id="categoryModal">
+    <i class="close icon"></i><div class="header">Category</div>
+    <div class="content">
+        <form class="ui tiny form" id="categoryForm">{% csrf_token %}
+            <input type="hidden" name="id" id="categoryId">
+            <div class="library-form-grid">
+                <div class="field required"><label>Name</label><input name="name" id="categoryName"></div>
+                <div class="field"><label>Code</label><input name="code" id="categoryCode"></div>
+                <div class="field"><label>Parent</label><select class="ui search dropdown" name="parent" id="categoryParent"><option value="">None</option></select></div>
+                <div class="field"><label>Status</label><select class="ui dropdown" name="isActive" id="categoryActive"><option value="true">Active</option><option value="false">Inactive</option></select></div>
+                <div class="field wide-field"><label>Description</label><textarea rows="2" name="description" id="categoryDescription"></textarea></div>
+            </div>
+        </form>
+    </div>
+    <div class="actions library-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button class-page-action" onclick="saveCategory()"><span><span class="desktop-label">Submit</span><span class="mobile-label">Save</span></span><i class="check icon"></i></button></div>
+</div>
+<script>
+let categoryTable;
+function loadCategoryOptions(){ $.get("{% url 'libraryAppAPI:library_options_api' %}", function(r){ let opts='<option value="">None</option>'; (r.data.categories||[]).forEach(x=>opts+='<option value="'+x.id+'">'+x.name+'</option>'); $('#categoryParent').html(opts).dropdown('refresh'); }); }
+function showCategoryModal(){ $('#categoryForm')[0].reset(); $('#categoryId').val(''); loadCategoryOptions(); $('#categoryModal').modal('show'); }
+function editCategory(id){ $.get("{% url 'libraryAppAPI:detail_api' %}", {entity:'category', id:id}, function(r){ const d=r.data; loadCategoryOptions(); $('#categoryId').val(d.id); $('#categoryName').val(d.name); $('#categoryCode').val(d.code); $('#categoryParent').val(d.parent); $('#categoryDescription').val(d.description); $('#categoryActive').val(String(d.isActive)); $('#categoryModal').modal('show'); }); }
+function saveCategory(){
+    if (!libraryValidateRequired('#categoryForm', ['categoryName'])) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:category_api' %}", $('#categoryForm').serialize(), function(response){
+        if (libraryHandleSuccess(response, 'Category saved successfully.')) {
+            $('#categoryModal').modal('hide');
+            categoryTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+function confirmDeleteCategory(id){ if(confirm('Delete this category?')) $.post("{% url 'libraryAppAPI:delete_api' %}", {entity:'category', id:id}, function(){ categoryTable.ajax.reload(); }); }
+$(function(){
+    $('.ui.dropdown').dropdown();
+    categoryTable = libraryDataTable('#CategoryTable', "{% url 'libraryAppAPI:CategoryListJson' %}", [
+        {"name": "name", "targets": 0, "orderable": true},
+        {"name": "code", "targets": 1, "orderable": true},
+        {"name": "parent", "targets": 2, "orderable": true},
+        {"name": "isActive", "targets": 3, "orderable": true},
+        {"name": "lastEditedBy", "targets": 4, "orderable": true},
+        {"name": "lastUpdatedOn", "targets": 5, "orderable": true},
+        {"name": "action", "targets": 6, "orderable": false}
+    ], 5);
+});
+</script>
+{% endblock %}

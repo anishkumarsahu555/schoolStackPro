@@ -1,0 +1,37 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Library Reports</title>{% endblock %}
+{% block page_title %}Library Reports{% endblock %}
+{% block page_subtitle %}Review circulation, overdue, stock, and fine reports{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <div class="library-actions">
+        <a class="ui green button class-page-action" href="{% url 'libraryAppAPI:library_report_csv' %}?report=overdue"><i class="download icon"></i><span><span class="desktop-label">Overdue CSV</span><span class="mobile-label">Overdue</span></span></a>
+        <a class="ui teal button class-page-action" href="{% url 'libraryAppAPI:library_report_csv' %}?report=stock"><i class="download icon"></i><span><span class="desktop-label">Stock CSV</span><span class="mobile-label">Stock</span></span></a>
+        <a class="ui orange button class-page-action" href="{% url 'libraryAppAPI:library_report_csv' %}?report=fines"><i class="download icon"></i><span><span class="desktop-label">Fines CSV</span><span class="mobile-label">Fines</span></span></a>
+    </div>
+    <h4 class="ui horizontal left aligned divider header"><i class="clock outline icon"></i>Overdue Books</h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="OverdueTable" style="margin-top: 5px;width: 100%"><thead><tr><th>Book</th><th>Copy</th><th>Code</th><th>Member</th><th>Issue Date</th><th>Due Date</th><th>Status</th><th>Fine</th><th>Actions</th></tr></thead></table>
+    </div>
+</div>
+{% include 'libraryApp/_return_modal.html' %}
+{% include 'libraryApp/_renew_modal.html' %}
+{% include 'libraryApp/_issue_detail_modal.html' %}
+<script>
+$(function(){
+    libraryDataTable('#OverdueTable', "{% url 'libraryAppAPI:OverdueReportListJson' %}", [
+        { name: 'book', targets: 0 },
+        { name: 'copy', targets: 1 },
+        { name: 'memberCode', targets: 2 },
+        { name: 'memberName', targets: 3 },
+        { name: 'issueDate', targets: 4 },
+        { name: 'dueDate', targets: 5 },
+        { name: 'status', targets: 6 },
+        { name: 'fineAmount', targets: 7 },
+        { name: 'action', targets: 8, orderable: false, searchable: false }
+    ], 5);
+});
+</script>
+{% endblock %}

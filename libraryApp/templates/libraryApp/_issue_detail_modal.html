@@ -1,0 +1,54 @@
+<div class="ui modal" id="issueDetailModal">
+    <i class="close icon"></i>
+    <div class="header">Issue Detail</div>
+    <div class="content">
+        <div class="library-detail-grid" id="issueDetailContent"></div>
+        <h4 class="ui horizontal left aligned divider header"><i class="rupee sign icon"></i>Linked Fines</h4>
+        <div class="wide library-table-wrap">
+            <table class="ui unstackable tiny celled very compact table" style="width:100%">
+                <thead><tr><th>Reason</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Paid Date</th><th>Status</th></tr></thead>
+                <tbody id="issueDetailFines"></tbody>
+            </table>
+        </div>
+    </div>
+    <div class="actions library-modal-actions">
+        <div class="ui cancel button">Close</div>
+    </div>
+</div>
+<script>
+function issueDetailCell(label, value) {
+    return '<div class="library-detail-item"><div class="label">' + $('<div>').text(label).html() + '</div><div class="value">' + $('<div>').text(value || 'N/A').html() + '</div></div>';
+}
+function showIssueDetailModal(id) {
+    $('#issueDetailContent').html('<div class="library-detail-item"><div class="value">Loading...</div></div>');
+    $('#issueDetailFines').html('<tr><td colspan="6">Loading...</td></tr>');
+    $('#issueDetailModal').modal('show');
+    $.get("{% url 'libraryAppAPI:issue_detail_api' %}", {issue:id}, function(response){
+        const d = response.data || {};
+        $('#issueDetailContent').html(
+            issueDetailCell('Book', d.book) +
+            issueDetailCell('Copy', d.copy) +
+            issueDetailCell('Member Code', d.memberCode) +
+            issueDetailCell('Member', d.memberName) +
+            issueDetailCell('Issue Date', d.issueDate) +
+            issueDetailCell('Due Date', d.dueDate) +
+            issueDetailCell('Return Date', d.returnDate) +
+            issueDetailCell('Renewals', d.renewalCount) +
+            issueDetailCell('Status', d.status) +
+            issueDetailCell('Condition', d.returnCondition) +
+            issueDetailCell('Overdue Days', d.overdueDays) +
+            issueDetailCell('Fine Amount', d.fineAmount) +
+            issueDetailCell('Notes', d.notes)
+        );
+        let rows = '';
+        const cell = function(value){ return $('<div>').text(value == null || value === '' ? 'N/A' : value).html(); };
+        (d.fines || []).forEach(function(fine){
+            rows += '<tr><td>'+cell(fine.reason)+'</td><td>'+cell(fine.amount)+'</td><td>'+cell(fine.paidAmount)+'</td><td>'+cell(fine.balance)+'</td><td>'+cell(fine.paidDate)+'</td><td>'+cell(fine.status)+'</td></tr>';
+        });
+        $('#issueDetailFines').html(rows || '<tr><td colspan="6">No linked fines.</td></tr>');
+    }).fail(function(xhr){
+        $('#issueDetailContent').html('<div class="library-detail-item"><div class="value">Unable to load issue detail.</div></div>');
+        addErrorNotification(libraryValidationMessage(xhr));
+    });
+}
+</script>

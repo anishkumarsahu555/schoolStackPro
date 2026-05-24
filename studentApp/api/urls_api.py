@@ -21,5 +21,10 @@ urlpatterns = [
     path('student_update_leave_api', student_update_leave_api, name='student_update_leave_api'),
     path('student_cancel_leave_api', student_cancel_leave_api, name='student_cancel_leave_api'),
     path('get_student_leave_detail_api', get_student_leave_detail_api, name='get_student_leave_detail_api'),
+    path('student_library_summary_api', student_library_summary_api, name='student_library_summary_api'),
+    path('StudentLibraryCurrentIssueListJson', StudentLibraryIssueListJson.as_view(), name='StudentLibraryCurrentIssueListJson'),
+    path('StudentLibraryIssueHistoryListJson', StudentLibraryIssueListJson.as_view(), name='StudentLibraryIssueHistoryListJson'),
+    path('StudentLibraryFineListJson', StudentLibraryFineListJson.as_view(), name='StudentLibraryFineListJson'),
+    path('StudentLibraryAvailableBookListJson', StudentLibraryAvailableBookListJson.as_view(), name='StudentLibraryAvailableBookListJson'),
 
 ]

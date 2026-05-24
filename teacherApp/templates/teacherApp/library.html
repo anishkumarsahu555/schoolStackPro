@@ -1,0 +1,81 @@
+{% extends 'teacherApp/index.html' %}
+{% block title %}<title>My Library</title>{% endblock %}
+{% block page_title %}My Library{% endblock %}
+{% block page_subtitle %}View issued books, history, fines, and available library stock{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="book reader icon"></i>
+        Library summary
+    </h4>
+    {% if profile_missing %}
+        <div class="ui yellow message">Teacher profile is not available for the current session.</div>
+    {% endif %}
+    <div class="ui yellow message" id="libraryMemberMessage" style="display:none;">Library membership is not active. Please contact the library office.</div>
+    <div class="library-actions" id="libraryMemberCardAction" style="display:none; margin-bottom: 0.8rem;">
+        <a class="ui blue button class-page-action" href="{% url 'teacherApp:teacher_library_id_card' %}">
+            <i class="id card outline icon"></i>
+            <span>View ID Card</span>
+        </a>
+    </div>
+    <div class="library-kpi-grid">
+        <div class="library-kpi"><div class="label">Member ID</div><div class="value" id="libraryMemberCode">N/A</div></div>
+        <div class="library-kpi"><div class="label">Current Issued</div><div class="value" id="libraryCurrentIssued">0</div></div>
+        <div class="library-kpi"><div class="label">Overdue</div><div class="value" id="libraryOverdue">0</div></div>
+        <div class="library-kpi"><div class="label">Pending Fine</div><div class="value" id="libraryPendingFine">0.00</div></div>
+    </div>
+</div>
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header"><i class="undo icon"></i>Currently issued</h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="teacherCurrentIssueTable" style="margin-top: 5px;width: 100%">
+            <thead><tr><th>Book</th><th>Copy</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th><th>Fine</th></tr></thead>
+        </table>
+    </div>
+</div>
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header"><i class="history icon"></i>Issue history</h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="teacherIssueHistoryTable" style="margin-top: 5px;width: 100%">
+            <thead><tr><th>Book</th><th>Copy</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th><th>Fine</th></tr></thead>
+        </table>
+    </div>
+</div>
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header"><i class="money bill alternate outline icon"></i>Fine history</h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="teacherFineTable" style="margin-top: 5px;width: 100%">
+            <thead><tr><th>Reason</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Paid Date</th><th>Status</th></tr></thead>
+        </table>
+    </div>
+</div>
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header"><i class="search icon"></i>Available books</h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="teacherAvailableBookTable" style="margin-top: 5px;width: 100%">
+            <thead><tr><th>Title</th><th>ISBN</th><th>Category</th><th>Authors</th><th>Publisher</th><th>Shelf/Rack</th><th>Available</th></tr></thead>
+        </table>
+    </div>
+</div>
+<script>
+$(function(){
+    $.get("{% url 'teacherAppAPI:teacher_library_summary_api' %}", function(response){
+        const data = response.data || {};
+        if (!data.memberFound) $('#libraryMemberMessage').show();
+        if (data.memberFound) $('#libraryMemberCardAction').show();
+        $('#libraryMemberCode').text(data.memberId || data.memberCode || 'N/A');
+        $('#libraryCurrentIssued').text(data.currentIssued || 0);
+        $('#libraryOverdue').text(data.overdue || 0);
+        $('#libraryPendingFine').text(data.pendingFine || '0.00');
+    });
+    libraryDataTable('#teacherCurrentIssueTable', {url: "{% url 'teacherAppAPI:TeacherLibraryCurrentIssueListJson' %}", data: {current: '1'}}, [], 3);
+    libraryDataTable('#teacherIssueHistoryTable', {url: "{% url 'teacherAppAPI:TeacherLibraryIssueHistoryListJson' %}"}, [], 2);
+    libraryDataTable('#teacherFineTable', {url: "{% url 'teacherAppAPI:TeacherLibraryFineListJson' %}"}, [], 4);
+    libraryDataTable('#teacherAvailableBookTable', {url: "{% url 'teacherAppAPI:TeacherLibraryAvailableBookListJson' %}"}, [
+        {targets: 3, orderable: false}
+    ], 0);
+});
+</script>
+{% endblock %}

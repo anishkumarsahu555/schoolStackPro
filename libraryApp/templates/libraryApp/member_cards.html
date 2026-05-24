@@ -1,0 +1,150 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Library Member Cards</title>{% endblock %}
+{% block page_title %}Library Member Cards{% endblock %}
+{% block page_subtitle %}Preview and print library membership cards{% endblock %}
+{% block page_actions %}
+    <a class="ui button class-page-action no-print" href="{% url 'libraryApp:member_card_design' %}">
+        <i class="paint brush icon"></i>
+        <span>Design</span>
+    </a>
+    <button class="ui blue button class-page-action no-print" type="button" onclick="window.print()">
+        <i class="print icon"></i>
+        <span>Print</span>
+    </button>
+    <button class="ui teal button class-page-action no-print library-jpeg-download-btn" type="button" onclick="downloadLibraryCardsJpeg()">
+        <i class="download icon"></i>
+        <span>JPEG</span>
+    </button>
+{% endblock %}
+{% block body %}
+<style>
+    .library-card-sheet {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(3, minmax(0, {{ id_card_design.cardWidthMm|default:54 }}mm));
+        justify-content: center;
+    }
+    @media (max-width: 900px) {
+        .library-card-sheet {
+            grid-template-columns: repeat(2, minmax(0, {{ id_card_design.cardWidthMm|default:54 }}mm));
+        }
+    }
+    @media (max-width: 520px) {
+        .library-card-sheet {
+            grid-template-columns: 1fr;
+            justify-items: center;
+        }
+    }
+    @media print {
+        @page {
+            margin: 8mm;
+            size: A4 portrait;
+        }
+        .no-print,
+        .ui.top.fixed.menu,
+        .ui.sidebar,
+        .app-topbar,
+        .sidenav,
+        .page-header {
+            display: none !important;
+        }
+        body,
+        .main-content {
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .ui.segment {
+            border: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .library-card-sheet {
+            gap: 7mm;
+            grid-template-columns: repeat(3, {{ id_card_design.cardWidthMm|default:54 }}mm);
+            justify-content: start;
+        }
+        .library-id-card {
+            box-shadow: none !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+<div class="ui segment">
+    {% if cards %}
+        <div class="library-card-sheet">
+            {% include 'libraryApp/partials/member_card_embed.html' %}
+        </div>
+    {% else %}
+        <div class="ui yellow message">No active library members found for the selected filter.</div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+    function libraryCardValue(card, fieldKey) {
+        const row = card.querySelector('[data-preview-field="' + fieldKey + '"]');
+        const value = row ? row.querySelector('.v') : null;
+        return value ? value.textContent.trim() : '';
+    }
+
+    function libraryCardFileName(card, index) {
+        const memberCode = libraryCardValue(card, 'memberCode') || 'member';
+        const memberName = libraryCardValue(card, 'name') || 'library-member';
+        const rawName = memberCode + '-' + memberName + '-library-card-' + index;
+        const cleaned = String(rawName)
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || ('library-member-card-' + index);
+        return cleaned + '.jpg';
+    }
+
+    function setLibraryJpegButtonsLoading(isLoading) {
+        document.querySelectorAll('.library-jpeg-download-btn').forEach(function(button) {
+            button.classList.toggle('loading', isLoading);
+            button.classList.toggle('disabled', isLoading);
+        });
+    }
+
+    async function downloadLibraryCardsJpeg() {
+        const cards = Array.from(document.querySelectorAll('.library-card-sheet .library-id-card'));
+        if (!cards.length) {
+            addErrorNotification('No library member cards available for export.');
+            return;
+        }
+        if (typeof html2canvas !== 'function') {
+            addErrorNotification('JPEG export library not loaded.');
+            return;
+        }
+
+        setLibraryJpegButtonsLoading(true);
+        try {
+            for (let index = 0; index < cards.length; index += 1) {
+                const card = cards[index];
+                const canvas = await html2canvas(card, {
+                    backgroundColor: '#ffffff',
+                    scale: Math.max(2, window.devicePixelRatio || 1),
+                    useCORS: true,
+                    allowTaint: false
+                });
+                const downloadLink = document.createElement('a');
+                downloadLink.href = canvas.toDataURL('image/jpeg', 0.95);
+                downloadLink.download = libraryCardFileName(card, index + 1);
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                await new Promise(function(resolve) { setTimeout(resolve, 120); });
+            }
+            addSuccessNotification(cards.length === 1 ? 'JPEG download started.' : 'JPEG downloads started.');
+        } catch (error) {
+            addErrorNotification('Unable to generate JPEG. Please try again.');
+        } finally {
+            setLibraryJpegButtonsLoading(false);
+        }
+    }
+</script>
+{% endblock %}

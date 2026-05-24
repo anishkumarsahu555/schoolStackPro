@@ -1,0 +1,282 @@
+<style>
+    .library-id-card {
+        background: {{ id_card_style.cardBackgroundColor|default:'#f3f5f8' }};
+        color: {{ id_card_style.textColor|default:'#122030' }};
+        border: 2px solid {{ id_card_style.primaryColor|default:'#2452a3' }};
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(30, 65, 119, 0.12);
+        display: flex;
+        flex-direction: column;
+        font-family: {{ id_card_style.fontFamily|default:'Arial, sans-serif' }};
+        height: {{ id_card_design.cardHeightMm|default:86 }}mm;
+        overflow: hidden;
+        page-break-inside: avoid;
+        position: relative;
+        width: {{ id_card_design.cardWidthMm|default:54 }}mm;
+        {% if id_card_design.backgroundImage %}
+            background-image: url("{{ id_card_design.backgroundImage.url }}");
+            background-position: center;
+            background-size: cover;
+        {% endif %}
+    }
+    .library-id-head {
+        background: {{ id_card_style.headerColor|default:'#2457ad' }};
+        color: {{ id_card_style.headerTextColor|default:'#ffffff' }};
+        padding: 0.16cm 0.14cm 0.12cm;
+        text-align: center;
+    }
+    .library-id-head.band {
+        background: {{ id_card_style.headerColor|default:'#2452a3' }};
+        color: {{ id_card_style.headerTextColor|default:'#ffffff' }};
+        border-bottom: 2px solid {{ id_card_style.primaryColor|default:'#2452a3' }};
+    }
+    .library-school {
+        align-items: center;
+        display: grid;
+        gap: 0.08cm;
+        grid-template-columns: {{ id_card_header.logoSizeMm|default:4.6 }}mm minmax(0, 1fr);
+        margin-bottom: 0.05cm;
+    }
+    .library-school.no-logo {
+        display: block;
+    }
+    .library-school-logo,
+    .library-school-logo-fallback {
+        align-items: center;
+        background: #ffffff;
+        border-radius: 50%;
+        color: {{ id_card_style.primaryColor|default:'#2452a3' }};
+        display: flex;
+        font-size: 10px;
+        font-weight: 900;
+        height: {{ id_card_header.logoSizeMm|default:4.6 }}mm;
+        justify-content: center;
+        object-fit: contain;
+        width: {{ id_card_header.logoSizeMm|default:4.6 }}mm;
+    }
+    .library-school-name {
+        color: {{ id_card_style.headerTextColor|default:'#ffffff' }};
+        font-size: {{ id_card_header.schoolNameFontSize|default:15 }}px;
+        font-weight: 900;
+        line-height: 1.05;
+        overflow-wrap: anywhere;
+        text-align: left;
+        text-transform: uppercase;
+    }
+    .library-school.no-logo .library-school-name {
+        text-align: center;
+    }
+    .library-school-contact {
+        color: {{ id_card_style.headerTextColor|default:'#ffffff' }};
+        font-size: {{ id_card_header.addressFontSize|default:8.8 }}px;
+        font-weight: 700;
+        line-height: 1.1;
+        opacity: 0.95;
+    }
+    .library-school-contact .web-phone {
+        font-size: {{ id_card_header.contactFontSize|default:8.3 }}px;
+    }
+    .library-card-title {
+        color: {{ id_card_style.headerTextColor|default:'#ffffff' }};
+        font-size: {{ id_card_header.titleFontSize|default:9 }}px;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        line-height: 1.05;
+        text-transform: uppercase;
+    }
+    .library-card-subtitle {
+        color: {{ id_card_style.headerTextColor|default:'#ffffff' }};
+        font-size: {{ id_card_header.subtitleFontSize|default:7 }}px;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-top: 0.03cm;
+        opacity: 0.96;
+    }
+    .library-id-body {
+        display: grid;
+        flex: 1;
+        gap: 0.03cm;
+        overflow: hidden;
+        padding: 0.11cm 0.14cm 0.06cm;
+    }
+    .library-photo-wrap {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 0.02cm;
+    }
+    .library-photo,
+    .library-photo-fallback {
+        align-items: center;
+        background: #eef3fb;
+        border: 1px solid #cad8ee;
+        border-radius: {% if id_card_style.photoShape == 'circle' %}50%{% else %}10px{% endif %};
+        display: flex;
+        height: 1.72cm;
+        justify-content: center;
+        object-fit: cover;
+        overflow: hidden;
+        width: 1.48cm;
+    }
+    .library-photo img {
+        height: 100%;
+        object-fit: cover;
+        width: 100%;
+    }
+    .library-photo-fallback {
+        color: {{ id_card_style.primaryColor|default:'#2452a3' }};
+        font-size: 16px;
+        font-weight: 900;
+    }
+    .library-line {
+        border-bottom: 1px dashed #d7e1ef;
+        column-gap: 0.1cm;
+        display: grid;
+        grid-template-columns: 2cm minmax(0, 1fr);
+        line-height: 1.08;
+        min-height: 0.26cm;
+        padding-bottom: 0.01cm;
+    }
+    .library-line .k {
+        color: {{ id_card_style.labelColor|default:'#324f75' }};
+        font-size: 8.4px;
+        font-weight: 800;
+        overflow-wrap: anywhere;
+    }
+    .library-line .v {
+        color: {{ id_card_style.textColor|default:'#122030' }};
+        font-size: 8.4px;
+        font-weight: 800;
+        overflow-wrap: anywhere;
+    }
+    .library-code-row {
+        align-items: center;
+        display: grid;
+        gap: 0.08cm;
+        grid-template-columns: 1.08cm minmax(0, 1fr);
+        margin-top: 0.03cm;
+    }
+    .library-qr {
+        background: #ffffff;
+        border: 1px solid #d7e1ef;
+        border-radius: 6px;
+        height: 1.02cm;
+        padding: 0.04cm;
+        width: 1.02cm;
+    }
+    .library-qr img {
+        height: 100%;
+        width: 100%;
+    }
+    .library-barcode {
+        background: repeating-linear-gradient(90deg, {{ id_card_style.textColor|default:'#122030' }} 0 1px, transparent 1px 3px, {{ id_card_style.textColor|default:'#122030' }} 3px 4px, transparent 4px 7px);
+        height: 0.42cm;
+        margin-top: 0.04cm;
+        width: 100%;
+    }
+    .library-id-foot {
+        align-items: end;
+        display: grid;
+        gap: 0.1cm;
+        grid-template-columns: minmax(0, 1fr) 2.1cm;
+        min-height: 1.05cm;
+        padding: 0.04cm 0.14cm 0.08cm;
+    }
+    .library-validity {
+        color: {{ id_card_style.primaryColor|default:'#2452a3' }};
+        font-size: 7px;
+        font-weight: 800;
+        line-height: 1.12;
+    }
+    .library-sign {
+        align-items: end;
+        color: #3a4f67;
+        display: grid;
+        font-size: 6px;
+        grid-template-rows: 0.58cm 0.1cm 0.22cm;
+        justify-items: center;
+        line-height: 1.12;
+        text-align: center;
+    }
+    .library-signature-img {
+        display: block;
+        max-height: 0.56cm;
+        max-width: 2cm;
+        object-fit: contain;
+        justify-self: center;
+    }
+    .library-sign .line-sign {
+        border-top: 1px solid #405f89;
+        margin-bottom: 2px;
+    }
+</style>
+
+{% for card in cards %}
+    <div class="library-id-card" data-preview-card>
+        <div class="library-id-head {{ id_card_header.layout|default:'masthead' }}" data-preview-head>
+            <div class="library-school {% if not id_card_header.showLogo %}no-logo{% endif %}" data-preview-school-block {% if not id_card_header.showLogo and not id_card_header.showSchoolName %}style="display:none;"{% endif %}>
+                {% if school and school.logo %}
+                    <img class="library-school-logo" data-preview-logo src="{{ school.logo.url }}" alt="{{ school_name }}" {% if not id_card_header.showLogo %}style="display:none;"{% endif %}>
+                {% else %}
+                    <div class="library-school-logo-fallback" data-preview-logo {% if not id_card_header.showLogo %}style="display:none;"{% endif %}>{{ school_name|slice:":1"|upper }}</div>
+                {% endif %}
+                <div class="library-school-name" data-preview-school-name {% if not id_card_header.showSchoolName %}style="display:none;"{% endif %}>{{ school_name }}</div>
+            </div>
+            <div class="library-school-contact" data-preview-contact {% if not id_card_header.showAddress and not id_card_header.showPhone and not id_card_header.showWebsite %}style="display:none;"{% endif %}>
+                {% firstof id_card_header.addressText school.address as header_address_text %}
+                <div data-preview-address {% if not id_card_header.showAddress or not header_address_text %}style="display:none;"{% endif %}>{{ header_address_text }}</div>
+                <div class="web-phone" data-preview-web-phone {% if not id_card_header.showPhone and not id_card_header.showWebsite %}style="display:none;"{% endif %}>
+                    {% firstof id_card_header.websiteUrl school.website as header_website_url %}
+                    {% firstof id_card_header.phoneNumber school.phoneNumber as header_phone_number %}
+                    <span data-preview-website {% if not id_card_header.showWebsite or not header_website_url %}style="display:none;"{% endif %}>{{ header_website_url }}</span>
+                    <span data-preview-contact-separator {% if not id_card_header.showWebsite or not id_card_header.showPhone or not header_website_url or not header_phone_number %}style="display:none;"{% endif %}> | </span>
+                    <span data-preview-phone {% if not id_card_header.showPhone or not header_phone_number %}style="display:none;"{% endif %}>{{ header_phone_number }}</span>
+                </div>
+            </div>
+            <div class="library-card-title" data-preview-title {% if not id_card_header.title %}style="display:none;"{% endif %}>{{ id_card_header.title }}</div>
+            <div class="library-card-subtitle" data-preview-subtitle {% if not id_card_header.subtitle %}style="display:none;"{% endif %}>{{ id_card_header.subtitle }}</div>
+        </div>
+        <div class="library-id-body">
+            <div class="library-photo-wrap" data-preview-photo-wrap>
+                {% if card.photo_url %}
+                    <div class="library-photo" data-preview-photo><img src="{{ card.photo_url }}" alt="{{ card.name }}"></div>
+                {% else %}
+                    <div class="library-photo-fallback" data-preview-photo>{{ card.name|first|default:'L' }}</div>
+                {% endif %}
+            </div>
+            {% for field in card.field_rows %}
+                <div class="library-line {{ field.key }}" data-preview-field="{{ field.key }}" {% if not field.visible %}style="display:none;"{% endif %}>
+                    <div class="k" data-preview-field-label>{{ field.label }}:</div>
+                    <div class="v">{{ field.value|default:'N/A' }}</div>
+                </div>
+            {% endfor %}
+            <div class="library-code-row" data-preview-code-row {% if not id_card_style.showQr and not id_card_style.showBarcode %}style="display:none;"{% endif %}>
+                <div class="library-qr" data-preview-qr {% if not id_card_style.showQr %}style="display:none;"{% endif %}><img src="{{ card.qr_data_uri }}" alt="{{ card.member.memberCode }}"></div>
+                <div>
+                    <div class="library-line"><div class="k">Session:</div><div class="v">{{ session_label|default:'N/A' }}</div></div>
+                    <div class="library-barcode" data-preview-barcode {% if not id_card_style.showBarcode %}style="display:none;"{% endif %}></div>
+                </div>
+            </div>
+        </div>
+        <div class="library-id-foot">
+            {% if id_card_footer.showValidity and valid_till_label %}
+                <div class="library-validity" data-preview-validity>Valid till : {{ valid_till_label }}</div>
+            {% else %}
+                <div class="library-validity" data-preview-validity style="display:none;"></div>
+            {% endif %}
+            {% if id_card_footer.showSignature %}
+                <div class="library-sign" data-preview-signature>
+                    {% if id_card_design.librarianSignature and id_card_footer.showSignatureImage %}
+                        <img class="library-signature-img" data-preview-signature-img src="{{ id_card_design.librarianSignature.url }}" alt="Librarian Signature">
+                    {% endif %}
+                    <div class="line-sign" data-preview-signature-line></div>
+                    <div data-preview-signature-label>{{ id_card_footer.signatureLabel|default:'Librarian Signature' }}</div>
+                </div>
+            {% else %}
+                <div class="library-sign" data-preview-signature style="display:none;">
+                    <div class="line-sign" data-preview-signature-line></div>
+                    <div data-preview-signature-label>{{ id_card_footer.signatureLabel|default:'Librarian Signature' }}</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endfor %}
