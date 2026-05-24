@@ -1,0 +1,996 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Audit Manager</title>{% endblock %}
+{% block page_title %}Audit Manager{% endblock %}
+{% block page_subtitle %}Review create, update, delete, and restore activity across school records{% endblock %}
+{% block css %}
+<style>
+    .audit-detail-modal.ui.modal {
+        border-radius: 10px !important;
+        overflow: hidden;
+        width: min(94vw, 1280px) !important;
+    }
+
+    .audit-detail-modal .audit-modal-header {
+        align-items: center;
+        display: flex;
+        gap: 14px;
+        justify-content: space-between;
+    }
+
+    .audit-title-wrap {
+        min-width: 0;
+    }
+
+    .audit-title {
+        color: var(--app-text, #111827);
+        font-size: 1.1rem;
+        font-weight: 700;
+        line-height: 1.25;
+    }
+
+    .audit-subtitle {
+        color: var(--app-muted, #64748b);
+        font-size: 0.82rem;
+        font-weight: 500;
+        margin-top: 3px;
+        overflow-wrap: anywhere;
+    }
+
+    .audit-action-pill {
+        align-items: center;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        color: #1d4ed8;
+        display: inline-flex;
+        font-size: 0.78rem;
+        font-weight: 700;
+        gap: 6px;
+        padding: 7px 12px;
+        white-space: nowrap;
+    }
+
+    .audit-detail-shell {
+        display: grid;
+        gap: 14px;
+        min-height: 0;
+    }
+
+    .audit-detail-modal > .content {
+        max-height: 78vh;
+        overflow: hidden !important;
+    }
+
+    .audit-meta-grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .audit-meta-item {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        min-width: 0;
+        padding: 10px 12px;
+    }
+
+    .audit-meta-label {
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: uppercase;
+    }
+
+    .audit-meta-value {
+        color: #0f172a;
+        font-size: 0.88rem;
+        font-weight: 650;
+        margin-top: 5px;
+        overflow-wrap: anywhere;
+    }
+
+    .audit-context-panel {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        display: grid;
+        gap: 8px;
+        padding: 12px;
+    }
+
+    .audit-context-line {
+        align-items: flex-start;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 84px minmax(0, 1fr);
+    }
+
+    .audit-context-line strong {
+        color: #64748b;
+        font-size: 0.78rem;
+    }
+
+    .audit-context-line span {
+        color: #0f172a;
+        overflow-wrap: anywhere;
+    }
+
+    .audit-diff-toolbar {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 2px;
+    }
+
+    .audit-diff-title {
+        color: #111827;
+        font-size: 0.95rem;
+        font-weight: 700;
+    }
+
+    .audit-diff-count {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 999px;
+        color: #475569;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 5px 9px;
+        white-space: nowrap;
+    }
+
+    .audit-diff-list {
+        display: grid;
+        gap: 5px;
+        max-height: min(48vh, 520px);
+        overflow: auto;
+        padding: 0 2px 2px 0;
+    }
+
+    .audit-diff-header-row {
+        align-items: stretch;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        color: #475569;
+        display: grid;
+        font-size: 0.72rem;
+        font-weight: 800;
+        gap: 0;
+        grid-template-columns: 180px minmax(320px, 1fr) minmax(320px, 1fr);
+        min-width: 860px;
+        overflow: hidden;
+        position: sticky;
+        top: 0;
+        text-transform: uppercase;
+        z-index: 2;
+    }
+
+    .audit-diff-header-row span {
+        border-left: 1px solid #e5e7eb;
+        padding: 7px 9px;
+    }
+
+    .audit-diff-header-row span:first-child {
+        border-left: 0;
+    }
+
+    .audit-diff-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        display: grid;
+        grid-template-columns: 180px minmax(320px, 1fr) minmax(320px, 1fr);
+        min-width: 860px;
+        overflow: hidden;
+    }
+
+    .audit-diff-field {
+        align-items: center;
+        background: #ffffff;
+        border-right: 1px solid #e5e7eb;
+        color: #111827;
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 750;
+        line-height: 1.25;
+        padding: 7px 8px;
+        overflow-wrap: anywhere;
+    }
+
+    .audit-field-meta {
+        color: #94a3b8;
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 700;
+        margin-top: 3px;
+    }
+
+    .audit-diff-cell {
+        min-width: 0;
+        padding: 5px;
+    }
+
+    .audit-diff-cell + .audit-diff-cell {
+        border-left: 1px solid #e5e7eb;
+    }
+
+    .audit-diff-label {
+        align-items: center;
+        color: #64748b;
+        display: flex;
+        font-size: 0.72rem;
+        font-weight: 800;
+        gap: 6px;
+        margin-bottom: 7px;
+        text-transform: uppercase;
+    }
+
+    .audit-diff-value {
+        border-radius: 7px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: 0.73rem;
+        line-height: 1.32;
+        max-height: 84px;
+        min-height: 26px;
+        overflow: auto;
+        padding: 5px 6px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .audit-mobile-value-label {
+        color: #64748b;
+        display: none;
+        font-size: 0.7rem;
+        font-weight: 800;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
+
+    .audit-status-chip {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 0.68rem;
+        font-weight: 800;
+        line-height: 1;
+        margin-top: 5px;
+        padding: 5px 7px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .audit-status-chip.changed {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .audit-status-chip.unchanged {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .audit-old-value {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #7c2d12;
+    }
+
+    .audit-new-value {
+        background: #ecfdf5;
+        border: 1px solid #bbf7d0;
+        color: #064e3b;
+    }
+
+    .audit-no-value {
+        color: #94a3b8;
+        font-family: inherit;
+        font-style: italic;
+    }
+
+    .audit-empty-state {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        color: #64748b;
+        font-weight: 650;
+        padding: 18px;
+        text-align: center;
+    }
+
+    html[data-theme="dark"] .audit-title,
+    html[data-theme="dark"] .audit-diff-title,
+    html[data-theme="dark"] .audit-diff-field {
+        color: var(--app-text, #e5edf7);
+    }
+
+    html[data-theme="dark"] .audit-subtitle,
+    html[data-theme="dark"] .audit-meta-label,
+    html[data-theme="dark"] .audit-context-line strong,
+    html[data-theme="dark"] .audit-diff-label,
+    html[data-theme="dark"] .audit-mobile-value-label {
+        color: var(--app-muted, #9aa8ba);
+    }
+
+    html[data-theme="dark"] .audit-action-pill {
+        background: rgba(96, 165, 250, 0.14);
+        border-color: rgba(96, 165, 250, 0.34);
+        color: #93c5fd;
+    }
+
+    html[data-theme="dark"] .audit-meta-item,
+    html[data-theme="dark"] .audit-context-panel,
+    html[data-theme="dark"] .audit-diff-card,
+    html[data-theme="dark"] .audit-diff-field,
+    html[data-theme="dark"] .audit-empty-state {
+        background: #121b2a;
+        border-color: #263449;
+    }
+
+    html[data-theme="dark"] .audit-meta-value,
+    html[data-theme="dark"] .audit-context-line span {
+        color: #e5edf7;
+    }
+
+    html[data-theme="dark"] .audit-diff-count {
+        background: #172235;
+        border-color: #2b3a50;
+        color: #cbd5e1;
+    }
+
+    html[data-theme="dark"] .audit-diff-field {
+        border-right-color: #263449;
+    }
+
+    html[data-theme="dark"] .audit-diff-cell + .audit-diff-cell {
+        border-left-color: #263449;
+    }
+
+    html[data-theme="dark"] .audit-diff-header-row {
+        background: #172235;
+        border-color: #263449;
+        color: #cbd5e1;
+    }
+
+    html[data-theme="dark"] .audit-diff-header-row span {
+        border-left-color: #263449;
+    }
+
+    html[data-theme="dark"] .audit-field-meta {
+        color: #64748b;
+    }
+
+    html[data-theme="dark"] .audit-status-chip.changed {
+        background: rgba(96, 165, 250, 0.18);
+        color: #93c5fd;
+    }
+
+    html[data-theme="dark"] .audit-status-chip.unchanged {
+        background: #1f2937;
+        color: #94a3b8;
+    }
+
+    html[data-theme="dark"] .audit-old-value {
+        background: rgba(251, 146, 60, 0.12);
+        border-color: rgba(251, 146, 60, 0.36);
+        color: #fed7aa;
+    }
+
+    html[data-theme="dark"] .audit-new-value {
+        background: rgba(52, 211, 153, 0.12);
+        border-color: rgba(52, 211, 153, 0.34);
+        color: #bbf7d0;
+    }
+
+    html[data-theme="dark"] .audit-no-value {
+        color: #64748b;
+    }
+
+    @media (max-width: 767px) {
+        .audit-detail-modal.ui.modal {
+            width: 96% !important;
+        }
+
+        .audit-detail-modal .audit-modal-header,
+        .audit-diff-toolbar {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .audit-meta-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .audit-diff-header-row {
+            display: none;
+        }
+
+        .audit-diff-card {
+            grid-template-columns: minmax(0, 1fr);
+            min-width: 0;
+        }
+
+        .audit-mobile-value-label {
+            display: block;
+        }
+
+        .audit-diff-field {
+            border-bottom: 1px solid #e5e7eb;
+            border-right: 0;
+        }
+
+        .audit-diff-cell + .audit-diff-cell {
+            border-left: 0;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        html[data-theme="dark"] .audit-diff-cell + .audit-diff-cell {
+            border-top-color: #263449;
+        }
+
+        html[data-theme="dark"] .audit-diff-field {
+            border-top-color: #263449;
+            border-bottom-color: #263449;
+        }
+    }
+
+    .audit-diff-workspace {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        min-height: 360px;
+        overflow: hidden;
+    }
+
+    .audit-field-list {
+        background: #f8fafc;
+        border-right: 1px solid #e5e7eb;
+        max-height: min(50vh, 560px);
+        overflow: auto;
+        padding: 8px;
+    }
+
+    .audit-field-item {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        color: #111827;
+        cursor: pointer;
+        display: block;
+        margin-bottom: 7px;
+        padding: 9px 10px;
+        text-align: left;
+        transition: background .16s ease, border-color .16s ease, box-shadow .16s ease;
+        width: 100%;
+    }
+
+    .audit-field-item:hover,
+    .audit-field-item.active {
+        background: #eff6ff;
+        border-color: #93c5fd;
+        box-shadow: inset 3px 0 0 #2563eb;
+    }
+
+    .audit-field-item-name {
+        display: block;
+        font-size: 0.86rem;
+        font-weight: 750;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+    }
+
+    .audit-field-item-meta {
+        color: #64748b;
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 650;
+        margin-top: 4px;
+    }
+
+    .audit-value-viewer {
+        background: #ffffff;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        min-width: 0;
+    }
+
+    .audit-value-viewer-header {
+        align-items: center;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+        min-width: 0;
+        padding: 10px 12px;
+    }
+
+    .audit-selected-field {
+        color: #111827;
+        font-size: 0.95rem;
+        font-weight: 800;
+        overflow-wrap: anywhere;
+    }
+
+    .audit-value-panes {
+        display: grid;
+        gap: 0;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .audit-value-pane {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        min-width: 0;
+    }
+
+    .audit-value-pane + .audit-value-pane {
+        border-left: 1px solid #e5e7eb;
+    }
+
+    .audit-pane-title {
+        align-items: center;
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e7eb;
+        color: #475569;
+        display: flex;
+        font-size: 0.76rem;
+        font-weight: 800;
+        gap: 7px;
+        justify-content: space-between;
+        padding: 8px 10px;
+        text-transform: uppercase;
+    }
+
+    .audit-pane-meta {
+        color: #94a3b8;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: none;
+    }
+
+    .audit-full-value {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: 0.78rem;
+        line-height: 1.45;
+        max-height: min(44vh, 500px);
+        min-height: 260px;
+        overflow: auto;
+        padding: 12px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .audit-full-old {
+        background: #fff7ed;
+        color: #7c2d12;
+    }
+
+    .audit-full-new {
+        background: #ecfdf5;
+        color: #064e3b;
+    }
+
+    html[data-theme="dark"] .audit-diff-workspace,
+    html[data-theme="dark"] .audit-value-viewer-header,
+    html[data-theme="dark"] .audit-value-pane + .audit-value-pane,
+    html[data-theme="dark"] .audit-pane-title {
+        border-color: #263449;
+    }
+
+    html[data-theme="dark"] .audit-field-list,
+    html[data-theme="dark"] .audit-pane-title {
+        background: #172235;
+    }
+
+    html[data-theme="dark"] .audit-value-viewer,
+    html[data-theme="dark"] .audit-field-item {
+        background: #121b2a;
+    }
+
+    html[data-theme="dark"] .audit-field-item {
+        border-color: #263449;
+        color: #e5edf7;
+    }
+
+    html[data-theme="dark"] .audit-field-item:hover,
+    html[data-theme="dark"] .audit-field-item.active {
+        background: rgba(96, 165, 250, 0.12);
+        border-color: rgba(96, 165, 250, 0.42);
+        box-shadow: inset 3px 0 0 #60a5fa;
+    }
+
+    html[data-theme="dark"] .audit-field-item-meta,
+    html[data-theme="dark"] .audit-pane-title,
+    html[data-theme="dark"] .audit-pane-meta {
+        color: #9aa8ba;
+    }
+
+    html[data-theme="dark"] .audit-selected-field {
+        color: #e5edf7;
+    }
+
+    html[data-theme="dark"] .audit-full-old {
+        background: rgba(251, 146, 60, 0.12);
+        color: #fed7aa;
+    }
+
+    html[data-theme="dark"] .audit-full-new {
+        background: rgba(52, 211, 153, 0.12);
+        color: #bbf7d0;
+    }
+
+    @media (max-width: 900px) {
+        .audit-diff-workspace {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .audit-field-list {
+            border-right: 0;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            gap: 7px;
+            max-height: 132px;
+            overflow: auto;
+        }
+
+        .audit-field-item {
+            flex: 0 0 220px;
+            margin-bottom: 0;
+        }
+
+        .audit-value-panes {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .audit-value-pane + .audit-value-pane {
+            border-left: 0;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .audit-full-value {
+            max-height: 220px;
+            min-height: 140px;
+        }
+
+        html[data-theme="dark"] .audit-field-list,
+        html[data-theme="dark"] .audit-value-pane + .audit-value-pane {
+            border-color: #263449;
+        }
+    }
+</style>
+{% endblock %}
+{% block body %}
+    {% include 'transportApp/_management_table_styles.html' %}
+    <div class="ui right aligned basic  grid">
+        <div class="sixteen wide column">
+            <div class="ui tab active" data-tab="user">
+                <div class="ui segment">
+            <h4 class="ui horizontal left aligned divider header">
+                <i class="history icon"></i>
+                Audit filters
+            </h4>
+            <form class="ui tiny form">
+                <div class="four fields">
+                    <div class="field">
+                        <label>Action</label>
+                        <select class="ui fluid dropdown" id="auditAction">
+                            <option value="">All Actions</option>
+                            <option value="create">Create</option>
+                            <option value="update">Update</option>
+                            <option value="soft_delete">Soft Delete</option>
+                            <option value="restore">Restore</option>
+                            <option value="delete">Delete</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Model</label>
+                        <select class="ui fluid search dropdown" id="auditModel">
+                            <option value="">All Models</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Search</label>
+                        <input type="text" id="auditSearch" placeholder="Object ID, path, user, model">
+                    </div>
+                    <div class="field" style="padding-top:1.55rem;">
+                        <button type="button" class="ui mini green button" onclick="loadAuditLogs()"><i class="search icon"></i>Search</button>
+                        <button type="button" class="ui mini red button" onclick="clearAuditFilters()"><i class="times circle icon"></i>Clear</button>
+                    </div>
+                </div>
+            </form>
+                </div>
+                <div class="ui segment">
+            <h4 class="ui horizontal left aligned divider header">
+                <i class="list alternate outline icon"></i>
+                Audit logs
+            </h4>
+            <div class="wide">
+                <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="AuditTable" style="margin-top: 5px;width:100%">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Model</th>
+                        <th>Object</th>
+                        <th>Action</th>
+                        <th>Changed Fields</th>
+                        <th>User</th>
+                        <th>Path</th>
+                        <th>IP</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui large modal audit-detail-modal" id="auditDetailModal">
+        <i class="close icon"></i>
+        <div class="header audit-modal-header">
+            <div class="audit-title-wrap">
+                <div class="audit-title">Audit Change Detail</div>
+                <div class="audit-subtitle" id="auditDetailSubtitle">Review captured field-level differences</div>
+            </div>
+            <span class="audit-action-pill">
+                <i class="history icon"></i>
+                <span id="auditDetailAction">-</span>
+            </span>
+        </div>
+        <div class="content">
+            <div class="audit-detail-shell">
+                <div class="audit-meta-grid">
+                    <div class="audit-meta-item">
+                        <div class="audit-meta-label">Object</div>
+                        <div class="audit-meta-value" id="auditDetailObject">-</div>
+                    </div>
+                    <div class="audit-meta-item">
+                        <div class="audit-meta-label">User</div>
+                        <div class="audit-meta-value" id="auditDetailUser">-</div>
+                    </div>
+                    <div class="audit-meta-item">
+                        <div class="audit-meta-label">Date</div>
+                        <div class="audit-meta-value" id="auditDetailDate">-</div>
+                    </div>
+                    <div class="audit-meta-item">
+                        <div class="audit-meta-label">IP Address</div>
+                        <div class="audit-meta-value" id="auditDetailIP">-</div>
+                    </div>
+                </div>
+
+                <div class="audit-context-panel">
+                    <div class="audit-context-line">
+                        <strong>Model</strong>
+                        <span id="auditDetailModel">-</span>
+                    </div>
+                    <div class="audit-context-line">
+                        <strong>Path</strong>
+                        <span id="auditDetailPath">-</span>
+                    </div>
+                    <div class="audit-context-line">
+                        <strong>Agent</strong>
+                        <span id="auditDetailUserAgent">-</span>
+                    </div>
+                </div>
+
+                <div class="audit-diff-toolbar">
+                    <div class="audit-diff-title">Field Comparison</div>
+                    <div class="audit-diff-count" id="auditDiffCount">0 fields</div>
+                </div>
+
+                <div class="audit-diff-workspace">
+                    <div class="audit-field-list" id="auditFieldList"></div>
+                    <div class="audit-value-viewer">
+                        <div class="audit-value-viewer-header">
+                            <div class="audit-selected-field" id="auditSelectedField">Select a field</div>
+                            <span class="audit-status-chip changed" id="auditSelectedStatus">Changed</span>
+                        </div>
+                        <div class="audit-value-panes">
+                            <div class="audit-value-pane">
+                                <div class="audit-pane-title">
+                                    <span>Old Value</span>
+                                    <span class="audit-pane-meta" id="auditOldMeta">empty</span>
+                                </div>
+                                <div class="audit-full-value audit-full-old" id="auditOldValue">Select a field to inspect the previous value.</div>
+                            </div>
+                            <div class="audit-value-pane">
+                                <div class="audit-pane-title">
+                                    <span>New Value</span>
+                                    <span class="audit-pane-meta" id="auditNewMeta">empty</span>
+                                </div>
+                                <div class="audit-full-value audit-full-new" id="auditNewValue">Select a field to inspect the new value.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="actions">
+            <div class="ui cancel button">Close</div>
+        </div>
+    </div>
+{% endblock %}
+{% block js %}
+<script>
+    let auditTable;
+    $(function () {
+        $('.ui.dropdown').dropdown();
+        auditTable = $('#AuditTable').DataTable({
+            dom: 'Blfrtip',
+            scrollX: true,
+            stateSave: true,
+            processing: true,
+            serverSide: true,
+            pageLength: 25,
+            order: [[0, 'desc']],
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            buttons: [{
+                extend: 'excel',
+                exportOptions: {columns: [0, 1, 2, 3, 4, 5, 6, 7]}
+            }],
+            columnDefs: [
+                {"name": "datetime", "targets": 0, "orderable": true},
+                {"name": "model", "targets": 1, "orderable": true},
+                {"name": "objectID", "targets": 2, "orderable": true},
+                {"name": "action", "targets": 3, "orderable": true},
+                {"name": "changedFields", "targets": 4, "orderable": false},
+                {"name": "user", "targets": 5, "orderable": true},
+                {"name": "path", "targets": 6, "orderable": false},
+                {"name": "ipAddress", "targets": 7, "orderable": false},
+                {"name": "actions", "targets": 8, "orderable": false}
+            ],
+            ajax: {
+                url: "{% url 'managementAppAPI:AuditLogListJson' %}",
+                data: function (d) {
+                    d.action = $('#auditAction').val();
+                    d.model = $('#auditModel').val();
+                    d.auditSearch = $('#auditSearch').val();
+                }
+            }
+        });
+        loadAuditLogs();
+    });
+
+    function loadAuditLogs() {
+        $.get("{% url 'managementAppAPI:audit_log_list_api' %}", {
+            action: $('#auditAction').val(),
+            model: $('#auditModel').val(),
+            search: $('#auditSearch').val()
+        }, function (response) {
+            if (!response.success) {
+                addErrorNotification(response.message || 'Unable to load audit logs.');
+                return;
+            }
+            const payload = response.data || {};
+            if (!$('#auditModel option[data-loaded="1"]').length) {
+                (payload.modelOptions || []).forEach(function (item) {
+                    $('#auditModel').append('<option data-loaded="1" value="' + item.id + '">' + item.text + '</option>');
+                });
+                $('#auditModel').dropdown('refresh');
+            }
+            auditTable.ajax.reload(null, false);
+        }).fail(function () {
+            addErrorNotification('Unable to load audit logs.');
+        });
+    }
+
+    function clearAuditFilters() {
+        $('#auditAction').dropdown('clear');
+        $('#auditModel').dropdown('clear');
+        $('#auditSearch').val('');
+        auditTable.ajax.reload(null, false);
+    }
+
+    function escapeHtml(value) {
+        return $('<div>').text(value === null || value === undefined ? '' : String(value)).html();
+    }
+
+    function renderAuditValue(value, className) {
+        const raw = value === null || value === undefined ? '' : String(value);
+        if (!raw.length) {
+            return '<div class="audit-diff-value ' + className + ' audit-no-value">Empty</div>';
+        }
+        return '<div class="audit-diff-value ' + className + '">' + escapeHtml(raw) + '</div>';
+    }
+
+    function displayValue(value) {
+        const raw = value === null || value === undefined ? '' : String(value);
+        return raw.length ? raw : 'Empty';
+    }
+
+    function valueMeta(value) {
+        const raw = value === null || value === undefined ? '' : String(value);
+        if (!raw.length) return 'empty';
+        const lineCount = raw.split(/\r\n|\r|\n/).length;
+        const charCount = raw.length;
+        return charCount + ' chars' + (lineCount > 1 ? ' / ' + lineCount + ' lines' : '');
+    }
+
+    let currentAuditRows = [];
+
+    function selectAuditField(index) {
+        const row = currentAuditRows[index];
+        if (!row) return;
+        $('.audit-field-item').removeClass('active');
+        $('.audit-field-item[data-index="' + index + '"]').addClass('active');
+        $('#auditSelectedField').text(row.field || '-');
+        $('#auditSelectedStatus')
+            .attr('class', 'audit-status-chip ' + (row.changed ? 'changed' : 'unchanged'))
+            .text(row.changed ? 'Changed' : 'Same');
+        $('#auditOldMeta').text(valueMeta(row.oldValue));
+        $('#auditNewMeta').text(valueMeta(row.newValue));
+        $('#auditOldValue').text(displayValue(row.oldValue));
+        $('#auditNewValue').text(displayValue(row.newValue));
+    }
+
+    function renderAuditComparison(rows) {
+        currentAuditRows = rows || [];
+        const list = $('#auditFieldList');
+        list.html('');
+        $('#auditDiffCount').text(currentAuditRows.length + (currentAuditRows.length === 1 ? ' field' : ' fields'));
+        if (!currentAuditRows.length) {
+            list.append('<div class="audit-empty-state">No field-level changes were captured.</div>');
+            $('#auditSelectedField').text('No field selected');
+            $('#auditSelectedStatus').attr('class', 'audit-status-chip unchanged').text('Same');
+            $('#auditOldMeta').text('empty');
+            $('#auditNewMeta').text('empty');
+            $('#auditOldValue').text('No old value captured.');
+            $('#auditNewValue').text('No new value captured.');
+            return;
+        }
+        currentAuditRows.forEach(function (row, index) {
+            const oldMeta = valueMeta(row.oldValue);
+            const newMeta = valueMeta(row.newValue);
+            list.append(
+                '<button type="button" class="audit-field-item" data-index="' + index + '" onclick="selectAuditField(' + index + ')">' +
+                    '<span class="audit-field-item-name">' + escapeHtml(row.field) + '</span>' +
+                    '<span class="audit-field-item-meta">' + escapeHtml(oldMeta) + ' -> ' + escapeHtml(newMeta) + '</span>' +
+                    '<span class="audit-status-chip ' + (row.changed ? 'changed' : 'unchanged') + '">' + (row.changed ? 'Changed' : 'Same') + '</span>' +
+                '</button>'
+            );
+        });
+        selectAuditField(0);
+    }
+
+    function viewAuditDetail(id) {
+        $('#auditDetailSubtitle').text('Loading audit record #' + id);
+        $('#auditDiffCount').text('0 fields');
+        $('#auditFieldList').html('<div class="audit-empty-state">Loading comparison...</div>');
+        $('#auditSelectedField').text('Loading...');
+        $('#auditOldValue').text('Loading...');
+        $('#auditNewValue').text('Loading...');
+        $('#auditDetailModal').modal('show');
+        $.get("{% url 'managementAppAPI:audit_log_detail_api' %}", {id: id}, function (response) {
+            if (!response.success) {
+                addErrorNotification(response.message || 'Unable to load audit detail.');
+                return;
+            }
+            const data = response.data || {};
+            $('#auditDetailAction').text(data.action || '-');
+            $('#auditDetailObject').text(data.objectID || '-');
+            $('#auditDetailUser').text(data.user || '-');
+            $('#auditDetailDate').text(data.datetime || '-');
+            $('#auditDetailModel').text(data.model || '-');
+            $('#auditDetailSubtitle').text((data.model || 'Audit record') + ' #' + (data.objectID || '-'));
+            $('#auditDetailPath').text(data.path || '-');
+            $('#auditDetailIP').text(data.ipAddress || '-');
+            $('#auditDetailUserAgent').text(data.userAgent || '-');
+            renderAuditComparison(data.comparisonRows || []);
+        }).fail(function () {
+            addErrorNotification('Unable to load audit detail.');
+            $('#auditFieldList').html('<div class="audit-empty-state">Unable to load detail.</div>');
+            $('#auditSelectedField').text('Unable to load detail');
+            $('#auditOldValue').text('Unable to load detail.');
+            $('#auditNewValue').text('Unable to load detail.');
+        });
+    }
+</script>
+{% endblock %}

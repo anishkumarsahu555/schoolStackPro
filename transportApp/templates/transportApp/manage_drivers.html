@@ -1,0 +1,355 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+{% block title %}<title>Manage Drivers</title>{% endblock %}
+{% block page_title %}Manage Drivers{% endblock %}
+{% block page_subtitle %}Maintain transport driver contact and license details{% endblock %}
+{% block page_actions %}
+    <button class="ui green button class-page-action" type="button" onclick="showDriverModal()">
+        <i class="plus icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Add Driver</span><span class="mobile-label">Add</span></span>
+    </button>
+{% endblock %}
+{% block body %}
+{% include 'transportApp/_management_table_styles.html' %}
+<style>
+    #photoCropModal .cropper-stage {
+        width: 320px;
+        height: 320px;
+        margin: 0 auto;
+        border: 1px solid #d4d4d5;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #f8f9fb;
+        touch-action: none;
+    }
+
+    #cropCanvas {
+        width: 100%;
+        height: 100%;
+        cursor: grab;
+        display: block;
+    }
+
+    #cropCanvas.is-dragging {
+        cursor: grabbing;
+    }
+
+    #photoCropModal .cropper-controls {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    #photoCropModal .cropper-controls input[type="range"] {
+        flex: 1;
+    }
+
+    #photoCropModal .cropper-hint {
+        margin-top: 0.5rem;
+        color: #6b7280;
+        font-size: 0.85rem;
+    }
+
+    .avatar-upload.photo-error .avatar-preview {
+        border: 2px solid #db2828;
+        border-radius: 8px;
+        box-shadow: 0 0 0 2px rgba(219, 40, 40, 0.15);
+    }
+</style>
+<div class="ui right aligned basic  grid">
+    <div class="sixteen wide column">
+        <div class="ui tab active" data-tab="user">
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header"><i class="id card icon"></i>Driver list</h4>
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="DriverTable" style="margin-top: 5px;width:100%">
+                        <thead><tr><th>Photo</th><th>Name</th><th>Phone</th><th>License</th><th>License Expiry</th><th>Status</th><th>Actions</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="ui modal" id="driverModal">
+    <i class="close icon"></i><div class="header">Driver Detail</div>
+    <div class="content">
+        <form class="ui tiny form" id="driverForm">{% csrf_token %}
+            <input type="hidden" id="driverID">
+            <div class="transport-modal-section">
+                <div class="transport-modal-section-title"><i class="image icon"></i>Photo</div>
+                <div class="field">
+                    <label>Photo</label>
+                    <div class="ui" style="width: 100%; text-align: center">
+                        <div class="ui icon header">
+                            <div class="inline ">
+                                <div class="avatar-upload">
+                                    <div class="avatar-edit">
+                                        <input type='file' id="imageUpload" name="photo" accept=".png, .jpg, .jpeg"/>
+                                        <label for="imageUpload"><i class="edit icon" style="font-size: 1rem;padding: 0.4rem"></i></label>
+                                    </div>
+                                    <div class="avatar-preview">
+                                        <div id="cImg" style="background-image: url({% static 'images/add_photo.svg' %});"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="transport-modal-section">
+                <div class="transport-modal-section-title"><i class="user icon"></i>Basic Detail</div>
+                <div class="three fields">
+                    <div class="field required"><label>Name</label><input id="driverName"></div>
+                    <div class="field"><label>Phone</label><input id="phoneNumber"></div>
+                    <div class="field"><label>License Number</label><input id="licenseNumber"></div>
+                </div>
+            </div>
+            <div class="transport-modal-section">
+                <div class="transport-modal-section-title"><i class="id card icon"></i>License & Status</div>
+                <div class="three fields">
+                    <div class="field"><label>License Expiry</label><div class="ui calendar transport-date-calendar" id="licenseExpiryDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" id="licenseExpiryDate" placeholder="YYYY-MM-DD"></div></div></div>
+                    <div class="field"><label>Address</label><input id="address"></div>
+                    <div class="field"><div class="transport-active-row"><div class="ui checkbox"><input type="checkbox" id="driverIsActive" checked><label>Active</label></div></div></div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="actions transport-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button" onclick="saveDriver()">Submit<i class="checkmark icon"></i></button></div>
+</div>
+<div class="ui basic modal custom" id="deleteDriverModal">
+    <div class="ui icon header">
+        <i class="trash alternate icon red"></i>
+        Driver Details will be Deleted
+    </div>
+    <div class="content">
+        <p style="text-align: center">The Driver will be deleted, are you sure to delete this Driver?</p>
+    </div>
+    <div class="actions">
+        <div class="ui red basic cancel inverted button">
+            <i class="remove icon"></i>
+            No
+        </div>
+        <input type="hidden" id="deleteDriverID">
+        <div class="ui green ok inverted button" onclick="deleteDriver()">
+            <i class="checkmark icon"></i>
+            Yes
+        </div>
+    </div>
+</div>
+<div class="ui tiny modal" id="photoCropModal">
+    <div class="header">Crop Photo</div>
+    <div class="content">
+        <div class="cropper-stage">
+            <canvas id="cropCanvas" width="320" height="320"></canvas>
+        </div>
+        <div class="cropper-controls">
+            <label for="cropZoomRange">Zoom</label>
+            <input type="range" id="cropZoomRange" min="1" max="3" step="0.01" value="1">
+            <span id="cropZoomValue">100%</span>
+        </div>
+        <div class="cropper-hint">Drag image to reposition inside the square.</div>
+    </div>
+    <div class="actions">
+        <button type="button" class="ui button" id="cropCancelBtn">Cancel</button>
+        <button type="button" class="ui primary button" id="cropApplyBtn">Apply Crop</button>
+    </div>
+</div>
+{% endblock %}
+{% block js %}
+<script>
+let driverTable, croppedImageFile = null;
+const defaultDriverPhoto = "{% static 'images/add_photo.svg' %}";
+let currentDriverPhoto = defaultDriverPhoto;
+$(function(){
+    $('.ui.checkbox').checkbox();
+    $('#driverModal').modal({allowMultiple: true, autofocus: false});
+    $('#photoCropModal').modal({allowMultiple: true, autofocus: false, closable: false});
+    initTransportCalendars();
+    driverTable = $('#DriverTable').DataTable({
+        dom: 'Blfrtip', scrollX: true, stateSave: true, processing: true, serverSide: true,
+        aaSorting: [[0, 'asc']], pageLength: 10,
+        ajax:"{% url 'transportAppAPI:DriverListJson' %}",
+        columnDefs: [
+            {"name":"photo","targets":0,"orderable":false},{"name":"name","targets":1},{"name":"phoneNumber","targets":2},{"name":"licenseNumber","targets":3},
+            {"name":"licenseExpiryDate","targets":4},{"name":"isActive","targets":5},
+            {"name":"actions","targets":6,"orderable":false}
+        ]
+    });
+});
+function initTransportCalendars(){
+    $('.transport-date-calendar').calendar({
+        monthFirst: false,
+        type: 'date',
+        formatter: { date: function(date){ if(!date) return ''; const m=String(date.getMonth()+1).padStart(2,'0'); const d=String(date.getDate()).padStart(2,'0'); return date.getFullYear()+'-'+m+'-'+d; } }
+    });
+}
+function setPhotoPreview(src) {
+    $('#cImg').css('background-image', 'url(' + src + ')');
+    $('#cImg').hide();
+    $('#cImg').fadeIn(300);
+}
+function setPhotoFieldError() {
+    $('#imageUpload').closest('.field').addClass('error');
+    $('#imageUpload').closest('.avatar-upload').addClass('photo-error');
+}
+function clearPhotoFieldError() {
+    $('#imageUpload').closest('.field').removeClass('error');
+    $('#imageUpload').closest('.avatar-upload').removeClass('photo-error');
+}
+function resetDriverPhotoSelection(photoUrl) {
+    croppedImageFile = null;
+    $('#imageUpload').val('');
+    currentDriverPhoto = photoUrl || defaultDriverPhoto;
+    setPhotoPreview(currentDriverPhoto);
+    clearPhotoFieldError();
+}
+function showDriverModal(){ $('#driverForm').trigger('reset'); $('#driverID').val(''); $('#driverIsActive').prop('checked', true); resetDriverPhotoSelection(defaultDriverPhoto); $('#driverModal').modal('show'); }
+function saveDriver(){
+    const data = new FormData();
+    [['id','#driverID'],['name','#driverName'],['phoneNumber','#phoneNumber'],['licenseNumber','#licenseNumber'],['licenseExpiryDate','#licenseExpiryDate'],['address','#address']].forEach(i => data.append(i[0], $(i[1]).val()));
+    if(croppedImageFile){ data.append('imageUpload', croppedImageFile); }
+    data.append('isActive', $('#driverIsActive').is(':checked')); data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+    $.ajax({url:"{% url 'transportAppAPI:drivers_api' %}", type:'POST', data:data, contentType:false, processData:false,
+        success:r => { if(r.success){ addSuccessNotification(r.message,'green'); $('#driverModal').modal('hide'); driverTable.ajax.reload(null,false); } else addErrorNotification(r.message); },
+        error:x => addErrorNotification((x.responseJSON || {}).message || 'Unable to save driver.')});
+}
+function editDriver(id){ $.get("{% url 'transportAppAPI:driver_detail_api' %}", {id:id}, function(r){ const d=r.data||{}; $('#driverID').val(d.id); $('#driverName').val(d.name); $('#phoneNumber').val(d.phoneNumber); $('#licenseNumber').val(d.licenseNumber); $('#licenseExpiryDate').val(d.licenseExpiryDate); $('#address').val(d.address); $('#driverIsActive').prop('checked', !!d.isActive); resetDriverPhotoSelection(d.photoUrl || defaultDriverPhoto); $('#driverModal').modal('show'); }); }
+function confirmDeleteDriver(id){ $('#deleteDriverID').val(id); $('#deleteDriverModal').modal('show'); }
+function deleteDriver(){ const data = new FormData(); data.append('id', $('#deleteDriverID').val()); data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val()); $.ajax({url:"{% url 'transportAppAPI:delete_driver_api' %}", type:'POST', data:data, contentType:false, processData:false, success:r => { if(r.success){ addSuccessNotification(r.message,'green'); $('#deleteDriverModal').modal('hide'); driverTable.ajax.reload(null,false); } else addErrorNotification(r.message); }}); }
+
+const cropModal = $('#photoCropModal');
+const cropCanvas = document.getElementById('cropCanvas');
+const cropCtx = cropCanvas.getContext('2d');
+const cropZoomRange = document.getElementById('cropZoomRange');
+const cropZoomValue = document.getElementById('cropZoomValue');
+const cropState = {image:null, baseScale:1, zoom:1, offsetX:0, offsetY:0, isDragging:false, dragStartX:0, dragStartY:0};
+function clampCropPosition() {
+    const scaledWidth = cropState.image.width * cropState.baseScale * cropState.zoom;
+    const scaledHeight = cropState.image.height * cropState.baseScale * cropState.zoom;
+    const minX = Math.min(0, cropCanvas.width - scaledWidth);
+    const minY = Math.min(0, cropCanvas.height - scaledHeight);
+    cropState.offsetX = Math.min(0, Math.max(minX, cropState.offsetX));
+    cropState.offsetY = Math.min(0, Math.max(minY, cropState.offsetY));
+}
+function drawCropCanvas() {
+    if (!cropState.image) return;
+    cropCtx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
+    const scale = cropState.baseScale * cropState.zoom;
+    const drawWidth = cropState.image.width * scale;
+    const drawHeight = cropState.image.height * scale;
+    cropCtx.drawImage(cropState.image, cropState.offsetX, cropState.offsetY, drawWidth, drawHeight);
+}
+function resetCropState(image) {
+    cropState.image = image;
+    cropState.baseScale = Math.max(cropCanvas.width / image.width, cropCanvas.height / image.height);
+    cropState.zoom = 1;
+    cropZoomRange.value = 1;
+    cropZoomValue.textContent = '100%';
+    const initialWidth = image.width * cropState.baseScale;
+    const initialHeight = image.height * cropState.baseScale;
+    cropState.offsetX = (cropCanvas.width - initialWidth) / 2;
+    cropState.offsetY = (cropCanvas.height - initialHeight) / 2;
+    clampCropPosition();
+    drawCropCanvas();
+}
+function loadImageFromFile(file) {
+    return new Promise(function(resolve, reject){
+        const reader = new FileReader();
+        reader.onload = function(event){
+            const image = new Image();
+            image.onload = function(){ resolve(image); };
+            image.onerror = function(){ reject(new Error('Unable to read image')); };
+            image.src = event.target.result;
+        };
+        reader.onerror = function(){ reject(new Error('Unable to read file')); };
+        reader.readAsDataURL(file);
+    });
+}
+function canvasToFile(fileName) {
+    return new Promise(function(resolve, reject){
+        cropCanvas.toBlob(function(blob){
+            if (!blob) {
+                reject(new Error('Unable to crop image'));
+                return;
+            }
+            resolve(new File([blob], fileName, {type:'image/jpeg'}));
+        }, 'image/jpeg', 0.9);
+    });
+}
+cropCanvas.addEventListener('pointerdown', function(event){
+    if(!cropState.image) return;
+    cropState.isDragging = true;
+    cropState.dragStartX = event.clientX;
+    cropState.dragStartY = event.clientY;
+    cropCanvas.classList.add('is-dragging');
+    cropCanvas.setPointerCapture(event.pointerId);
+});
+cropCanvas.addEventListener('pointermove', function(event){
+    if(!cropState.isDragging || !cropState.image) return;
+    const moveX = event.clientX - cropState.dragStartX;
+    const moveY = event.clientY - cropState.dragStartY;
+    cropState.dragStartX = event.clientX;
+    cropState.dragStartY = event.clientY;
+    cropState.offsetX += moveX;
+    cropState.offsetY += moveY;
+    clampCropPosition();
+    drawCropCanvas();
+});
+function stopCanvasDragging() {
+    cropState.isDragging = false;
+    cropCanvas.classList.remove('is-dragging');
+}
+cropCanvas.addEventListener('pointerup', stopCanvasDragging);
+cropCanvas.addEventListener('pointercancel', stopCanvasDragging);
+cropZoomRange.addEventListener('input', function(event){
+    if(!cropState.image) return;
+    const previousScale = cropState.baseScale * cropState.zoom;
+    cropState.zoom = parseFloat(event.target.value || '1');
+    cropZoomValue.textContent = Math.round(cropState.zoom * 100) + '%';
+    const nextScale = cropState.baseScale * cropState.zoom;
+    const imageCenterX = (cropCanvas.width / 2 - cropState.offsetX) / previousScale;
+    const imageCenterY = (cropCanvas.height / 2 - cropState.offsetY) / previousScale;
+    cropState.offsetX = cropCanvas.width / 2 - imageCenterX * nextScale;
+    cropState.offsetY = cropCanvas.height / 2 - imageCenterY * nextScale;
+    clampCropPosition();
+    drawCropCanvas();
+});
+$('#imageUpload').on('change', async function(){
+    clearPhotoFieldError();
+    const selectedFile = this.files && this.files[0];
+    if(!selectedFile) return;
+    try {
+        const image = await loadImageFromFile(selectedFile);
+        resetCropState(image);
+        cropModal.modal('show');
+    } catch(e) {
+        addErrorNotification('Unable to read selected image.');
+        this.value = '';
+    }
+});
+$('#cropCancelBtn').on('click', function(){
+    const hasCroppedPhoto = !!croppedImageFile;
+    cropModal.modal('hide');
+    $('#driverModal').modal('show');
+    $('#imageUpload').val('');
+    if (!hasCroppedPhoto) {
+        setPhotoPreview(currentDriverPhoto);
+    }
+});
+$('#cropApplyBtn').on('click', async function(){
+    try {
+        const selected = document.getElementById('imageUpload').files[0];
+        if(!selected || !cropState.image){ addErrorNotification('Please select a photo first.'); return; }
+        const croppedName = (selected.name || 'driver-photo').replace(/\.[^.]+$/, '') + '-cropped.jpg';
+        croppedImageFile = await canvasToFile(croppedName);
+        setPhotoPreview(URL.createObjectURL(croppedImageFile));
+        clearPhotoFieldError();
+        cropModal.modal('hide');
+        $('#driverModal').modal('show');
+    } catch(e) {
+        addErrorNotification('Unable to crop selected image.');
+    }
+});
+</script>
+{% endblock %}

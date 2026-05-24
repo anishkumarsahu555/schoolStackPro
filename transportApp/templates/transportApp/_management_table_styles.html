@@ -1,0 +1,164 @@
+<style>
+    #RouteTable_length,
+    #StopTable_length,
+    #DriverTable_length,
+    #VehicleTable_length,
+    #AssignmentTable_length,
+    #FeeMappingTable_length,
+    #FeeRecordTable_length,
+    #AuditTable_length {
+        left: 20px;
+        position: absolute;
+    }
+
+    #RouteTable_filter,
+    #StopTable_filter,
+    #DriverTable_filter,
+    #VehicleTable_filter,
+    #AssignmentTable_filter,
+    #FeeMappingTable_filter,
+    #FeeRecordTable_filter,
+    #AuditTable_filter {
+        width: 50%;
+        float: right;
+        text-align: right !important;
+    }
+
+    #RouteTable_filter label,
+    #StopTable_filter label,
+    #DriverTable_filter label,
+    #VehicleTable_filter label,
+    #AssignmentTable_filter label,
+    #FeeMappingTable_filter label,
+    #FeeRecordTable_filter label,
+    #AuditTable_filter label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.4rem;
+        width: 100%;
+    }
+
+    #RouteTable_wrapper .dt-buttons,
+    #StopTable_wrapper .dt-buttons,
+    #DriverTable_wrapper .dt-buttons,
+    #VehicleTable_wrapper .dt-buttons,
+    #AssignmentTable_wrapper .dt-buttons,
+    #FeeMappingTable_wrapper .dt-buttons,
+    #FeeRecordTable_wrapper .dt-buttons,
+    #AuditTable_wrapper .dt-buttons {
+        display: none;
+    }
+
+    input[type=search] {
+        width: 100px !important;
+    }
+
+    .dataTables_wrapper .dataTables_filter {
+        text-align: right !important;
+    }
+
+    .ui.form,
+    .ui.form .fields,
+    .ui.form .field,
+    .ui.form .field > label,
+    .ui.form .field input,
+    .ui.form .field textarea,
+    .ui.form .field select,
+    .ui.form .ui.dropdown,
+    .ui.modal .content,
+    .ui.modal .content .ui.form,
+    .ui.modal .content .field,
+    .ui.modal .content .field > label {
+        text-align: left !important;
+    }
+
+    .ui.form .field > label,
+    .ui.modal .content .field > label {
+        display: block;
+        margin-bottom: 0.28571429rem;
+    }
+
+    .ui.checkbox,
+    .ui.checkbox label {
+        text-align: left !important;
+    }
+
+    .ui.form .fields {
+        justify-content: flex-start;
+    }
+
+    .transport-modal-section {
+        border: 1px solid rgba(34, 36, 38, .10);
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        text-align: left;
+    }
+
+    .transport-modal-section-title {
+        align-items: center;
+        color: #344054;
+        display: flex;
+        font-size: 12px;
+        font-weight: 800;
+        gap: 0.45rem;
+        letter-spacing: .02em;
+        margin-bottom: 0.85rem;
+        text-transform: uppercase;
+    }
+
+    .class-modal-actions,
+    .transport-modal-actions {
+        align-items: center;
+        display: flex;
+        gap: 0.65rem;
+        justify-content: flex-end;
+        margin-top: 2rem !important;
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+
+    .class-modal-actions .ui.button,
+    .transport-modal-actions .ui.button {
+        border-radius: 10px !important;
+        min-width: 104px;
+        white-space: nowrap;
+    }
+
+    .class-modal-actions .ui.button i.icon,
+    .transport-modal-actions .ui.button i.icon {
+        margin: 0 0 0 0.45rem !important;
+    }
+
+    .transport-active-row {
+        align-items: center;
+        display: flex;
+        min-height: 38px;
+        padding-top: 1.45rem;
+    }
+
+    html[data-theme="dark"] .transport-modal-section,
+    body.dark .transport-modal-section,
+    .dark-mode .transport-modal-section {
+        border-color: #334155;
+    }
+
+    html[data-theme="dark"] .transport-modal-section-title,
+    body.dark .transport-modal-section-title,
+    .dark-mode .transport-modal-section-title {
+        color: #cbd5e1;
+    }
+
+    @media (max-width: 767px) {
+        .class-modal-actions,
+        .transport-modal-actions {
+            justify-content: center;
+        }
+
+        .class-modal-actions .ui.button,
+        .transport-modal-actions .ui.button {
+            min-width: 96px;
+        }
+    }
+</style>

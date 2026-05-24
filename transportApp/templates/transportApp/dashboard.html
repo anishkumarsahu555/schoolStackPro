@@ -1,0 +1,547 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Transport Dashboard</title>{% endblock %}
+{% block page_title %}Transport Dashboard{% endblock %}
+{% block page_subtitle %}Monitor capacity, fee collection, compliance, and route utilization{% endblock %}
+{% block page_actions %}
+    <a class="ui green button class-page-action" href="{% url 'transportApp:manage_assignments' %}">
+        <i class="plus icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Assign Transport</span><span class="mobile-label">Assign</span></span>
+    </a>
+    <a class="ui blue button class-page-action" href="{% url 'transportApp:manage_fee_tracking' %}">
+        <i class="rupee sign icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Fee Tracking</span><span class="mobile-label">Fees</span></span>
+    </a>
+{% endblock %}
+{% block body %}
+{% include 'transportApp/_management_table_styles.html' %}
+<style>
+    .transport-dashboard {
+        display: grid;
+        gap: 14px;
+        text-align: left;
+    }
+    .transport-kpi-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(4, minmax(150px, 1fr));
+    }
+    .transport-kpi {
+        background: #fff;
+        border: 1px solid rgba(34, 36, 38, .10);
+        border-radius: 6px;
+        min-height: 104px;
+        padding: 14px 15px;
+    }
+    .transport-kpi .label {
+        align-items: center;
+        color: #667085;
+        display: flex;
+        font-size: 11px;
+        font-weight: 800;
+        gap: 0.45rem;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+    .transport-kpi .value {
+        color: #111827;
+        font-size: 30px;
+        font-weight: 850;
+        line-height: 1.1;
+        margin-top: 8px;
+    }
+    .transport-kpi .sub {
+        color: #667085;
+        font-size: 12px;
+        font-weight: 700;
+        margin-top: 6px;
+    }
+    .transport-dashboard-grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+    }
+    .transport-panel {
+        background: #fff;
+        border: 1px solid rgba(34, 36, 38, .10);
+        border-radius: 6px;
+        padding: 14px;
+    }
+    .transport-panel-head {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 12px;
+    }
+    .transport-panel-title {
+        align-items: center;
+        color: #1f2937;
+        display: flex;
+        font-size: 14px;
+        font-weight: 850;
+        gap: 0.45rem;
+        margin: 0;
+    }
+    .transport-panel-link {
+        font-size: 12px;
+        font-weight: 800;
+    }
+    .transport-progress {
+        min-width: 130px;
+    }
+    .transport-progress-track {
+        background: #e5e7eb;
+        border-radius: 999px;
+        height: 8px;
+        overflow: hidden;
+    }
+    .transport-progress-fill {
+        background: #21ba45;
+        border-radius: 999px;
+        height: 100%;
+    }
+    .transport-progress-fill.warning { background: #fbbd08; }
+    .transport-progress-fill.danger { background: #db2828; }
+    .transport-progress-text {
+        color: #4b5563;
+        font-size: 11px;
+        font-weight: 800;
+        margin-top: 4px;
+    }
+    .transport-alert-list,
+    .transport-action-list {
+        display: grid;
+        gap: 8px;
+    }
+    .transport-alert {
+        align-items: flex-start;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 6px;
+        display: grid;
+        gap: 0.7rem;
+        grid-template-columns: auto 1fr auto;
+        padding: 10px 11px;
+    }
+    .transport-alert .icon-wrap {
+        align-items: center;
+        background: rgba(33, 133, 208, 0.1);
+        border-radius: 6px;
+        color: #2185d0;
+        display: flex;
+        height: 32px;
+        justify-content: center;
+        width: 32px;
+    }
+    .transport-alert.warning .icon-wrap { background: rgba(251, 189, 8, 0.14); color: #b7791f; }
+    .transport-alert.danger .icon-wrap { background: rgba(219, 40, 40, 0.12); color: #db2828; }
+    .transport-alert-title {
+        color: #1f2937;
+        font-size: 13px;
+        font-weight: 850;
+    }
+    .transport-alert-sub {
+        color: #667085;
+        font-size: 12px;
+        font-weight: 700;
+        margin-top: 2px;
+    }
+    .transport-empty {
+        align-items: center;
+        border: 1px dashed rgba(148, 163, 184, 0.34);
+        border-radius: 6px;
+        color: #667085;
+        display: flex;
+        font-size: 13px;
+        font-weight: 700;
+        justify-content: center;
+        min-height: 86px;
+        padding: 12px;
+    }
+    .transport-fee-grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .transport-fee-box {
+        background: #f9fafb;
+        border: 1px solid rgba(34, 36, 38, .08);
+        border-radius: 6px;
+        padding: 10px;
+    }
+    .transport-fee-box .label {
+        color: #667085;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .transport-fee-box .value {
+        color: #111827;
+        font-size: 18px;
+        font-weight: 850;
+        margin-top: 4px;
+    }
+    .transport-action {
+        align-items: center;
+        border: 1px solid rgba(34, 36, 38, .10);
+        border-radius: 6px;
+        color: #1f2937;
+        display: flex;
+        gap: 0.7rem;
+        padding: 10px 11px;
+    }
+    .transport-action i.icon {
+        color: #2185d0;
+        margin: 0 !important;
+    }
+    .transport-action span {
+        font-size: 13px;
+        font-weight: 800;
+    }
+    .transport-action:hover {
+        background: #f9fafb;
+        color: #1f2937;
+    }
+    .transport-panel .ui.table {
+        background: #fff;
+        border-color: rgba(34, 36, 38, .10);
+        border-radius: 6px;
+        color: #1f2937;
+        overflow: hidden;
+    }
+    .transport-panel .ui.table thead th {
+        background: #f8fafc;
+        color: #475467;
+        font-size: 11px;
+        font-weight: 850;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+    .transport-panel .ui.table tbody td {
+        color: #1f2937;
+        font-weight: 700;
+        vertical-align: middle;
+    }
+    .transport-panel .ui.celled.table tr td,
+    .transport-panel .ui.celled.table tr th {
+        border-color: rgba(34, 36, 38, .08);
+    }
+    html[data-theme="dark"] .transport-kpi,
+    html[data-theme="dark"] .transport-panel,
+    html[data-theme="dark"] .transport-fee-box,
+    html[data-theme="dark"] .transport-action,
+    body.dark .transport-kpi,
+    body.dark .transport-panel,
+    body.dark .transport-fee-box,
+    body.dark .transport-action,
+    .dark-mode .transport-kpi,
+    .dark-mode .transport-panel,
+    .dark-mode .transport-fee-box,
+    .dark-mode .transport-action {
+        background: #111827;
+        border-color: #334155;
+    }
+    html[data-theme="dark"] .transport-kpi .value,
+    html[data-theme="dark"] .transport-panel-title,
+    html[data-theme="dark"] .transport-fee-box .value,
+    html[data-theme="dark"] .transport-alert-title,
+    html[data-theme="dark"] .transport-action,
+    body.dark .transport-kpi .value,
+    body.dark .transport-panel-title,
+    body.dark .transport-fee-box .value,
+    body.dark .transport-alert-title,
+    body.dark .transport-action,
+    .dark-mode .transport-kpi .value,
+    .dark-mode .transport-panel-title,
+    .dark-mode .transport-fee-box .value,
+    .dark-mode .transport-alert-title,
+    .dark-mode .transport-action {
+        color: #f8fafc;
+    }
+    html[data-theme="dark"] .transport-kpi .label,
+    html[data-theme="dark"] .transport-kpi .sub,
+    html[data-theme="dark"] .transport-fee-box .label,
+    html[data-theme="dark"] .transport-alert-sub,
+    html[data-theme="dark"] .transport-progress-text,
+    body.dark .transport-kpi .label,
+    body.dark .transport-kpi .sub,
+    body.dark .transport-fee-box .label,
+    body.dark .transport-alert-sub,
+    body.dark .transport-progress-text,
+    .dark-mode .transport-kpi .label,
+    .dark-mode .transport-kpi .sub,
+    .dark-mode .transport-fee-box .label,
+    .dark-mode .transport-alert-sub,
+    .dark-mode .transport-progress-text {
+        color: #cbd5e1;
+    }
+    html[data-theme="dark"] .transport-alert,
+    html[data-theme="dark"] .transport-empty,
+    body.dark .transport-alert,
+    body.dark .transport-empty,
+    .dark-mode .transport-alert,
+    .dark-mode .transport-empty {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    html[data-theme="dark"] .transport-empty,
+    body.dark .transport-empty,
+    .dark-mode .transport-empty {
+        color: #cbd5e1;
+    }
+    html[data-theme="dark"] .transport-progress-track,
+    body.dark .transport-progress-track,
+    .dark-mode .transport-progress-track {
+        background: #334155;
+    }
+    html[data-theme="dark"] .transport-alert .icon-wrap,
+    body.dark .transport-alert .icon-wrap,
+    .dark-mode .transport-alert .icon-wrap {
+        background: rgba(59, 130, 246, 0.18);
+        color: #93c5fd;
+    }
+    html[data-theme="dark"] .transport-alert.warning .icon-wrap,
+    body.dark .transport-alert.warning .icon-wrap,
+    .dark-mode .transport-alert.warning .icon-wrap {
+        background: rgba(251, 189, 8, 0.18);
+        color: #facc15;
+    }
+    html[data-theme="dark"] .transport-alert.danger .icon-wrap,
+    body.dark .transport-alert.danger .icon-wrap,
+    .dark-mode .transport-alert.danger .icon-wrap {
+        background: rgba(248, 113, 113, 0.18);
+        color: #fca5a5;
+    }
+    html[data-theme="dark"] .transport-panel-link,
+    body.dark .transport-panel-link,
+    .dark-mode .transport-panel-link {
+        color: #93c5fd;
+    }
+    html[data-theme="dark"] .transport-action:hover,
+    body.dark .transport-action:hover,
+    .dark-mode .transport-action:hover {
+        background: #172033;
+        color: #f8fafc;
+    }
+    html[data-theme="dark"] .transport-action i.icon,
+    body.dark .transport-action i.icon,
+    .dark-mode .transport-action i.icon {
+        color: #93c5fd;
+    }
+    html[data-theme="dark"] .transport-panel .ui.table,
+    body.dark .transport-panel .ui.table,
+    .dark-mode .transport-panel .ui.table {
+        background: #0f172a;
+        border-color: #334155;
+        color: #e5e7eb;
+    }
+    html[data-theme="dark"] .transport-panel .ui.table thead th,
+    body.dark .transport-panel .ui.table thead th,
+    .dark-mode .transport-panel .ui.table thead th {
+        background: #172033;
+        color: #cbd5e1;
+    }
+    html[data-theme="dark"] .transport-panel .ui.table tbody td,
+    body.dark .transport-panel .ui.table tbody td,
+    .dark-mode .transport-panel .ui.table tbody td {
+        background: #0f172a;
+        color: #e5e7eb;
+    }
+    html[data-theme="dark"] .transport-panel .ui.table tbody tr:hover td,
+    body.dark .transport-panel .ui.table tbody tr:hover td,
+    .dark-mode .transport-panel .ui.table tbody tr:hover td {
+        background: #172033;
+    }
+    html[data-theme="dark"] .transport-panel .ui.celled.table tr td,
+    html[data-theme="dark"] .transport-panel .ui.celled.table tr th,
+    body.dark .transport-panel .ui.celled.table tr td,
+    body.dark .transport-panel .ui.celled.table tr th,
+    .dark-mode .transport-panel .ui.celled.table tr td,
+    .dark-mode .transport-panel .ui.celled.table tr th {
+        border-color: #334155;
+    }
+    @media (max-width: 1100px) {
+        .transport-kpi-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
+        .transport-dashboard-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+        .transport-kpi-grid,
+        .transport-fee-grid { grid-template-columns: 1fr; }
+    }
+</style>
+<div class="ui right aligned basic grid">
+    <div class="sixteen wide column">
+        <div class="transport-dashboard">
+            <div class="transport-kpi-grid">
+                <div class="transport-kpi">
+                    <div class="label"><i class="users icon"></i>Active Riders</div>
+                    <div class="value" data-summary="activeAssignments">0</div>
+                    <div class="sub"><span data-summary="studentAssignments">0</span> students / <span data-summary="staffAssignments">0</span> staff</div>
+                </div>
+                <div class="transport-kpi">
+                    <div class="label"><i class="chair icon"></i>Seat Utilization</div>
+                    <div class="value"><span data-summary="occupancyPercent">0</span>%</div>
+                    <div class="sub"><span data-summary="vacantSeats">0</span> vacant / <span data-summary="overCapacity">0</span> over</div>
+                </div>
+                <div class="transport-kpi">
+                    <div class="label"><i class="shuttle van icon"></i>Active Vehicles</div>
+                    <div class="value" data-summary="activeVehicles">0</div>
+                    <div class="sub"><span data-summary="vehiclesWithoutRoute">0</span> without route / <span data-summary="vehiclesWithoutDriver">0</span> without driver</div>
+                </div>
+                <div class="transport-kpi">
+                    <div class="label"><i class="id card icon"></i>Active Drivers</div>
+                    <div class="value" data-summary="activeDrivers">0</div>
+                    <div class="sub"><span data-summary="unassignedDrivers">0</span> not assigned to vehicle</div>
+                </div>
+            </div>
+
+            <div class="transport-dashboard-grid">
+                <div class="transport-panel">
+                    <div class="transport-panel-head">
+                        <h4 class="transport-panel-title"><i class="rupee sign icon"></i>Monthly Fee Collection</h4>
+                        <a class="transport-panel-link" href="{% url 'transportApp:manage_fee_tracking' %}">View fees</a>
+                    </div>
+                    <div class="transport-fee-grid">
+                        <div class="transport-fee-box"><div class="label">Period</div><div class="value" data-fee="period">-</div></div>
+                        <div class="transport-fee-box"><div class="label">Collected</div><div class="value" data-fee="paidAmount">0.00</div></div>
+                        <div class="transport-fee-box"><div class="label">Pending</div><div class="value" data-fee="dueAmount">0.00</div></div>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <div class="transport-progress">
+                            <div class="transport-progress-track"><div class="transport-progress-fill" id="feeCollectionBar" style="width:0%"></div></div>
+                            <div class="transport-progress-text"><span data-fee="collectionPercent">0</span>% collected from <span data-fee="records">0</span> records, <span data-fee="pendingRecords">0</span> pending/partial</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="transport-panel">
+                    <div class="transport-panel-head">
+                        <h4 class="transport-panel-title"><i class="exclamation triangle icon"></i>Needs Attention</h4>
+                        <a class="transport-panel-link" href="{% url 'transportApp:manage_vehicles' %}">Manage</a>
+                    </div>
+                    <div class="transport-alert-list" id="transportAlerts"></div>
+                </div>
+            </div>
+
+            <div class="transport-dashboard-grid">
+                <div class="transport-panel">
+                    <div class="transport-panel-head">
+                        <h4 class="transport-panel-title"><i class="route icon"></i>Route Utilization</h4>
+                        <a class="transport-panel-link" href="{% url 'transportApp:manage_reports' %}">Open reports</a>
+                    </div>
+                    <table class="ui unstackable tiny celled very compact table">
+                        <thead><tr><th>Route</th><th>Vehicles</th><th>Assigned</th><th>Capacity</th><th>Usage</th></tr></thead>
+                        <tbody id="routeUtilizationBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="transport-panel">
+                    <div class="transport-panel-head">
+                        <h4 class="transport-panel-title"><i class="bus icon"></i>Vehicle Load</h4>
+                        <a class="transport-panel-link" href="{% url 'transportApp:manage_vehicles' %}">Vehicles</a>
+                    </div>
+                    <table class="ui unstackable tiny celled very compact table">
+                        <thead><tr><th>Vehicle</th><th>Route</th><th>Load</th></tr></thead>
+                        <tbody id="vehicleLoadBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="transport-panel">
+                <div class="transport-panel-head">
+                    <h4 class="transport-panel-title"><i class="bolt icon"></i>Transport Workbench</h4>
+                    <span class="transport-panel-link" id="dashboardGeneratedAt"></span>
+                </div>
+                <div class="transport-action-list">
+                    <a class="transport-action" href="{% url 'transportApp:manage_routes' %}"><i class="route icon"></i><span>Routes, pickup/drop points, timings</span></a>
+                    <a class="transport-action" href="{% url 'transportApp:manage_assignments' %}"><i class="users icon"></i><span>Student and staff transport assignment</span></a>
+                    <a class="transport-action" href="{% url 'transportApp:manage_fee_mapping' %}"><i class="sliders horizontal icon"></i><span>Default fee rules by route and point</span></a>
+                    <a class="transport-action" href="{% url 'transportApp:manage_fee_tracking' %}"><i class="money bill alternate outline icon"></i><span>Monthly fee generation and payment tracking</span></a>
+                    <a class="transport-action" href="{% url 'transportApp:manage_reports' %}"><i class="chart bar icon"></i><span>Capacity reports and passenger manifest</span></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block js %}
+<script>
+function escapeHtml(value){
+    return $('<div/>').text(value === null || value === undefined || value === '' ? 'N/A' : value).html();
+}
+function numberText(value){
+    const num = Number(value || 0);
+    return Number.isFinite(num) ? num.toLocaleString('en-IN') : '0';
+}
+function moneyText(value){
+    const num = Number(value || 0);
+    return Number.isFinite(num) ? num.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00';
+}
+function progressCell(percent, overCapacity){
+    const safePercent = Math.max(0, Math.min(Number(percent || 0), 100));
+    const tone = overCapacity > 0 ? 'danger' : (safePercent >= 85 ? 'warning' : '');
+    return '<div class="transport-progress"><div class="transport-progress-track"><div class="transport-progress-fill '+tone+'" style="width:'+safePercent+'%"></div></div><div class="transport-progress-text">'+escapeHtml(percent)+'%'+(overCapacity > 0 ? ' / Over '+escapeHtml(overCapacity) : '')+'</div></div>';
+}
+function renderSummary(summary){
+    Object.keys(summary || {}).forEach(function(key){
+        $('[data-summary="'+key+'"]').text(numberText(summary[key]));
+    });
+}
+function renderFeeSummary(fee){
+    fee = fee || {};
+    $('[data-fee="period"]').text(fee.period || '-');
+    $('[data-fee="paidAmount"]').text(moneyText(fee.paidAmount));
+    $('[data-fee="dueAmount"]').text(moneyText(fee.dueAmount));
+    $('[data-fee="collectionPercent"]').text(numberText(fee.collectionPercent));
+    $('[data-fee="records"]').text(numberText(fee.records));
+    $('[data-fee="pendingRecords"]').text(numberText(fee.pendingRecords));
+    $('#feeCollectionBar').css('width', Math.max(0, Math.min(Number(fee.collectionPercent || 0), 100)) + '%');
+}
+function renderAlerts(alerts){
+    const wrap = $('#transportAlerts').empty();
+    if(!alerts || !alerts.length){
+        wrap.append('<div class="transport-empty">No compliance alerts for the next 30 days.</div>');
+        return;
+    }
+    alerts.forEach(function(item){
+        wrap.append('<div class="transport-alert '+escapeHtml(item.tone)+'"><div class="icon-wrap"><i class="calendar alternate outline icon"></i></div><div><div class="transport-alert-title">'+escapeHtml(item.target)+' / '+escapeHtml(item.title)+'</div><div class="transport-alert-sub">'+escapeHtml(item.kind)+' / '+escapeHtml(item.date)+'</div></div><span class="ui tiny '+(item.tone === 'danger' ? 'red' : item.tone === 'warning' ? 'yellow' : 'blue')+' label">'+escapeHtml(item.status)+'</span></div>');
+    });
+}
+function renderRoutes(rows){
+    const body = $('#routeUtilizationBody').empty();
+    if(!rows || !rows.length){
+        body.append('<tr><td colspan="5"><div class="transport-empty">No active route utilization yet.</div></td></tr>');
+        return;
+    }
+    rows.forEach(function(row){
+        body.append('<tr><td><b>'+escapeHtml(row.code)+'</b><br><span class="text-muted">'+escapeHtml(row.name)+'</span></td><td>'+escapeHtml(row.vehicles)+'</td><td>'+escapeHtml(row.assigned)+'</td><td>'+escapeHtml(row.capacity)+'</td><td>'+progressCell(row.occupancyPercent, row.overCapacity)+'</td></tr>');
+    });
+}
+function renderVehicles(rows){
+    const body = $('#vehicleLoadBody').empty();
+    if(!rows || !rows.length){
+        body.append('<tr><td colspan="3"><div class="transport-empty">No active vehicle load yet.</div></td></tr>');
+        return;
+    }
+    rows.forEach(function(row){
+        body.append('<tr><td><b>'+escapeHtml(row.vehicleNumber)+'</b><br><span class="text-muted">'+escapeHtml(row.driver)+'</span></td><td>'+escapeHtml(row.route)+'</td><td>'+progressCell(row.occupancyPercent, row.overCapacity)+'</td></tr>');
+    });
+}
+$(function () {
+    $.get("{% url 'transportAppAPI:dashboard_summary' %}", function (response) {
+        if (!response.success) {
+            addErrorNotification(response.message || 'Unable to load transport dashboard.');
+            return;
+        }
+        const data = response.data || {};
+        renderSummary(data.summary || {});
+        renderFeeSummary(data.feeSummary || {});
+        renderAlerts(data.alerts || []);
+        renderRoutes(data.routes || []);
+        renderVehicles(data.vehicles || []);
+        $('#dashboardGeneratedAt').text(data.generatedAt ? 'Updated ' + data.generatedAt : '');
+    }).fail(function () {
+        addErrorNotification('Unable to load transport dashboard.');
+    });
+});
+</script>
+{% endblock %}

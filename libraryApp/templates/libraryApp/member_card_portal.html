@@ -1,0 +1,120 @@
+{% extends base_template %}
+{% block title %}<title>Library ID Card</title>{% endblock %}
+{% block page_title %}Library ID Card{% endblock %}
+{% block page_subtitle %}View your library membership card{% endblock %}
+{% block page_actions %}
+    {% if cards %}
+        <button class="ui teal button class-page-action no-print" id="downloadLibraryIdCardJpegBtn" type="button" onclick="downloadLibraryIdCardJpeg()">
+            <i class="download icon"></i>
+            <span>JPEG</span>
+        </button>
+    {% endif %}
+{% endblock %}
+{% block body %}
+<style>
+    .portal-library-card-wrap {
+        display: flex;
+        justify-content: center;
+        padding: 12px 0;
+    }
+    @media print {
+        @page {
+            margin: 8mm;
+            size: A4 portrait;
+        }
+        .no-print,
+        .ui.top.fixed.menu,
+        .ui.sidebar,
+        .app-topbar,
+        .sidenav,
+        .page-header {
+            display: none !important;
+        }
+        body,
+        .main-content,
+        .ui.segment {
+            background: #ffffff !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .portal-library-card-wrap {
+            justify-content: start;
+            padding: 0 !important;
+        }
+        .library-id-card {
+            box-shadow: none !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+<div class="ui segment">
+    {% if cards %}
+        <div class="portal-library-card-wrap">
+            {% include 'libraryApp/partials/member_card_embed.html' %}
+        </div>
+    {% else %}
+        <div class="ui yellow message">{{ portal_missing_message|default:'Library membership is not available.' }}</div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+    function portalLibraryCardValue(fieldKey) {
+        const row = document.querySelector('.portal-library-card-wrap [data-preview-field="' + fieldKey + '"]');
+        const value = row ? row.querySelector('.v') : null;
+        return value ? value.textContent.trim() : '';
+    }
+
+    function portalLibraryCardFileName() {
+        const memberCode = portalLibraryCardValue('memberCode') || 'member';
+        const memberName = portalLibraryCardValue('name') || 'library-member';
+        const cleaned = String(memberCode + '-' + memberName + '-library-id-card')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'library-id-card';
+        return cleaned + '.jpg';
+    }
+
+    async function downloadLibraryIdCardJpeg() {
+        const card = document.querySelector('.portal-library-card-wrap .library-id-card');
+        const button = document.getElementById('downloadLibraryIdCardJpegBtn');
+        if (!card) {
+            addErrorNotification('Unable to find library ID card for export.');
+            return;
+        }
+        if (typeof html2canvas !== 'function') {
+            addErrorNotification('JPEG export library not loaded.');
+            return;
+        }
+        if (button) {
+            button.classList.add('loading', 'disabled');
+        }
+        try {
+            const canvas = await html2canvas(card, {
+                backgroundColor: '#ffffff',
+                scale: Math.max(2, window.devicePixelRatio || 1),
+                useCORS: true,
+                allowTaint: false
+            });
+            const downloadLink = document.createElement('a');
+            downloadLink.href = canvas.toDataURL('image/jpeg', 0.95);
+            downloadLink.download = portalLibraryCardFileName();
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            addSuccessNotification('JPEG download started.');
+        } catch (error) {
+            addErrorNotification('Unable to generate JPEG. Please try again.');
+        } finally {
+            if (button) {
+                button.classList.remove('loading', 'disabled');
+            }
+        }
+    }
+</script>
+{% endblock %}

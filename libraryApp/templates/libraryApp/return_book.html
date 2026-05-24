@@ -1,0 +1,37 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Return & Renew Book</title>{% endblock %}
+{% block page_title %}Return & Renew Book{% endblock %}
+{% block page_subtitle %}Return, renew, and calculate overdue fines{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="list alternate outline icon"></i>
+        Issued book list
+    </h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="ReturnTable" style="margin-top: 5px;width: 100%"><thead><tr><th>Book</th><th>Copy</th><th>Code</th><th>Member</th><th>Issue Date</th><th>Due Date</th><th>Status</th><th>Fine</th><th>Actions</th></tr></thead></table>
+    </div>
+</div>
+{% include 'libraryApp/_return_modal.html' %}
+{% include 'libraryApp/_renew_modal.html' %}
+{% include 'libraryApp/_issue_detail_modal.html' %}
+<script>
+let returnTable;
+$(function(){
+    $('.ui.dropdown').dropdown();
+    returnTable = libraryDataTable('#ReturnTable', {url:"{% url 'libraryAppAPI:IssueListJson' %}", data:{status:'issued'}}, [
+        { name: 'book', targets: 0 },
+        { name: 'copy', targets: 1 },
+        { name: 'memberCode', targets: 2 },
+        { name: 'memberName', targets: 3 },
+        { name: 'issueDate', targets: 4 },
+        { name: 'dueDate', targets: 5 },
+        { name: 'status', targets: 6 },
+        { name: 'fineAmount', targets: 7 },
+        { name: 'action', targets: 8, orderable: false, searchable: false }
+    ], 5);
+});
+</script>
+{% endblock %}

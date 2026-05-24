@@ -1,0 +1,60 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Library Members</title>{% endblock %}
+{% block page_title %}Library Members{% endblock %}
+{% block page_subtitle %}Manage student and staff memberships{% endblock %}
+{% block page_actions %}
+    <a class="ui button class-page-action library-secondary-action" href="{% url 'libraryApp:member_card_design' %}">
+        <i class="paint brush icon"></i>
+        <span><span class="desktop-label">Card Design</span><span class="mobile-label">Design</span></span>
+    </a>
+    <button class="ui green button class-page-action" onclick="showMemberModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Member</span><span class="mobile-label">Add</span></span></button>
+{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="list alternate outline icon"></i>
+        Member list
+    </h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="MemberTable" style="margin-top: 5px;width: 100%"><thead><tr><th>Code</th><th>Type</th><th>Name</th><th>Max Books</th><th>Open Fine</th><th>Status</th><th>Actions</th></tr></thead></table>
+    </div>
+</div>
+<div class="ui modal" id="memberModal"><i class="close icon"></i><div class="header">Library Member</div><div class="content"><form class="ui tiny form" id="memberForm">{% csrf_token %}<input type="hidden" name="id" id="memberId"><div class="library-form-grid"><div class="field required"><label>Member Type</label><select class="ui dropdown" name="memberType" id="memberType" onchange="toggleMemberType()"><option value="student">Student</option><option value="staff">Staff</option></select></div><div class="field member-student"><label>Student</label><select class="ui search dropdown" name="student" id="memberStudent"></select></div><div class="field member-staff"><label>Staff</label><select class="ui search dropdown" name="staff" id="memberStaff"></select></div><div class="field required"><label>Member Code</label><input name="memberCode" id="memberCode"></div><div class="field"><label>Join Date</label><div class="ui calendar library-date-calendar" id="memberJoinDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="joinDate" id="memberJoinDate" placeholder="YYYY-MM-DD"></div></div></div><div class="field"><label>Max Books</label><input type="number" name="maxBooksAllowed" id="memberMaxBooks" value="2"></div><div class="field"><label>Fine Limit</label><input type="number" step="0.01" name="fineLimit" id="memberFineLimit"></div><div class="field"><label>Status</label><select class="ui dropdown" name="isActive" id="memberActive"><option value="true">Active</option><option value="false">Inactive</option></select></div></div></form></div><div class="actions library-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button class-page-action" onclick="saveMember()"><span><span class="desktop-label">Submit</span><span class="mobile-label">Save</span></span><i class="check icon"></i></button></div></div>
+{% include 'libraryApp/_issue_history_modal.html' %}
+<script>
+let memberTable; function toggleMemberType(){ const t=$('#memberType').val(); $('.member-student').toggle(t==='student'); $('.member-staff').toggle(t==='staff'); }
+function fillMemberOptions(done){ $.get("{% url 'libraryAppAPI:library_options_api' %}", function(r){ let s='<option value="">Select</option>', st='<option value="">Select</option>'; (r.data.students||[]).forEach(x=>s+='<option value="'+x.id+'">'+x.name+'</option>'); (r.data.staff||[]).forEach(x=>st+='<option value="'+x.id+'">'+x.name+'</option>'); $('#memberStudent').html(s); $('#memberStaff').html(st); $('.ui.dropdown').dropdown('refresh'); if(done) done(); }); }
+function showMemberModal(){ $('#memberForm')[0].reset(); $('#memberId').val(''); fillMemberOptions(); toggleMemberType(); $('#memberModal').modal('show'); }
+function editMember(id){ $.get("{% url 'libraryAppAPI:detail_api' %}", {entity:'member', id:id}, function(r){ const d=r.data; fillMemberOptions(function(){ $('#memberId').val(d.id); $('#memberType').dropdown('set selected', d.memberType); $('#memberStudent').dropdown('set selected', d.student); $('#memberStaff').dropdown('set selected', d.staff); $('#memberCode').val(d.memberCode); $('#memberJoinDate').val(d.joinDate); $('#memberMaxBooks').val(d.maxBooksAllowed); $('#memberFineLimit').val(d.fineLimit); $('#memberActive').dropdown('set selected', String(d.isActive)); toggleMemberType(); }); $('#memberModal').modal('show'); }); }
+function saveMember(){
+    const requiredIds = ['memberType', 'memberCode'];
+    if ($('#memberType').val() === 'student') requiredIds.push('memberStudent');
+    if ($('#memberType').val() === 'staff') requiredIds.push('memberStaff');
+    if (!libraryValidateRequired('#memberForm', requiredIds)) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:member_api' %}", $('#memberForm').serialize(), function(response){
+        if (libraryHandleSuccess(response, 'Library member saved successfully.')) {
+            $('#memberModal').modal('hide');
+            memberTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+function confirmDeleteMember(id){ if(confirm('Delete this member?')) $.post("{% url 'libraryAppAPI:delete_api' %}", {entity:'member', id:id}, function(){ memberTable.ajax.reload(); }); }
+function viewMemberHistory(id){ loadIssueHistory({member:id}, 'Member Issue History'); }
+$(function(){
+    $('.ui.dropdown').dropdown();
+    toggleMemberType();
+    memberTable = libraryDataTable('#MemberTable', "{% url 'libraryAppAPI:MemberListJson' %}", [
+        { name: 'memberCode', targets: 0 },
+        { name: 'memberType', targets: 1 },
+        { name: 'name', targets: 2 },
+        { name: 'maxBooksAllowed', targets: 3 },
+        { name: 'openFine', targets: 4, orderable: false },
+        { name: 'isActive', targets: 5 },
+        { name: 'action', targets: 6, orderable: false, searchable: false }
+    ], 0);
+});
+</script>
+{% endblock %}

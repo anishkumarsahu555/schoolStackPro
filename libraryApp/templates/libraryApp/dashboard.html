@@ -1,0 +1,113 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Library Dashboard</title>{% endblock %}
+{% block page_title %}Library Dashboard{% endblock %}
+{% block page_subtitle %}Track stock, circulation, reservations, fines, and exceptions{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="chart pie icon"></i>
+        Library overview
+    </h4>
+    <div class="library-kpi-grid">
+        <div class="library-kpi"><div class="label">Books</div><div class="value" id="books">0</div></div>
+        <div class="library-kpi"><div class="label">Copies</div><div class="value" id="copies">0</div></div>
+        <div class="library-kpi"><div class="label">Available</div><div class="value" id="availableCopies">0</div></div>
+        <div class="library-kpi"><div class="label">Issued</div><div class="value" id="issuedCopies">0</div></div>
+        <div class="library-kpi"><div class="label">Overdue</div><div class="value" id="overdueIssues">0</div></div>
+        <div class="library-kpi"><div class="label">Reservations</div><div class="value" id="pendingReservations">0</div></div>
+        <div class="library-kpi"><div class="label">Lost/Damaged</div><div class="value" id="lostDamagedCopies">0</div></div>
+        <div class="library-kpi"><div class="label">Pending Fine</div><div class="value" id="pendingFineAmount">0.00</div></div>
+    </div>
+    <h4 class="ui horizontal left aligned divider header"><i class="chart bar outline icon"></i>Library charts</h4>
+    <div class="library-chart-grid">
+        <div class="library-chart-card">
+            <div class="chart-title">Copy Status</div>
+            <canvas id="copyStatusChart"></canvas>
+        </div>
+        <div class="library-chart-card">
+            <div class="chart-title">Issues Last 7 Days</div>
+            <canvas id="issueTrendChart"></canvas>
+        </div>
+        <div class="library-chart-card">
+            <div class="chart-title">Reservation Status</div>
+            <canvas id="reservationStatusChart"></canvas>
+        </div>
+        <div class="library-chart-card">
+            <div class="chart-title">Fine Amounts</div>
+            <canvas id="fineAmountsChart"></canvas>
+        </div>
+    </div>
+    <h4 class="ui horizontal left aligned divider header"><i class="history icon"></i>Recent Circulation</h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table">
+            <thead><tr><th>Book</th><th>Copy</th><th>Member</th><th>Due Date</th><th>Status</th></tr></thead>
+            <tbody id="recentRows"></tbody>
+        </table>
+    </div>
+</div>
+<script>
+let libraryDashboardCharts = [];
+function libraryChartColors(){
+    return {
+        status: ['#10b981', '#f59e0b', '#14b8a6', '#ef4444', '#eab308', '#64748b'],
+        reservation: ['#f59e0b', '#10b981', '#64748b', '#ef4444'],
+        fine: ['#f59e0b', '#10b981', '#3b82f6'],
+        trend: '#2563eb',
+        grid: $('html').attr('data-theme') === 'dark' || $('body').hasClass('dark') || $('.dark-mode').length ? 'rgba(148, 163, 184, 0.22)' : 'rgba(148, 163, 184, 0.28)',
+        text: $('html').attr('data-theme') === 'dark' || $('body').hasClass('dark') || $('.dark-mode').length ? '#e5e7eb' : '#334155'
+    };
+}
+function clearLibraryDashboardCharts(){
+    libraryDashboardCharts.forEach(function(chart){ chart.destroy(); });
+    libraryDashboardCharts = [];
+}
+function renderLibraryDashboardCharts(charts){
+    if (typeof Chart === 'undefined' || !charts) return;
+    clearLibraryDashboardCharts();
+    const colors = libraryChartColors();
+    const axisOptions = {
+        legend: {display: false},
+        scales: {
+            xAxes: [{ticks: {fontColor: colors.text}, gridLines: {color: colors.grid}}],
+            yAxes: [{ticks: {beginAtZero: true, precision: 0, fontColor: colors.text}, gridLines: {color: colors.grid}}]
+        },
+        maintainAspectRatio: false,
+        responsive: true
+    };
+    libraryDashboardCharts.push(new Chart(document.getElementById('copyStatusChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {labels: charts.copyStatus.labels, datasets: [{data: charts.copyStatus.data, backgroundColor: colors.status, borderWidth: 0}]},
+        options: {legend: {position: 'bottom', labels: {fontColor: colors.text, boxWidth: 10}}, maintainAspectRatio: false, responsive: true}
+    }));
+    libraryDashboardCharts.push(new Chart(document.getElementById('issueTrendChart').getContext('2d'), {
+        type: 'bar',
+        data: {labels: charts.issueTrend.labels, datasets: [{data: charts.issueTrend.data, backgroundColor: colors.trend, borderWidth: 0}]},
+        options: axisOptions
+    }));
+    libraryDashboardCharts.push(new Chart(document.getElementById('reservationStatusChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {labels: charts.reservationStatus.labels, datasets: [{data: charts.reservationStatus.data, backgroundColor: colors.reservation, borderWidth: 0}]},
+        options: {legend: {position: 'bottom', labels: {fontColor: colors.text, boxWidth: 10}}, maintainAspectRatio: false, responsive: true}
+    }));
+    libraryDashboardCharts.push(new Chart(document.getElementById('fineAmountsChart').getContext('2d'), {
+        type: 'bar',
+        data: {labels: charts.fineAmounts.labels, datasets: [{data: charts.fineAmounts.data, backgroundColor: colors.fine, borderWidth: 0}]},
+        options: axisOptions
+    }));
+}
+$(function(){
+    $.get("{% url 'libraryAppAPI:dashboard_summary' %}", function(resp){
+        if(!resp || resp.status !== 'success') return;
+        const d = resp.data;
+        ['books','copies','availableCopies','issuedCopies','overdueIssues','pendingReservations','lostDamagedCopies','pendingFineAmount'].forEach(function(k){ $('#' + k).text(d[k]); });
+        renderLibraryDashboardCharts(d.charts);
+        const rows = (d.recentIssues || []).map(function(i){
+            return '<tr><td>'+i.book+'</td><td>'+i.copy+'</td><td>'+i.member+'</td><td>'+i.dueDate+'</td><td>'+i.status+'</td></tr>';
+        }).join('');
+        $('#recentRows').html(rows || '<tr><td colspan="5" class="center aligned">No recent circulation</td></tr>');
+    });
+});
+</script>
+{% endblock %}

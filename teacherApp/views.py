@@ -9,6 +9,9 @@ from chatApp.views import inbox as chat_inbox
 from homeApp.models import SchoolSession, SchoolDetail
 from homeApp.session_utils import build_current_session_payload, build_session_list_item
 from homeApp.utils import login_required
+from libraryApp.models import LibraryMember
+from libraryApp.services import build_member_card_render_context, get_or_create_active_member_card_design
+from libraryApp.views import _member_card_context, _school_fallback
 from managementApp.models import (
     Student,
     TeacherDetail,
@@ -24,6 +27,7 @@ from managementApp.models import (
 )
 from managementApp.reporting import build_report_cards_for_student
 from teacherApp.models import SubjectNote
+from transportApp.portal_services import build_my_transport_context
 from utils.custom_decorators import check_groups
 from utils.logger import logger
 
@@ -114,6 +118,85 @@ def teacher_school_detail(request):
     school = _resolve_school_from_context(teacher, current_session_id)
     return render(request, 'teacherApp/school_detail.html', {
         'school': school,
+        'is_class_teacher': is_class_teacher,
+    })
+
+
+@login_required
+@check_groups('Teaching')
+def teacher_my_transport(request):
+    teacher, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
+    context = {
+        'profile_missing': not bool(teacher and current_session_id),
+        'is_class_teacher': is_class_teacher,
+        'portal_role': 'teacher',
+    }
+    if teacher and current_session_id:
+        context.update(build_my_transport_context('teacher', teacher, current_session_id))
+    else:
+        context.update({
+            'assignment': None,
+            'recent_fee_records': [],
+            'current_fee_record': None,
+            'fee_summary': {'net': 0, 'paid': 0, 'due': 0},
+        })
+    logger.info(f'Teacher transport page opened user={request.user.id} teacher={teacher.id if teacher else None}')
+    return render(request, 'teacherApp/my_transport.html', context)
+
+
+@login_required
+@check_groups('Teaching')
+def teacher_library(request):
+    teacher, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
+    logger.info(f'Teacher library page opened user={request.user.id} teacher={teacher.id if teacher else None}')
+    return render(request, 'teacherApp/library.html', {
+        'profile_missing': not bool(teacher and current_session_id),
+        'is_class_teacher': is_class_teacher,
+    })
+
+
+@login_required
+@check_groups('Teaching')
+def teacher_library_id_card(request):
+    teacher, current_session_id, is_class_teacher = _bootstrap_teacher_context(request)
+    current_session = request.session.get('current_session', {}) or {}
+    member = None
+    if teacher and current_session_id:
+        member = LibraryMember.objects.select_related(
+            'schoolID',
+            'sessionID',
+            'staff',
+        ).filter(
+            isDeleted=False,
+            isActive=True,
+            memberType='staff',
+            staff_id=teacher.id,
+            schoolID_id=current_session.get('SchoolID') or teacher.schoolID_id,
+            sessionID_id=current_session_id,
+        ).first()
+    if not member:
+        logger.info(f'Teacher library ID card unavailable user={request.user.id} teacher={teacher.id if teacher else None}')
+        return render(request, 'libraryApp/member_card_portal.html', {
+            'base_template': 'teacherApp/index.html',
+            'portal_back_url': 'teacherApp:teacher_library',
+            'portal_missing_message': 'Library membership is not active. Please contact the library office.',
+            'cards': [],
+            'is_class_teacher': is_class_teacher,
+        })
+    school = _school_fallback(SchoolDetail.objects.filter(pk=member.schoolID_id, isDeleted=False).first())
+    design = get_or_create_active_member_card_design(member.schoolID_id, member.sessionID_id)
+    render_context = build_member_card_render_context(
+        cards=[_member_card_context(member)],
+        design=design,
+        school=school,
+        session_id=member.sessionID_id,
+    )
+    logger.info(f'Teacher library ID card opened user={request.user.id} member={member.id}')
+    return render(request, 'libraryApp/member_card_portal.html', {
+        **render_context,
+        'base_template': 'teacherApp/index.html',
+        'portal_back_url': 'teacherApp:teacher_library',
+        'portal_missing_message': '',
         'is_class_teacher': is_class_teacher,
     })
 

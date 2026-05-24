@@ -1,0 +1,214 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Transport Fee Mapping</title>{% endblock %}
+{% block page_title %}Transport Fee Mapping{% endblock %}
+{% block page_subtitle %}Configure default transport fee rules used during student and staff assignment{% endblock %}
+{% block page_actions %}
+    <button class="ui green button class-page-action" type="button" onclick="showFeeMappingModal()">
+        <i class="plus icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Add Fee Mapping</span><span class="mobile-label">Add</span></span>
+    </button>
+{% endblock %}
+{% block body %}
+{% include 'transportApp/_management_table_styles.html' %}
+<div class="ui right aligned basic  grid">
+    <div class="sixteen wide column">
+        <div class="ui tab active" data-tab="user">
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header"><i class="rupee sign icon"></i>Fee mapping list</h4>
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="FeeMappingTable" style="margin-top: 5px;width:100%">
+                        <thead><tr><th>Route</th><th>Point</th><th>For</th><th>Mode</th><th>Monthly Fee</th><th>From</th><th>To</th><th>Status</th><th>Actions</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ui modal" id="feeMappingModal">
+    <i class="close icon"></i>
+    <div class="header">Transport Fee Mapping</div>
+    <div class="content">
+        <form class="ui tiny form" id="feeMappingForm">{% csrf_token %}
+            <input type="hidden" id="feeMappingID">
+            <div class="transport-modal-section">
+                <div class="transport-modal-section-title"><i class="route icon"></i>Default Rule Scope</div>
+                <div class="three fields">
+                    <div class="field required">
+                        <label>Route</label>
+                        <div class="ui fluid search selection dropdown route-options" id="feeRouteDropdown">
+                            <input type="hidden" id="feeRouteID">
+                            <i class="dropdown icon"></i>
+                            <div class="default text">Select Route</div>
+                            <div class="menu"></div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Pickup/Drop Point</label>
+                        <div class="ui fluid search selection dropdown fee-stop-options" id="feeStopDropdown">
+                            <input type="hidden" id="feeStopID">
+                            <i class="dropdown icon"></i>
+                            <div class="default text">Route Default</div>
+                            <div class="menu"></div>
+                        </div>
+                    </div>
+                    <div class="field"><label>Applies To</label><select class="ui fluid search selection dropdown" id="feeAssigneeType"><option value="student">Student</option><option value="teacher">Staff</option><option value="both">Student & Staff</option></select></div>
+                </div>
+            </div>
+            <div class="transport-modal-section">
+                <div class="transport-modal-section-title"><i class="rupee sign icon"></i>Default Fee Rule</div>
+                <div class="four fields">
+                    <div class="field"><label>Default Fee Mode</label><select class="ui fluid search selection dropdown" id="mappingFeeMode"><option value="student_fee">Student Fee</option><option value="free">Free</option><option value="payroll_deduction">Payroll Deduction</option><option value="staff_receivable">Staff Receivable</option><option value="informational">Informational Only</option></select></div>
+                    <div class="field required"><label>Default Monthly Fee</label><input id="mappingMonthlyFee" type="number" step="0.01" value="0"></div>
+                    <div class="field"><label>Effective From</label><div class="ui calendar transport-date-calendar" id="effectiveFromCal"><div class="ui input left icon"><i class="calendar icon"></i><input id="effectiveFrom" type="text" placeholder="YYYY-MM-DD"></div></div></div>
+                    <div class="field"><label>Effective To</label><div class="ui calendar transport-date-calendar" id="effectiveToCal"><div class="ui input left icon"><i class="calendar icon"></i><input id="effectiveTo" type="text" placeholder="YYYY-MM-DD"></div></div></div>
+                </div>
+            </div>
+            <div class="transport-modal-section">
+                <div class="transport-modal-section-title"><i class="sticky note outline icon"></i>Notes & Status</div>
+                <div class="two fields">
+                    <div class="field"><label>Notes</label><textarea id="feeNotes" rows="2"></textarea></div>
+                    <div class="field"><div class="transport-active-row"><div class="ui checkbox"><input type="checkbox" id="feeMappingIsActive" checked><label>Active</label></div></div></div>
+                </div>
+            </div>
+        </form>
+        <div class="actions class-modal-actions">
+            <div class="ui cancel button">Cancel</div>
+            <button class="ui green button saveBtn" onclick="saveFeeMapping()">Submit<i class="checkmark icon"></i></button>
+            <button style="display: none" class="ui green button saveBtnLoad">Saving ...<i class="checkmark icon"></i></button>
+        </div>
+    </div>
+</div>
+
+<div class="ui basic modal custom" id="deleteFeeMappingModal">
+    <div class="ui icon header">
+        <i class="trash alternate icon red"></i>
+        Fee Mapping Details will be Deleted
+    </div>
+    <div class="content">
+        <p style="text-align: center">The Transport Fee Mapping will be deleted, are you sure to delete this Fee Mapping?</p>
+    </div>
+    <div class="actions">
+        <div class="ui red basic cancel inverted button">
+            <i class="remove icon"></i>
+            No
+        </div>
+        <input type="hidden" id="deleteFeeMappingID">
+        <div class="ui green ok inverted button" onclick="deleteFeeMapping()">
+            <i class="checkmark icon"></i>
+            Yes
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block js %}
+<script>
+let feeMappingTable, transportOptions = {stops: []};
+$(function () {
+    $('.ui.dropdown').dropdown({fullTextSearch: true});
+    $('.ui.checkbox').checkbox();
+    initTransportCalendars();
+    feeMappingTable = $('#FeeMappingTable').DataTable({
+        dom: 'Blfrtip', scrollX: true, stateSave: true, processing: true, serverSide: true,
+        aaSorting: [[0, 'asc']], pageLength: 10,
+        ajax: "{% url 'transportAppAPI:FeeMappingListJson' %}",
+        columnDefs: [
+            {"name":"route","targets":0},{"name":"stop","targets":1},{"name":"assigneeType","targets":2},
+            {"name":"feeMode","targets":3},{"name":"monthlyFee","targets":4},{"name":"effectiveFrom","targets":5},
+            {"name":"effectiveTo","targets":6},{"name":"isActive","targets":7},{"name":"actions","targets":8,"orderable":false}
+        ]
+    });
+    loadTransportOptions();
+});
+function initTransportCalendars(){
+    $('.transport-date-calendar').calendar({
+        monthFirst: false,
+        type: 'date',
+        formatter: { date: function(date){ if(!date) return ''; const m=String(date.getMonth()+1).padStart(2,'0'); const d=String(date.getDate()).padStart(2,'0'); return date.getFullYear()+'-'+m+'-'+d; } }
+    });
+}
+function formDataFrom(mapping) {
+    const data = new FormData();
+    Object.keys(mapping).forEach(function (key) {
+        const selector = mapping[key], elm = $(selector);
+        data.append(key, elm.attr('type') === 'checkbox' ? elm.is(':checked') : elm.val());
+    });
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+    return data;
+}
+function feeDropdownItem(value, text, extraAttrs) {
+    return '<div class="item" data-value="' + value + '" ' + (extraAttrs || '') + '>' + text + '</div>';
+}
+function initFeeSearchDropdown(dropdownID, onChange) {
+    $(dropdownID).dropdown('destroy').dropdown({
+        fullTextSearch: true,
+        forceSelection: false,
+        clearable: true,
+        match: 'both',
+        onChange: onChange || function(){}
+    });
+}
+function loadTransportOptions() {
+    $.get("{% url 'transportAppAPI:transport_options_api' %}", function (response) {
+        transportOptions = response.data || {};
+        const routeMenu = $('#feeRouteDropdown .menu').empty();
+        (transportOptions.routes || []).forEach(item => routeMenu.append(feeDropdownItem(item.id, item.text)));
+        initFeeSearchDropdown('#feeRouteDropdown', function(){ filterFeeStops(true); });
+        filterFeeStops(false);
+    });
+}
+function filterFeeStops(clearSelected){
+    const routeID = $('#feeRouteID').val();
+    const stopMenu = $('#feeStopDropdown .menu').empty();
+    stopMenu.append(feeDropdownItem('', 'Route Default'));
+    (transportOptions.stops || []).filter(item => !routeID || String(item.routeID) === String(routeID)).forEach(item => stopMenu.append(feeDropdownItem(item.id, item.text, 'data-fee="'+item.monthlyFee+'"')));
+    initFeeSearchDropdown('#feeStopDropdown', function(){
+        const fee = $('#feeStopDropdown .menu .item[data-value="' + $('#feeStopID').val() + '"]').data('fee');
+        if(fee !== undefined && fee !== '') $('#mappingMonthlyFee').val(fee);
+    });
+    if(clearSelected) $('#feeStopDropdown').dropdown('clear');
+}
+function showFeeMappingModal(){
+    $('#feeMappingForm').trigger('reset');
+    $('#feeMappingID').val('');
+    $('#feeRouteDropdown').dropdown('clear');
+    $('#feeStopDropdown').dropdown('clear');
+    $('#feeMappingIsActive').prop('checked', true);
+    $('#feeAssigneeType').dropdown('set selected','student');
+    $('#mappingFeeMode').dropdown('set selected','student_fee');
+    filterFeeStops(false);
+    $('#feeMappingModal').modal('show');
+}
+function saveFeeMapping(){
+    const data = formDataFrom({id:'#feeMappingID', routeID:'#feeRouteID', stopID:'#feeStopID', assigneeType:'#feeAssigneeType', feeMode:'#mappingFeeMode', monthlyFee:'#mappingMonthlyFee', effectiveFrom:'#effectiveFrom', effectiveTo:'#effectiveTo', notes:'#feeNotes', isActive:'#feeMappingIsActive'});
+    $.ajax({url:"{% url 'transportAppAPI:fee_mappings_api' %}", type:'POST', data:data, contentType:false, processData:false,
+        success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); $('#feeMappingModal').modal('hide'); feeMappingTable.ajax.reload(null,false); loadTransportOptions(); } else addErrorNotification(r.message); },
+        error:function(x){ addErrorNotification((x.responseJSON || {}).message || 'Unable to save fee mapping.'); }});
+}
+function editFeeMapping(id){
+    $.get("{% url 'transportAppAPI:fee_mapping_detail_api' %}", {id:id}, function(r){
+        const d = r.data || {};
+        $('#feeMappingID').val(d.id);
+        $('#feeRouteDropdown').dropdown('set selected', String(d.routeID));
+        filterFeeStops(false);
+        $('#feeStopDropdown').dropdown('set selected', String(d.stopID || ''));
+        $('#feeAssigneeType').dropdown('set selected', d.assigneeType);
+        $('#mappingFeeMode').dropdown('set selected', d.feeMode);
+        $('#mappingMonthlyFee').val(d.monthlyFee);
+        $('#effectiveFrom').val(d.effectiveFrom);
+        $('#effectiveTo').val(d.effectiveTo);
+        $('#feeNotes').val(d.notes);
+        $('#feeMappingIsActive').prop('checked', !!d.isActive);
+        $('#feeMappingModal').modal('show');
+    });
+}
+function confirmDeleteFeeMapping(id){ $('#deleteFeeMappingID').val(id); $('#deleteFeeMappingModal').modal('show'); }
+function deleteFeeMapping(){
+    const data = new FormData();
+    data.append('id', $('#deleteFeeMappingID').val());
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+    $.ajax({url:"{% url 'transportAppAPI:delete_fee_mapping_api' %}", type:'POST', data:data, contentType:false, processData:false,
+        success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); $('#deleteFeeMappingModal').modal('hide'); feeMappingTable.ajax.reload(null,false); loadTransportOptions(); } else addErrorNotification(r.message); }});
+}
+</script>
+{% endblock %}

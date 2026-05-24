@@ -4,6 +4,7 @@ import json
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction, IntegrityError, connection
 from django.db.models import Q, Prefetch, Sum, DecimalField, Value
@@ -34,7 +35,7 @@ from financeApp.models import (
     PaymentReceipt,
     StudentCharge,
 )
-from homeApp.models import SchoolDetail, SchoolSession
+from homeApp.models import AuditLog, SchoolDetail, SchoolSession
 from homeApp.owner_access import school_owner_user_q
 from homeApp.session_utils import get_session_month_sequence
 from homeApp.push_service import send_event_push_notifications
@@ -262,6 +263,234 @@ def _management_edit_delete_buttons(*, edit_handler, delete_handler=None):
             )
         )
     return ''.join(actions)
+
+
+@login_required
+def audit_log_list_api(request):
+    try:
+        school_id = _current_school_id(request)
+        session_id = _current_session_id(request)
+        logs = AuditLog.objects.select_related('content_type', 'userID', 'schoolID', 'sessionID').order_by('-datetime')
+        if school_id:
+            logs = logs.filter(Q(schoolID_id=school_id) | Q(schoolID__isnull=True))
+        if session_id:
+            logs = logs.filter(Q(sessionID_id=session_id) | Q(sessionID__isnull=True))
+
+        action = (request.GET.get('action') or '').strip()
+        model_label = (request.GET.get('model') or '').strip()
+        search = (request.GET.get('search') or '').strip()
+        if action:
+            logs = logs.filter(action=action)
+        if model_label:
+            app_label, _, model_name = model_label.partition('.')
+            logs = logs.filter(content_type__app_label=app_label, content_type__model=model_name.lower())
+        if search:
+            search_q = (
+                Q(action__icontains=search)
+                | Q(userID__username__icontains=search)
+                | Q(path__icontains=search)
+                | Q(content_type__app_label__icontains=search)
+                | Q(content_type__model__icontains=search)
+            )
+            if search.isdigit():
+                search_q |= Q(object_id=int(search))
+            logs = logs.filter(search_q)
+
+        rows = []
+        for item in logs[:500]:
+            model_name = f'{item.content_type.app_label}.{item.content_type.model}'
+            user_label = item.userID.get_full_name() or item.userID.username if item.userID else 'System'
+            changed_fields = ', '.join((item.changes or {}).keys()) or 'Snapshot'
+            rows.append({
+                'id': item.id,
+                'datetime': item.datetime.strftime('%d-%m-%Y %I:%M %p') if item.datetime else '',
+                'model': model_name,
+                'objectID': item.object_id,
+                'action': item.get_action_display(),
+                'changedFields': changed_fields,
+                'user': user_label,
+                'path': item.path or 'N/A',
+                'ipAddress': item.ipAddress or 'N/A',
+                'actions': (
+                    f'<button data-tooltip="View Changes" data-position="left center" data-variation="mini" '
+                    f'onclick="viewAuditDetail({item.id})" class="ui circular blue icon button">'
+                    f'<i class="eye icon"></i></button>'
+                ),
+            })
+
+        model_options = [
+            {'id': f'{ct.app_label}.{ct.model}', 'text': f'{ct.app_label}.{ct.model}'}
+            for ct in ContentType.objects.filter(app_label__in=[
+                'homeApp', 'managementApp', 'financeApp', 'certificateApp',
+                'teacherApp', 'studentApp', 'chatApp', 'transportApp',
+            ]).order_by('app_label', 'model')
+        ]
+        logger.info(f'Audit log list fetched count={len(rows)} school={school_id} session={session_id}')
+        return SuccessResponse('Audit logs loaded.', data={'rows': rows, 'modelOptions': model_options}).to_json_response()
+    except Exception as exc:
+        logger.exception(f'Error fetching audit logs: {exc}')
+        return ErrorResponse('Unable to load audit logs.', status_code=500).to_json_response()
+
+
+class AuditLogListJson(BaseDatatableView):
+    order_columns = ['datetime', 'content_type__app_label', 'object_id', 'action', 'changes', 'userID__username', 'path', 'ipAddress']
+
+    def get_initial_queryset(self):
+        school_id = _current_school_id(self.request)
+        session_id = _current_session_id(self.request)
+        logs = AuditLog.objects.select_related('content_type', 'userID', 'schoolID', 'sessionID').order_by('-datetime')
+        if school_id:
+            logs = logs.filter(Q(schoolID_id=school_id) | Q(schoolID__isnull=True))
+        if session_id:
+            logs = logs.filter(Q(sessionID_id=session_id) | Q(sessionID__isnull=True))
+        action = (self.request.GET.get('action') or '').strip()
+        model_label = (self.request.GET.get('model') or '').strip()
+        if action:
+            logs = logs.filter(action=action)
+        if model_label:
+            app_label, _, model_name = model_label.partition('.')
+            logs = logs.filter(content_type__app_label=app_label, content_type__model=model_name.lower())
+        return logs
+
+    def filter_queryset(self, qs):
+        search = self.request.GET.get('search[value]', None)
+        extra_search = (self.request.GET.get('auditSearch') or '').strip()
+        search = extra_search or search
+        if search:
+            search_q = (
+                Q(action__icontains=search)
+                | Q(userID__username__icontains=search)
+                | Q(path__icontains=search)
+                | Q(content_type__app_label__icontains=search)
+                | Q(content_type__model__icontains=search)
+            )
+            if str(search).isdigit():
+                search_q |= Q(object_id=int(search))
+            qs = qs.filter(search_q)
+        return qs
+
+    def prepare_results(self, qs):
+        rows = []
+        for item in qs:
+            model_name = f'{item.content_type.app_label}.{item.content_type.model}'
+            user_label = item.userID.get_full_name() or item.userID.username if item.userID else 'System'
+            changed_fields = ', '.join((item.changes or {}).keys()) or 'Snapshot'
+            action = (
+                f'<button data-inverted="" data-tooltip="View Changes" data-position="left center" '
+                f'data-variation="mini" style="font-size:10px;" onclick="viewAuditDetail({item.id})" '
+                f'class="ui circular facebook icon button blue"><i class="eye icon"></i></button>'
+            )
+            rows.append([
+                escape(item.datetime.strftime('%d-%m-%Y %I:%M %p') if item.datetime else 'N/A'),
+                escape(model_name),
+                escape(item.object_id),
+                escape(item.get_action_display()),
+                escape(changed_fields),
+                escape(user_label),
+                escape(item.path or 'N/A'),
+                escape(item.ipAddress or 'N/A'),
+                action,
+            ])
+        return rows
+
+
+def _audit_display_value(value):
+    if value is None:
+        return ''
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, indent=2, ensure_ascii=False)
+    return str(value)
+
+
+def _audit_comparison_rows(audit_log):
+    changes = audit_log.changes or {}
+    snapshot = audit_log.snapshot or {}
+    rows = []
+
+    if audit_log.action in {'update', 'soft_delete', 'restore'}:
+        for field_name, values in changes.items():
+            if isinstance(values, dict) and ('old' in values or 'new' in values):
+                old_value = values.get('old')
+                new_value = values.get('new')
+            else:
+                old_value = snapshot.get(field_name)
+                new_value = values
+            rows.append({
+                'field': field_name,
+                'oldValue': _audit_display_value(old_value),
+                'newValue': _audit_display_value(new_value),
+                'changed': old_value != new_value,
+            })
+        return rows
+
+    if audit_log.action == 'create':
+        source = changes or snapshot
+        for field_name, value in source.items():
+            rows.append({
+                'field': field_name,
+                'oldValue': '',
+                'newValue': _audit_display_value(value),
+                'changed': True,
+            })
+        return rows
+
+    if audit_log.action == 'delete':
+        for field_name, value in snapshot.items():
+            rows.append({
+                'field': field_name,
+                'oldValue': _audit_display_value(value),
+                'newValue': '',
+                'changed': True,
+            })
+        return rows
+
+    for field_name, value in snapshot.items():
+        rows.append({
+            'field': field_name,
+            'oldValue': _audit_display_value(value),
+            'newValue': _audit_display_value(value),
+            'changed': False,
+        })
+    return rows
+
+
+@login_required
+def audit_log_detail_api(request):
+    try:
+        school_id = _current_school_id(request)
+        session_id = _current_session_id(request)
+        audit_id = request.GET.get('id')
+        log = AuditLog.objects.select_related('content_type', 'userID', 'schoolID', 'sessionID').filter(pk=audit_id).first()
+        if not log:
+            logger.error(f'Audit log detail not found id={audit_id}')
+            return ErrorResponse('Audit log not found.', status_code=404).to_json_response()
+        if school_id and log.schoolID_id and log.schoolID_id != school_id:
+            logger.warning(f'Audit log access denied id={audit_id} user={request.user.id}')
+            return ErrorResponse('Audit log not found.', status_code=404).to_json_response()
+        if session_id and log.sessionID_id and log.sessionID_id != session_id:
+            logger.warning(f'Audit log session access denied id={audit_id} user={request.user.id}')
+            return ErrorResponse('Audit log not found.', status_code=404).to_json_response()
+
+        model_name = f'{log.content_type.app_label}.{log.content_type.model}'
+        user_label = log.userID.get_full_name() or log.userID.username if log.userID else 'System'
+        data = {
+            'id': log.id,
+            'datetime': log.datetime.strftime('%d-%m-%Y %I:%M %p') if log.datetime else '',
+            'model': model_name,
+            'objectID': log.object_id,
+            'action': log.get_action_display(),
+            'rawAction': log.action,
+            'user': user_label,
+            'path': log.path or 'N/A',
+            'ipAddress': log.ipAddress or 'N/A',
+            'userAgent': log.userAgent or 'N/A',
+            'comparisonRows': _audit_comparison_rows(log),
+        }
+        logger.info(f'Audit log detail fetched id={log.id} model={model_name} object={log.object_id}')
+        return SuccessResponse('Audit log detail loaded.', data=data).to_json_response()
+    except Exception as exc:
+        logger.exception(f'Error fetching audit log detail: {exc}')
+        return ErrorResponse('Unable to load audit log detail.', status_code=500).to_json_response()
 
 
 def _safe_int(value, default=0):
@@ -2377,23 +2606,30 @@ def add_student_api(request):
 @login_required
 def get_student_list_by_class_api(request):
     standard = request.GET.get('standard')
+    rows = Student.objects.select_related('standardID').filter(
+        isDeleted=False,
+        sessionID_id=_current_session_id(request),
+    )
     try:
         standard_id = int(standard)
     except (TypeError, ValueError):
-        return _api_response({'status': 'success', 'data': [], 'color': 'success'}, safe=False)
-    rows = Student.objects.filter(
-        isDeleted=False,
-        sessionID_id=_current_session_id(request),
-        standardID_id=standard_id
-    ).values('id', 'name', 'roll').order_by('roll')
+        standard_id = None
+    if standard_id:
+        rows = rows.filter(standardID_id=standard_id)
+    rows = rows.order_by('name', 'roll')
     data = []
     for row in rows:
-        roll = row.get('roll')
+        roll = row.roll
         try:
             roll_label = str(int(float(roll)))
         except Exception:
             roll_label = str(roll or 'N/A')
-        data.append({'ID': row['id'], 'Name': f"{row.get('name') or 'N/A'} - {roll_label}"})
+        class_label = 'N/A'
+        if row.standardID:
+            class_label = row.standardID.name or 'N/A'
+            if row.standardID.section:
+                class_label = f'{class_label} {row.standardID.section}'
+        data.append({'ID': row.id, 'Name': f"{row.name or 'N/A'} - Roll {roll_label} - Class {class_label}"})
     return _api_response(
         {'status': 'success', 'data': data,
          'color': 'success'}, safe=False)
@@ -4887,20 +5123,32 @@ class FeeByStudentJson(BaseDatatableView):
             student = self.request.GET.get("student")
             standard = self.request.GET.get("standard")
             session_id = self.request.session["current_session"]["Id"]
+            student_id = int(student)
+            try:
+                standard_id = int(standard)
+            except (TypeError, ValueError):
+                student_obj = Student.objects.filter(
+                    id=student_id,
+                    isDeleted=False,
+                    sessionID_id=session_id,
+                ).only('id', 'standardID').first()
+                standard_id = student_obj.standardID_id if student_obj else None
+            if not standard_id:
+                return StudentFee.objects.none()
             for month_name, year_value, month_no, period_start, period_end in _session_month_rows(session_id):
                 fee_obj = StudentFee.objects.filter(
-                    studentID_id=int(student),
+                    studentID_id=student_id,
                     month__iexact=month_name,
-                    standardID_id=int(standard),
+                    standardID_id=standard_id,
                     isDeleted=False,
                     sessionID_id=session_id,
                 ).order_by('id').first()
 
                 if not fee_obj:
                     fee_obj = StudentFee.objects.create(
-                        studentID_id=int(student),
+                        studentID_id=student_id,
                         month=month_name,
-                        standardID_id=int(standard),
+                        standardID_id=standard_id,
                         feeMonth=month_no,
                         feeYear=year_value,
                         periodStartDate=period_start,
@@ -4929,8 +5177,8 @@ class FeeByStudentJson(BaseDatatableView):
                         fee_obj.save(update_fields=update_fields + ['lastUpdatedOn'])
 
             fee_qs = StudentFee.objects.select_related().filter(
-                studentID_id=int(student),
-                standardID_id=int(standard),
+                studentID_id=student_id,
+                standardID_id=standard_id,
                 isDeleted=False,
                 sessionID_id=session_id,
             )
@@ -4984,10 +5232,14 @@ class FeeByStudentJson(BaseDatatableView):
             </div>
                         '''.format(item.pk, item.pk, item.amount)
 
-            if item.payDate:
-                payDate = item.payDate.strftime('%d-%m-%Y')
-            else:
-                payDate = 'N/A'
+            pay_date_value = item.payDate.strftime('%d/%m/%Y') if item.payDate else ''
+            payDate = '''<div class="ui calendar fee-pay-date-calendar" id="payDateCal{}">
+              <div class="ui tiny input fluid left icon">
+                <i class="calendar alternate outline icon"></i>
+                <input type="text" placeholder="Paid Date" name="payDate{}" id="payDate{}" value="{}">
+              </div>
+            </div>
+                        '''.format(item.pk, item.pk, item.pk, pay_date_value)
 
             json_data.append([
                 escape(_fee_month_label(item)),
@@ -5013,6 +5265,7 @@ def add_student_fee_api(request):
         isPresent = request.POST.get("isPresent")
         reason = request.POST.get("reason")
         amount = request.POST.get("amount")
+        payDate = request.POST.get("payDate")
         try:
             instance = StudentFee.objects.get(pk=int(id))
             if isPresent == 'true':
@@ -5022,7 +5275,17 @@ def add_student_fee_api(request):
             instance.isPaid = isPresent
             instance.note = reason
             instance.amount = float(amount)
-            instance.payDate = datetime.today().date()
+            if isPresent:
+                parsed_pay_date = None
+                for date_format in ('%Y-%m-%d', '%d-%m-%Y', '%d/%m/%Y'):
+                    try:
+                        parsed_pay_date = datetime.strptime(payDate, date_format).date()
+                        break
+                    except (TypeError, ValueError):
+                        pass
+                instance.payDate = parsed_pay_date or timezone.localdate()
+            else:
+                instance.payDate = None
             pre_save_with_user.send(sender=StudentFee, instance=instance, user=request.user.pk)
             instance.save()
             try:
@@ -5044,10 +5307,16 @@ class StudentFeeDetailsByClassJson(BaseDatatableView):
     def get_initial_queryset(self):
         try:
             standard = self.request.GET.get("standard")
-
-            return Student.objects.select_related().filter(isDeleted__exact=False, standardID_id=int(standard),
-                                                           sessionID_id=self.request.session["current_session"][
-                                                               "Id"]).order_by('roll')
+            qs = Student.objects.select_related().filter(
+                isDeleted__exact=False,
+                sessionID_id=self.request.session["current_session"]["Id"]
+            )
+            try:
+                standard_id = int(standard)
+            except (TypeError, ValueError):
+                return Student.objects.none()
+            qs = qs.filter(standardID_id=standard_id)
+            return qs.order_by('standardID__name', 'standardID__section', 'roll', 'name')
         except:
             return Student.objects.none()
 
@@ -5125,10 +5394,22 @@ class StudentFeeDetailsByStudentJson(BaseDatatableView):
             student = self.request.GET.get("student")
 
             session_id = self.request.session["current_session"]["Id"]
+            student_id = int(student)
+            try:
+                standard_id = int(standardByStudent)
+            except (TypeError, ValueError):
+                student_obj = Student.objects.filter(
+                    id=student_id,
+                    isDeleted=False,
+                    sessionID_id=session_id,
+                ).only('id', 'standardID').first()
+                standard_id = student_obj.standardID_id if student_obj else None
+            if not standard_id:
+                return StudentFee.objects.none()
             fee_qs = StudentFee.objects.select_related().filter(
                 isDeleted__exact=False,
-                studentID_id=int(student),
-                standardID_id=int(standardByStudent),
+                studentID_id=student_id,
+                standardID_id=standard_id,
                 sessionID_id=session_id,
             )
             return _restrict_fee_queryset_to_session_months(fee_qs, session_id).order_by('feeYear', 'feeMonth', 'id')

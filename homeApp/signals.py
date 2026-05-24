@@ -1,12 +1,29 @@
 from django.contrib.auth.models import User
-from django.db.models.signals import m2m_changed, post_save, pre_save
+from django.contrib.contenttypes.models import ContentType
+from django.db.models.signals import m2m_changed, post_delete, post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from homeApp.models import SchoolOwner, SchoolSession
+from homeApp.audit import build_changes, get_client_ip, get_current_request, get_current_user, serialize_model_instance
+from homeApp.models import AuditLog, SchoolOwner, SchoolSession
+from utils.logger import logger
 
 
 OWNER_GROUP_NAME = 'Owner'
+AUDITED_APP_LABELS = {
+    'homeApp',
+    'managementApp',
+    'financeApp',
+    'certificateApp',
+    'teacherApp',
+    'studentApp',
+    'chatApp',
+    'transportApp',
+    'libraryApp',
+}
+AUDIT_EXCLUDED_MODELS = {
+    ('homeApp', 'AuditLog'),
+}
 
 
 def _user_display_name(user):
@@ -107,3 +124,90 @@ def _auto_resync_fee_periods_on_session_change(sender, instance, created, **kwar
         feeResyncCreatedCount=0,
         feeResyncError='',
     )
+
+
+def _is_audited_sender(sender):
+    meta = getattr(sender, '_meta', None)
+    if not meta:
+        return False
+    if meta.abstract or meta.proxy:
+        return False
+    if meta.app_label not in AUDITED_APP_LABELS:
+        return False
+    if (meta.app_label, meta.object_name) in AUDIT_EXCLUDED_MODELS:
+        return False
+    return True
+
+
+def _school_session_ids(instance):
+    return getattr(instance, 'schoolID_id', None), getattr(instance, 'sessionID_id', None)
+
+
+def _audit_request_meta():
+    request = get_current_request()
+    if not request:
+        return None, None
+    return request.path[:500], get_client_ip(request)
+
+
+def _create_audit_log(instance, action, changes=None, snapshot=None):
+    try:
+        path, ip_address = _audit_request_meta()
+        request = get_current_request()
+        school_id, session_id = _school_session_ids(instance)
+        user_agent = request.META.get('HTTP_USER_AGENT', '') if request else ''
+        user = get_current_user() or getattr(instance, 'updatedByUserID', None)
+        AuditLog.objects.create(
+            content_type=ContentType.objects.get_for_model(instance.__class__),
+            object_id=instance.pk,
+            action=action,
+            changes=changes or {},
+            snapshot=snapshot or serialize_model_instance(instance),
+            schoolID_id=school_id,
+            sessionID_id=session_id,
+            userID=user if getattr(user, 'pk', None) else None,
+            path=path,
+            ipAddress=ip_address,
+            userAgent=user_agent,
+        )
+        logger.info(f'Audit log created action={action} model={instance._meta.label} object_id={instance.pk}')
+    except Exception as exc:
+        logger.exception(f'Unable to create audit log for {instance._meta.label}: {exc}')
+
+
+@receiver(pre_save)
+def _capture_audit_before_save(sender, instance, **kwargs):
+    if not _is_audited_sender(sender) or not instance.pk:
+        return
+    try:
+        old_instance = sender.objects.filter(pk=instance.pk).first()
+        instance._audit_before = serialize_model_instance(old_instance) if old_instance else {}
+    except Exception as exc:
+        instance._audit_before = {}
+        logger.exception(f'Unable to capture audit before state for {sender._meta.label}: {exc}')
+
+
+@receiver(post_save)
+def _write_audit_after_save(sender, instance, created, **kwargs):
+    if not _is_audited_sender(sender):
+        return
+    snapshot = serialize_model_instance(instance)
+    if created:
+        _create_audit_log(instance, 'create', changes=snapshot, snapshot=snapshot)
+        return
+    before = getattr(instance, '_audit_before', {})
+    changes = build_changes(before, snapshot)
+    if not changes:
+        return
+    if 'isDeleted' in changes and len(changes) == 1:
+        action = 'soft_delete' if changes['isDeleted']['new'] else 'restore'
+    else:
+        action = 'update'
+    _create_audit_log(instance, action, changes=changes, snapshot=snapshot)
+
+
+@receiver(post_delete)
+def _write_audit_after_delete(sender, instance, **kwargs):
+    if not _is_audited_sender(sender):
+        return
+    _create_audit_log(instance, 'delete', snapshot=serialize_model_instance(instance))

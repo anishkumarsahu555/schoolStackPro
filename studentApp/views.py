@@ -9,11 +9,16 @@ from chatApp.views import inbox as chat_inbox
 from homeApp.models import SchoolSession, SchoolDetail
 from homeApp.session_utils import build_current_session_payload, build_session_list_item
 from homeApp.utils import login_required
+from libraryApp.models import LibraryMember
+from libraryApp.services import build_member_card_render_context, get_or_create_active_member_card_design
+from libraryApp.views import _member_card_context, _school_fallback
 from managementApp.models import *
 from managementApp.reporting import build_report_cards_for_student
 from managementApp.services.id_cards import build_id_card_context
 from teacherApp.models import SubjectNote
+from transportApp.portal_services import build_my_transport_context
 from utils.custom_decorators import check_groups
+from utils.logger import logger
 
 
 # Create your views here.
@@ -93,6 +98,82 @@ def student_school_detail(request):
     school = _resolve_school_from_context(student, current_session_id)
     return render(request, 'studentApp/school_detail.html', {
         'school': school,
+    })
+
+
+@login_required
+@check_groups('Student')
+def student_my_transport(request):
+    student, current_session_id = _bootstrap_student_context(request)
+    context = {
+        'profile_missing': not bool(student and current_session_id),
+        'portal_role': 'student',
+    }
+    if student and current_session_id:
+        context.update(build_my_transport_context('student', student, current_session_id))
+    else:
+        context.update({
+            'assignment': None,
+            'recent_fee_records': [],
+            'current_fee_record': None,
+            'fee_summary': {'net': 0, 'paid': 0, 'due': 0},
+        })
+    logger.info(f'Student transport page opened user={request.user.id} student={student.id if student else None}')
+    return render(request, 'studentApp/my_transport.html', context)
+
+
+@login_required
+@check_groups('Student')
+def student_library(request):
+    student, current_session_id = _bootstrap_student_context(request)
+    logger.info(f'Student library page opened user={request.user.id} student={student.id if student else None}')
+    return render(request, 'studentApp/library.html', {
+        'profile_missing': not bool(student and current_session_id),
+    })
+
+
+@login_required
+@check_groups('Student')
+def student_library_id_card(request):
+    student, current_session_id = _bootstrap_student_context(request)
+    current_session = request.session.get('current_session', {}) or {}
+    member = None
+    if student and current_session_id:
+        member = LibraryMember.objects.select_related(
+            'schoolID',
+            'sessionID',
+            'student',
+            'student__standardID',
+        ).filter(
+            isDeleted=False,
+            isActive=True,
+            memberType='student',
+            student_id=student.id,
+            schoolID_id=current_session.get('SchoolID') or student.schoolID_id,
+            sessionID_id=current_session_id,
+        ).first()
+    if not member:
+        logger.info(f'Student library ID card unavailable user={request.user.id} student={student.id if student else None}')
+        return render(request, 'libraryApp/member_card_portal.html', {
+            'base_template': 'studentApp/index.html',
+            'portal_back_url': 'studentApp:student_library',
+            'portal_missing_message': 'Library membership is not active. Please contact the library office.',
+            'cards': [],
+        })
+    school = _school_fallback(SchoolDetail.objects.filter(pk=member.schoolID_id, isDeleted=False).first())
+    design = get_or_create_active_member_card_design(member.schoolID_id, member.sessionID_id)
+    render_context = build_member_card_render_context(
+        cards=[_member_card_context(member)],
+        design=design,
+        school=school,
+        session_id=member.sessionID_id,
+    )
+    logger.info(f'Student library ID card opened user={request.user.id} member={member.id}')
+    return render(request, 'libraryApp/member_card_portal.html', {
+        **render_context,
+        'base_template': 'studentApp/index.html',
+        'portal_back_url': 'studentApp:student_library',
+        'portal_missing_message': '',
     })
 
 

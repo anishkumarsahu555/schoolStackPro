@@ -27,6 +27,10 @@ from .views_api import (
     teacher_save_exam_subject_component_rules_api,
     TeacherMarksOfSubjectsByStudentJson,
     teacher_add_subject_mark_api,
+    teacher_library_summary_api,
+    TeacherLibraryIssueListJson,
+    TeacherLibraryFineListJson,
+    TeacherLibraryAvailableBookListJson,
 )
 from .leave_views_api import (
     TeacherLeaveApplicationListJson,
@@ -70,4 +74,9 @@ urlpatterns = [
     path('teacher_save_exam_subject_component_rules_api', teacher_save_exam_subject_component_rules_api, name='teacher_save_exam_subject_component_rules_api'),
     path('TeacherMarksOfSubjectsByStudentJson', TeacherMarksOfSubjectsByStudentJson.as_view(), name='TeacherMarksOfSubjectsByStudentJson'),
     path('teacher_add_subject_mark_api', teacher_add_subject_mark_api, name='teacher_add_subject_mark_api'),
+    path('teacher_library_summary_api', teacher_library_summary_api, name='teacher_library_summary_api'),
+    path('TeacherLibraryCurrentIssueListJson', TeacherLibraryIssueListJson.as_view(), name='TeacherLibraryCurrentIssueListJson'),
+    path('TeacherLibraryIssueHistoryListJson', TeacherLibraryIssueListJson.as_view(), name='TeacherLibraryIssueHistoryListJson'),
+    path('TeacherLibraryFineListJson', TeacherLibraryFineListJson.as_view(), name='TeacherLibraryFineListJson'),
+    path('TeacherLibraryAvailableBookListJson', TeacherLibraryAvailableBookListJson.as_view(), name='TeacherLibraryAvailableBookListJson'),
 ]

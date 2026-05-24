@@ -1,0 +1,158 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Issue History</title>{% endblock %}
+{% block page_title %}Issue History{% endblock %}
+{% block page_subtitle %}Search issued, returned, renewed, lost, and damaged book history{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="filter icon"></i>
+        History filters
+    </h4>
+    <form class="ui tiny form" id="issueHistoryPageFilterForm">
+        <div class="library-form-grid">
+            <div class="field">
+                <label>Member</label>
+                <select class="ui search dropdown" id="historyMember"></select>
+            </div>
+            <div class="field">
+                <label>Book</label>
+                <select class="ui search dropdown" id="historyBook"></select>
+            </div>
+            <div class="field">
+                <label>Status</label>
+                <select class="ui dropdown" id="historyStatus">
+                    <option value="">All</option>
+                    <option value="issued">Issued</option>
+                    <option value="returned">Returned</option>
+                    <option value="lost">Lost</option>
+                    <option value="damaged">Damaged</option>
+                    <option value="overdue">Overdue</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Issue From</label>
+                <div class="ui calendar library-date-calendar" id="historyIssueFromCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" id="historyIssueFrom" placeholder="YYYY-MM-DD"></div></div>
+            </div>
+            <div class="field">
+                <label>Issue To</label>
+                <div class="ui calendar library-date-calendar" id="historyIssueToCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" id="historyIssueTo" placeholder="YYYY-MM-DD"></div></div>
+            </div>
+            <div class="field">
+                <label>Due From</label>
+                <div class="ui calendar library-date-calendar" id="historyDueFromCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" id="historyDueFrom" placeholder="YYYY-MM-DD"></div></div>
+            </div>
+            <div class="field">
+                <label>Due To</label>
+                <div class="ui calendar library-date-calendar" id="historyDueToCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" id="historyDueTo" placeholder="YYYY-MM-DD"></div></div>
+            </div>
+        </div>
+        <div class="library-actions" style="margin-top:12px">
+            <button class="ui mini green button" type="button" onclick="reloadFullIssueHistory()">
+                <i class="filter icon"></i>
+                Apply
+            </button>
+            <button class="ui mini red button" type="button" onclick="resetFullIssueHistory()">
+                <i class="times circle icon"></i>
+                Reset
+            </button>
+        </div>
+    </form>
+</div>
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="history icon"></i>
+        Full issue history
+    </h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="IssueHistoryTable" style="margin-top: 5px;width: 100%">
+            <thead>
+                <tr>
+                    <th>Book</th>
+                    <th>Copy</th>
+                    <th>Code</th>
+                    <th>Member</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Fine</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+{% include 'libraryApp/_return_modal.html' %}
+{% include 'libraryApp/_renew_modal.html' %}
+{% include 'libraryApp/_issue_detail_modal.html' %}
+<script>
+let issueHistoryTable;
+function fillHistoryOptions(done){
+    $.get("{% url 'libraryAppAPI:library_options_api' %}", function(r){
+        let members = '<option value="">All</option>', books = '<option value="">All</option>';
+        (r.data.members || []).forEach(x => members += '<option value="'+x.id+'">'+x.name+'</option>');
+        (r.data.books || []).forEach(x => books += '<option value="'+x.id+'">'+x.name+'</option>');
+        $('#historyMember').html(members);
+        $('#historyBook').html(books);
+        $('.ui.dropdown').dropdown('refresh');
+        if (done) done();
+    });
+}
+function readQueryParam(name) {
+    return new URLSearchParams(window.location.search).get(name) || '';
+}
+function applyInitialHistoryFilters() {
+    const member = readQueryParam('member');
+    const book = readQueryParam('book');
+    const status = readQueryParam('status');
+    if (member) $('#historyMember').dropdown('set selected', member);
+    if (book) $('#historyBook').dropdown('set selected', book);
+    if (status) $('#historyStatus').dropdown('set selected', status);
+}
+function issueHistoryPageParams(d) {
+    const status = $('#historyStatus').val();
+    if (status === 'overdue') {
+        d.overdue = '1';
+    } else if (status) {
+        d.status = status;
+    }
+    d.member = $('#historyMember').val();
+    d.book = $('#historyBook').val();
+    d.issueFrom = $('#historyIssueFrom').val();
+    d.issueTo = $('#historyIssueTo').val();
+    d.dueFrom = $('#historyDueFrom').val();
+    d.dueTo = $('#historyDueTo').val();
+}
+function reloadFullIssueHistory(){
+    issueHistoryTable.ajax.reload(null, false);
+}
+function resetFullIssueHistory(){
+    $('#historyMember').dropdown('clear');
+    $('#historyBook').dropdown('clear');
+    $('#historyStatus').dropdown('set selected', '');
+    $('#historyIssueFrom,#historyIssueTo,#historyDueFrom,#historyDueTo').val('');
+    reloadFullIssueHistory();
+}
+$(function(){
+    $('.ui.dropdown').dropdown();
+    fillHistoryOptions(function(){
+        applyInitialHistoryFilters();
+        issueHistoryTable = libraryDataTable('#IssueHistoryTable', {url:"{% url 'libraryAppAPI:IssueListJson' %}", data: issueHistoryPageParams}, [
+            { name: 'book', targets: 0 },
+            { name: 'copy', targets: 1 },
+            { name: 'memberCode', targets: 2 },
+            { name: 'memberName', targets: 3 },
+            { name: 'issueDate', targets: 4 },
+            { name: 'dueDate', targets: 5 },
+            { name: 'status', targets: 6 },
+            { name: 'fineAmount', targets: 7 },
+            { name: 'action', targets: 8, orderable: false, searchable: false }
+        ], 4);
+    });
+    $('#historyMember,#historyBook,#historyStatus').on('change', function(){
+        if (issueHistoryTable) reloadFullIssueHistory();
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Book Management</title>{% endblock %}
+{% block page_title %}Book Management{% endblock %}
+{% block page_subtitle %}Maintain book catalogue and metadata{% endblock %}
+{% block page_actions %}<a class="ui teal button class-page-action library-secondary-action" href="{% url 'libraryApp:manage_categories' %}"><i class="tags icon"></i><span><span class="desktop-label">Categories</span><span class="mobile-label">Cats</span></span></a><a class="ui teal button class-page-action library-secondary-action" href="{% url 'libraryApp:manage_authors' %}"><i class="user edit icon"></i><span><span class="desktop-label">Authors</span><span class="mobile-label">Authors</span></span></a><a class="ui teal button class-page-action library-secondary-action" href="{% url 'libraryApp:manage_publishers' %}"><i class="building icon"></i><span><span class="desktop-label">Publishers</span><span class="mobile-label">Pubs</span></span></a><button class="ui green button class-page-action" onclick="showBookModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Book</span><span class="mobile-label">Add</span></span></button>{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="list alternate outline icon"></i>
+        Book list
+    </h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="BookTable" style="margin-top: 5px;width: 100%"><thead><tr><th>Title</th><th>ISBN</th><th>Category</th><th>Authors</th><th>Publisher</th><th>Shelf</th><th>Status</th><th>Actions</th></tr></thead></table>
+    </div>
+</div>
+<div class="ui modal" id="bookModal">
+    <i class="close icon"></i>
+    <div class="header">Book</div>
+    <div class="content">
+        <form class="ui tiny form" id="bookForm" enctype="multipart/form-data">{% csrf_token %}
+            <input type="hidden" name="id" id="bookId">
+            <div class="library-form-grid">
+                <div class="field required">
+                    <label>Title</label>
+                    <input name="title" id="bookTitle">
+                </div>
+                <div class="field">
+                    <label>ISBN</label>
+                    <input name="isbn" id="bookIsbn">
+                </div>
+                <div class="field">
+                    <label>Category</label>
+                    <select class="ui search dropdown" name="category" id="bookCategory"></select>
+                </div>
+                <div class="field">
+                    <label>Authors</label>
+                    <select class="ui search dropdown" multiple name="authors" id="bookAuthors"></select>
+                </div>
+                <div class="field">
+                    <label>Publisher</label>
+                    <select class="ui search dropdown" name="publisher" id="bookPublisher"></select>
+                </div>
+                <div class="field">
+                    <label>Shelf/Rack</label>
+                    <input name="shelfLocation" id="bookShelf">
+                </div>
+                <div class="field">
+                    <label>Edition</label>
+                    <input name="edition" id="bookEdition">
+                </div>
+                <div class="field">
+                    <label>Language</label>
+                    <input name="language" id="bookLanguage">
+                </div>
+                <div class="field">
+                    <label>Publication Year</label>
+                    <input type="number" name="publicationYear" id="bookYear">
+                </div>
+                <div class="field">
+                    <label>Cover Image</label>
+                    <input type="file" name="coverImage" id="bookCoverImage" accept="image/*">
+                </div>
+                <div class="field">
+                    <label>Status</label>
+                    <select class="ui dropdown" name="isActive" id="bookActive">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+                <div class="field wide-field">
+                    <label>Description</label>
+                    <textarea rows="2" name="description" id="bookDescription"></textarea>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="actions library-modal-actions">
+        <div class="ui cancel button">Cancel</div>
+        <button class="ui green button class-page-action" onclick="saveBook()"><span><span class="desktop-label">Submit</span><span class="mobile-label">Save</span></span><i class="check icon"></i></button>
+    </div>
+</div>
+{% include 'libraryApp/_issue_history_modal.html' %}
+<script>
+let bookTable;
+function fillBookOptions(done){ $.get("{% url 'libraryAppAPI:library_options_api' %}", function(r){ const d=r.data; let cats='<option value="">Select</option>', pubs='<option value="">Select</option>', authors=''; (d.categories||[]).forEach(x=>cats+='<option value="'+x.id+'">'+x.name+'</option>'); (d.publishers||[]).forEach(x=>pubs+='<option value="'+x.id+'">'+x.name+'</option>'); (d.authors||[]).forEach(x=>authors+='<option value="'+x.id+'">'+x.name+'</option>'); $('#bookCategory').html(cats); $('#bookPublisher').html(pubs); $('#bookAuthors').html(authors); $('.ui.dropdown').dropdown('refresh'); if(done) done(); }); }
+function showBookModal(){ $('#bookForm')[0].reset(); $('#bookId').val(''); $('#bookCoverImage').val(''); fillBookOptions(); $('#bookModal').modal('show'); }
+function editBook(id){ $.get("{% url 'libraryAppAPI:detail_api' %}", {entity:'book', id:id}, function(r){ const d=r.data; fillBookOptions(function(){ $('#bookId').val(d.id); $('#bookTitle').val(d.title); $('#bookIsbn').val(d.isbn); $('#bookCategory').dropdown('set selected', d.category); $('#bookPublisher').dropdown('set selected', d.publisher); $('#bookAuthors').dropdown('set selected', d.authors || []); $('#bookShelf').val(d.shelfLocation); $('#bookEdition').val(d.edition); $('#bookLanguage').val(d.language); $('#bookYear').val(d.publicationYear); $('#bookDescription').val(d.description); $('#bookActive').dropdown('set selected', String(d.isActive)); }); $('#bookModal').modal('show'); }); }
+function saveBook(){
+    if (!libraryValidateRequired('#bookForm', ['bookTitle'])) return;
+    libraryShowLoading();
+    $.ajax({
+        url:"{% url 'libraryAppAPI:book_api' %}",
+        type:'POST',
+        data:new FormData($('#bookForm')[0]),
+        processData:false,
+        contentType:false,
+        success:function(response){
+            if (libraryHandleSuccess(response, 'Book saved successfully.')) {
+                $('#bookModal').modal('hide');
+                bookTable.ajax.reload(null, false);
+            }
+        },
+        error:function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); },
+        complete: libraryHideLoading
+    });
+}
+function confirmDeleteBook(id){ if(confirm('Delete this book?')) $.post("{% url 'libraryAppAPI:delete_api' %}", {entity:'book', id:id}, function(){ bookTable.ajax.reload(); }); }
+function viewBookHistory(id){ loadIssueHistory({book:id}, 'Book Issue History'); }
+$(function(){
+    $('.ui.dropdown').dropdown();
+    bookTable = libraryDataTable('#BookTable', "{% url 'libraryAppAPI:BookListJson' %}", [
+        {"name": "title", "targets": 0, "orderable": true},
+        {"name": "isbn", "targets": 1, "orderable": true},
+        {"name": "category", "targets": 2, "orderable": true},
+        {"name": "authors", "targets": 3, "orderable": false},
+        {"name": "publisher", "targets": 4, "orderable": true},
+        {"name": "shelfLocation", "targets": 5, "orderable": true},
+        {"name": "isActive", "targets": 6, "orderable": true},
+        {"name": "action", "targets": 7, "orderable": false}
+    ], 0);
+});
+</script>
+{% endblock %}

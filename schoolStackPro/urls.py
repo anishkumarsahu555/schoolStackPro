@@ -30,12 +30,16 @@ urlpatterns = [
     path('chat/', include(('chatApp.urls', 'chatApp'), namespace='chatApp')),
     path('certificates/', include(('certificateApp.urls', 'certificateApp'), namespace='certificateApp')),
     path('certificates/api/', include(('certificateApp.api.urls_api', 'certificateApp'), namespace='certificateAppAPI')),
+    path('management/library/', include(('libraryApp.urls', 'libraryApp'), namespace='libraryApp')),
+    path('management/library/api/', include(('libraryApp.api.urls_api', 'libraryApp'), namespace='libraryAppAPI')),
     path('management/', include(('managementApp.urls', 'managementApp'), namespace='managementApp')),
     path('management/api/', include(('managementApp.api.urls_api', 'managementApp'), namespace='managementAppAPI')),
     path('teacher/', include(('teacherApp.urls', 'teacherApp'), namespace='teacherApp')),
     path('teacher/api/', include(('teacherApp.api.urls_api', 'teacherApp'), namespace='teacherAppAPI')),
     path('student/', include(('studentApp.urls', 'studentApp'), namespace='studentApp')),
     path('student/api/', include(('studentApp.api.urls_api', 'studentApp'), namespace='studentAppAPI')),
+    path('transport/', include(('transportApp.urls', 'transportApp'), namespace='transportApp')),
+    path('transport/api/', include(('transportApp.api.urls_api', 'transportApp'), namespace='transportAppAPI')),
     path('', include('pwa.urls')),  # You MUST use an empty string as the URL prefix
     path('management/api/cached/', include(('managementApp.cached_api.cached_urls', 'managementApp'), namespace='managementAppCachedAPI')),
 

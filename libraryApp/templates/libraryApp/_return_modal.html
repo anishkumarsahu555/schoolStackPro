@@ -1,0 +1,16 @@
+<div class="ui modal" id="returnModal"><i class="close icon"></i><div class="header">Return Book</div><div class="content"><form class="ui tiny form" id="returnForm">{% csrf_token %}<input type="hidden" name="issue" id="returnIssueId"><div class="library-form-grid"><div class="field"><label>Return Date</label><div class="ui calendar library-date-calendar" id="returnDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="returnDate" id="returnDate" placeholder="YYYY-MM-DD"></div></div></div><div class="field"><label>Condition</label><select class="ui dropdown" name="returnCondition"><option value="good">Good</option><option value="fair">Fair</option><option value="damaged">Damaged</option><option value="lost">Lost</option></select></div><div class="field"><label>Notes</label><input name="notes"></div></div></form></div><div class="actions library-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button class-page-action" onclick="returnIssue()"><span><span class="desktop-label">Return</span><span class="mobile-label">Return</span></span><i class="check icon"></i></button></div></div>
+<script>
+function showReturnModal(id){ $('#returnIssueId').val(id); $('#returnModal').modal('show'); }
+function returnIssue(){
+    if (!libraryValidateRequired('#returnForm', ['returnIssueId'])) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:return_book_api' %}", $('#returnForm').serialize(), function(response){
+        if (libraryHandleSuccess(response, 'Book return saved successfully.')) {
+            $('#returnModal').modal('hide');
+            if (typeof issueTable !== 'undefined' && issueTable) issueTable.ajax.reload(null, false);
+            if (typeof returnTable !== 'undefined' && returnTable) returnTable.ajax.reload(null, false);
+            if (typeof issueHistoryTable !== 'undefined' && issueHistoryTable) issueHistoryTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+</script>

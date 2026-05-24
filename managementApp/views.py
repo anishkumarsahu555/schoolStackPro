@@ -7,7 +7,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 
 from financeApp.models import ExpenseCategory, ExpenseVoucher, FeeHead, FinanceAccount, FinanceApprovalRule, FinanceConfiguration, FinanceEntry, FinanceParty, FinancePeriod, PaymentReceipt, PayrollRun, StudentCharge
 from financeApp.services import bootstrap_expense_categories, bootstrap_school_finance, get_finance_configuration
-from homeApp.models import SchoolDetail, SchoolSession
+from homeApp.models import AuditLog, SchoolDetail, SchoolSession
 from homeApp.owner_access import school_owner_user_q
 from homeApp.session_utils import get_session_month_sequence
 from homeApp.utils import login_required
@@ -25,6 +25,7 @@ from managementApp.services.id_cards import (
 from managementApp.signals import pre_save_with_user
 from teacherApp.models import SubjectNote
 from utils.custom_decorators import check_groups
+from utils.logger import logger
 
 
 # Create your views here.
@@ -116,6 +117,13 @@ def manage_session_import(request):
         'previous_session_id': previous_session_id,
     }
     return render(request, 'managementApp/school/session_import.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def audit_manager(request):
+    logger.info(f'Audit manager opened by user={request.user.id}')
+    return render(request, 'managementApp/audit/audit_manager.html')
 
 
 @login_required

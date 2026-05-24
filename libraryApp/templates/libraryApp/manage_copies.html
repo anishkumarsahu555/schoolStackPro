@@ -1,0 +1,62 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Book Copies</title>{% endblock %}
+{% block page_title %}Book Copies{% endblock %}
+{% block page_subtitle %}Track physical copies, accession numbers, and scan values{% endblock %}
+{% block page_actions %}<button class="ui teal button class-page-action library-secondary-action" onclick="showBulkCopyModal()"><i class="copy outline icon"></i><span><span class="desktop-label">Bulk Copies</span><span class="mobile-label">Bulk</span></span></button><button class="ui green button class-page-action" onclick="showCopyModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Copy</span><span class="mobile-label">Add</span></span></button>{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="list alternate outline icon"></i>
+        Book copy list
+    </h4>
+    <div class="wide library-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="CopyTable" style="margin-top: 5px;width: 100%"><thead><tr><th>Accession No.</th><th>Book</th><th>Status</th><th>Condition</th><th>Barcode/QR</th><th>Updated On</th><th>Actions</th></tr></thead></table>
+    </div>
+</div>
+{% include 'libraryApp/_issue_history_modal.html' %}
+<div class="ui modal" id="copyModal"><i class="close icon"></i><div class="header">Book Copy</div><div class="content"><form class="ui tiny form" id="copyForm">{% csrf_token %}<input type="hidden" name="id" id="copyId"><div class="library-form-grid"><div class="field required"><label>Book</label><select class="ui search dropdown" name="book" id="copyBook"></select></div><div class="field required"><label>Accession Number</label><input name="accessionNumber" id="copyAccession"></div><div class="field"><label>Barcode Value</label><input name="barcodeValue" id="copyBarcode"></div><div class="field"><label>QR Code Value</label><input name="qrCodeValue" id="copyQr"></div><div class="field"><label>Status</label><select class="ui dropdown" name="status" id="copyStatus"><option value="available">Available</option><option value="issued">Issued</option><option value="reserved">Reserved</option><option value="lost">Lost</option><option value="damaged">Damaged</option><option value="withdrawn">Withdrawn</option></select></div><div class="field"><label>Condition</label><select class="ui dropdown" name="condition" id="copyCondition"><option value="good">Good</option><option value="fair">Fair</option><option value="damaged">Damaged</option><option value="lost">Lost</option><option value="withdrawn">Withdrawn</option></select></div><div class="field"><label>Purchase Date</label><div class="ui calendar library-date-calendar" id="copyPurchaseDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="purchaseDate" id="copyPurchaseDate" placeholder="YYYY-MM-DD"></div></div></div><div class="field"><label>Purchase Price</label><input type="number" step="0.01" name="purchasePrice" id="copyPurchasePrice"></div><div class="field wide-field"><label>Notes</label><textarea rows="2" name="notes" id="copyNotes"></textarea></div></div></form></div><div class="actions library-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button class-page-action" onclick="saveCopy()"><span><span class="desktop-label">Submit</span><span class="mobile-label">Save</span></span><i class="check icon"></i></button></div></div>
+<div class="ui modal" id="bulkCopyModal"><i class="close icon"></i><div class="header">Bulk Book Copies</div><div class="content"><form class="ui tiny form" id="bulkCopyForm">{% csrf_token %}<div class="library-form-grid"><div class="field required"><label>Book</label><select class="ui search dropdown" name="book" id="bulkCopyBook"></select></div><div class="field"><label>Accession Prefix</label><input name="prefix" id="bulkCopyPrefix" placeholder="LIB-"></div><div class="field required"><label>Start Number</label><input type="number" min="0" name="startNumber" id="bulkCopyStart" value="1"></div><div class="field required"><label>Quantity</label><input type="number" min="1" max="500" name="quantity" id="bulkCopyQuantity" value="10"></div><div class="field"><label>Padding</label><input type="number" min="1" max="10" name="padding" id="bulkCopyPadding" value="3"></div><div class="field"><label>Status</label><select class="ui dropdown" name="status" id="bulkCopyStatus"><option value="available">Available</option><option value="reserved">Reserved</option><option value="withdrawn">Withdrawn</option></select></div><div class="field"><label>Condition</label><select class="ui dropdown" name="condition" id="bulkCopyCondition"><option value="good">Good</option><option value="fair">Fair</option><option value="damaged">Damaged</option><option value="withdrawn">Withdrawn</option></select></div><div class="field"><label>Purchase Date</label><div class="ui calendar library-date-calendar" id="bulkCopyPurchaseDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="purchaseDate" id="bulkCopyPurchaseDate" placeholder="YYYY-MM-DD"></div></div></div><div class="field"><label>Purchase Price</label><input type="number" step="0.01" name="purchasePrice" id="bulkCopyPurchasePrice"></div><div class="field wide-field"><label>Notes</label><textarea rows="2" name="notes" id="bulkCopyNotes"></textarea></div></div></form></div><div class="actions library-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button class-page-action" onclick="saveBulkCopies()"><span><span class="desktop-label">Create Copies</span><span class="mobile-label">Create</span></span><i class="check icon"></i></button></div></div>
+<script>
+let copyTable; function fillCopyOptions(done){ $.get("{% url 'libraryAppAPI:library_options_api' %}", function(r){ let opts='<option value="">Select</option>'; (r.data.books||[]).forEach(x=>opts+='<option value="'+x.id+'">'+x.name+'</option>'); $('#copyBook').html(opts); $('.ui.dropdown').dropdown('refresh'); if(done) done(); }); }
+function fillBulkCopyOptions(done){ $.get("{% url 'libraryAppAPI:library_options_api' %}", function(r){ let opts='<option value="">Select</option>'; (r.data.books||[]).forEach(x=>opts+='<option value="'+x.id+'">'+x.name+'</option>'); $('#bulkCopyBook').html(opts); $('.ui.dropdown').dropdown('refresh'); if(done) done(); }); }
+function showCopyModal(){ $('#copyForm')[0].reset(); $('#copyId').val(''); fillCopyOptions(); $('#copyModal').modal('show'); }
+function showBulkCopyModal(){ $('#bulkCopyForm')[0].reset(); $('#bulkCopyStart').val('1'); $('#bulkCopyQuantity').val('10'); $('#bulkCopyPadding').val('3'); fillBulkCopyOptions(); $('#bulkCopyModal').modal('show'); }
+function editCopy(id){ $.get("{% url 'libraryAppAPI:detail_api' %}", {entity:'copy', id:id}, function(r){ const d=r.data; fillCopyOptions(function(){ $('#copyId').val(d.id); $('#copyBook').dropdown('set selected', d.book); $('#copyAccession').val(d.accessionNumber); $('#copyBarcode').val(d.barcodeValue); $('#copyQr').val(d.qrCodeValue); $('#copyStatus').dropdown('set selected', d.status); $('#copyCondition').dropdown('set selected', d.condition); $('#copyPurchaseDate').val(d.purchaseDate); $('#copyPurchasePrice').val(d.purchasePrice); $('#copyNotes').val(d.notes); }); $('#copyModal').modal('show'); }); }
+function saveCopy(){
+    if (!libraryValidateRequired('#copyForm', ['copyBook', 'copyAccession'])) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:copy_api' %}", $('#copyForm').serialize(), function(response){
+        if (libraryHandleSuccess(response, 'Book copy saved successfully.')) {
+            $('#copyModal').modal('hide');
+            copyTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+function confirmDeleteCopy(id){ if(confirm('Delete this copy?')) $.post("{% url 'libraryAppAPI:delete_api' %}", {entity:'copy', id:id}, function(){ copyTable.ajax.reload(); }); }
+function viewCopyHistory(id){ loadIssueHistory({copy:id}, 'Copy Issue History'); }
+function saveBulkCopies(){
+    if (!libraryValidateRequired('#bulkCopyForm', ['bulkCopyBook', 'bulkCopyStart', 'bulkCopyQuantity'])) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:bulk_copy_api' %}", $('#bulkCopyForm').serialize(), function(response){
+        if (libraryHandleSuccess(response, response.message || 'Book copies created successfully.')) {
+            $('#bulkCopyModal').modal('hide');
+            copyTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+$(function(){
+    $('.ui.dropdown').dropdown();
+    copyTable = libraryDataTable('#CopyTable', "{% url 'libraryAppAPI:BookCopyListJson' %}", [
+        {"name": "accessionNumber", "targets": 0, "orderable": true},
+        {"name": "book", "targets": 1, "orderable": true},
+        {"name": "status", "targets": 2, "orderable": true},
+        {"name": "condition", "targets": 3, "orderable": true},
+        {"name": "barcodeValue", "targets": 4, "orderable": true},
+        {"name": "lastUpdatedOn", "targets": 5, "orderable": true},
+        {"name": "action", "targets": 6, "orderable": false}
+    ], 5);
+});
+</script>
+{% endblock %}

@@ -10,6 +10,9 @@ urlpatterns = [
     path('get_session_import_meta_api', get_session_import_meta_api, name='get_session_import_meta_api'),
     path('preview_session_import_api', preview_session_import_api, name='preview_session_import_api'),
     path('run_session_import_api', run_session_import_api, name='run_session_import_api'),
+    path('audit_log_list_api', audit_log_list_api, name='audit_log_list_api'),
+    path('audit_log_detail_api', audit_log_detail_api, name='audit_log_detail_api'),
+    path('AuditLogListJson', AuditLogListJson.as_view(), name='AuditLogListJson'),
 
     path('add_class', add_class, name='add_class'),
     path('class_list', StandardListJson.as_view(), name='class_list'),

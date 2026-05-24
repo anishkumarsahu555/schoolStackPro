@@ -18,12 +18,18 @@ from .views import (
     teacher_leave_applications,
     teacher_subject_notes,
     teacher_chat,
+    teacher_my_transport,
+    teacher_library,
+    teacher_library_id_card,
 )
 
 urlpatterns = [
     path('', teacher_home, name='teacher_root'),
     path('home/', teacher_home, name='teacher_home'),
     path('school-detail/', teacher_school_detail, name='teacher_school_detail'),
+    path('my-transport/', teacher_my_transport, name='teacher_my_transport'),
+    path('library/', teacher_library, name='teacher_library'),
+    path('library/id-card/', teacher_library_id_card, name='teacher_library_id_card'),
     path('students/', teacher_students_list, name='teacher_students_list'),
     path('assigned-class/', teacher_assigned_class, name='teacher_assigned_class'),
     path('assigned-subjects/', teacher_assigned_subjects, name='teacher_assigned_subjects'),

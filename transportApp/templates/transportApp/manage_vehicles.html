@@ -1,0 +1,121 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Manage Vehicles</title>{% endblock %}
+{% block page_title %}Manage Vehicles{% endblock %}
+{% block page_subtitle %}Maintain transport vehicles, compliance dates, routes, and drivers{% endblock %}
+{% block page_actions %}
+    <button class="ui green button class-page-action" type="button" onclick="showVehicleModal()">
+        <i class="plus icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Add Vehicle</span><span class="mobile-label">Add</span></span>
+    </button>
+{% endblock %}
+{% block body %}
+{% include 'transportApp/_management_table_styles.html' %}
+<div class="ui right aligned basic  grid">
+    <div class="sixteen wide column">
+        <div class="ui tab active" data-tab="user">
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header"><i class="shuttle van icon"></i>Vehicle list</h4>
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="VehicleTable" style="margin-top: 5px;width:100%">
+                        <thead><tr><th>Vehicle</th><th>Type</th><th>Capacity</th><th>Driver</th><th>Route</th><th>Status</th><th>Actions</th></tr></thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="ui modal" id="vehicleModal">
+    <i class="close icon"></i><div class="header">Vehicle Detail</div>
+    <div class="content"><form class="ui tiny form" id="vehicleForm">{% csrf_token %}
+        <input type="hidden" id="vehicleID">
+        <div class="transport-modal-section">
+            <div class="transport-modal-section-title"><i class="shuttle van icon"></i>Vehicle Information</div>
+            <div class="three fields">
+                <div class="field required"><label>Vehicle Number</label><input id="vehicleNumber" placeholder="Vehicle Number"></div>
+                <div class="field"><label>Vehicle Type</label><select class="ui fluid search selection dropdown" id="vehicleType"><option value="bus">Bus</option><option value="van">Van</option><option value="car">Car</option><option value="auto">Auto</option><option value="other">Other</option></select></div>
+                <div class="field"><label>Capacity</label><input type="number" id="capacity" value="0"></div>
+            </div>
+        </div>
+        <div class="transport-modal-section">
+            <div class="transport-modal-section-title"><i class="route icon"></i>Assignment</div>
+            <div class="two fields">
+                <div class="field">
+                    <label>Route</label>
+                    <div class="ui fluid search selection dropdown route-options" id="vehicleRouteDropdown">
+                        <input type="hidden" id="vehicleRouteID">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">Select Route</div>
+                        <div class="menu"></div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Driver</label>
+                    <div class="ui fluid search selection dropdown driver-options" id="driverDropdown">
+                        <input type="hidden" id="driverID">
+                        <i class="dropdown icon"></i>
+                        <div class="default text">Select Driver</div>
+                        <div class="menu"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="transport-modal-section">
+            <div class="transport-modal-section-title"><i class="calendar check outline icon"></i>Compliance & Status</div>
+            <div class="four fields">
+                <div class="field"><label>Registration Expiry</label><div class="ui calendar transport-date-calendar" id="registrationExpiryDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" id="registrationExpiryDate" placeholder="YYYY-MM-DD"></div></div></div>
+                <div class="field"><label>Insurance Expiry</label><div class="ui calendar transport-date-calendar" id="insuranceExpiryDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" id="insuranceExpiryDate" placeholder="YYYY-MM-DD"></div></div></div>
+                <div class="field"><label>Pollution Expiry</label><div class="ui calendar transport-date-calendar" id="pollutionExpiryDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" id="pollutionExpiryDate" placeholder="YYYY-MM-DD"></div></div></div>
+                <div class="field"><div class="transport-active-row"><div class="ui checkbox"><input type="checkbox" id="vehicleIsActive" checked><label>Active</label></div></div></div>
+            </div>
+        </div>
+    </form>
+        <div class="actions class-modal-actions"><div class="ui cancel button">Cancel</div><button class="ui green button" onclick="saveVehicle()">Submit<i class="checkmark icon"></i></button></div>
+    </div>
+</div>
+<div class="ui basic modal custom" id="deleteVehicleModal">
+    <div class="ui icon header">
+        <i class="trash alternate icon red"></i>
+        Vehicle Details will be Deleted
+    </div>
+    <div class="content">
+        <p style="text-align: center">The Vehicle will be deleted, are you sure to delete this Vehicle?</p>
+    </div>
+    <div class="actions">
+        <div class="ui red basic cancel inverted button">
+            <i class="remove icon"></i>
+            No
+        </div>
+        <input type="hidden" id="deleteVehicleID">
+        <div class="ui green ok inverted button" onclick="deleteVehicle()">
+            <i class="checkmark icon"></i>
+            Yes
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block js %}
+<script>
+let vehicleTable;
+$(function(){ $('.ui.dropdown').dropdown({fullTextSearch: true}); $('.ui.checkbox').checkbox(); initTransportCalendars(); loadOptions(); vehicleTable = $('#VehicleTable').DataTable({
+    dom: 'Blfrtip', scrollX: true, stateSave: true, processing: true, serverSide: true,
+    aaSorting: [[0, 'asc']], pageLength: 10,
+    ajax:"{% url 'transportAppAPI:VehicleListJson' %}",
+    columnDefs:[{"name":"vehicleNumber","targets":0},{"name":"vehicleType","targets":1},{"name":"capacity","targets":2},{"name":"driver","targets":3},{"name":"route","targets":4},{"name":"isActive","targets":5},{"name":"actions","targets":6,"orderable":false}]
+}); });
+function initTransportCalendars(){
+    $('.transport-date-calendar').calendar({
+        monthFirst: false,
+        type: 'date',
+        formatter: { date: function(date){ if(!date) return ''; const m=String(date.getMonth()+1).padStart(2,'0'); const d=String(date.getDate()).padStart(2,'0'); return date.getFullYear()+'-'+m+'-'+d; } }
+    });
+}
+function vehicleDropdownItem(value, text){ return '<div class="item" data-value="' + value + '">' + text + '</div>'; }
+function initVehicleSearchDropdown(dropdownID){ $(dropdownID).dropdown('destroy').dropdown({fullTextSearch:true, forceSelection:false, clearable:true, match:'both'}); }
+function loadOptions(){ $.get("{% url 'transportAppAPI:transport_options_api' %}", function(r){ const d=r.data||{}; const routeMenu=$('#vehicleRouteDropdown .menu').empty(); (d.routes||[]).forEach(i => routeMenu.append(vehicleDropdownItem(i.id, i.text))); const driverMenu=$('#driverDropdown .menu').empty(); (d.drivers||[]).forEach(i => driverMenu.append(vehicleDropdownItem(i.id, i.text))); initVehicleSearchDropdown('#vehicleRouteDropdown'); initVehicleSearchDropdown('#driverDropdown'); $('.ui.dropdown').not('#vehicleRouteDropdown, #driverDropdown').dropdown({fullTextSearch: true}).dropdown('refresh'); }); }
+function showVehicleModal(){ $('#vehicleForm').trigger('reset'); $('#vehicleID').val(''); $('#vehicleType').dropdown('set selected', 'bus'); $('#vehicleRouteDropdown').dropdown('clear'); $('#driverDropdown').dropdown('clear'); $('#vehicleIsActive').prop('checked', true); $('#vehicleModal').modal('show'); }
+function saveVehicle(){ const data=new FormData(); ['vehicleID','vehicleNumber','vehicleType','capacity','driverID','registrationExpiryDate','insuranceExpiryDate','pollutionExpiryDate'].forEach(id => data.append(id === 'vehicleID' ? 'id' : id, $('#'+id).val())); data.append('routeID',$('#vehicleRouteID').val()); data.append('isActive',$('#vehicleIsActive').is(':checked')); data.append('csrfmiddlewaretoken',$("input[name='csrfmiddlewaretoken']").val()); $.ajax({url:"{% url 'transportAppAPI:vehicles_api' %}", type:'POST', data:data, contentType:false, processData:false, success:r=>{ if(r.success){ addSuccessNotification(r.message,'green'); $('#vehicleModal').modal('hide'); vehicleTable.ajax.reload(null,false); loadOptions(); } else addErrorNotification(r.message); }, error:x=>addErrorNotification((x.responseJSON||{}).message||'Unable to save vehicle.')}); }
+function editVehicle(id){ $.get("{% url 'transportAppAPI:vehicle_detail_api' %}", {id:id}, function(r){ const d=r.data||{}; $('#vehicleID').val(d.id); $('#vehicleNumber').val(d.vehicleNumber); $('#vehicleType').dropdown('set selected', d.vehicleType); $('#capacity').val(d.capacity); $('#driverDropdown').dropdown('set selected', String(d.driverID || '')); $('#vehicleRouteDropdown').dropdown('set selected', String(d.routeID || '')); $('#registrationExpiryDate').val(d.registrationExpiryDate); $('#insuranceExpiryDate').val(d.insuranceExpiryDate); $('#pollutionExpiryDate').val(d.pollutionExpiryDate); $('#vehicleIsActive').prop('checked', !!d.isActive); $('#vehicleModal').modal('show'); }); }
+function confirmDeleteVehicle(id){ $('#deleteVehicleID').val(id); $('#deleteVehicleModal').modal('show'); }
+function deleteVehicle(){ const data=new FormData(); data.append('id',$('#deleteVehicleID').val()); data.append('csrfmiddlewaretoken',$("input[name='csrfmiddlewaretoken']").val()); $.ajax({url:"{% url 'transportAppAPI:delete_vehicle_api' %}", type:'POST', data:data, contentType:false, processData:false, success:r=>{ if(r.success){ addSuccessNotification(r.message,'green'); $('#deleteVehicleModal').modal('hide'); vehicleTable.ajax.reload(null,false); } else addErrorNotification(r.message); }}); }
+</script>
+{% endblock %}

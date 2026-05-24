@@ -1,0 +1,403 @@
+<style>
+    .my-transport-shell {
+        display: grid;
+        gap: 0.85rem;
+    }
+    .my-transport-grid {
+        display: grid;
+        gap: 0.8rem;
+        grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+    }
+    .my-transport-card {
+        background: var(--dm-card-bg, #fff);
+        border: 1px solid var(--dm-border, #d8e2f0);
+        border-radius: 14px;
+        box-shadow: 0 8px 20px rgba(29, 48, 77, 0.08);
+        padding: 0.9rem;
+        min-width: 0;
+    }
+    .my-transport-card h4 {
+        align-items: center;
+        color: var(--dm-text, #1f2f43);
+        display: flex;
+        font-size: 1rem;
+        font-weight: 800;
+        gap: 0.45rem;
+        margin: 0 0 0.75rem;
+    }
+    .transport-hero-card {
+        align-items: center;
+        display: grid;
+        gap: 0.85rem;
+        grid-template-columns: 46px minmax(0, 1fr);
+    }
+    .transport-icon-tile {
+        align-items: center;
+        background: rgba(33, 133, 208, .1);
+        border-radius: 12px;
+        color: #1f6fb2;
+        display: flex;
+        font-size: 1.45rem;
+        height: 46px;
+        justify-content: center;
+        width: 46px;
+    }
+    .transport-route-title {
+        color: var(--dm-text, #1f2f43);
+        font-size: 1.16rem;
+        font-weight: 850;
+        line-height: 1.25;
+    }
+    .transport-route-meta {
+        color: var(--dm-muted, #5f6d7d);
+        font-size: 0.86rem;
+        font-weight: 700;
+        margin-top: 0.2rem;
+    }
+    .transport-detail-list {
+        display: grid;
+        gap: 0.6rem;
+    }
+    .transport-detail-row {
+        display: grid;
+        gap: 0.3rem;
+        grid-template-columns: 130px minmax(0, 1fr);
+    }
+    .transport-detail-label {
+        color: var(--dm-muted, #5f6d7d);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .transport-detail-value {
+        color: var(--dm-text, #1f2f43);
+        font-weight: 800;
+        word-break: break-word;
+    }
+    .transport-stop-grid,
+    .transport-fee-grid {
+        display: grid;
+        gap: 0.65rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .transport-stop-box,
+    .transport-fee-box {
+        border: 1px solid var(--dm-border, #d8e2f0);
+        border-radius: 12px;
+        padding: 0.75rem;
+    }
+    .transport-stop-label,
+    .transport-fee-label {
+        color: var(--dm-muted, #5f6d7d);
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .transport-stop-value,
+    .transport-fee-value {
+        color: var(--dm-text, #1f2f43);
+        font-size: 1rem;
+        font-weight: 850;
+        margin-top: 0.25rem;
+    }
+    .transport-stop-time {
+        color: var(--dm-muted, #5f6d7d);
+        font-size: 0.82rem;
+        font-weight: 700;
+        margin-top: 0.2rem;
+    }
+    .transport-fee-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .transport-fee-table {
+        min-width: 560px;
+    }
+    .transport-fee-table.ui.table {
+        background: var(--dm-card-bg, #fff);
+        color: var(--dm-text, #1f2f43);
+    }
+    .transport-empty-state {
+        align-items: center;
+        display: grid;
+        justify-items: center;
+        min-height: 220px;
+        padding: 1.4rem;
+        text-align: center;
+    }
+    .transport-empty-state i.icon {
+        color: #94a3b8;
+        font-size: 2.4rem;
+        margin: 0 0 0.6rem;
+    }
+    .transport-empty-state h3 {
+        color: var(--dm-text, #1f2f43);
+        margin: 0 0 0.25rem;
+    }
+    .transport-empty-state p {
+        color: var(--dm-muted, #5f6d7d);
+        margin: 0;
+    }
+    html[data-theme="dark"] .transport-icon-tile {
+        background: rgba(96, 165, 250, .15);
+        color: #93c5fd;
+    }
+    html[data-theme="dark"] .my-transport-card,
+    html[data-theme="dark"] .transport-fee-table.ui.table {
+        --dm-card-bg: var(--app-surface, #1a1f28);
+        --dm-border: var(--app-border, #2c3440);
+        --dm-text: var(--app-text, #e5e7eb);
+        --dm-muted: var(--app-muted, #c0c7d1);
+    }
+    html[data-theme="dark"] .my-transport-card {
+        background: var(--app-surface, #1a1f28);
+        border-color: var(--app-border, #2c3440);
+        box-shadow: 0 10px 22px rgba(1, 7, 18, 0.30);
+    }
+    html[data-theme="dark"] .my-transport-card h4,
+    html[data-theme="dark"] .transport-route-title,
+    html[data-theme="dark"] .transport-detail-value,
+    html[data-theme="dark"] .transport-stop-value,
+    html[data-theme="dark"] .transport-fee-value,
+    html[data-theme="dark"] .transport-empty-state h3 {
+        color: var(--app-text, #e5e7eb);
+    }
+    html[data-theme="dark"] .transport-route-meta,
+    html[data-theme="dark"] .transport-detail-label,
+    html[data-theme="dark"] .transport-stop-label,
+    html[data-theme="dark"] .transport-fee-label,
+    html[data-theme="dark"] .transport-stop-time,
+    html[data-theme="dark"] .transport-empty-state p {
+        color: var(--app-muted, #c0c7d1);
+    }
+    html[data-theme="dark"] .transport-stop-box,
+    html[data-theme="dark"] .transport-fee-box {
+        background: rgba(15, 23, 42, 0.24);
+        border-color: var(--app-border, #2c3440);
+    }
+    html[data-theme="dark"] .transport-fee-table.ui.table {
+        background: var(--dm-card-bg, #1a1f28);
+        border-color: var(--dm-border, #2c3440);
+        color: var(--dm-text, #e5e7eb);
+    }
+    html[data-theme="dark"] .transport-fee-table.ui.table thead th {
+        background: rgba(15, 23, 42, 0.45);
+        color: var(--dm-muted, #c0c7d1);
+    }
+    html[data-theme="dark"] .transport-fee-table.ui.table tbody td {
+        background: var(--dm-card-bg, #1a1f28);
+        color: var(--dm-text, #e5e7eb);
+    }
+    html[data-theme="dark"] .transport-fee-table.ui.celled.table tr td,
+    html[data-theme="dark"] .transport-fee-table.ui.celled.table tr th {
+        border-color: var(--dm-border, #2c3440);
+    }
+    @media (max-width: 820px) {
+        .my-transport-grid,
+        .transport-stop-grid {
+            grid-template-columns: 1fr;
+        }
+        .transport-fee-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 560px) {
+        .my-transport-shell {
+            gap: 0.7rem;
+        }
+        .my-transport-card {
+            border-radius: 12px;
+            padding: 0.78rem;
+        }
+        .my-transport-card h4 {
+            font-size: 0.95rem;
+            margin-bottom: 0.65rem;
+        }
+        .transport-hero-card {
+            grid-template-columns: 40px minmax(0, 1fr);
+        }
+        .transport-icon-tile {
+            border-radius: 10px;
+            font-size: 1.2rem;
+            height: 40px;
+            width: 40px;
+        }
+        .transport-route-title {
+            font-size: 1.02rem;
+            overflow-wrap: anywhere;
+        }
+        .transport-stop-grid,
+        .transport-fee-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .transport-stop-box,
+        .transport-fee-box {
+            padding: 0.65rem;
+        }
+        .transport-stop-label,
+        .transport-fee-label {
+            font-size: 0.68rem;
+            line-height: 1.2;
+        }
+        .transport-stop-value,
+        .transport-fee-value {
+            font-size: 0.9rem;
+            overflow-wrap: anywhere;
+        }
+        .transport-detail-row {
+            grid-template-columns: 1fr;
+            gap: 0.12rem;
+        }
+        .transport-fee-table-wrap {
+            margin-left: -0.2rem;
+            margin-right: -0.2rem;
+            width: calc(100% + 0.4rem);
+        }
+        .transport-fee-table {
+            min-width: 520px;
+            width: 520px !important;
+        }
+    }
+    @media (max-width: 380px) {
+        .transport-stop-grid,
+        .transport-fee-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+<div class="ui left aligned basic grid detail-shell" style="margin-left:0;margin-right:0;">
+    <div class="sixteen wide column" style="padding-left:0;padding-right:0;">
+        <div class="my-transport-shell">
+            {% if profile_missing %}
+                <div class="my-transport-card transport-empty-state">
+                    <i class="id card outline icon"></i>
+                    <h3>Profile not found</h3>
+                    <p>Your current session profile is not available.</p>
+                </div>
+            {% elif not assignment %}
+                <div class="my-transport-card transport-empty-state">
+                    <i class="bus icon"></i>
+                    <h3>No active transport assigned</h3>
+                    <p>Contact the school office if transport should be enabled for you.</p>
+                </div>
+            {% else %}
+                <div class="my-transport-card">
+                    <div class="transport-hero-card">
+                        <div class="transport-icon-tile"><i class="bus icon"></i></div>
+                        <div>
+                            <div class="transport-route-title">{{ assignment.routeID.routeName }}</div>
+                            <div class="transport-route-meta">{{ assignment.routeID.routeCode }} / {{ assignment.get_tripType_display }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="my-transport-grid">
+                    <div class="my-transport-card">
+                        <h4><i class="route icon"></i>Route & Points</h4>
+                        <div class="transport-stop-grid">
+                            <div class="transport-stop-box">
+                                <div class="transport-stop-label">Pickup Point</div>
+                                <div class="transport-stop-value">{{ assignment.pickupStopID.stopName|default:'N/A' }}</div>
+                                <div class="transport-stop-time">{{ assignment.pickupStopID.pickupTime|time:'h:i A'|default:'Time not set' }}</div>
+                            </div>
+                            <div class="transport-stop-box">
+                                <div class="transport-stop-label">Drop Point</div>
+                                <div class="transport-stop-value">{{ assignment.dropStopID.stopName|default:'N/A' }}</div>
+                                <div class="transport-stop-time">{{ assignment.dropStopID.dropTime|time:'h:i A'|default:'Time not set' }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="my-transport-card">
+                        <h4><i class="shuttle van icon"></i>Vehicle & Driver</h4>
+                        <div class="transport-detail-list">
+                            <div class="transport-detail-row">
+                                <div class="transport-detail-label">Vehicle</div>
+                                <div class="transport-detail-value">{{ assignment.vehicleID.vehicleNumber|default:'Not assigned' }}</div>
+                            </div>
+                            <div class="transport-detail-row">
+                                <div class="transport-detail-label">Vehicle Type</div>
+                                <div class="transport-detail-value">{% if assignment.vehicleID %}{{ assignment.vehicleID.get_vehicleType_display }}{% else %}N/A{% endif %}</div>
+                            </div>
+                            <div class="transport-detail-row">
+                                <div class="transport-detail-label">Driver</div>
+                                <div class="transport-detail-value">{{ assignment.vehicleID.driverID.name|default:'Not assigned' }}</div>
+                            </div>
+                            <div class="transport-detail-row">
+                                <div class="transport-detail-label">Driver Phone</div>
+                                <div class="transport-detail-value">{{ assignment.vehicleID.driverID.phoneNumber|default:'N/A' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="my-transport-grid">
+                    <div class="my-transport-card">
+                        <h4><i class="rupee sign icon"></i>Transport Fee</h4>
+                        <div class="transport-fee-grid">
+                            <div class="transport-fee-box">
+                                <div class="transport-fee-label">Monthly Fee</div>
+                                <div class="transport-fee-value">{{ assignment.monthlyFee }}</div>
+                            </div>
+                            <div class="transport-fee-box">
+                                <div class="transport-fee-label">Fee Mode</div>
+                                <div class="transport-fee-value">{{ assignment.get_feeMode_display }}</div>
+                            </div>
+                            <div class="transport-fee-box">
+                                <div class="transport-fee-label">Total Paid</div>
+                                <div class="transport-fee-value">{{ fee_summary.paid }}</div>
+                            </div>
+                            <div class="transport-fee-box">
+                                <div class="transport-fee-label">Balance Due</div>
+                                <div class="transport-fee-value">{{ fee_summary.due }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="my-transport-card">
+                        <h4><i class="calendar check outline icon"></i>Assignment Period</h4>
+                        <div class="transport-detail-list">
+                            <div class="transport-detail-row">
+                                <div class="transport-detail-label">Start Date</div>
+                                <div class="transport-detail-value">{{ assignment.startDate|date:'d-m-Y'|default:'N/A' }}</div>
+                            </div>
+                            <div class="transport-detail-row">
+                                <div class="transport-detail-label">End Date</div>
+                                <div class="transport-detail-value">{{ assignment.endDate|date:'d-m-Y'|default:'Ongoing' }}</div>
+                            </div>
+                            <div class="transport-detail-row">
+                                <div class="transport-detail-label">Current Month</div>
+                                <div class="transport-detail-value">{% if current_fee_record %}{{ current_fee_record.get_status_display }}{% else %}No fee record{% endif %}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="my-transport-card">
+                    <h4><i class="list alternate outline icon"></i>Recent Fee Records</h4>
+                    <div class="transport-fee-table-wrap">
+                        <table class="ui unstackable tiny celled very compact table transport-fee-table">
+                            <thead>
+                            <tr><th>Period</th><th>Net</th><th>Paid</th><th>Balance</th><th>Status</th><th>Due Date</th></tr>
+                            </thead>
+                            <tbody>
+                            {% for record in recent_fee_records %}
+                                <tr>
+                                    <td>{{ record.feeMonth }}/{{ record.feeYear }}</td>
+                                    <td>{{ record.netAmount }}</td>
+                                    <td>{{ record.paidAmount }}</td>
+                                    <td>{{ record.balanceAmount }}</td>
+                                    <td>{{ record.get_status_display }}</td>
+                                    <td>{{ record.dueDate|date:'d-m-Y'|default:'N/A' }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="6" class="center aligned">No transport fee records found.</td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

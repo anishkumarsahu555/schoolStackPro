@@ -1,0 +1,17 @@
+{% extends 'studentApp/index.html' %}
+
+{% block title %}
+    <title>My Transport</title>
+{% endblock %}
+
+{% block page_title %}
+    My Transport
+{% endblock %}
+
+{% block page_subtitle %}
+    View your assigned route, pickup/drop details, vehicle, driver, and transport fee status
+{% endblock %}
+
+{% block body %}
+    {% include 'transportApp/portal/my_transport_content.html' %}
+{% endblock %}

@@ -1,0 +1,42 @@
+<div class="ui modal" id="renewModal">
+    <i class="close icon"></i>
+    <div class="header">Renew Book</div>
+    <div class="content">
+        <form class="ui tiny form" id="renewForm">{% csrf_token %}
+            <input type="hidden" name="issue" id="renewIssueId">
+            <div class="library-form-grid">
+                <div class="field">
+                    <label>New Due Date</label>
+                    <div class="ui calendar library-date-calendar" id="renewDueDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" name="newDueDate" id="renewDueDate" placeholder="YYYY-MM-DD"></div></div>
+                </div>
+                <div class="field wide-field">
+                    <label>Notes</label>
+                    <input name="notes" id="renewNotes">
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="actions library-modal-actions">
+        <div class="ui cancel button">Cancel</div>
+        <button class="ui green button class-page-action" onclick="renewIssue()"><span><span class="desktop-label">Renew</span><span class="mobile-label">Renew</span></span><i class="check icon"></i></button>
+    </div>
+</div>
+<script>
+function showRenewModal(id){
+    $('#renewForm')[0].reset();
+    $('#renewIssueId').val(id);
+    $('#renewModal').modal('show');
+}
+function renewIssue(){
+    if (!libraryValidateRequired('#renewForm', ['renewIssueId'])) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:renew_book_api' %}", $('#renewForm').serialize(), function(response){
+        if (libraryHandleSuccess(response, 'Book renewed successfully.')) {
+            $('#renewModal').modal('hide');
+            if (typeof issueTable !== 'undefined' && issueTable) issueTable.ajax.reload(null, false);
+            if (typeof returnTable !== 'undefined' && returnTable) returnTable.ajax.reload(null, false);
+            if (typeof issueHistoryTable !== 'undefined' && issueHistoryTable) issueHistoryTable.ajax.reload(null, false);
+        }
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+</script>

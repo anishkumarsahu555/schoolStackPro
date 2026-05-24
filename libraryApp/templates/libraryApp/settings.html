@@ -1,0 +1,81 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Library Settings</title>{% endblock %}
+{% block page_title %}Library Settings{% endblock %}
+{% block page_subtitle %}Configure borrowing, fines, reservations, and defaults{% endblock %}
+{% block body %}
+{% include 'libraryApp/_library_styles.html' %}
+{% include 'libraryApp/_library_validation.html' %}
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="settings icon"></i>
+        Borrowing and fine rules
+    </h4>
+    <form class="ui tiny form" id="librarySettingsForm">{% csrf_token %}
+        <div class="library-form-grid">
+            <div class="field required">
+                <label>Default Issue Days</label>
+                <input type="number" min="1" name="defaultIssueDays" id="defaultIssueDays">
+            </div>
+            <div class="field required">
+                <label>Fine Per Day</label>
+                <input type="number" step="0.01" min="0" name="finePerDay" id="finePerDay">
+            </div>
+            <div class="field">
+                <label>Grace Days</label>
+                <input type="number" min="0" name="graceDays" id="graceDays">
+            </div>
+            <div class="field">
+                <label>Max Renewals</label>
+                <input type="number" min="0" name="maxRenewals" id="maxRenewals">
+            </div>
+            <div class="field">
+                <label>Default Max Books</label>
+                <input type="number" min="1" name="defaultMaxBooksAllowed" id="defaultMaxBooksAllowed">
+            </div>
+            <div class="field">
+                <label>Reservation Expiry Days</label>
+                <input type="number" min="0" name="reservationExpiryDays" id="reservationExpiryDays">
+            </div>
+            <div class="field">
+                <label>Lost Book Fine</label>
+                <input type="number" step="0.01" min="0" name="lostBookFine" id="lostBookFine">
+            </div>
+            <div class="field">
+                <label>Damaged Book Fine</label>
+                <input type="number" step="0.01" min="0" name="damagedBookFine" id="damagedBookFine">
+            </div>
+        </div>
+        <div class="library-actions" style="margin-top:12px">
+            <button class="ui green button class-page-action" type="button" onclick="saveLibrarySettings()">
+                <span><span class="desktop-label">Save Settings</span><span class="mobile-label">Save</span></span>
+                <i class="check icon"></i>
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+function loadLibrarySettings(){
+    $.get("{% url 'libraryAppAPI:settings_detail_api' %}", function(response){
+        const d = response.data || {};
+        $('#defaultIssueDays').val(d.defaultIssueDays);
+        $('#finePerDay').val(d.finePerDay);
+        $('#graceDays').val(d.graceDays);
+        $('#maxRenewals').val(d.maxRenewals);
+        $('#defaultMaxBooksAllowed').val(d.defaultMaxBooksAllowed);
+        $('#reservationExpiryDays').val(d.reservationExpiryDays);
+        $('#lostBookFine').val(d.lostBookFine);
+        $('#damagedBookFine').val(d.damagedBookFine);
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); });
+}
+function saveLibrarySettings(){
+    if (!libraryValidateRequired('#librarySettingsForm', ['defaultIssueDays', 'finePerDay'])) return;
+    libraryShowLoading();
+    $.post("{% url 'libraryAppAPI:settings_api' %}", $('#librarySettingsForm').serialize(), function(response){
+        libraryHandleSuccess(response, 'Library settings saved successfully.');
+    }).fail(function(xhr){ addErrorNotification(libraryValidationMessage(xhr)); }).always(libraryHideLoading);
+}
+$(function(){
+    loadLibrarySettings();
+});
+</script>
+{% endblock %}
