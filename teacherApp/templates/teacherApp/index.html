@@ -103,6 +103,22 @@
     <div class="nav-group">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
+                <span>Timetable</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.url_name == 'teacher_school_timetable' %}active{% endif %}"
+               href="{% url 'teacherApp:teacher_school_timetable' %}">
+                <i class="calendar alternate outline icon"></i>
+                <span>Timetable</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
                 <span>Attendance</span>
             </span>
             <i class="chevron down icon nav-section-chevron"></i>

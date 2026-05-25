@@ -1,0 +1,172 @@
+{% extends 'teacherApp/index.html' %}
+
+{% block title %}<title>School Timetable</title>{% endblock %}
+{% block page_title %}School Timetable{% endblock %}
+{% block page_subtitle %}Your published weekly teaching schedule{% endblock %}
+
+{% block body %}
+    <style>
+        .portal-timetable-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 0.75rem;
+        }
+
+        .portal-timetable-wrap {
+            overflow: auto;
+            border: 1px solid var(--app-border);
+            border-radius: 6px;
+            background: var(--app-surface);
+        }
+
+        .portal-timetable {
+            min-width: 980px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .portal-timetable th,
+        .portal-timetable td {
+            border: 1px solid var(--app-border);
+            min-width: 140px;
+            height: 104px;
+            padding: 0.45rem;
+            vertical-align: top;
+        }
+
+        .portal-timetable th {
+            background: var(--app-hover);
+            color: var(--app-text);
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-align: left;
+        }
+
+        .portal-period-head {
+            width: 150px;
+            min-width: 150px !important;
+        }
+
+        .portal-period-label,
+        .portal-slot-title {
+            color: var(--app-text);
+            font-size: 0.8rem;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+
+        .portal-period-time,
+        .portal-slot-meta,
+        .portal-empty-cell {
+            color: var(--app-muted);
+            font-size: 0.72rem;
+            line-height: 1.25;
+            margin-top: 0.2rem;
+        }
+
+        .portal-week-cell {
+            display: grid;
+            gap: 0.42rem;
+        }
+
+        .portal-slot-card {
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-left: 3px solid #3b82f6;
+            border-radius: 6px;
+            background: rgba(59, 130, 246, 0.04);
+            min-height: 88px;
+            padding: 0.45rem;
+        }
+
+        html[data-theme="dark"] .portal-timetable-wrap {
+            border-color: rgba(148, 163, 184, 0.22);
+            background: rgba(15, 23, 42, 0.72);
+        }
+
+        html[data-theme="dark"] .portal-timetable th,
+        html[data-theme="dark"] .portal-timetable td {
+            border-color: rgba(148, 163, 184, 0.18);
+        }
+
+        html[data-theme="dark"] .portal-timetable th {
+            background: rgba(30, 41, 59, 0.86);
+            color: #f8fafc;
+        }
+
+        html[data-theme="dark"] .portal-timetable td {
+            background: rgba(15, 23, 42, 0.64);
+        }
+
+        html[data-theme="dark"] .portal-slot-card {
+            border-color: rgba(148, 163, 184, 0.24);
+            border-left-color: #60a5fa;
+            background: rgba(30, 41, 59, 0.64);
+        }
+
+        html[data-theme="dark"] .portal-period-label,
+        html[data-theme="dark"] .portal-slot-title {
+            color: #f8fafc;
+        }
+
+        html[data-theme="dark"] .portal-period-time,
+        html[data-theme="dark"] .portal-slot-meta,
+        html[data-theme="dark"] .portal-empty-cell {
+            color: #cbd5e1;
+        }
+    </style>
+    <div class="ui segment">
+        <h4 class="ui horizontal left aligned divider header">
+            <i class="calendar alternate outline icon"></i>
+            My timetable
+        </h4>
+        {% if profile_missing %}
+            <div class="ui warning message">Teacher profile was not found for the active session.</div>
+        {% elif rows %}
+            <div class="portal-timetable-actions">
+                <a class="ui mini blue button" href="{% url 'teacherApp:teacher_school_timetable_pdf' %}">
+                    <i class="file pdf outline icon"></i>Download PDF
+                </a>
+            </div>
+            <div class="portal-timetable-wrap">
+                <table class="portal-timetable">
+                    <thead>
+                    <tr>
+                        <th class="portal-period-head">Period</th>
+                        {% for day in days %}
+                            <th>{{ day }}</th>
+                        {% endfor %}
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            <th class="portal-period-head">
+                                <div class="portal-period-label">{{ row.name }}</div>
+                                {% if row.time %}<div class="portal-period-time">{{ row.time }}</div>{% endif %}
+                            </th>
+                            {% for entries in row.cells_list %}
+                                <td>
+                                    <div class="portal-week-cell">
+                                        {% for entry in entries %}
+                                            <div class="portal-slot-card">
+                                                <div class="portal-slot-title">{{ entry.assignedSubjectID.subjectID.name|default:"N/A" }}</div>
+                                                <div class="portal-slot-meta"><i class="graduation cap icon"></i>{{ entry.timetableID.standardID.name|default:"Class" }}{% if entry.timetableID.standardID.section %} - {{ entry.timetableID.standardID.section }}{% endif %}</div>
+                                                {% if entry.room %}<div class="portal-slot-meta"><i class="map marker alternate icon"></i>{{ entry.room }}</div>{% endif %}
+                                                {% if entry.note %}<div class="portal-slot-meta">{{ entry.note }}</div>{% endif %}
+                                            </div>
+                                        {% empty %}
+                                            <div class="portal-empty-cell">Free</div>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="ui info message">No published timetable entries are available yet.</div>
+        {% endif %}
+    </div>
+{% endblock %}

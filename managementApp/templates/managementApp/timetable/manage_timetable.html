@@ -1,0 +1,1735 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>School Timetable</title>
+{% endblock %}
+{% block page_title %}School Timetable{% endblock %}
+{% block page_subtitle %}Build class timetables manually, review conflicts, and publish for portals{% endblock %}
+{% block body %}
+    <style>
+        .timetable-control-grid {
+            display: grid;
+            grid-template-columns: minmax(220px, 320px) 1fr auto;
+            gap: 0.75rem;
+            align-items: end;
+        }
+
+        .timetable-day-row,
+        .timetable-period-actions,
+        .timetable-slot-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .timetable-tool-grid {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) auto minmax(180px, 0.8fr) minmax(240px, 1fr) auto;
+            gap: 0.75rem;
+            align-items: end;
+        }
+
+        .timetable-workspace-segment {
+            margin-bottom: 0.85rem !important;
+            padding: 1rem !important;
+        }
+
+        .timetable-tabs-wrap .ui.top.attached.tabular.menu {
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            margin-bottom: 0 !important;
+        }
+
+        .timetable-tabs-wrap .ui.top.attached.tabular.menu .item {
+            font-weight: 700;
+            padding: 0.8rem 1rem !important;
+        }
+
+        .timetable-tabs-wrap .ui.bottom.attached.tab.segment {
+            margin: 0 !important;
+            padding: 1rem !important;
+        }
+
+        .timetable-builder-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .timetable-builder-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .timetable-day-row .ui.checkbox {
+            margin-right: 0.55rem;
+        }
+
+        .timetable-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            border-radius: 999px;
+            padding: 0.25rem 0.65rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .timetable-status-pill.published {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .timetable-grid-wrap {
+            overflow: auto;
+            border: 1px solid var(--app-border);
+            border-radius: 6px;
+            background: var(--app-surface);
+        }
+
+        .timetable-grid {
+            min-width: 920px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .timetable-grid th,
+        .timetable-grid td {
+            border: 1px solid var(--app-border);
+            vertical-align: top;
+            min-width: 140px;
+        }
+
+        .timetable-grid th {
+            background: var(--app-hover);
+            padding: 0.55rem;
+            color: var(--app-text);
+            font-size: 0.8rem;
+        }
+
+        .timetable-grid td {
+            padding: 0.45rem;
+            height: 104px;
+        }
+
+        .timetable-period-head {
+            width: 150px;
+            min-width: 150px !important;
+        }
+
+        .timetable-slot {
+            border-radius: 6px;
+            border: 1px solid transparent;
+            padding: 0.45rem;
+            min-height: 88px;
+            cursor: pointer;
+        }
+
+        .timetable-slot:hover {
+            border-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.08);
+        }
+
+        .timetable-slot.has-warning {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.12);
+            box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.18);
+        }
+
+        .timetable-slot.has-error {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.12);
+            box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.2);
+        }
+
+        .timetable-slot-warning {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            border-radius: 999px;
+            margin-top: 0.4rem;
+            padding: 0.12rem 0.45rem;
+            font-size: 0.68rem;
+            font-weight: 800;
+            color: #92400e;
+            background: rgba(245, 158, 11, 0.18);
+        }
+
+        .timetable-slot.has-error .timetable-slot-warning {
+            color: #991b1b;
+            background: rgba(239, 68, 68, 0.18);
+        }
+
+        .timetable-slot-warning-message {
+            border-left: 3px solid #f59e0b;
+            border-radius: 6px;
+            margin-top: 0.45rem;
+            padding: 0.35rem 0.45rem;
+            background: rgba(245, 158, 11, 0.10);
+            color: #78350f;
+            font-size: 0.72rem;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .timetable-slot.has-error .timetable-slot-warning-message {
+            border-left-color: #ef4444;
+            background: rgba(239, 68, 68, 0.10);
+            color: #7f1d1d;
+        }
+
+        .timetable-slot-title {
+            color: var(--app-text);
+            font-size: 0.86rem;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+
+        .timetable-slot-meta {
+            color: var(--app-muted);
+            font-size: 0.75rem;
+            margin-top: 0.28rem;
+            line-height: 1.25;
+        }
+
+        .timetable-break-cell {
+            background: repeating-linear-gradient(135deg, rgba(148, 163, 184, 0.14), rgba(148, 163, 184, 0.14) 8px, transparent 8px, transparent 16px);
+        }
+
+        .timetable-activity-cell {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(34, 197, 94, 0.10));
+            text-align: center;
+        }
+
+        .timetable-activity-row {
+            border: 1px solid rgba(14, 165, 233, 0.28);
+            border-radius: 6px;
+            padding: 0.6rem;
+            min-height: 64px;
+        }
+
+        .teacher-timetable-toolbar {
+            display: grid;
+            grid-template-columns: minmax(240px, 360px) 1fr;
+            gap: 0.75rem;
+            align-items: end;
+            margin-bottom: 0.85rem;
+        }
+
+        .teacher-timetable-summary {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 0.45rem;
+        }
+
+        .teacher-print-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.45rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .teacher-summary-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            border: 1px solid var(--app-border);
+            border-radius: 999px;
+            background: var(--app-surface);
+            color: var(--app-muted);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.35rem 0.65rem;
+        }
+
+        .teacher-summary-chip strong {
+            color: var(--app-text);
+        }
+
+        .teacher-timetable-board {
+            overflow: auto;
+            border: 1px solid var(--app-border);
+            border-radius: 6px;
+            background: var(--app-surface);
+        }
+
+        .teacher-week-grid {
+            min-width: 980px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .teacher-week-grid th,
+        .teacher-week-grid td {
+            border: 1px solid var(--app-border);
+            vertical-align: top;
+        }
+
+        .teacher-week-grid th {
+            background: var(--app-hover);
+            color: var(--app-text);
+            font-size: 0.78rem;
+            font-weight: 800;
+            padding: 0.58rem;
+            text-align: left;
+        }
+
+        .teacher-week-grid td {
+            min-width: 140px;
+            height: 104px;
+            padding: 0.45rem;
+        }
+
+        .teacher-period-head {
+            width: 150px;
+            min-width: 150px !important;
+        }
+
+        .teacher-period-label {
+            color: var(--app-text);
+            font-size: 0.8rem;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+
+        .teacher-period-time {
+            color: var(--app-muted);
+            font-size: 0.72rem;
+            line-height: 1.25;
+            margin-top: 0.2rem;
+        }
+
+        .teacher-week-cell {
+            display: grid;
+            gap: 0.42rem;
+        }
+
+        .teacher-week-empty {
+            color: var(--app-muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.45rem;
+            text-align: center;
+        }
+
+        .teacher-slot-card {
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            border-left: 3px solid #3b82f6;
+            border-radius: 6px;
+            background: rgba(59, 130, 246, 0.04);
+            padding: 0.45rem;
+            min-height: 88px;
+        }
+
+        .teacher-slot-subject {
+            color: var(--app-text);
+            font-size: 0.78rem;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+
+        .teacher-slot-class,
+        .teacher-slot-meta {
+            color: var(--app-muted);
+            font-size: 0.68rem;
+            line-height: 1.3;
+            margin-top: 0.2rem;
+        }
+
+        .teacher-status-pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 0.2rem 0.55rem;
+            text-transform: uppercase;
+            white-space: nowrap;
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .teacher-status-pill.published {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .teacher-empty-state {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            border: 1px dashed var(--app-border);
+            border-radius: 6px;
+            color: var(--app-muted);
+            padding: 0.9rem;
+            background: var(--app-surface);
+        }
+
+        .timetable-warning-list {
+            max-height: 220px;
+            overflow: auto;
+        }
+
+        .timetable-warning-item {
+            display: flex;
+            gap: 0.55rem;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--app-border);
+            padding: 0.5rem 0;
+            color: var(--app-text);
+        }
+
+        .timetable-warning-item[data-day][data-period] {
+            cursor: pointer;
+        }
+
+        .timetable-warning-item[data-day][data-period]:hover {
+            background: var(--app-hover);
+        }
+
+        .timetable-warning-item:last-child {
+            border-bottom: 0;
+        }
+
+        .timetable-warning-item .icon {
+            margin-top: 0.1rem;
+        }
+
+        #periodForm .timetable-period-row {
+            align-items: flex-end;
+            margin-bottom: 0.5rem;
+        }
+
+        #periodForm .period-action-field {
+            align-items: center;
+            display: flex;
+            justify-content: center;
+        }
+
+        #periodForm .ui.calendar .ui.input,
+        #periodForm .ui.calendar .ui.input input {
+            width: 100%;
+        }
+
+        .timetable-tabs-wrap .ui.form .field {
+            margin-bottom: 0.75rem;
+        }
+
+        .timetable-page .ui.form .field > label,
+        .timetable-page .ui.form .fields > .field > label,
+        .timetable-page label {
+            text-align: left !important;
+        }
+
+        .timetable-tabs-wrap table.ui.table {
+            margin-top: 0.5rem !important;
+        }
+
+        .timetable-tabs-wrap h4.ui.divider.header {
+            margin-top: 0.35rem !important;
+            margin-bottom: 0.85rem !important;
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-grid-wrap {
+            border-color: rgba(148, 163, 184, 0.22);
+            background: #0f172a;
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-grid th,
+        html[data-theme="dark"] .timetable-page .timetable-grid td {
+            border-color: rgba(148, 163, 184, 0.18);
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-grid th {
+            background: #111827;
+            color: #f8fafc;
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-grid td {
+            background: rgba(15, 23, 42, 0.74);
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-slot {
+            background: rgba(30, 41, 59, 0.72);
+            border-color: rgba(148, 163, 184, 0.24);
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-slot:hover {
+            background: rgba(30, 64, 175, 0.22);
+            border-color: #60a5fa;
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-slot.has-warning {
+            background: rgba(120, 53, 15, 0.28);
+            border-color: #fbbf24;
+            box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.28);
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-slot.has-error {
+            background: rgba(127, 29, 29, 0.28);
+            border-color: #f87171;
+            box-shadow: inset 0 0 0 1px rgba(248, 113, 113, 0.28);
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-slot-title {
+            color: #f8fafc;
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-slot-meta {
+            color: #cbd5e1;
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-slot-warning {
+            color: #fde68a;
+            background: rgba(245, 158, 11, 0.24);
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-slot.has-error .timetable-slot-warning {
+            color: #fecaca;
+            background: rgba(239, 68, 68, 0.24);
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-slot-warning-message {
+            color: #fed7aa;
+            background: rgba(154, 52, 18, 0.30);
+            border-left-color: #fbbf24;
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-slot.has-error .timetable-slot-warning-message {
+            color: #fecaca;
+            background: rgba(127, 29, 29, 0.34);
+            border-left-color: #f87171;
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-break-cell {
+            background: repeating-linear-gradient(135deg, rgba(71, 85, 105, 0.22), rgba(71, 85, 105, 0.22) 8px, rgba(15, 23, 42, 0.82) 8px, rgba(15, 23, 42, 0.82) 16px);
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-activity-cell {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(34, 197, 94, 0.14));
+        }
+
+        html[data-theme="dark"] .timetable-page .timetable-activity-row {
+            background: rgba(15, 23, 42, 0.62);
+            border-color: rgba(125, 211, 252, 0.34);
+        }
+
+        html[data-theme="dark"] .timetable-page .teacher-summary-chip,
+        html[data-theme="dark"] .timetable-page .teacher-timetable-board,
+        html[data-theme="dark"] .timetable-page .teacher-empty-state {
+            border-color: rgba(148, 163, 184, 0.22);
+            background: rgba(15, 23, 42, 0.72);
+        }
+
+        html[data-theme="dark"] .timetable-page .teacher-week-grid th {
+            background: rgba(30, 41, 59, 0.86);
+            color: #f8fafc;
+        }
+
+        html[data-theme="dark"] .timetable-page .teacher-week-grid th,
+        html[data-theme="dark"] .timetable-page .teacher-week-grid td {
+            border-color: rgba(148, 163, 184, 0.18);
+        }
+
+        html[data-theme="dark"] .timetable-page .teacher-week-grid td {
+            background: rgba(15, 23, 42, 0.64);
+        }
+
+        html[data-theme="dark"] .timetable-page .teacher-slot-card {
+            border-color: rgba(148, 163, 184, 0.24);
+            border-left-color: #60a5fa;
+            background: rgba(30, 41, 59, 0.64);
+        }
+
+        html[data-theme="dark"] .timetable-page .teacher-period-label,
+        html[data-theme="dark"] .timetable-page .teacher-slot-subject,
+        html[data-theme="dark"] .timetable-page .teacher-summary-chip strong {
+            color: #f8fafc;
+        }
+
+        html[data-theme="dark"] .timetable-page .teacher-period-time,
+        html[data-theme="dark"] .timetable-page .teacher-slot-class,
+        html[data-theme="dark"] .timetable-page .teacher-slot-meta,
+        html[data-theme="dark"] .timetable-page .teacher-week-empty,
+        html[data-theme="dark"] .timetable-page .teacher-summary-chip,
+        html[data-theme="dark"] .timetable-page .teacher-empty-state {
+            color: #cbd5e1;
+        }
+
+        html[data-theme="dark"] .timetable-page .teacher-status-pill {
+            background: rgba(148, 163, 184, 0.18);
+            color: #e5e7eb;
+        }
+
+        html[data-theme="dark"] .timetable-page .teacher-status-pill.published {
+            background: rgba(34, 197, 94, 0.18);
+            color: #bbf7d0;
+        }
+
+        @media (max-width: 767px) {
+            .timetable-control-grid,
+            .timetable-tool-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .teacher-timetable-toolbar,
+            .teacher-slot-card {
+                grid-template-columns: 1fr;
+            }
+
+            .teacher-timetable-summary {
+                justify-content: flex-start;
+            }
+        }
+
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 6mm;
+            }
+
+            body.timetable-teacher-printing * {
+                visibility: hidden !important;
+            }
+
+            body.timetable-teacher-printing #teacherPrintArea,
+            body.timetable-teacher-printing #teacherPrintArea * {
+                visibility: visible !important;
+            }
+
+            body.timetable-teacher-printing #teacherPrintArea {
+                position: absolute;
+                inset: 0 auto auto 0;
+                width: 100%;
+                padding: 0 !important;
+                background: #ffffff !important;
+                color: #111827 !important;
+            }
+
+            body.timetable-teacher-printing .teacher-timetable-toolbar,
+            body.timetable-teacher-printing .teacher-print-actions,
+            body.timetable-teacher-printing .teacher-summary-chip .icon,
+            body.timetable-teacher-printing .teacher-slot-class .icon,
+            body.timetable-teacher-printing .teacher-slot-meta .icon {
+                display: none !important;
+            }
+
+            body.timetable-teacher-printing .teacher-print-heading {
+                display: block !important;
+                margin: 0 0 4mm 0 !important;
+                text-align: center;
+                color: #111827 !important;
+            }
+
+            body.timetable-teacher-printing .teacher-print-heading h3 {
+                margin: 0 !important;
+                font-size: 13pt !important;
+                line-height: 1.15 !important;
+            }
+
+            body.timetable-teacher-printing .teacher-print-heading div {
+                margin-top: 1mm;
+                font-size: 8pt !important;
+                color: #4b5563 !important;
+            }
+
+            body.timetable-teacher-printing .teacher-timetable-board {
+                border: 1px solid #9ca3af !important;
+                border-radius: 0 !important;
+                overflow: visible !important;
+                background: #ffffff !important;
+            }
+
+            body.timetable-teacher-printing .teacher-week-grid {
+                min-width: 0 !important;
+                table-layout: fixed !important;
+                width: 100% !important;
+                page-break-inside: avoid;
+            }
+
+            body.timetable-teacher-printing .teacher-week-grid th,
+            body.timetable-teacher-printing .teacher-week-grid td {
+                border: 1px solid #9ca3af !important;
+                background: #ffffff !important;
+                color: #111827 !important;
+                padding: 2mm !important;
+            }
+
+            body.timetable-teacher-printing .teacher-week-grid th {
+                background: #f3f4f6 !important;
+                font-size: 7.5pt !important;
+            }
+
+            body.timetable-teacher-printing .teacher-week-grid td {
+                height: 18mm !important;
+                min-width: 0 !important;
+            }
+
+            body.timetable-teacher-printing .teacher-period-head {
+                width: 26mm !important;
+                min-width: 26mm !important;
+            }
+
+            body.timetable-teacher-printing .teacher-period-label,
+            body.timetable-teacher-printing .teacher-slot-subject {
+                font-size: 7pt !important;
+                color: #111827 !important;
+                line-height: 1.15 !important;
+            }
+
+            body.timetable-teacher-printing .teacher-period-time,
+            body.timetable-teacher-printing .teacher-slot-class,
+            body.timetable-teacher-printing .teacher-slot-meta,
+            body.timetable-teacher-printing .teacher-week-empty {
+                font-size: 6.3pt !important;
+                color: #374151 !important;
+                line-height: 1.1 !important;
+                margin-top: 1mm !important;
+            }
+
+            body.timetable-teacher-printing .teacher-slot-card {
+                border: 0 !important;
+                border-left: 2px solid #2563eb !important;
+                border-radius: 0 !important;
+                background: #eff6ff !important;
+                min-height: 0 !important;
+                padding: 1.2mm !important;
+                page-break-inside: avoid;
+            }
+
+            body.timetable-teacher-printing .teacher-status-pill {
+                display: none !important;
+            }
+        }
+    </style>
+
+    <div class="ui right aligned basic grid timetable-page">
+        <div class="sixteen wide column">
+            <div class="ui tab active" data-tab="user">
+
+    <div class="ui segment timetable-workspace-segment">
+        <h4 class="ui horizontal left aligned divider header">
+            <i class="sliders horizontal icon"></i>
+            Timetable Workspace
+        </h4>
+        <div class="timetable-control-grid ui tiny form">
+            <div class="field required">
+                <label>Class</label>
+                <select class="ui search dropdown" id="standardSelect" onchange="loadTimetable()">
+                    <option value="">Select Class</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Working Days</label>
+                <div class="timetable-day-row" id="workingDays"></div>
+            </div>
+            <div class="field">
+                <label>Status</label>
+                <span class="timetable-status-pill" id="timetableStatus">Draft</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui timetable-tabs-wrap">
+        <div class="ui top attached tabular menu">
+            <a class="item active" data-tab="builder">
+                <i class="calendar alternate outline icon"></i>Manual Builder
+            </a>
+            <a class="item" data-tab="setup">
+                <i class="clock outline icon"></i>Setup Periods
+            </a>
+            <a class="item" data-tab="copy">
+                <i class="copy outline icon"></i>Copy Tools
+            </a>
+            <a class="item" data-tab="teacher">
+                <i class="chalkboard teacher icon"></i>Teacher-wise
+            </a>
+            <a class="item" data-tab="warnings">
+                <i class="exclamation triangle icon"></i>Warnings <span id="warningTabCount"></span>
+            </a>
+        </div>
+
+    <div class="ui bottom attached tab segment" data-tab="setup">
+        <h4 class="ui horizontal left aligned divider header">
+            <i class="clock outline icon"></i>
+            Periods
+        </h4>
+        <form class="ui tiny form" id="periodForm">{% csrf_token %}
+            <div id="periodRows"></div>
+            <div class="timetable-period-actions">
+                <button class="ui mini teal button" type="button" onclick="addPeriodRow()"><i class="plus icon"></i>Add Period</button>
+                <button class="ui mini green button" type="button" onclick="saveSettings()"><i class="check icon"></i>Save Setup</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="ui bottom attached tab segment" data-tab="copy">
+        <h4 class="ui horizontal left aligned divider header">
+            <i class="copy outline icon"></i>
+            Copy tools
+        </h4>
+        <div class="ui tiny form timetable-tool-grid">
+            <div class="field">
+                <label>Copy From Class</label>
+                <select class="ui search dropdown" id="copySourceStandard">
+                    <option value="">Select Class</option>
+                </select>
+            </div>
+            <div class="field">
+                <button class="ui mini teal button" type="button" onclick="copyClassTimetable()">
+                    <i class="copy outline icon"></i>Copy Class
+                </button>
+            </div>
+            <div class="field">
+                <label>Source Day</label>
+                <select class="ui dropdown" id="copySourceDay"></select>
+            </div>
+            <div class="field">
+                <label>Target Days</label>
+                <div class="timetable-day-row" id="copyTargetDays"></div>
+            </div>
+            <div class="field">
+                <button class="ui mini blue button" type="button" onclick="copyDayTimetable()">
+                    <i class="clone outline icon"></i>Copy Day
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui bottom attached tab segment active" data-tab="builder">
+        <div class="timetable-builder-header">
+            <h4 class="ui header" style="margin:0;">
+                <i class="calendar alternate outline icon"></i>
+                <span class="content">Manual Builder</span>
+            </h4>
+            <div class="timetable-builder-actions">
+                <button class="ui mini blue button" type="button" onclick="validateTimetable()"><i class="exclamation triangle icon"></i>Check</button>
+                <button class="ui mini green button" type="button" onclick="publishTimetable()"><i class="paper plane icon"></i>Publish</button>
+                <button class="ui mini orange button" id="unpublishTimetableButton" type="button" onclick="unpublishTimetable()" style="display:none;"><i class="undo icon"></i>Revert to Draft</button>
+                <button class="ui mini teal button" type="button" onclick="exportPdf()"><i class="file pdf outline icon"></i>PDF</button>
+            </div>
+        </div>
+        <div class="timetable-grid-wrap">
+            <table class="timetable-grid" id="timetableGrid"></table>
+        </div>
+    </div>
+
+    <div class="ui bottom attached tab segment" data-tab="teacher" id="teacherPrintArea">
+        <div class="teacher-print-heading" style="display:none;">
+            <h3 id="teacherPrintTitle">Teacher Timetable</h3>
+            <div>Weekly timetable</div>
+        </div>
+        <h4 class="ui horizontal left aligned divider header">
+            <i class="chalkboard teacher icon"></i>
+            Teacher-wise timetable
+        </h4>
+        <div class="teacher-timetable-toolbar">
+            <div class="ui tiny form">
+                <div class="field">
+                    <label>Teacher</label>
+                    <select class="ui search dropdown" id="teacherTimetableSelect" onchange="loadTeacherTimetable()">
+                        <option value="">Select Teacher</option>
+                    </select>
+                </div>
+            </div>
+            <div class="teacher-timetable-summary" id="teacherTimetableSummary"></div>
+        </div>
+        <div class="teacher-print-actions">
+            <button class="ui mini blue button" type="button" id="teacherPdfButton" onclick="downloadTeacherTimetablePdf()" style="display:none;">
+                <i class="file pdf outline icon"></i>Download PDF
+            </button>
+        </div>
+        <div class="teacher-timetable-board" id="teacherTimetableBoard">
+            <div class="teacher-empty-state">
+                <i class="info circle icon"></i>
+                <div>Select a teacher to view timetable.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui bottom attached tab segment" data-tab="warnings">
+        <h4 class="ui horizontal left aligned divider header">
+            <i class="exclamation triangle icon"></i>
+            Conflict Warnings
+        </h4>
+        <div class="timetable-warning-list" id="warningList">
+            <div class="timetable-warning-item"><i class="info circle icon"></i><div>Select a class to load warnings.</div></div>
+        </div>
+    </div>
+    </div>
+
+    <div class="ui modal" id="slotModal">
+        <i class="close icon"></i>
+        <div class="header">Timetable Slot</div>
+        <div class="content">
+            <form class="ui tiny form" id="slotForm">{% csrf_token %}
+                <input type="hidden" id="slotDay">
+                <input type="hidden" id="slotPeriod">
+                <div class="field">
+                    <label>Subject Teacher</label>
+                    <select class="ui search dropdown" id="slotSubjectTeacher"></select>
+                </div>
+                <div class="two fields">
+                    <div class="field">
+                        <label>Room</label>
+                        <input type="text" id="slotRoom" placeholder="Room / Lab">
+                    </div>
+                    <div class="field">
+                        <label>Note</label>
+                        <input type="text" id="slotNote" placeholder="Optional note">
+                    </div>
+                </div>
+            </form>
+            <div class="timetable-slot-actions" style="justify-content:flex-end;margin-top:1rem;">
+                <button class="ui basic red button" type="button" onclick="clearSlot()"><i class="trash alternate outline icon"></i>Clear</button>
+                <button class="ui green button" type="button" onclick="saveSlot()"><i class="check icon"></i>Save</button>
+            </div>
+        </div>
+    </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        const defaultPeriods = [
+            {name: 'Morning Assembly', startTime: '08:45', endTime: '09:05', displayOrder: 1, periodType: 'morning_assembly', isBreak: true},
+            {name: 'Period 1', startTime: '09:05', endTime: '09:45', displayOrder: 2, periodType: 'teaching', isBreak: false},
+            {name: 'Period 2', startTime: '09:45', endTime: '10:25', displayOrder: 3, periodType: 'teaching', isBreak: false},
+            {name: 'Break', startTime: '10:25', endTime: '10:40', displayOrder: 4, periodType: 'break', isBreak: true},
+            {name: 'Period 3', startTime: '10:40', endTime: '11:20', displayOrder: 5, periodType: 'teaching', isBreak: false},
+            {name: 'Period 4', startTime: '11:20', endTime: '12:00', displayOrder: 6, periodType: 'teaching', isBreak: false},
+            {name: 'Afternoon Assembly', startTime: '13:30', endTime: '13:35', displayOrder: 7, periodType: 'afternoon_assembly', isBreak: true}
+        ];
+        let timetableState = null;
+        let timetableMeta = {days: [], standards: [], teachers: []};
+        let currentWarnings = [];
+
+        $(document).ready(function () {
+            $('#standardSelect, #slotSubjectTeacher, #copySourceStandard, #copySourceDay, #teacherTimetableSelect').dropdown();
+            $('.timetable-tabs-wrap .menu .item').tab();
+            $(document).on('click', '.remove-period-row', function () {
+                $(this).closest('.timetable-period-row').remove();
+                renderGrid();
+            });
+            $(document).on('click', '.timetable-slot', function () {
+                openSlotModal($(this).data('day'), $(this).data('period'));
+            });
+            $(document).on('change', '.period-type, .period-name, .period-start, .period-end', function () {
+                renderGrid();
+            });
+            $(document).on('click', '.timetable-warning-item[data-day][data-period]', function () {
+                $('.timetable-tabs-wrap .menu .item[data-tab="builder"]').tab('change tab', 'builder');
+                focusWarningSlot($(this).data('day'), $(this).data('period'));
+            });
+            $(document).on('change', '.working-day-input', function () {
+                renderCopyControls();
+                renderGrid();
+            });
+            loadMeta();
+        });
+
+        function escapeHtml(value) {
+            return $('<div>').text(value || '').html();
+        }
+
+        function csrfToken() {
+            return $("input[name='csrfmiddlewaretoken']").first().val();
+        }
+
+        function loadMeta() {
+            $.get("{% url 'managementAppAPI:get_school_timetable_meta_api' %}", function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load timetable setup.');
+                    return;
+                }
+                timetableMeta = response.data;
+                $('#standardSelect').html('<option value="">Select Class</option>');
+                timetableMeta.standards.forEach(item => {
+                    $('#standardSelect').append('<option value="' + item.ID + '">' + item.Name + '</option>');
+                });
+                $('#standardSelect').dropdown('refresh');
+                renderWorkingDays(timetableMeta.days.slice(0, 5));
+                renderPeriodRows(defaultPeriods);
+                renderCopyControls();
+                renderTeacherOptions();
+            });
+        }
+
+        function renderTeacherOptions() {
+            $('#teacherTimetableSelect').html('<option value="">Select Teacher</option>');
+            (timetableMeta.teachers || []).forEach(item => {
+                $('#teacherTimetableSelect').append('<option value="' + item.ID + '">' + escapeHtml(item.Name) + '</option>');
+            });
+            $('#teacherTimetableSelect').dropdown('refresh');
+        }
+
+        function renderWorkingDays(selectedDays) {
+            $('#workingDays').html('');
+            timetableMeta.days.forEach(day => {
+                const checked = selectedDays.indexOf(day) !== -1 ? 'checked' : '';
+                $('#workingDays').append(
+                    '<div class="ui checkbox">' +
+                    '<input type="checkbox" class="working-day-input" value="' + day + '" ' + checked + '>' +
+                    '<label>' + day.slice(0, 3) + '</label>' +
+                    '</div>'
+                );
+            });
+            $('#workingDays .ui.checkbox').checkbox();
+        }
+
+        function selectedWorkingDays() {
+            let days = [];
+            $('.working-day-input:checked').each(function () {
+                days.push($(this).val());
+            });
+            return days;
+        }
+
+        function renderCopyControls() {
+            const selectedStandard = $('#standardSelect').val() || '';
+            const workingDays = selectedWorkingDays();
+            $('#copySourceStandard').html('<option value="">Select Class</option>');
+            (timetableMeta.standards || []).forEach(item => {
+                if (String(item.ID) !== String(selectedStandard)) {
+                    $('#copySourceStandard').append('<option value="' + item.ID + '">' + escapeHtml(item.Name) + '</option>');
+                }
+            });
+            $('#copySourceStandard').dropdown('refresh');
+
+            $('#copySourceDay').html('');
+            workingDays.forEach(day => {
+                $('#copySourceDay').append('<option value="' + day + '">' + day + '</option>');
+            });
+            $('#copySourceDay').dropdown('refresh');
+
+            $('#copyTargetDays').html('');
+            workingDays.forEach(day => {
+                $('#copyTargetDays').append(
+                    '<div class="ui checkbox">' +
+                    '<input type="checkbox" class="copy-target-day" value="' + day + '">' +
+                    '<label>' + day.slice(0, 3) + '</label>' +
+                    '</div>'
+                );
+            });
+            $('#copyTargetDays .ui.checkbox').checkbox();
+        }
+
+        function renderPeriodRows(periods) {
+            $('#periodRows').html('');
+            const rows = periods && periods.length ? periods : defaultPeriods;
+            rows.forEach((period, index) => addPeriodRow(period, index + 1));
+        }
+
+        function timeFormatter(date) {
+            if (!date) return '';
+            let hours = date.getHours();
+            const meridian = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const hoursText = String(hours).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return hoursText + ':' + minutes + ' ' + meridian;
+        }
+
+        function initPeriodTimeCalendars(scope) {
+            const $scope = scope ? $(scope) : $('#periodRows');
+            $scope.find('.timetable-time-calendar').calendar({
+                type: 'time',
+                ampm: true,
+                formatter: { time: timeFormatter }
+            });
+        }
+
+        function toTwelveHourTime(value) {
+            const raw = String(value || '').trim();
+            const match = raw.match(/^(\d{1,2}):(\d{2})$/);
+            if (!match) return raw;
+            let hour = parseInt(match[1], 10);
+            const minute = match[2];
+            const suffix = hour >= 12 ? 'PM' : 'AM';
+            hour = hour % 12;
+            if (hour === 0) hour = 12;
+            return String(hour).padStart(2, '0') + ':' + minute + ' ' + suffix;
+        }
+
+        function periodTypeOptions(selected) {
+            const types = timetableMeta.periodTypes && timetableMeta.periodTypes.length ? timetableMeta.periodTypes : [
+                {ID: 'teaching', Name: 'Teaching Period'},
+                {ID: 'break', Name: 'Break'},
+                {ID: 'morning_assembly', Name: 'Morning Assembly'},
+                {ID: 'afternoon_assembly', Name: 'Afternoon Assembly'}
+            ];
+            let html = '';
+            types.forEach(item => {
+                html += '<option value="' + item.ID + '"' + (item.ID === selected ? ' selected' : '') + '>' + item.Name + '</option>';
+            });
+            return html;
+        }
+
+        function periodTypeOptionsText(selected) {
+            const types = timetableMeta.periodTypes && timetableMeta.periodTypes.length ? timetableMeta.periodTypes : [];
+            const match = types.find(item => item.ID === selected);
+            if (match) return match.Name;
+            const fallback = {
+                teaching: 'Teaching Period',
+                break: 'Break',
+                morning_assembly: 'Morning Assembly',
+                morning_prayer: 'Morning Assembly',
+                afternoon_assembly: 'Afternoon Assembly',
+                afternoon_prayer: 'Afternoon Assembly'
+            };
+            return fallback[selected] || 'Non teaching period';
+        }
+
+        function periodTypeFromName(name, fallback) {
+            const normalizedName = String(name || '').trim().toLowerCase();
+            if (normalizedName.includes('assembly')) {
+                return normalizedName.includes('afternoon') ? 'afternoon_assembly' : 'morning_assembly';
+            }
+            if (normalizedName.includes('prayer')) {
+                return normalizedName.includes('afternoon') ? 'afternoon_assembly' : 'morning_assembly';
+            }
+            if (normalizedName.includes('break') || normalizedName.includes('lunch') || normalizedName.includes('recess')) {
+                return 'break';
+            }
+            return fallback || 'teaching';
+        }
+
+        function normalizedPeriodType(period) {
+            if (!period) return 'teaching';
+            const rawType = period.periodType || (period.isBreak ? 'break' : 'teaching');
+            if (rawType === 'morning_prayer') return 'morning_assembly';
+            if (rawType === 'afternoon_prayer') return 'afternoon_assembly';
+            if (rawType === 'teaching') {
+                return periodTypeFromName(period.name, rawType);
+            }
+            return rawType;
+        }
+
+        function isTeachingPeriod(period) {
+            return normalizedPeriodType(period) === 'teaching' && !period.isBreak;
+        }
+
+        function addPeriodRow(period, order) {
+            const row = period || {name: '', startTime: '', endTime: '', displayOrder: order || ($('#periodRows .timetable-period-row').length + 1), periodType: 'teaching', isBreak: false};
+            const selectedType = normalizedPeriodType(row);
+            const rowHtml =
+                '<div class="fields timetable-period-row" data-id="' + (row.id || '') + '">' +
+                '<div class="four wide field"><label>Name</label><input type="text" class="period-name" placeholder="Period name" value="' + escapeHtml(row.name || '') + '"></div>' +
+                '<div class="three wide field"><label>Start</label><div class="ui calendar timetable-time-calendar"><div class="ui input left icon"><i class="clock outline icon"></i><input type="text" class="period-start" placeholder="Start time" value="' + escapeHtml(row.startTime || '') + '"></div></div></div>' +
+                '<div class="three wide field"><label>End</label><div class="ui calendar timetable-time-calendar"><div class="ui input left icon"><i class="clock outline icon"></i><input type="text" class="period-end" placeholder="End time" value="' + escapeHtml(row.endTime || '') + '"></div></div></div>' +
+                '<div class="four wide field"><label>Type</label><select class="ui dropdown period-type">' + periodTypeOptions(selectedType) + '</select></div>' +
+                '<div class="two wide field period-action-field"><button class="ui mini circular red icon button remove-period-row" type="button" data-tooltip="Remove period" data-position="top center"><i class="trash alternate outline icon"></i></button></div>' +
+                '</div>';
+            const $row = $(rowHtml);
+            $('#periodRows').append($row);
+            $row.find('.ui.dropdown').dropdown();
+            initPeriodTimeCalendars($row);
+            renderGrid();
+        }
+
+        function collectPeriods() {
+            let periods = [];
+            $('#periodRows .timetable-period-row').each(function (index) {
+                const name = $(this).find('.period-name').val();
+                const periodType = periodTypeFromName(name, $(this).find('.period-type').val() || 'teaching');
+                periods.push({
+                    id: $(this).data('id') || '',
+                    name: name,
+                    startTime: $(this).find('.period-start').val(),
+                    endTime: $(this).find('.period-end').val(),
+                    displayOrder: index + 1,
+                    periodType: periodType,
+                    isBreak: periodType !== 'teaching'
+                });
+            });
+            return periods;
+        }
+
+        function timeToMinutes(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return null;
+            const meridianMatch = raw.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+            if (meridianMatch) {
+                let hour = parseInt(meridianMatch[1], 10);
+                const minute = parseInt(meridianMatch[2], 10);
+                const suffix = meridianMatch[3].toUpperCase();
+                if (suffix === 'PM' && hour < 12) hour += 12;
+                if (suffix === 'AM' && hour === 12) hour = 0;
+                return hour * 60 + minute;
+            }
+            const match = raw.match(/^(\d{1,2}):(\d{2})$/);
+            if (!match) return null;
+            return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+        }
+
+        function validatePeriodOverlapRows(periods) {
+            const timed = [];
+            for (let i = 0; i < periods.length; i += 1) {
+                const period = periods[i];
+                const name = period.name || ('Period ' + (i + 1));
+                const start = timeToMinutes(period.startTime);
+                const end = timeToMinutes(period.endTime);
+                if ((period.startTime || period.endTime) && (start === null || end === null)) {
+                    return name + ' has an invalid time format.';
+                }
+                if ((start === null) !== (end === null)) {
+                    return name + ' must have both start and end time.';
+                }
+                if (start !== null && end !== null) {
+                    if (start >= end) return name + ' end time must be after start time.';
+                    timed.push({name: name, start: start, end: end});
+                }
+            }
+            timed.sort((a, b) => a.start - b.start || a.end - b.end || a.name.localeCompare(b.name));
+            for (let i = 1; i < timed.length; i += 1) {
+                if (timed[i].start < timed[i - 1].end) {
+                    return timed[i].name + ' overlaps with ' + timed[i - 1].name + '.';
+                }
+            }
+            return '';
+        }
+
+        function loadTimetable() {
+            const standard = $('#standardSelect').val();
+            if (!standard) return;
+            $.get("{% url 'managementAppAPI:get_school_timetable_api' %}", {standard: standard}, function (response) {
+                if (!response.success) {
+                    addErrorNotification(response.message || 'Unable to load timetable.');
+                    return;
+                }
+                timetableState = response.data;
+                renderWorkingDays(timetableState.timetable.workingDays);
+                renderCopyControls();
+                renderPeriodRows(timetableState.periods);
+                renderSlotSubjectTeacherOptions();
+                renderGrid();
+                renderWarnings(timetableState.warnings);
+                renderStatus();
+            });
+        }
+
+        function renderStatus() {
+            const status = timetableState && timetableState.timetable ? timetableState.timetable.status : 'draft';
+            $('#timetableStatus').removeClass('published').text(status === 'published' ? 'Published' : 'Draft');
+            if (status === 'published') $('#timetableStatus').addClass('published');
+            $('#unpublishTimetableButton').toggle(status === 'published');
+        }
+
+        function subjectTeacherValue(assignedSubjectID, teacherID) {
+            if (!assignedSubjectID || !teacherID) return '';
+            return String(assignedSubjectID) + '|' + String(teacherID);
+        }
+
+        function selectedSubjectTeacherParts() {
+            const raw = $('#slotSubjectTeacher').val() || '';
+            const parts = raw.split('|');
+            return {
+                assignedSubjectID: parts[0] || '',
+                teacherID: parts[1] || ''
+            };
+        }
+
+        function renderSlotSubjectTeacherOptions(selectedAssignedSubjectID, selectedTeacherID) {
+            const selected = subjectTeacherValue(selectedAssignedSubjectID, selectedTeacherID);
+            $('#slotSubjectTeacher').html('<option value="">Select Subject Teacher</option>');
+            if (timetableState && timetableState.subjectTeachers) {
+                timetableState.subjectTeachers.forEach(item => {
+                    const value = subjectTeacherValue(item.assignedSubjectID, item.teacherID);
+                    $('#slotSubjectTeacher').append('<option value="' + value + '">' + escapeHtml(item.Name) + '</option>');
+                });
+            }
+            $('#slotSubjectTeacher').dropdown('refresh');
+            if (selected) {
+                $('#slotSubjectTeacher').dropdown('set selected', selected);
+            } else {
+                $('#slotSubjectTeacher').dropdown('clear');
+            }
+        }
+
+        function entryFor(day, periodID) {
+            if (!timetableState || !timetableState.entries) return null;
+            return timetableState.entries.find(item => item.dayOfWeek === day && String(item.periodID) === String(periodID));
+        }
+
+        function warningsForSlot(day, periodID) {
+            return (currentWarnings || []).filter(item => item.dayOfWeek === day && String(item.periodID || '') === String(periodID || ''));
+        }
+
+        function renderGrid() {
+            const days = selectedWorkingDays();
+            const periods = collectPeriods();
+            let html = '<thead><tr><th class="timetable-period-head">Period</th>';
+            days.forEach(day => html += '<th>' + day + '</th>');
+            html += '</tr></thead><tbody>';
+            periods.forEach(period => {
+                html += '<tr><th class="timetable-period-head">' + (period.name || 'Period') + '<br><small>' + (period.startTime || '') + ' - ' + (period.endTime || '') + '</small></th>';
+                const nonTeaching = !isTeachingPeriod(period);
+                if (nonTeaching) {
+                    html += '<td class="timetable-break-cell timetable-activity-cell" colspan="' + Math.max(days.length, 1) + '">';
+                    html += '<div class="timetable-activity-row"><div class="timetable-slot-title">' + escapeHtml(period.name || 'Activity') + '</div>';
+                    html += '<div class="timetable-slot-meta">' + escapeHtml(periodTypeOptionsText(normalizedPeriodType(period))) + '</div>';
+                    html += '</div></td>';
+                } else {
+                    days.forEach(day => {
+                        const entry = entryFor(day, period.id);
+                        const slotWarnings = warningsForSlot(day, period.id);
+                        const hasError = slotWarnings.some(item => item.severity === 'error');
+                        const warningClass = hasError ? ' has-error' : (slotWarnings.length ? ' has-warning' : '');
+                        html += '<td><div class="timetable-slot' + warningClass + '" data-day="' + escapeHtml(day) + '" data-period="' + escapeHtml(period.id || '') + '">';
+                        if (entry) {
+                        html += '<div class="timetable-slot-title">' + (entry.subjectName || 'N/A') + '</div>';
+                        html += '<div class="timetable-slot-meta"><i class="user outline icon"></i>' + (entry.teacherName || 'N/A') + '</div>';
+                        if (entry.room) html += '<div class="timetable-slot-meta"><i class="map marker alternate icon"></i>' + entry.room + '</div>';
+                        if (entry.note) html += '<div class="timetable-slot-meta">' + entry.note + '</div>';
+                        } else {
+                        html += '<div class="timetable-slot-title">Free</div><div class="timetable-slot-meta">Click to assign</div>';
+                        }
+                        if (slotWarnings.length) {
+                            html += '<div class="timetable-slot-warning"><i class="exclamation triangle icon"></i>' + slotWarnings.length + ' warning' + (slotWarnings.length > 1 ? 's' : '') + '</div>';
+                            html += '<div class="timetable-slot-warning-message">' + escapeHtml(slotWarnings[0].message) + '</div>';
+                            if (slotWarnings.length > 1) {
+                                html += '<div class="timetable-slot-meta">+' + (slotWarnings.length - 1) + ' more in warning list</div>';
+                            }
+                        }
+                        html += '</div></td>';
+                    });
+                }
+                html += '</tr>';
+            });
+            html += '</tbody>';
+            $('#timetableGrid').html(html);
+        }
+
+        function saveSettings() {
+            const standard = $('#standardSelect').val();
+            if (!standard) {
+                addErrorNotification('Please select a class.');
+                return;
+            }
+            let data = new FormData();
+            const periods = collectPeriods();
+            const overlapMessage = validatePeriodOverlapRows(periods);
+            if (overlapMessage) {
+                addErrorNotification(overlapMessage);
+                return;
+            }
+            data.append('standard', standard);
+            data.append('workingDays', JSON.stringify(selectedWorkingDays()));
+            data.append('periods', JSON.stringify(periods));
+            data.append('csrfmiddlewaretoken', csrfToken());
+            $.ajax({
+                url: "{% url 'managementAppAPI:save_school_timetable_settings_api' %}",
+                type: 'POST',
+                data: data,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, 'green');
+                        if (response.data && response.data.warnings) renderWarnings(response.data.warnings);
+                        loadTimetable();
+                    } else {
+                        addErrorNotification(response.message);
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to save timetable setup.');
+                }
+            });
+        }
+
+        function copyClassTimetable() {
+            const targetStandard = $('#standardSelect').val();
+            const sourceStandard = $('#copySourceStandard').val();
+            if (!targetStandard || !sourceStandard) {
+                addErrorNotification('Select the current class and source class.');
+                return;
+            }
+            let data = new FormData();
+            data.append('targetStandard', targetStandard);
+            data.append('sourceStandard', sourceStandard);
+            data.append('csrfmiddlewaretoken', csrfToken());
+            $.ajax({
+                url: "{% url 'managementAppAPI:copy_school_timetable_from_class_api' %}",
+                type: 'POST',
+                data: data,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        if (response.data && response.data.warnings) renderWarnings(response.data.warnings);
+                        loadTimetable();
+                    } else {
+                        addErrorNotification(response.message);
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to copy class timetable.');
+                }
+            });
+        }
+
+        function copyDayTimetable() {
+            const standard = $('#standardSelect').val();
+            const sourceDay = $('#copySourceDay').val();
+            const targetDays = [];
+            $('.copy-target-day:checked').each(function () {
+                if ($(this).val() !== sourceDay) targetDays.push($(this).val());
+            });
+            if (!standard || !sourceDay || targetDays.length === 0) {
+                addErrorNotification('Select a source day and at least one different target day.');
+                return;
+            }
+            let data = new FormData();
+            data.append('standard', standard);
+            data.append('sourceDay', sourceDay);
+            data.append('targetDays', JSON.stringify(targetDays));
+            data.append('csrfmiddlewaretoken', csrfToken());
+            $.ajax({
+                url: "{% url 'managementAppAPI:copy_school_timetable_day_api' %}",
+                type: 'POST',
+                data: data,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, 'green');
+                        if (response.data && response.data.warnings) renderWarnings(response.data.warnings);
+                        loadTimetable();
+                    } else {
+                        addErrorNotification(response.message);
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to copy day timetable.');
+                }
+            });
+        }
+
+        function openSlotModal(day, periodID) {
+            if (!periodID) {
+                addErrorNotification('Save setup before assigning this slot.');
+                return;
+            }
+            const period = collectPeriods().find(item => String(item.id) === String(periodID));
+            if (period && !isTeachingPeriod(period)) return;
+            const entry = entryFor(day, periodID);
+            $('#slotDay').val(day);
+            $('#slotPeriod').val(periodID);
+            renderSlotSubjectTeacherOptions(entry ? entry.assignedSubjectID : '', entry ? entry.teacherID : '');
+            $('#slotRoom').val(entry ? entry.room : '');
+            $('#slotNote').val(entry ? entry.note : '');
+            $('#slotModal').modal('show');
+        }
+
+        function saveSlot(clearOnly) {
+            const standard = $('#standardSelect').val();
+            const subjectTeacher = selectedSubjectTeacherParts();
+            let data = new FormData();
+            data.append('standard', standard);
+            data.append('dayOfWeek', $('#slotDay').val());
+            data.append('periodID', $('#slotPeriod').val());
+            data.append('assignedSubjectID', clearOnly ? '' : subjectTeacher.assignedSubjectID);
+            data.append('teacherID', clearOnly ? '' : subjectTeacher.teacherID);
+            data.append('room', clearOnly ? '' : $('#slotRoom').val());
+            data.append('note', clearOnly ? '' : $('#slotNote').val());
+            data.append('csrfmiddlewaretoken', csrfToken());
+            $.ajax({
+                url: "{% url 'managementAppAPI:save_school_timetable_entry_api' %}",
+                type: 'POST',
+                data: data,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, 'green');
+                        $('#slotModal').modal('hide');
+                        loadTimetable();
+                    } else {
+                        addErrorNotification(response.message);
+                        if (response.data && response.data.warnings) renderWarnings(response.data.warnings);
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to save timetable slot.');
+                }
+            });
+        }
+
+        function clearSlot() {
+            saveSlot(true);
+        }
+
+        function validateTimetable() {
+            const standard = $('#standardSelect').val();
+            if (!standard) {
+                addErrorNotification('Please select a class.');
+                return;
+            }
+            $.get("{% url 'managementAppAPI:validate_school_timetable_api' %}", {standard: standard}, function (response) {
+                if (response.success) {
+                    renderWarnings(response.data.warnings);
+                    renderGrid();
+                    addSuccessNotification(response.message, 'green');
+                } else {
+                    addErrorNotification(response.message);
+                }
+            });
+        }
+
+        function publishTimetable() {
+            const standard = $('#standardSelect').val();
+            if (!standard) {
+                addErrorNotification('Please select a class.');
+                return;
+            }
+            let data = new FormData();
+            data.append('standard', standard);
+            data.append('csrfmiddlewaretoken', csrfToken());
+            $.ajax({
+                url: "{% url 'managementAppAPI:publish_school_timetable_api' %}",
+                type: 'POST',
+                data: data,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, 'green');
+                        if (response.data && response.data.warnings) renderWarnings(response.data.warnings);
+                        loadTimetable();
+                    } else {
+                        addErrorNotification(response.message);
+                        if (response.data && response.data.warnings) renderWarnings(response.data.warnings);
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to publish timetable.');
+                }
+            });
+        }
+
+        function unpublishTimetable() {
+            const standard = $('#standardSelect').val();
+            if (!standard) {
+                addErrorNotification('Please select a class.');
+                return;
+            }
+            let data = new FormData();
+            data.append('standard', standard);
+            data.append('csrfmiddlewaretoken', csrfToken());
+            $.ajax({
+                url: "{% url 'managementAppAPI:unpublish_school_timetable_api' %}",
+                type: 'POST',
+                data: data,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    if (response.success) {
+                        addSuccessNotification(response.message, response.color || 'green');
+                        if (response.data && response.data.warnings) renderWarnings(response.data.warnings);
+                        loadTimetable();
+                    } else {
+                        addErrorNotification(response.message);
+                    }
+                },
+                error: function () {
+                    addErrorNotification('Unable to revert timetable to draft.');
+                }
+            });
+        }
+
+        function exportPdf() {
+            if (!timetableState || !timetableState.timetable || !timetableState.timetable.id) {
+                addErrorNotification('Please load a timetable first.');
+                return;
+            }
+            window.location.href = "{% url 'managementApp:school_timetable_pdf' 0 %}".replace('/0/', '/' + timetableState.timetable.id + '/');
+        }
+
+        function loadTeacherTimetable() {
+            const teacher = $('#teacherTimetableSelect').val();
+            if (!teacher) {
+                $('#teacherPdfButton').hide();
+                $('#teacherTimetableSummary').html('');
+                $('#teacherTimetableBoard').html('<div class="teacher-empty-state"><i class="info circle icon"></i><div>Select a teacher to view timetable.</div></div>');
+                return;
+            }
+            $('#teacherPdfButton').show();
+            $('#teacherTimetableSummary').html('<span class="teacher-summary-chip"><i class="spinner loading icon"></i>Loading</span>');
+            $('#teacherTimetableBoard').html('<div class="teacher-empty-state"><i class="spinner loading icon"></i><div>Loading teacher timetable...</div></div>');
+            $.get("{% url 'managementAppAPI:get_teacher_school_timetable_api' %}", {teacher: teacher}, function (response) {
+                if (!response.success) {
+                    $('#teacherTimetableSummary').html('');
+                    $('#teacherTimetableBoard').html('<div class="teacher-empty-state"><i class="exclamation triangle icon"></i><div>Unable to load teacher timetable.</div></div>');
+                    addErrorNotification(response.message || 'Unable to load teacher timetable.');
+                    return;
+                }
+                const rows = response.data && response.data.rows ? response.data.rows : [];
+                const apiPeriods = response.data && response.data.periods ? response.data.periods : [];
+                if (!rows.length && !apiPeriods.length) {
+                    $('#teacherTimetableSummary').html('');
+                    $('#teacherTimetableBoard').html('<div class="teacher-empty-state"><i class="calendar times outline icon"></i><div>No timetable slots found for this teacher.</div></div>');
+                    return;
+                }
+                const dayOrder = timetableMeta.days && timetableMeta.days.length ? timetableMeta.days : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const periodMap = {};
+                const classes = {};
+                const subjects = {};
+                apiPeriods.forEach(period => {
+                    const periodKey = period.periodKey || [
+                        period.periodStart || '',
+                        period.periodEnd || '',
+                        period.periodOrder || '',
+                        period.period || ''
+                    ].join('|');
+                    periodMap[periodKey] = {
+                        key: periodKey,
+                        label: period.period || 'Period',
+                        start: period.periodStart || '',
+                        end: period.periodEnd || '',
+                        order: parseInt(period.periodOrder || '0', 10) || 0,
+                        cells: {}
+                    };
+                });
+                rows.forEach(row => {
+                    if (row.className) classes[row.className] = true;
+                    if (row.subjectName) subjects[row.subjectName] = true;
+                    const periodKey = row.periodKey || [
+                        row.periodStart || '',
+                        row.periodEnd || '',
+                        row.periodOrder || '',
+                        row.period || ''
+                    ].join('|');
+                    if (!periodMap[periodKey]) {
+                        periodMap[periodKey] = {
+                            key: periodKey,
+                            label: row.period || 'Period',
+                            start: row.periodStart || '',
+                            end: row.periodEnd || '',
+                            order: parseInt(row.periodOrder || '0', 10) || 0,
+                            cells: {}
+                        };
+                    }
+                    if (!periodMap[periodKey].cells[row.dayOfWeek]) periodMap[periodKey].cells[row.dayOfWeek] = [];
+                    periodMap[periodKey].cells[row.dayOfWeek].push(row);
+                });
+                const periods = Object.values(periodMap).sort((a, b) => {
+                    const startCompare = String(a.start).localeCompare(String(b.start));
+                    if (startCompare !== 0) return startCompare;
+                    if (a.order !== b.order) return a.order - b.order;
+                    return a.label.localeCompare(b.label);
+                });
+                $('#teacherTimetableSummary').html(
+                    '<span class="teacher-summary-chip"><i class="calendar check outline icon"></i><strong>' + rows.length + '</strong> slots</span>' +
+                    '<span class="teacher-summary-chip"><i class="building outline icon"></i><strong>' + Object.keys(classes).length + '</strong> classes</span>' +
+                    '<span class="teacher-summary-chip"><i class="book icon"></i><strong>' + Object.keys(subjects).length + '</strong> subjects</span>'
+                );
+                let html = '<table class="teacher-week-grid"><thead><tr><th class="teacher-period-head">Period</th>';
+                dayOrder.forEach(day => {
+                    html += '<th>' + escapeHtml(day) + '</th>';
+                });
+                html += '</tr></thead><tbody>';
+                periods.forEach(period => {
+                    const timeLabel = period.start && period.end ? toTwelveHourTime(period.start) + ' - ' + toTwelveHourTime(period.end) : '';
+                    html += '<tr><th class="teacher-period-head"><div class="teacher-period-label">' + escapeHtml(period.label.replace(' (' + timeLabel + ')', '')) + '</div>';
+                    if (timeLabel) html += '<div class="teacher-period-time">' + escapeHtml(timeLabel) + '</div>';
+                    html += '</th>';
+                    dayOrder.forEach(day => {
+                        const cellRows = period.cells[day] || [];
+                        html += '<td><div class="teacher-week-cell">';
+                        if (!cellRows.length) {
+                            html += '<div class="teacher-week-empty">Free</div>';
+                        }
+                        cellRows.forEach(row => {
+                            const status = (row.status || 'draft').toLowerCase();
+                            html += '<div class="teacher-slot-card">';
+                            html += '<div class="teacher-slot-subject">' + escapeHtml(row.subjectName || 'N/A') + '</div>';
+                            html += '<div class="teacher-slot-class"><i class="graduation cap icon"></i>' + escapeHtml(row.className || 'N/A') + '</div>';
+                            html += '<div class="teacher-slot-meta"><i class="map marker alternate icon"></i>' + escapeHtml(row.room || 'No room assigned') + '</div>';
+                            html += '<div class="teacher-slot-meta"><span class="teacher-status-pill ' + (status === 'published' ? 'published' : '') + '">' + escapeHtml(row.status || 'draft') + '</span></div>';
+                            html += '</div>';
+                        });
+                        html += '</div></td>';
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+                $('#teacherTimetableBoard').html(html);
+            });
+        }
+
+        function printTeacherTimetable() {
+            if (!$('#teacherTimetableSelect').val()) {
+                addErrorNotification('Please select a teacher first.');
+                return;
+            }
+            if (!$('#teacherTimetableBoard .teacher-week-grid').length) {
+                addErrorNotification('Please load a teacher timetable before printing.');
+                return;
+            }
+            const teacherName = $('#teacherTimetableSelect option:selected').text() || 'Teacher';
+            $('#teacherPrintTitle').text(teacherName + ' - Weekly Timetable');
+            $('body').addClass('timetable-teacher-printing');
+            window.print();
+        }
+
+        function downloadTeacherTimetablePdf() {
+            const teacher = $('#teacherTimetableSelect').val();
+            if (!teacher) {
+                addErrorNotification('Please select a teacher first.');
+                return;
+            }
+            window.location.href = "{% url 'managementApp:teacher_school_timetable_pdf' 0 %}".replace('/0/', '/' + teacher + '/');
+        }
+
+        window.addEventListener('afterprint', function () {
+            $('body').removeClass('timetable-teacher-printing');
+        });
+
+        function renderWarnings(warnings) {
+            currentWarnings = warnings || [];
+            $('#warningTabCount').text(currentWarnings.length ? '(' + currentWarnings.length + ')' : '');
+            renderGrid();
+            $('#warningList').html('');
+            if (!warnings || warnings.length === 0) {
+                $('#warningList').html('<div class="timetable-warning-item"><i class="green check circle icon"></i><div>No conflicts found.</div></div>');
+                return;
+            }
+            warnings.forEach(item => {
+                const icon = item.severity === 'error' ? 'red times circle icon' : 'orange exclamation triangle icon';
+                const attrs = item.dayOfWeek && item.periodID ? ' data-day="' + escapeHtml(item.dayOfWeek) + '" data-period="' + escapeHtml(item.periodID) + '"' : '';
+                $('#warningList').append('<div class="timetable-warning-item"' + attrs + '><i class="' + icon + '"></i><div>' + escapeHtml(item.message) + '</div></div>');
+            });
+        }
+
+        function focusWarningSlot(day, periodID) {
+            const $slot = $('.timetable-slot[data-day="' + day + '"][data-period="' + periodID + '"]');
+            if (!$slot.length) return;
+            const container = $('.timetable-grid-wrap').get(0);
+            const cell = $slot.get(0);
+            if (container && cell) {
+                container.scrollLeft = Math.max(0, cell.offsetLeft - 180);
+                container.scrollTop = Math.max(0, cell.offsetTop - 80);
+            }
+            $slot.transition('pulse');
+        }
+    </script>
+{% endblock %}

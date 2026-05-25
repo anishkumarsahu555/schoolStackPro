@@ -3,7 +3,9 @@ from decimal import Decimal
 from datetime import date, timedelta, datetime
 
 from django.db.models import Count, Q, Sum
+from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
+from django.template.loader import render_to_string
 
 from financeApp.models import ExpenseCategory, ExpenseVoucher, FeeHead, FinanceAccount, FinanceApprovalRule, FinanceConfiguration, FinanceEntry, FinanceParty, FinancePeriod, PaymentReceipt, PayrollRun, StudentCharge
 from financeApp.services import bootstrap_expense_categories, bootstrap_school_finance, get_finance_configuration
@@ -132,6 +134,210 @@ def manage_class(request):
     context = {
     }
     return render(request, 'managementApp/class.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_school_timetable(request):
+    logger.info(f'School timetable opened by user={request.user.id}')
+    return render(request, 'managementApp/timetable/manage_timetable.html')
+
+
+def _normalized_timetable_period_type(period):
+    period_type = getattr(period, 'periodType', None) or ('break' if getattr(period, 'isBreak', False) else 'teaching')
+    if period_type == 'morning_prayer':
+        return 'morning_assembly'
+    if period_type == 'afternoon_prayer':
+        return 'afternoon_assembly'
+    if period_type != 'teaching':
+        return period_type
+    normalized_name = (getattr(period, 'name', '') or '').strip().lower()
+    if 'assembly' in normalized_name:
+        return 'afternoon_assembly' if 'afternoon' in normalized_name else 'morning_assembly'
+    if 'prayer' in normalized_name:
+        return 'afternoon_assembly' if 'afternoon' in normalized_name else 'morning_assembly'
+    if 'break' in normalized_name or 'lunch' in normalized_name or 'recess' in normalized_name:
+        return 'break'
+    return period_type
+
+
+TIMETABLE_PRINT_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+
+def _timetable_period_key(period):
+    if not period:
+        return ''
+    start = period.startTime.strftime('%H:%M') if period.startTime else ''
+    end = period.endTime.strftime('%H:%M') if period.endTime else ''
+    if start or end:
+        return f'{start}|{end}'
+    return f'order|{period.displayOrder or 0}|{period.name or "Period"}'
+
+
+def _is_timetable_teaching_period(period):
+    return bool(period) and _normalized_timetable_period_type(period) == 'teaching' and not period.isBreak
+
+
+def _period_time_label(period):
+    if period and period.startTime and period.endTime:
+        return f'{period.startTime.strftime("%I:%M %p")} - {period.endTime.strftime("%I:%M %p")}'
+    return ''
+
+
+def _build_timetable_print_context(timetable):
+    periods = list(SchoolTimetablePeriod.objects.filter(
+        timetableID=timetable,
+        isDeleted=False,
+    ).order_by('displayOrder', 'id'))
+    for period in periods:
+        period.periodType = _normalized_timetable_period_type(period)
+        period.isBreak = period.periodType != 'teaching'
+    entries = SchoolTimetableEntry.objects.select_related(
+        'assignedSubjectID__subjectID',
+        'teacherID',
+        'periodID',
+    ).filter(
+        timetableID=timetable,
+        isDeleted=False,
+    )
+    entry_map = {
+        f'{entry.dayOfWeek}_{entry.periodID_id}': entry
+        for entry in entries
+    }
+    rows = []
+    for period in periods:
+        row = {'period': period, 'cells': []}
+        for day in timetable.workingDays or []:
+            row['cells'].append(entry_map.get(f'{day}_{period.id}'))
+        rows.append(row)
+    school = SchoolDetail.objects.filter(pk=timetable.schoolID_id, isDeleted=False).first()
+    return {
+        'school': school,
+        'timetable': timetable,
+        'standard': timetable.standardID,
+        'periods': periods,
+        'days': timetable.workingDays or [],
+        'rows': rows,
+        'generated_on': datetime.now(),
+    }
+
+
+def _build_teacher_timetable_print_context(request, teacher):
+    current_session_id = request.session.get('current_session', {}).get('Id')
+    entries = list(SchoolTimetableEntry.objects.select_related(
+        'timetableID__standardID',
+        'periodID',
+        'assignedSubjectID__subjectID',
+        'teacherID',
+    ).filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        teacherID=teacher,
+        timetableID__isDeleted=False,
+    ))
+    entries = [entry for entry in entries if _is_timetable_teaching_period(entry.periodID)]
+
+    periods = list(SchoolTimetablePeriod.objects.select_related('timetableID').filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        timetableID__isDeleted=False,
+    ).order_by('startTime', 'displayOrder', 'name', 'id'))
+    period_map = {}
+    for period in periods:
+        if not _is_timetable_teaching_period(period):
+            continue
+        period_key = _timetable_period_key(period)
+        if period_key not in period_map:
+            period_map[period_key] = {
+                'key': period_key,
+                'name': period.name or 'Period',
+                'time': _period_time_label(period),
+                'start': period.startTime,
+                'order': period.displayOrder or 0,
+                'cells': {day: [] for day in TIMETABLE_PRINT_DAYS},
+            }
+
+    for entry in entries:
+        period_key = _timetable_period_key(entry.periodID)
+        if period_key not in period_map:
+            period_map[period_key] = {
+                'key': period_key,
+                'name': entry.periodID.name if entry.periodID else 'Period',
+                'time': _period_time_label(entry.periodID),
+                'start': entry.periodID.startTime if entry.periodID else None,
+                'order': entry.periodID.displayOrder if entry.periodID else 0,
+                'cells': {day: [] for day in TIMETABLE_PRINT_DAYS},
+            }
+        period_map[period_key]['cells'].setdefault(entry.dayOfWeek, []).append(entry)
+
+    rows = sorted(
+        period_map.values(),
+        key=lambda item: (item['start'] or datetime.min.time(), item['order'], item['name'])
+    )
+    for row in rows:
+        row['cells_list'] = [row['cells'].get(day, []) for day in TIMETABLE_PRINT_DAYS]
+    school = SchoolDetail.objects.filter(schoolsession__id=current_session_id, schoolsession__isDeleted=False, isDeleted=False).distinct().first()
+    return {
+        'school': school,
+        'teacher': teacher,
+        'days': TIMETABLE_PRINT_DAYS,
+        'rows': rows,
+        'generated_on': datetime.now(),
+    }
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def school_timetable_pdf(request, id=None):
+    timetable = get_object_or_404(
+        SchoolTimetable.objects.select_related('standardID', 'schoolID'),
+        pk=id,
+        isDeleted=False,
+        sessionID_id=request.session.get('current_session', {}).get('Id'),
+    )
+    context = _build_timetable_print_context(timetable)
+    html = render_to_string('managementApp/timetable/timetable_pdf.html', context)
+    response = HttpResponse(content_type='application/pdf')
+    class_label = (timetable.standardID.name or 'class').replace(' ', '-')
+    response['Content-Disposition'] = f'attachment; filename="{class_label}-timetable.pdf"'
+    try:
+        from xhtml2pdf import pisa
+        pisa_status = pisa.CreatePDF(html, dest=response)
+        if pisa_status.err:
+            logger.error(f'Timetable PDF render failed timetable={timetable.id}')
+            return HttpResponse(html)
+    except Exception as exc:
+        logger.error(f'Timetable PDF export error timetable={timetable.id}: {exc}')
+        return HttpResponse(html)
+    logger.info(f'Timetable PDF exported timetable={timetable.id} user={request.user.id}')
+    return response
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def teacher_school_timetable_pdf(request, id=None):
+    teacher = get_object_or_404(
+        TeacherDetail,
+        pk=id,
+        isDeleted=False,
+        sessionID_id=request.session.get('current_session', {}).get('Id'),
+    )
+    context = _build_teacher_timetable_print_context(request, teacher)
+    html = render_to_string('managementApp/timetable/teacher_timetable_pdf.html', context)
+    response = HttpResponse(content_type='application/pdf')
+    teacher_label = (teacher.name or 'teacher').replace(' ', '-')
+    response['Content-Disposition'] = f'attachment; filename="{teacher_label}-weekly-timetable.pdf"'
+    try:
+        from xhtml2pdf import pisa
+        pisa_status = pisa.CreatePDF(html, dest=response)
+        if pisa_status.err:
+            logger.error(f'Teacher timetable PDF render failed teacher={teacher.id}')
+            return HttpResponse(html)
+    except Exception as exc:
+        logger.error(f'Teacher timetable PDF export error teacher={teacher.id}: {exc}')
+        return HttpResponse(html)
+    logger.info(f'Teacher timetable PDF exported teacher={teacher.id} user={request.user.id}')
+    return response
 
 
 @login_required
