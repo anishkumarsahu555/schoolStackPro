@@ -1806,6 +1806,890 @@ def get_subjects_to_class_assign_list_with_given_class_api(request):
          'color': 'success'}, safe=False)
 
 
+TIMETABLE_DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+TIMETABLE_PERIOD_TYPES = {
+    'teaching': 'Teaching Period',
+    'break': 'Break',
+    'morning_assembly': 'Morning Assembly',
+    'afternoon_assembly': 'Afternoon Assembly',
+}
+
+
+def _safe_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_time_value(value):
+    raw = (value or '').strip()
+    if not raw:
+        return None
+    for fmt in ('%H:%M', '%I:%M %p'):
+        try:
+            return datetime.strptime(raw, fmt).time()
+        except ValueError:
+            continue
+    return None
+
+
+def _validate_timetable_period_rows(period_rows):
+    parsed_rows = []
+    for index, row in enumerate(period_rows, start=1):
+        name = (row.get('name') or f'Period {index}').strip()
+        start_time = _parse_time_value(row.get('startTime'))
+        end_time = _parse_time_value(row.get('endTime'))
+        if bool(start_time) != bool(end_time):
+            raise ValidationError(f'{name} must have both start and end time.')
+        if start_time and end_time:
+            if start_time >= end_time:
+                raise ValidationError(f'{name} end time must be after start time.')
+            parsed_rows.append({
+                'name': name,
+                'start': start_time,
+                'end': end_time,
+            })
+
+    parsed_rows.sort(key=lambda item: (item['start'], item['end'], item['name']))
+    for previous, current in zip(parsed_rows, parsed_rows[1:]):
+        if current['start'] < previous['end']:
+            raise ValidationError(
+                f'{current["name"]} overlaps with {previous["name"]} '
+                f'({previous["start"].strftime("%I:%M %p")} - {previous["end"].strftime("%I:%M %p")}).'
+            )
+
+
+def _class_label(standard):
+    if not standard:
+        return 'N/A'
+    return f'{standard.name} - {standard.section}' if standard.section else (standard.name or 'N/A')
+
+
+def _timetable_period_label(period):
+    if not period:
+        return 'N/A'
+    time_label = ''
+    if period.startTime and period.endTime:
+        time_label = f' ({period.startTime.strftime("%I:%M %p")} - {period.endTime.strftime("%I:%M %p")})'
+    return f'{period.name or "Period"}{time_label}'
+
+
+def _timetable_period_key(period):
+    if not period:
+        return ''
+    start = period.startTime.strftime('%H:%M') if period.startTime else ''
+    end = period.endTime.strftime('%H:%M') if period.endTime else ''
+    if start or end:
+        return f'{start}|{end}'
+    return f'order|{period.displayOrder or 0}|{period.name or "Period"}'
+
+
+def _period_type_from_name(name, fallback='teaching'):
+    normalized_name = (name or '').strip().lower()
+    if 'assembly' in normalized_name:
+        return 'afternoon_assembly' if 'afternoon' in normalized_name else 'morning_assembly'
+    if 'prayer' in normalized_name:
+        return 'afternoon_assembly' if 'afternoon' in normalized_name else 'morning_assembly'
+    if 'break' in normalized_name or 'lunch' in normalized_name or 'recess' in normalized_name:
+        return 'break'
+    return fallback
+
+
+def _normalized_period_type(period):
+    if not period:
+        return 'teaching'
+    period_type = getattr(period, 'periodType', None) or ('break' if getattr(period, 'isBreak', False) else 'teaching')
+    if period_type == 'morning_prayer':
+        return 'morning_assembly'
+    if period_type == 'afternoon_prayer':
+        return 'afternoon_assembly'
+    if period_type == 'teaching':
+        return _period_type_from_name(getattr(period, 'name', ''), fallback=period_type)
+    return period_type
+
+
+def _is_teaching_period(period):
+    if not period:
+        return False
+    return _normalized_period_type(period) == 'teaching' and not period.isBreak
+
+
+def _timetable_slot_signature(entry):
+    if not entry or not entry.periodID:
+        return None
+    period = entry.periodID
+    if period.startTime and period.endTime:
+        period_key = (period.startTime, period.endTime)
+    else:
+        period_key = ('order', period.displayOrder)
+    return (entry.dayOfWeek, period_key)
+
+
+def _serialize_timetable_entry(entry):
+    subject_name = ''
+    if entry.assignedSubjectID and entry.assignedSubjectID.subjectID:
+        subject_name = entry.assignedSubjectID.subjectID.name or ''
+    teacher_name = entry.teacherID.name if entry.teacherID else ''
+    return {
+        'id': entry.id,
+        'dayOfWeek': entry.dayOfWeek,
+        'periodID': entry.periodID_id,
+        'assignedSubjectID': entry.assignedSubjectID_id,
+        'teacherID': entry.teacherID_id,
+        'room': entry.room or '',
+        'note': entry.note or '',
+        'subjectName': subject_name,
+        'teacherName': teacher_name,
+    }
+
+
+def _day_sort_index(day):
+    try:
+        return TIMETABLE_DAY_ORDER.index(day)
+    except ValueError:
+        return len(TIMETABLE_DAY_ORDER)
+
+
+def _warning_slot_payload(*, entry=None, day=None, period=None):
+    if entry:
+        day = entry.dayOfWeek
+        period = entry.periodID
+    return {
+        'dayOfWeek': day or '',
+        'periodID': period.id if period else None,
+    }
+
+
+def _get_or_create_school_timetable(request, standard_id):
+    current_session_id = _current_session_id(request)
+    current_school_id = _current_school_id(request)
+    standard = Standard.objects.filter(
+        pk=standard_id,
+        isDeleted=False,
+        sessionID_id=current_session_id,
+    ).first()
+    if not standard:
+        raise ValidationError('Please select a valid class.')
+
+    timetable = SchoolTimetable.objects.filter(
+        standardID_id=standard_id,
+        sessionID_id=current_session_id,
+        isDeleted=False,
+    ).order_by('-lastUpdatedOn', '-id').first()
+    if not timetable:
+        timetable = SchoolTimetable(
+            standardID_id=standard_id,
+            schoolID_id=current_school_id,
+            sessionID_id=current_session_id,
+            name=f'{_class_label(standard)} Timetable',
+            workingDays=TIMETABLE_DAY_ORDER[:5],
+        )
+        pre_save_with_user.send(sender=SchoolTimetable, instance=timetable, user=request.user.pk)
+        timetable.save()
+        logger.info(f'Timetable created session={current_session_id} standard={standard_id} user={request.user.id}')
+    return timetable
+
+
+def _mark_timetable_draft(timetable, request):
+    if timetable.status != 'draft':
+        timetable.status = 'draft'
+        timetable.publishedOn = None
+        timetable.publishedByUserID = None
+        pre_save_with_user.send(sender=SchoolTimetable, instance=timetable, user=request.user.pk)
+        timetable.save()
+        logger.info(f'Timetable moved to draft timetable={timetable.id} user={request.user.id}')
+
+
+def _build_timetable_warnings(timetable):
+    warnings = []
+    if not timetable.workingDays:
+        warnings.append({
+            'severity': 'error',
+            'entryID': None,
+            'message': 'At least one working day is required before publishing.',
+        })
+    entries = list(SchoolTimetableEntry.objects.select_related(
+        'periodID',
+        'timetableID__standardID',
+        'assignedSubjectID__subjectID',
+        'assignedSubjectID__standardID',
+        'teacherID',
+    ).filter(
+        sessionID_id=timetable.sessionID_id,
+        isDeleted=False,
+        timetableID__isDeleted=False,
+    ))
+    active_entries = [entry for entry in entries if _is_teaching_period(entry.periodID)]
+
+    for entry in active_entries:
+        entry_slot = _timetable_slot_signature(entry)
+        same_teacher = [
+            item for item in active_entries
+            if item.id != entry.id
+            and item.teacherID_id
+            and item.teacherID_id == entry.teacherID_id
+            and _timetable_slot_signature(item) == entry_slot
+        ]
+        if same_teacher:
+            other = same_teacher[0]
+            warnings.append({
+                'severity': 'error',
+                'entryID': entry.id,
+                **_warning_slot_payload(entry=entry),
+                'message': (
+                    f'{entry.teacherID.name if entry.teacherID else "Teacher"} is already assigned to '
+                    f'{_class_label(other.timetableID.standardID)} on {entry.dayOfWeek}, '
+                    f'{_timetable_period_label(entry.periodID)}.'
+                ),
+            })
+
+        if entry.room:
+            same_room = [
+                item for item in active_entries
+                if item.id != entry.id
+                and item.room
+                and item.room.strip().lower() == entry.room.strip().lower()
+                and _timetable_slot_signature(item) == entry_slot
+            ]
+            if same_room:
+                other = same_room[0]
+                warnings.append({
+                    'severity': 'error',
+                    'entryID': entry.id,
+                    **_warning_slot_payload(entry=entry),
+                    'message': (
+                        f'Room {entry.room} is already used by {_class_label(other.timetableID.standardID)} '
+                        f'on {entry.dayOfWeek}, {_timetable_period_label(entry.periodID)}.'
+                    ),
+                })
+
+        if entry.assignedSubjectID_id and entry.teacherID_id:
+            teacher_subject_exists = AssignSubjectsToTeacher.objects.filter(
+                assignedSubjectID_id=entry.assignedSubjectID_id,
+                teacherID_id=entry.teacherID_id,
+                sessionID_id=timetable.sessionID_id,
+                isDeleted=False,
+            ).exists()
+            if not teacher_subject_exists:
+                warnings.append({
+                    'severity': 'warning',
+                    'entryID': entry.id,
+                    **_warning_slot_payload(entry=entry),
+                    'message': (
+                        f'{entry.teacherID.name if entry.teacherID else "Teacher"} is not mapped to '
+                        f'{entry.assignedSubjectID.subjectID.name if entry.assignedSubjectID and entry.assignedSubjectID.subjectID else "this subject"} '
+                        f'for {_class_label(entry.timetableID.standardID)}.'
+                    ),
+                })
+
+    own_entries = {
+        (entry.dayOfWeek, entry.periodID_id)
+        for entry in active_entries
+        if entry.timetableID_id == timetable.id and entry.assignedSubjectID_id
+    }
+    active_periods = list(SchoolTimetablePeriod.objects.filter(
+        timetableID=timetable,
+        isDeleted=False,
+    ).order_by('displayOrder', 'id'))
+    active_periods = [period for period in active_periods if _is_teaching_period(period)]
+    if not active_periods:
+        warnings.append({
+            'severity': 'error',
+            'entryID': None,
+            'message': 'At least one teaching period is required before publishing.',
+        })
+    for day in timetable.workingDays or []:
+        for period in active_periods:
+            if (day, period.id) not in own_entries:
+                warnings.append({
+                    'severity': 'warning',
+                    'entryID': None,
+                    **_warning_slot_payload(day=day, period=period),
+                    'message': f'{day}, {_timetable_period_label(period)} is empty.',
+                })
+
+    seen = set()
+    unique_warnings = []
+    for item in warnings:
+        key = (item['severity'], item['message'])
+        if key not in seen:
+            unique_warnings.append(item)
+            seen.add(key)
+    return unique_warnings
+
+
+@login_required
+def get_school_timetable_meta_api(request):
+    current_session_id = _current_session_id(request)
+    standards = Standard.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+    ).order_by('name', 'section').values('id', 'name', 'section')
+    teachers = TeacherDetail.objects.filter(
+        isDeleted=False,
+        isActive='Yes',
+        sessionID_id=current_session_id,
+    ).order_by('name').values('id', 'name', 'employeeCode')
+    data = {
+        'days': TIMETABLE_DAY_ORDER,
+        'periodTypes': [
+            {'ID': key, 'Name': value}
+            for key, value in TIMETABLE_PERIOD_TYPES.items()
+        ],
+        'standards': [
+            {'ID': row['id'], 'Name': f"{row['name']} - {row['section']}" if row['section'] else row['name']}
+            for row in standards
+        ],
+        'teachers': [
+            {'ID': row['id'], 'Name': f"{row.get('name') or 'N/A'} - {row.get('employeeCode') or 'N/A'}"}
+            for row in teachers
+        ],
+    }
+    return SuccessResponse('Timetable meta loaded.', data=data, extra={'color': 'success'}).to_json_response()
+
+
+@login_required
+def get_school_timetable_api(request):
+    standard_id = _safe_int(request.GET.get('standard'))
+    if not standard_id:
+        return ErrorResponse('Please select a class.', extra={'color': 'red'}).to_json_response()
+    try:
+        timetable = _get_or_create_school_timetable(request, standard_id)
+        subject_teachers = AssignSubjectsToTeacher.objects.select_related(
+            'assignedSubjectID__subjectID',
+            'teacherID',
+        ).filter(
+            isDeleted=False,
+            assignedSubjectID__isDeleted=False,
+            assignedSubjectID__standardID_id=standard_id,
+            sessionID_id=_current_session_id(request),
+            teacherID__isDeleted=False,
+            teacherID__isActive='Yes',
+        ).order_by('assignedSubjectID__subjectID__name', 'teacherID__name')
+        periods = SchoolTimetablePeriod.objects.filter(
+            timetableID=timetable,
+            isDeleted=False,
+        ).order_by('displayOrder', 'id')
+        entries = SchoolTimetableEntry.objects.select_related(
+            'assignedSubjectID__subjectID',
+            'teacherID',
+        ).filter(
+            timetableID=timetable,
+            isDeleted=False,
+        )
+        data = {
+            'timetable': {
+                'id': timetable.id,
+                'name': timetable.name or '',
+                'status': timetable.status,
+                'workingDays': timetable.workingDays or [],
+                'publishedOn': timetable.publishedOn.strftime('%d-%m-%Y %I:%M %p') if timetable.publishedOn else '',
+            },
+            'periods': [
+                {
+                    'id': item.id,
+                    'name': item.name or '',
+                    'startTime': item.startTime.strftime('%H:%M') if item.startTime else '',
+                    'endTime': item.endTime.strftime('%H:%M') if item.endTime else '',
+                    'displayOrder': item.displayOrder,
+                    'periodType': _normalized_period_type(item),
+                    'isBreak': _normalized_period_type(item) != 'teaching',
+                }
+                for item in periods
+            ],
+            'subjectTeachers': [
+                {
+                    'ID': item.id,
+                    'assignedSubjectID': item.assignedSubjectID_id,
+                    'teacherID': item.teacherID_id,
+                    'subjectName': item.assignedSubjectID.subjectID.name if item.assignedSubjectID and item.assignedSubjectID.subjectID else 'N/A',
+                    'teacherName': item.teacherID.name if item.teacherID else 'N/A',
+                    'Name': (
+                        f'{item.assignedSubjectID.subjectID.name if item.assignedSubjectID and item.assignedSubjectID.subjectID else "N/A"}'
+                        f' - {item.teacherID.name if item.teacherID else "N/A"}'
+                    ),
+                }
+                for item in subject_teachers
+            ],
+            'entries': [_serialize_timetable_entry(item) for item in entries],
+            'warnings': _build_timetable_warnings(timetable),
+        }
+        return SuccessResponse('Timetable loaded.', data=data, extra={'color': 'success'}).to_json_response()
+    except ValidationError as exc:
+        return ErrorResponse(str(exc), extra={'color': 'red'}).to_json_response()
+    except Exception as exc:
+        logger.error(f'Error loading timetable: {exc}')
+        return ErrorResponse('Unable to load timetable.', extra={'color': 'red'}).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def save_school_timetable_settings_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed').to_json_response()
+    try:
+        standard_id = _safe_int(request.POST.get('standard'))
+        working_days = json.loads(request.POST.get('workingDays') or '[]')
+        period_rows = json.loads(request.POST.get('periods') or '[]')
+        if not standard_id:
+            return ErrorResponse('Please select a class.', extra={'color': 'red'}).to_json_response()
+        if not working_days:
+            return ErrorResponse('Select at least one working day.', extra={'color': 'red'}).to_json_response()
+        _validate_timetable_period_rows(period_rows)
+        timetable = _get_or_create_school_timetable(request, standard_id)
+        timetable.workingDays = [day for day in TIMETABLE_DAY_ORDER if day in working_days]
+        pre_save_with_user.send(sender=SchoolTimetable, instance=timetable, user=request.user.pk)
+        timetable.save()
+
+        keep_ids = []
+        for index, row in enumerate(period_rows, start=1):
+            name = (row.get('name') or f'Period {index}').strip()
+            period_id = _safe_int(row.get('id'))
+            period = None
+            if period_id:
+                period = SchoolTimetablePeriod.objects.filter(
+                    pk=period_id,
+                    timetableID=timetable,
+                    isDeleted=False,
+                ).first()
+            if not period:
+                period = SchoolTimetablePeriod(timetableID=timetable)
+            period.name = name
+            period.startTime = _parse_time_value(row.get('startTime'))
+            period.endTime = _parse_time_value(row.get('endTime'))
+            period.displayOrder = _safe_int(row.get('displayOrder')) or index
+            period_type = (row.get('periodType') or '').strip()
+            if period_type not in TIMETABLE_PERIOD_TYPES:
+                period_type = 'break' if _truthy(row.get('isBreak')) else 'teaching'
+            if period_type == 'teaching':
+                period_type = _period_type_from_name(name, fallback=period_type)
+            period.periodType = period_type
+            period.isBreak = period_type != 'teaching'
+            pre_save_with_user.send(sender=SchoolTimetablePeriod, instance=period, user=request.user.pk)
+            period.save()
+            if period.isBreak:
+                SchoolTimetableEntry.objects.filter(
+                    timetableID=timetable,
+                    periodID=period,
+                    isDeleted=False,
+                ).update(isDeleted=True)
+            keep_ids.append(period.id)
+
+        stale_periods = SchoolTimetablePeriod.objects.filter(timetableID=timetable, isDeleted=False).exclude(id__in=keep_ids)
+        for period in stale_periods:
+            period.isDeleted = True
+            pre_save_with_user.send(sender=SchoolTimetablePeriod, instance=period, user=request.user.pk)
+            period.save()
+            SchoolTimetableEntry.objects.filter(periodID=period, isDeleted=False).update(isDeleted=True)
+
+        _mark_timetable_draft(timetable, request)
+        logger.info(f'Timetable settings saved timetable={timetable.id} user={request.user.id}')
+        return SuccessResponse('Timetable settings saved.', data={'warnings': _build_timetable_warnings(timetable)}, extra={'color': 'success'}).to_json_response()
+    except ValidationError as exc:
+        return ErrorResponse(str(exc), extra={'color': 'red'}).to_json_response()
+    except Exception as exc:
+        logger.error(f'Error saving timetable settings: {exc}')
+        return ErrorResponse('Unable to save timetable settings.', extra={'color': 'red'}).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def copy_school_timetable_from_class_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed').to_json_response()
+    try:
+        source_standard_id = _safe_int(request.POST.get('sourceStandard'))
+        target_standard_id = _safe_int(request.POST.get('targetStandard'))
+        if not source_standard_id or not target_standard_id:
+            return ErrorResponse('Source and target classes are required.', extra={'color': 'red'}).to_json_response()
+        if source_standard_id == target_standard_id:
+            return ErrorResponse('Choose a different source class.', extra={'color': 'red'}).to_json_response()
+
+        current_session_id = _current_session_id(request)
+        source_timetable = SchoolTimetable.objects.filter(
+            standardID_id=source_standard_id,
+            sessionID_id=current_session_id,
+            isDeleted=False,
+        ).order_by('-lastUpdatedOn', '-id').first()
+        if not source_timetable:
+            return ErrorResponse('Source class timetable was not found.', extra={'color': 'red'}).to_json_response()
+
+        target_timetable = _get_or_create_school_timetable(request, target_standard_id)
+        target_timetable.workingDays = source_timetable.workingDays or []
+        target_timetable.name = target_timetable.name or f'{_class_label(target_timetable.standardID)} Timetable'
+        pre_save_with_user.send(sender=SchoolTimetable, instance=target_timetable, user=request.user.pk)
+        target_timetable.save()
+
+        SchoolTimetableEntry.objects.filter(timetableID=target_timetable, isDeleted=False).update(isDeleted=True)
+        for period in SchoolTimetablePeriod.objects.filter(timetableID=target_timetable, isDeleted=False):
+            period.isDeleted = True
+            pre_save_with_user.send(sender=SchoolTimetablePeriod, instance=period, user=request.user.pk)
+            period.save()
+
+        period_map = {}
+        source_periods = SchoolTimetablePeriod.objects.filter(
+            timetableID=source_timetable,
+            isDeleted=False,
+        ).order_by('displayOrder', 'id')
+        for source_period in source_periods:
+            new_period = SchoolTimetablePeriod(
+                timetableID=target_timetable,
+                name=source_period.name,
+                startTime=source_period.startTime,
+                endTime=source_period.endTime,
+                displayOrder=source_period.displayOrder,
+                periodType=source_period.periodType,
+                isBreak=source_period.isBreak,
+            )
+            pre_save_with_user.send(sender=SchoolTimetablePeriod, instance=new_period, user=request.user.pk)
+            new_period.save()
+            period_map[source_period.id] = new_period
+
+        copied = 0
+        skipped = 0
+        source_entries = SchoolTimetableEntry.objects.select_related(
+            'assignedSubjectID__subjectID',
+            'teacherID',
+            'periodID',
+        ).filter(timetableID=source_timetable, isDeleted=False)
+        for source_entry in source_entries:
+            target_period = period_map.get(source_entry.periodID_id)
+            if not target_period or not _is_teaching_period(target_period):
+                continue
+            subject_id = source_entry.assignedSubjectID.subjectID_id if source_entry.assignedSubjectID_id else None
+            target_assignment = AssignSubjectsToTeacher.objects.select_related('assignedSubjectID').filter(
+                assignedSubjectID__standardID_id=target_standard_id,
+                assignedSubjectID__subjectID_id=subject_id,
+                assignedSubjectID__isDeleted=False,
+                teacherID_id=source_entry.teacherID_id,
+                teacherID__isDeleted=False,
+                teacherID__isActive='Yes',
+                sessionID_id=current_session_id,
+                isDeleted=False,
+            ).first()
+            if not target_assignment:
+                skipped += 1
+                continue
+            new_entry = SchoolTimetableEntry(
+                timetableID=target_timetable,
+                periodID=target_period,
+                dayOfWeek=source_entry.dayOfWeek,
+                assignedSubjectID_id=target_assignment.assignedSubjectID_id,
+                teacherID_id=target_assignment.teacherID_id,
+                room=source_entry.room,
+                note=source_entry.note,
+            )
+            pre_save_with_user.send(sender=SchoolTimetableEntry, instance=new_entry, user=request.user.pk)
+            new_entry.save()
+            copied += 1
+
+        _mark_timetable_draft(target_timetable, request)
+        logger.info(
+            f'Timetable copied source_standard={source_standard_id} target_standard={target_standard_id} '
+            f'copied={copied} skipped={skipped} user={request.user.id}'
+        )
+        message = f'Timetable copied. {copied} slots copied'
+        if skipped:
+            message += f', {skipped} skipped because matching subject-teacher mapping was missing.'
+        return SuccessResponse(
+            message,
+            data={'warnings': _build_timetable_warnings(target_timetable), 'copied': copied, 'skipped': skipped},
+            extra={'color': 'success' if not skipped else 'orange'}
+        ).to_json_response()
+    except Exception as exc:
+        logger.error(f'Error copying timetable from class: {exc}')
+        return ErrorResponse('Unable to copy timetable.', extra={'color': 'red'}).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def copy_school_timetable_day_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed').to_json_response()
+    try:
+        standard_id = _safe_int(request.POST.get('standard'))
+        source_day = (request.POST.get('sourceDay') or '').strip()
+        target_days = json.loads(request.POST.get('targetDays') or '[]')
+        if not standard_id or source_day not in TIMETABLE_DAY_ORDER:
+            return ErrorResponse('Class and source day are required.', extra={'color': 'red'}).to_json_response()
+        timetable = _get_or_create_school_timetable(request, standard_id)
+        working_days = timetable.workingDays or []
+        target_days = [day for day in target_days if day in working_days and day != source_day]
+        if source_day not in working_days:
+            return ErrorResponse('Source day is not enabled for this timetable.', extra={'color': 'red'}).to_json_response()
+        if not target_days:
+            return ErrorResponse('Select at least one target day.', extra={'color': 'red'}).to_json_response()
+
+        source_entries = list(SchoolTimetableEntry.objects.select_related('periodID').filter(
+            timetableID=timetable,
+            dayOfWeek=source_day,
+            isDeleted=False,
+            periodID__isDeleted=False,
+        ))
+        source_entries = [entry for entry in source_entries if _is_teaching_period(entry.periodID)]
+        if not source_entries:
+            return ErrorResponse('Source day has no teaching slots to copy.', extra={'color': 'red'}).to_json_response()
+
+        copied = 0
+        for target_day in target_days:
+            SchoolTimetableEntry.objects.filter(
+                timetableID=timetable,
+                dayOfWeek=target_day,
+                periodID_id__in=[entry.periodID_id for entry in source_entries],
+                isDeleted=False,
+            ).update(isDeleted=True)
+            for source_entry in source_entries:
+                new_entry = SchoolTimetableEntry(
+                    timetableID=timetable,
+                    periodID_id=source_entry.periodID_id,
+                    dayOfWeek=target_day,
+                    assignedSubjectID_id=source_entry.assignedSubjectID_id,
+                    teacherID_id=source_entry.teacherID_id,
+                    room=source_entry.room,
+                    note=source_entry.note,
+                )
+                pre_save_with_user.send(sender=SchoolTimetableEntry, instance=new_entry, user=request.user.pk)
+                new_entry.save()
+                copied += 1
+
+        _mark_timetable_draft(timetable, request)
+        logger.info(f'Timetable day copied timetable={timetable.id} source_day={source_day} targets={target_days} user={request.user.id}')
+        return SuccessResponse(
+            f'{source_day} copied to {len(target_days)} day(s).',
+            data={'warnings': _build_timetable_warnings(timetable), 'copied': copied},
+            extra={'color': 'success'}
+        ).to_json_response()
+    except Exception as exc:
+        logger.error(f'Error copying timetable day: {exc}')
+        return ErrorResponse('Unable to copy timetable day.', extra={'color': 'red'}).to_json_response()
+
+
+@login_required
+def get_teacher_school_timetable_api(request):
+    teacher_id = _safe_int(request.GET.get('teacher'))
+    if not teacher_id:
+        return ErrorResponse('Please select a teacher.', extra={'color': 'red'}).to_json_response()
+    try:
+        entries = list(SchoolTimetableEntry.objects.select_related(
+            'timetableID__standardID',
+            'periodID',
+            'assignedSubjectID__subjectID',
+            'teacherID',
+        ).filter(
+            isDeleted=False,
+            sessionID_id=_current_session_id(request),
+            teacherID_id=teacher_id,
+            timetableID__isDeleted=False,
+        ))
+        entries = [entry for entry in entries if _is_teaching_period(entry.periodID)]
+        entries.sort(key=lambda item: (
+            _day_sort_index(item.dayOfWeek),
+            item.periodID.startTime if item.periodID and item.periodID.startTime else datetime.min.time(),
+            item.periodID.displayOrder if item.periodID else 0,
+        ))
+        all_periods = list(SchoolTimetablePeriod.objects.select_related('timetableID').filter(
+            isDeleted=False,
+            sessionID_id=_current_session_id(request),
+            timetableID__isDeleted=False,
+        ).order_by('startTime', 'displayOrder', 'name', 'id'))
+        period_rows = []
+        seen_periods = set()
+        for period in all_periods:
+            if not _is_teaching_period(period):
+                continue
+            period_key = _timetable_period_key(period)
+            if period_key in seen_periods:
+                continue
+            seen_periods.add(period_key)
+            period_rows.append({
+                'periodKey': period_key,
+                'period': _timetable_period_label(period),
+                'periodOrder': period.displayOrder,
+                'periodStart': period.startTime.strftime('%H:%M') if period.startTime else '',
+                'periodEnd': period.endTime.strftime('%H:%M') if period.endTime else '',
+            })
+        rows = []
+        for entry in entries:
+            standard = entry.timetableID.standardID if entry.timetableID else None
+            rows.append({
+                'dayOfWeek': entry.dayOfWeek,
+                'periodKey': _timetable_period_key(entry.periodID),
+                'periodID': entry.periodID_id,
+                'period': _timetable_period_label(entry.periodID),
+                'periodOrder': entry.periodID.displayOrder if entry.periodID else 0,
+                'periodStart': entry.periodID.startTime.strftime('%H:%M') if entry.periodID and entry.periodID.startTime else '',
+                'periodEnd': entry.periodID.endTime.strftime('%H:%M') if entry.periodID and entry.periodID.endTime else '',
+                'className': _class_label(standard),
+                'subjectName': entry.assignedSubjectID.subjectID.name if entry.assignedSubjectID and entry.assignedSubjectID.subjectID else 'N/A',
+                'room': entry.room or '',
+                'status': entry.timetableID.status if entry.timetableID else 'draft',
+            })
+        return SuccessResponse('Teacher timetable loaded.', data={'rows': rows, 'periods': period_rows}, extra={'color': 'success'}).to_json_response()
+    except Exception as exc:
+        logger.error(f'Error loading teacher timetable: {exc}')
+        return ErrorResponse('Unable to load teacher timetable.', extra={'color': 'red'}).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def save_school_timetable_entry_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed').to_json_response()
+    try:
+        standard_id = _safe_int(request.POST.get('standard'))
+        period_id = _safe_int(request.POST.get('periodID'))
+        assigned_subject_id = _safe_int(request.POST.get('assignedSubjectID'))
+        teacher_id = _safe_int(request.POST.get('teacherID'))
+        day = (request.POST.get('dayOfWeek') or '').strip()
+        room = (request.POST.get('room') or '').strip()
+        note = (request.POST.get('note') or '').strip()
+        if not standard_id or not period_id or day not in TIMETABLE_DAY_ORDER:
+            return ErrorResponse('Class, day and period are required.', extra={'color': 'red'}).to_json_response()
+        timetable = _get_or_create_school_timetable(request, standard_id)
+        if day not in (timetable.workingDays or []):
+            return ErrorResponse('Selected day is not enabled for this timetable.', extra={'color': 'red'}).to_json_response()
+        period = SchoolTimetablePeriod.objects.filter(pk=period_id, timetableID=timetable, isDeleted=False).first()
+        if not period:
+            return ErrorResponse('Selected period was not found.', extra={'color': 'red'}).to_json_response()
+        if not _is_teaching_period(period):
+            SchoolTimetableEntry.objects.filter(
+                timetableID=timetable,
+                dayOfWeek=day,
+                periodID=period,
+                isDeleted=False,
+            ).update(isDeleted=True)
+            _mark_timetable_draft(timetable, request)
+            logger.info(f'Ignored non-teaching timetable assignment timetable={timetable.id} period={period.id} user={request.user.id}')
+            return SuccessResponse(
+                'This is a non-teaching period. No teacher assignment is required.',
+                data={'warnings': _build_timetable_warnings(timetable)},
+                extra={'color': 'info'}
+            ).to_json_response()
+
+        if not assigned_subject_id and not teacher_id and not room and not note:
+            existing = SchoolTimetableEntry.objects.filter(
+                timetableID=timetable,
+                dayOfWeek=day,
+                periodID=period,
+                isDeleted=False,
+            ).first()
+            if existing:
+                existing.isDeleted = True
+                pre_save_with_user.send(sender=SchoolTimetableEntry, instance=existing, user=request.user.pk)
+                existing.save()
+            _mark_timetable_draft(timetable, request)
+            return SuccessResponse('Timetable slot cleared.', data={'warnings': _build_timetable_warnings(timetable)}, extra={'color': 'success'}).to_json_response()
+
+        if assigned_subject_id or teacher_id:
+            if not assigned_subject_id or not teacher_id:
+                return ErrorResponse('Please select an assigned subject teacher.', extra={'color': 'red'}).to_json_response()
+            valid_subject_teacher = AssignSubjectsToTeacher.objects.filter(
+                assignedSubjectID_id=assigned_subject_id,
+                assignedSubjectID__standardID_id=standard_id,
+                assignedSubjectID__isDeleted=False,
+                teacherID_id=teacher_id,
+                teacherID__isDeleted=False,
+                teacherID__isActive='Yes',
+                sessionID_id=_current_session_id(request),
+                isDeleted=False,
+            ).exists()
+            if not valid_subject_teacher:
+                return ErrorResponse('Selected subject teacher is not assigned for this class.', extra={'color': 'red'}).to_json_response()
+
+        entry = SchoolTimetableEntry.objects.filter(
+            timetableID=timetable,
+            dayOfWeek=day,
+            periodID=period,
+            isDeleted=False,
+        ).first() or SchoolTimetableEntry(timetableID=timetable, dayOfWeek=day, periodID=period)
+        entry.assignedSubjectID_id = assigned_subject_id
+        entry.teacherID_id = teacher_id
+        entry.room = room
+        entry.note = note
+        pre_save_with_user.send(sender=SchoolTimetableEntry, instance=entry, user=request.user.pk)
+        entry.save()
+        _mark_timetable_draft(timetable, request)
+        warnings = _build_timetable_warnings(timetable)
+        logger.info(f'Timetable entry saved timetable={timetable.id} entry={entry.id} user={request.user.id}')
+        return SuccessResponse('Timetable slot saved.', data={'entry': _serialize_timetable_entry(entry), 'warnings': warnings}, extra={'color': 'success'}).to_json_response()
+    except Exception as exc:
+        logger.error(f'Error saving timetable entry: {exc}')
+        return ErrorResponse('Unable to save timetable slot.', extra={'color': 'red'}).to_json_response()
+
+
+@login_required
+def validate_school_timetable_api(request):
+    standard_id = _safe_int(request.GET.get('standard'))
+    if not standard_id:
+        return ErrorResponse('Please select a class.', extra={'color': 'red'}).to_json_response()
+    try:
+        timetable = _get_or_create_school_timetable(request, standard_id)
+        warnings = _build_timetable_warnings(timetable)
+        return SuccessResponse('Timetable validation completed.', data={'warnings': warnings}, extra={'color': 'success'}).to_json_response()
+    except Exception as exc:
+        logger.error(f'Error validating timetable: {exc}')
+        return ErrorResponse('Unable to validate timetable.', extra={'color': 'red'}).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def publish_school_timetable_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed').to_json_response()
+    standard_id = _safe_int(request.POST.get('standard'))
+    if not standard_id:
+        return ErrorResponse('Please select a class.', extra={'color': 'red'}).to_json_response()
+    try:
+        timetable = _get_or_create_school_timetable(request, standard_id)
+        warnings = _build_timetable_warnings(timetable)
+        blocking = [item for item in warnings if item.get('severity') == 'error']
+        if blocking:
+            logger.info(f'Timetable publish blocked timetable={timetable.id} conflicts={len(blocking)} user={request.user.id}')
+            return ErrorResponse('Resolve conflict errors before publishing.', data={'warnings': warnings}, extra={'color': 'red'}).to_json_response()
+        timetable.status = 'published'
+        timetable.publishedOn = timezone.now()
+        timetable.publishedByUserID = request.user
+        pre_save_with_user.send(sender=SchoolTimetable, instance=timetable, user=request.user.pk)
+        timetable.save()
+        logger.info(f'Timetable published timetable={timetable.id} user={request.user.id}')
+        return SuccessResponse('Timetable published successfully.', data={'warnings': warnings}, extra={'color': 'success'}).to_json_response()
+    except Exception as exc:
+        logger.error(f'Error publishing timetable: {exc}')
+        return ErrorResponse('Unable to publish timetable.', extra={'color': 'red'}).to_json_response()
+
+
+@transaction.atomic
+@csrf_exempt
+@login_required
+def unpublish_school_timetable_api(request):
+    if request.method != 'POST':
+        return ErrorResponse('Method not allowed').to_json_response()
+    standard_id = _safe_int(request.POST.get('standard'))
+    if not standard_id:
+        return ErrorResponse('Please select a class.', extra={'color': 'red'}).to_json_response()
+    try:
+        timetable = _get_or_create_school_timetable(request, standard_id)
+        if timetable.status == 'draft':
+            return SuccessResponse('Timetable is already in draft.', data={'warnings': _build_timetable_warnings(timetable)}, extra={'color': 'info'}).to_json_response()
+        timetable.status = 'draft'
+        timetable.publishedOn = None
+        timetable.publishedByUserID = None
+        pre_save_with_user.send(sender=SchoolTimetable, instance=timetable, user=request.user.pk)
+        timetable.save()
+        warnings = _build_timetable_warnings(timetable)
+        logger.info(f'Timetable unpublished timetable={timetable.id} user={request.user.id}')
+        return SuccessResponse('Timetable reverted to draft.', data={'warnings': warnings}, extra={'color': 'success'}).to_json_response()
+    except Exception as exc:
+        logger.error(f'Error unpublishing timetable: {exc}')
+        return ErrorResponse('Unable to revert timetable to draft.', extra={'color': 'red'}).to_json_response()
+
+
 # Assign Subjects To Teacher --------------------------------------------------------------
 @transaction.atomic
 @csrf_exempt

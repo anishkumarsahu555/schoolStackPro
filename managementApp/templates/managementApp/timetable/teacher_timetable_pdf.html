@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 6mm;
+        }
+
+        body {
+            color: #1f2937;
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 7.5px;
+            margin: 0;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .school {
+            font-size: 13px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .meta {
+            color: #4b5563;
+            font-size: 7px;
+            margin-top: 2px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        th,
+        td {
+            border: 1px solid #cbd5e1;
+            padding: 2.5px;
+            vertical-align: top;
+            line-height: 1.12;
+        }
+
+        th {
+            background: #e5eef8;
+            color: #111827;
+            font-weight: bold;
+            text-align: center;
+            font-size: 7px;
+        }
+
+        .period {
+            width: 78px;
+            font-weight: bold;
+            background: #f8fafc;
+        }
+
+        .subject {
+            font-weight: bold;
+            font-size: 7.5px;
+            line-height: 1.12;
+        }
+
+        .muted {
+            color: #64748b;
+            font-size: 6.5px;
+            line-height: 1.08;
+            margin-top: 1px;
+        }
+
+        .slot {
+            background: #eff6ff;
+            border-left: 2px solid #2563eb;
+            padding-left: 2px;
+        }
+
+        tr {
+            page-break-inside: avoid;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <p class="school">{{ school.schoolName|default:"School" }}</p>
+    <div class="meta">Teacher: {{ teacher.name|default:"Teacher" }}{% if teacher.employeeCode %} | Code: {{ teacher.employeeCode }}{% endif %}</div>
+    <div class="meta">Weekly Timetable | Generated: {{ generated_on|date:"d-m-Y h:i A" }}</div>
+</div>
+
+<table>
+    <thead>
+    <tr>
+        <th class="period">Period</th>
+        {% for day in days %}
+            <th>{{ day }}</th>
+        {% endfor %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for row in rows %}
+        <tr>
+            <td class="period">
+                {{ row.name }}
+                {% if row.time %}<div class="muted">{{ row.time }}</div>{% endif %}
+            </td>
+            {% for entries in row.cells_list %}
+                <td>
+                    {% for entry in entries %}
+                        <div class="slot">
+                            <div class="subject">{{ entry.assignedSubjectID.subjectID.name|default:"N/A" }}</div>
+                            <div class="muted">{{ entry.timetableID.standardID.name|default:"Class" }}{% if entry.timetableID.standardID.section %} - {{ entry.timetableID.standardID.section }}{% endif %}</div>
+                            {% if entry.room %}<div class="muted">{{ entry.room }}</div>{% endif %}
+                        </div>
+                    {% empty %}
+                        <span class="muted">Free</span>
+                    {% endfor %}
+                </td>
+            {% endfor %}
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="{{ days|length|add:1 }}"><span class="muted">No timetable slots found for this teacher.</span></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>

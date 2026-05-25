@@ -41,6 +41,16 @@ urlpatterns = [
     path('get_subjects_to_class_assign_list_with_given_class_api',
          get_subjects_to_class_assign_list_with_given_class_api,
          name='get_subjects_to_class_assign_list_with_given_class_api'),
+    path('get_school_timetable_meta_api', get_school_timetable_meta_api, name='get_school_timetable_meta_api'),
+    path('get_school_timetable_api', get_school_timetable_api, name='get_school_timetable_api'),
+    path('save_school_timetable_settings_api', save_school_timetable_settings_api, name='save_school_timetable_settings_api'),
+    path('copy_school_timetable_from_class_api', copy_school_timetable_from_class_api, name='copy_school_timetable_from_class_api'),
+    path('copy_school_timetable_day_api', copy_school_timetable_day_api, name='copy_school_timetable_day_api'),
+    path('get_teacher_school_timetable_api', get_teacher_school_timetable_api, name='get_teacher_school_timetable_api'),
+    path('save_school_timetable_entry_api', save_school_timetable_entry_api, name='save_school_timetable_entry_api'),
+    path('validate_school_timetable_api', validate_school_timetable_api, name='validate_school_timetable_api'),
+    path('publish_school_timetable_api', publish_school_timetable_api, name='publish_school_timetable_api'),
+    path('unpublish_school_timetable_api', unpublish_school_timetable_api, name='unpublish_school_timetable_api'),
 
     path('AssignSubjectToClassListJson', AssignSubjectToClassListJson.as_view(), name='AssignSubjectToClassListJson'),
 

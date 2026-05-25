@@ -8,6 +8,9 @@ urlpatterns = [
     path('session-import/', manage_session_import, name='manage_session_import'),
     path('audit-manager/', audit_manager, name='audit_manager'),
     path('manage-class/', manage_class, name='manage_class'),
+    path('school-timetable/', manage_school_timetable, name='manage_school_timetable'),
+    path('school-timetable/<int:id>/pdf/', school_timetable_pdf, name='school_timetable_pdf'),
+    path('school-timetable/teacher/<int:id>/pdf/', teacher_school_timetable_pdf, name='teacher_school_timetable_pdf'),
 
     # subjects
     path('manage_subjects/', manage_subjects, name='manage_subjects'),

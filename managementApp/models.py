@@ -1247,3 +1247,96 @@ class LeaveActionLog(models.Model):
         indexes = [
             models.Index(fields=['sessionID', 'leaveID', 'isDeleted', 'datetime'], name='lal_sess_leave_dt_idx'),
         ]
+
+
+class SchoolTimetable(models.Model):
+    STATUS_CHOICES = (
+        ('draft', 'Draft'),
+        ('published', 'Published'),
+    )
+
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    standardID = models.ForeignKey(Standard, blank=True, null=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=500, blank=True, null=True)
+    workingDays = models.JSONField(default=list, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    publishedOn = models.DateTimeField(blank=True, null=True)
+    publishedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    def __str__(self):
+        class_name = self.standardID.name if self.standardID_id and self.standardID else 'Timetable'
+        section = f' - {self.standardID.section}' if self.standardID_id and self.standardID and self.standardID.section else ''
+        return f'{class_name}{section} {self.status}'
+
+    class Meta:
+        verbose_name_plural = 'za) School Timetables'
+        indexes = [
+            models.Index(fields=['sessionID', 'standardID', 'status', 'isDeleted'], name='stt_sess_std_status_idx'),
+        ]
+
+
+class SchoolTimetablePeriod(models.Model):
+    PERIOD_TYPE_CHOICES = (
+        ('teaching', 'Teaching Period'),
+        ('break', 'Break'),
+        ('morning_assembly', 'Morning Assembly'),
+        ('afternoon_assembly', 'Afternoon Assembly'),
+    )
+
+    timetableID = models.ForeignKey(SchoolTimetable, blank=True, null=True, on_delete=models.CASCADE)
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, blank=True, null=True)
+    startTime = models.TimeField(blank=True, null=True)
+    endTime = models.TimeField(blank=True, null=True)
+    displayOrder = models.PositiveSmallIntegerField(default=0)
+    periodType = models.CharField(max_length=30, choices=PERIOD_TYPE_CHOICES, default='teaching')
+    isBreak = models.BooleanField(default=False)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    def __str__(self):
+        return self.name or f'Period {self.displayOrder}'
+
+    class Meta:
+        verbose_name_plural = 'zb) School Timetable Periods'
+        ordering = ['displayOrder', 'startTime', 'id']
+        indexes = [
+            models.Index(fields=['sessionID', 'timetableID', 'isDeleted'], name='stp_sess_tt_del_idx'),
+        ]
+
+
+class SchoolTimetableEntry(models.Model):
+    timetableID = models.ForeignKey(SchoolTimetable, blank=True, null=True, on_delete=models.CASCADE)
+    periodID = models.ForeignKey(SchoolTimetablePeriod, blank=True, null=True, on_delete=models.CASCADE)
+    assignedSubjectID = models.ForeignKey(AssignSubjectsToClass, blank=True, null=True, on_delete=models.SET_NULL)
+    teacherID = models.ForeignKey(TeacherDetail, blank=True, null=True, on_delete=models.SET_NULL)
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    sessionID = models.ForeignKey(SchoolSession, blank=True, null=True, on_delete=models.CASCADE)
+    dayOfWeek = models.CharField(max_length=20)
+    room = models.CharField(max_length=100, blank=True, null=True)
+    note = models.CharField(max_length=500, blank=True, null=True)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+
+    def __str__(self):
+        return f'{self.dayOfWeek} - {self.periodID or "Period"}'
+
+    class Meta:
+        verbose_name_plural = 'zc) School Timetable Entries'
+        indexes = [
+            models.Index(fields=['sessionID', 'teacherID', 'dayOfWeek', 'periodID', 'isDeleted'], name='ste_tchr_slot_idx'),
+            models.Index(fields=['sessionID', 'timetableID', 'dayOfWeek', 'periodID', 'isDeleted'], name='ste_tt_slot_idx'),
+        ]

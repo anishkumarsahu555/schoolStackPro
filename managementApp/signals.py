@@ -41,6 +41,9 @@ pre_save_with_user = Signal()
 @receiver(pre_save_with_user, sender=LeaveType)
 @receiver(pre_save_with_user, sender=LeaveApplication)
 @receiver(pre_save_with_user, sender=LeaveActionLog)
+@receiver(pre_save_with_user, sender=SchoolTimetable)
+@receiver(pre_save_with_user, sender=SchoolTimetablePeriod)
+@receiver(pre_save_with_user, sender=SchoolTimetableEntry)
 def update_fields_from_signal(sender, instance, **kwargs):
     user_id = kwargs.get('user')
     if not user_id:
