@@ -1,0 +1,101 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+env:
+  DJANGO_SETTINGS_MODULE: schoolStackPro.settings
+  SECRET_KEY: ci-test-secret-key
+  PYTHON_VERSION: "3.14"
+  DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+  DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/root/schoolManagement/schoolStackPro' }}
+  DEPLOY_BRANCH: ${{ vars.DEPLOY_BRANCH || 'main' }}
+  DEPLOY_RESTART_COMMAND: ${{ vars.DEPLOY_RESTART_COMMAND || 'sudo systemctl restart schoolstack.service' }}
+
+jobs:
+  validate:
+    name: Validate release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Django system check
+        run: uv run python manage.py check
+
+      - name: Check migrations are committed
+        run: uv run python manage.py makemigrations --check --dry-run
+
+      - name: Run tests
+        run: uv run python manage.py test --noinput
+
+      - name: Verify static assets
+        run: uv run python manage.py collectstatic --noinput --clear
+
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    needs: validate
+    environment: production
+
+    steps:
+      - name: Configure SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          test -n "$DEPLOY_HOST"
+          test -n "$DEPLOY_SSH_KEY"
+          test -n "$DEPLOY_USER"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy application
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" <<EOF
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          if [ -f .env ]; then
+            set -a
+            . ./.env
+            set +a
+          fi
+          git fetch origin "$DEPLOY_BRANCH"
+          git reset --hard "origin/$DEPLOY_BRANCH"
+          uv sync --frozen
+          uv run python manage.py migrate --noinput
+          uv run python manage.py collectstatic --noinput --clear
+          $DEPLOY_RESTART_COMMAND
+          EOF
