@@ -14,6 +14,8 @@
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
             <div class="ui tab active finance-shell" data-tab="user">
+                {% include 'managementApp/finance/_settings_tabs.html' with active='settings' %}
+
                 <section class="finance-summary-grid" id="financeSettingsSummary" style="display:none;">
                     <div class="finance-summary-item">
                         <div class="value" id="previewReceiptNo">-</div>

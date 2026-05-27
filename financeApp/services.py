@@ -80,7 +80,7 @@ def _sequence_width(value):
 def _preview_doc_number(prefix, sequence, *, include_date_segment, width):
     parts = [_sanitize_prefix(prefix, 'DOC')]
     if include_date_segment:
-        parts.append(timezone.localdate().strftime('%Y%m%d'))
+        parts.append(timezone.now().date().strftime('%Y%m%d'))
     parts.append(str(max(int(sequence or 1), 1)).zfill(_sequence_width(width)))
     return '-'.join(parts)
 
@@ -436,6 +436,17 @@ def bootstrap_school_finance(*, school_id, session_id, user_obj=None):
             'accountType': 'income',
             'openingBalanceType': 'credit',
         },
+        'LIBRARY_FINE_INCOME': {
+            'accountName': 'Library Fine Income',
+            'accountType': 'income',
+            'openingBalanceType': 'credit',
+        },
+        'OTHER_RECEIVABLE': {
+            'accountName': 'Other Receivable',
+            'accountType': 'asset',
+            'openingBalanceType': 'debit',
+            'isControlAccount': True,
+        },
         'EXPENSE_PAYABLE': {
             'accountName': 'Expense Payable',
             'accountType': 'liability',
@@ -562,6 +573,7 @@ def bootstrap_school_finance(*, school_id, session_id, user_obj=None):
         'ADMISSION_FEE': ('Admission Fee', 'admission', accounts['ADMISSION_FEE_INCOME']),
         'MONTHLY_STUDENT_FEE': ('Monthly Student Fee', 'tuition', accounts['TUITION_FEE_INCOME']),
         'TRANSPORT_FEE': ('Transport Fee', 'transport', accounts['MISC_FEE_INCOME']),
+        'LIBRARY_FINE': ('Library Fine', 'library', accounts['LIBRARY_FINE_INCOME']),
         'MISC_FEE': ('Misc Fee', 'misc', accounts['MISC_FEE_INCOME']),
     }
     fee_heads = {}
@@ -604,8 +616,9 @@ def bootstrap_school_finance(*, school_id, session_id, user_obj=None):
             if fee_head.incomeAccountID_id != income_account.id:
                 fee_head.incomeAccountID = income_account
                 changed.append('incomeAccountID')
-            if fee_head.receivableAccountID_id != accounts['STUDENT_RECEIVABLE'].id:
-                fee_head.receivableAccountID = accounts['STUDENT_RECEIVABLE']
+            expected_receivable = accounts['OTHER_RECEIVABLE'] if code == 'LIBRARY_FINE' else accounts['STUDENT_RECEIVABLE']
+            if fee_head.receivableAccountID_id != expected_receivable.id:
+                fee_head.receivableAccountID = expected_receivable
                 changed.append('receivableAccountID')
             if not fee_head.isActive:
                 fee_head.isActive = True
@@ -1743,12 +1756,15 @@ def sync_student_charge(
         user_obj=user_obj,
     )
     fee_head = setup['fee_heads'][fee_head_code]
+    charge_type = 'admission_fee' if fee_head_code == 'ADMISSION_FEE' else 'student_fee'
+    if fee_head_code in {'LIBRARY_FINE', 'MISC_FEE'}:
+        charge_type = 'misc_income'
     defaults = {
         'studentID': student_obj,
         'standardID': standard_obj,
         'partyID': party_obj,
         'feeHeadID': fee_head,
-        'chargeType': 'admission_fee' if fee_head_code == 'ADMISSION_FEE' else 'student_fee',
+        'chargeType': charge_type,
         'referenceNo': str(source_record_id),
         'title': title,
         'description': description or '',
@@ -1952,6 +1968,165 @@ def clear_payment_receipt(*, school_id, source_module, source_record_id, user_ob
     for charge_obj in StudentCharge.objects.filter(id__in=charge_ids, isDeleted=False):
         _refresh_charge_paid_state(charge_obj, user_obj=user_obj)
     return receipt_obj
+
+
+@transaction.atomic
+def sync_library_fine_finance(*, fine_obj, user_obj=None, payment_mode_code='CASH', reference_no=''):
+    if not fine_obj or fine_obj.isDeleted:
+        return {'charge': None, 'receipt': None}
+
+    school_id = fine_obj.schoolID_id
+    session_id = fine_obj.sessionID_id
+    if not school_id or not session_id or not fine_obj.member_id:
+        return {'charge': None, 'receipt': None}
+
+    setup = bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=user_obj)
+    fine_amount = _money(fine_obj.amount)
+    paid_amount = _money(fine_obj.paidAmount)
+    fine_date = getattr(getattr(fine_obj, 'issue', None), 'returnDate', None) or fine_obj.paidDate or timezone.now().date()
+    title = f'Library Fine - {fine_obj.get_reason_display() if hasattr(fine_obj, "get_reason_display") else fine_obj.reason}'
+    description = fine_obj.notes or title
+
+    if fine_obj.status in {'waived', 'cancelled'} or fine_amount <= 0:
+        if fine_obj.member.memberType == 'student' and fine_obj.member.student_id:
+            sync_student_charge(
+                student_obj=fine_obj.member.student,
+                school_id=school_id,
+                session_id=session_id,
+                fee_head_code='LIBRARY_FINE',
+                amount=Decimal('0.00'),
+                charge_date=fine_date,
+                due_date=fine_date,
+                source_module='library_fine_charge',
+                source_record_id=fine_obj.id,
+                title=title,
+                description=description,
+                standard_obj=fine_obj.member.student.standardID,
+                user_obj=user_obj,
+            )
+        else:
+            clear_finance_transaction(
+                school_id=school_id,
+                source_module='library_fine_charge',
+                source_record_id=fine_obj.id,
+                user_obj=user_obj,
+            )
+        clear_payment_receipt(
+            school_id=school_id,
+            source_module='library_fine_receipt',
+            source_record_id=fine_obj.id,
+            user_obj=user_obj,
+        )
+        clear_finance_transaction(
+            school_id=school_id,
+            source_module='library_fine_receipt',
+            source_record_id=fine_obj.id,
+            user_obj=user_obj,
+        )
+        return {'charge': None, 'receipt': None}
+
+    if fine_obj.member.memberType == 'student' and fine_obj.member.student_id:
+        charge_obj = sync_student_charge(
+            student_obj=fine_obj.member.student,
+            school_id=school_id,
+            session_id=session_id,
+            fee_head_code='LIBRARY_FINE',
+            amount=fine_amount,
+            charge_date=fine_date,
+            due_date=fine_date,
+            source_module='library_fine_charge',
+            source_record_id=fine_obj.id,
+            title=title,
+            description=description,
+            standard_obj=fine_obj.member.student.standardID,
+            user_obj=user_obj,
+        )
+        receipt_obj = None
+        if paid_amount > 0:
+            receipt_obj = sync_payment_receipt(
+                charge_obj=charge_obj,
+                school_id=school_id,
+                session_id=session_id,
+                amount_received=paid_amount,
+                receipt_date=fine_obj.paidDate or timezone.now().date(),
+                source_module='library_fine_receipt',
+                source_record_id=fine_obj.id,
+                payment_mode_code=payment_mode_code or 'CASH',
+                reference_no=reference_no or '',
+                notes=fine_obj.notes or f'Library fine payment for {fine_obj.member.display_name}',
+                received_from_name=fine_obj.member.display_name,
+                user_obj=user_obj,
+            )
+        else:
+            clear_payment_receipt(
+                school_id=school_id,
+                source_module='library_fine_receipt',
+                source_record_id=fine_obj.id,
+                user_obj=user_obj,
+            )
+        return {'charge': charge_obj, 'receipt': receipt_obj}
+
+    party_obj = ensure_teacher_party(
+        teacher_obj=fine_obj.member.staff if fine_obj.member.staff_id else None,
+        school_id=school_id,
+        session_id=session_id,
+        user_obj=user_obj,
+    )
+    if not party_obj:
+        party_obj, _ = FinanceParty.objects.get_or_create(
+            schoolID_id=school_id,
+            sessionID_id=session_id,
+            partyType='other',
+            displayName=fine_obj.member.display_name or fine_obj.member.memberCode,
+            isDeleted=False,
+            defaults={
+                'isActive': True,
+                'lastEditedBy': _user_label(user_obj),
+                'updatedByUserID': user_obj,
+            },
+        )
+    receivable_account = setup['accounts']['OTHER_RECEIVABLE']
+    income_account = setup['accounts']['LIBRARY_FINE_INCOME']
+    upsert_finance_transaction(
+        school_id=school_id,
+        session_id=session_id,
+        txn_type='student_charge',
+        txn_date=fine_date,
+        source_module='library_fine_charge',
+        source_record_id=fine_obj.id,
+        description=description,
+        reference_no=str(fine_obj.id),
+        entries=[
+            {'accountID': receivable_account, 'partyID': party_obj, 'entryType': 'debit', 'amount': fine_amount, 'narration': title},
+            {'accountID': income_account, 'partyID': party_obj, 'entryType': 'credit', 'amount': fine_amount, 'narration': title},
+        ],
+        user_obj=user_obj,
+    )
+    if paid_amount > 0:
+        payment_mode = setup['payment_modes'].get((payment_mode_code or 'CASH').upper(), setup['payment_modes']['CASH'])
+        upsert_finance_transaction(
+            school_id=school_id,
+            session_id=session_id,
+            txn_type='student_receipt',
+            txn_date=fine_obj.paidDate or timezone.now().date(),
+            source_module='library_fine_receipt',
+            source_record_id=fine_obj.id,
+            description=fine_obj.notes or f'Library fine payment for {fine_obj.member.display_name}',
+            reference_no=reference_no or str(fine_obj.id),
+            entries=[
+                {'accountID': payment_mode.linkedAccountID or setup['accounts']['CASH_ON_HAND'], 'partyID': party_obj, 'entryType': 'debit', 'amount': paid_amount, 'narration': title},
+                {'accountID': receivable_account, 'partyID': party_obj, 'entryType': 'credit', 'amount': paid_amount, 'narration': title},
+            ],
+            user_obj=user_obj,
+        )
+    else:
+        clear_finance_transaction(
+            school_id=school_id,
+            source_module='library_fine_receipt',
+            source_record_id=fine_obj.id,
+            user_obj=user_obj,
+        )
+    return {'charge': None, 'receipt': None}
 
 
 @transaction.atomic

@@ -1,0 +1,10 @@
+<nav class="ui two item pointing secondary menu finance-workflow-tabs" aria-label="Finance settings workflow">
+    <a class="{% if active == 'settings' %}active {% endif %}item" href="{% url 'managementApp:finance_settings' %}">
+        <i class="cogs icon"></i>
+        <span>Settings</span>
+    </a>
+    <a class="{% if active == 'controls' %}active {% endif %}item" href="{% url 'managementApp:finance_controls' %}">
+        <i class="shield alternate icon"></i>
+        <span>Controls</span>
+    </a>
+</nav>

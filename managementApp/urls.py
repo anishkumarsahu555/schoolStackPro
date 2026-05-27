@@ -52,6 +52,7 @@ urlpatterns = [
     path('finance/', finance_dashboard, name='finance_dashboard'),
     path('finance/receipts/', manage_receipts, name='manage_receipts'),
     path('finance/reports/', finance_reports, name='finance_reports'),
+    path('finance/money-ledger/', money_ledger, name='money_ledger'),
     path('finance/controls/', finance_controls, name='finance_controls'),
     path('finance/settings/', finance_settings, name='finance_settings'),
     path('finance/audit-trail/', finance_audit_trail, name='finance_audit_trail'),

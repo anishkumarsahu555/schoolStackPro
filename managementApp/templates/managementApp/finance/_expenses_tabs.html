@@ -1,0 +1,14 @@
+<nav class="ui three item pointing secondary menu finance-workflow-tabs" aria-label="Expenses workflow">
+    <a class="{% if active == 'vouchers' %}active {% endif %}item" href="{% url 'managementApp:manage_expense_vouchers' %}">
+        <i class="file alternate outline icon"></i>
+        <span>Vouchers</span>
+    </a>
+    <a class="{% if active == 'vendors' %}active {% endif %}item" href="{% url 'managementApp:manage_vendors' %}">
+        <i class="truck icon"></i>
+        <span>Vendors</span>
+    </a>
+    <a class="{% if active == 'payables' %}active {% endif %}item" href="{% url 'managementApp:vendor_payables' %}">
+        <i class="handshake outline icon"></i>
+        <span>Vendor Payables</span>
+    </a>
+</nav>

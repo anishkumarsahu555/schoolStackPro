@@ -38,6 +38,7 @@ from libraryApp.services import (
     merged_config,
     normalize_library_card_fields,
 )
+from financeApp.services import sync_library_fine_finance
 from utils.custom_response import ErrorResponse, SuccessResponse
 from utils.logger import logger
 
@@ -926,6 +927,7 @@ def return_book_api(request):
             fine = LibraryFine(issue=issue, member=issue.member, reason=reason, amount=amount, paidAmount=Decimal('0.00'), status='pending')
             _audit(request, fine)
             fine.save()
+            sync_library_fine_finance(fine_obj=fine, user_obj=request.user)
         logger.info(f'Library book returned issue={issue.id} condition={condition} fine={amount}')
         return SuccessResponse('Book return saved successfully.').to_json_response()
     except Exception as exc:
@@ -997,6 +999,12 @@ def fine_api(request):
         _audit(request, obj)
         obj.full_clean()
         obj.save()
+        sync_library_fine_finance(
+            fine_obj=obj,
+            user_obj=request.user,
+            payment_mode_code=request.POST.get('paymentMode') or request.POST.get('paymentModeCode') or 'CASH',
+            reference_no=request.POST.get('referenceNo') or '',
+        )
         logger.info(f'Library fine saved id={obj.id} created={created}')
         return SuccessResponse('Fine saved successfully.').to_json_response()
     except Exception as exc:
@@ -1022,6 +1030,12 @@ def pay_fine_api(request):
         fine.notes = _append_note(fine.notes, 'Payment note', request.POST.get('notes'))
         _audit(request, fine)
         fine.save()
+        sync_library_fine_finance(
+            fine_obj=fine,
+            user_obj=request.user,
+            payment_mode_code=request.POST.get('paymentMode') or request.POST.get('paymentModeCode') or 'CASH',
+            reference_no=request.POST.get('referenceNo') or '',
+        )
         logger.info(f'Library fine payment saved fine={fine.id} amount={amount} paid={fine.paidAmount}')
         return SuccessResponse('Fine payment saved successfully.').to_json_response()
     except Exception as exc:
@@ -1038,6 +1052,7 @@ def waive_fine_api(request):
         fine.status = 'waived'
         _audit(request, fine)
         fine.save()
+        sync_library_fine_finance(fine_obj=fine, user_obj=request.user)
         logger.info(f'Library fine waived fine={fine.id}')
         return SuccessResponse('Fine waived successfully.').to_json_response()
     except Exception as exc:

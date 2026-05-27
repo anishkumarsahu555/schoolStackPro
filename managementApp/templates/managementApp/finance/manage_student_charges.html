@@ -14,6 +14,8 @@
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
             <div class="ui tab active finance-shell" data-tab="user">
+                {% include 'managementApp/finance/_collect_fees_tabs.html' with active='charges' %}
+
         <div class="ui segment">
             <h4 class="ui horizontal left aligned divider header">
                         <i class="filter icon"></i>
@@ -49,11 +51,21 @@
                     </div>
                     <div class="field">
                         <label>Date From</label>
-                        <input type="text" id="chargeDateFrom" placeholder="dd/mm/yyyy">
+                        <div class="ui calendar" id="chargeDateFromCal">
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text" id="chargeDateFrom" placeholder="Date From">
+                            </div>
+                        </div>
                     </div>
                     <div class="field">
                         <label>Date To</label>
-                        <input type="text" id="chargeDateTo" placeholder="dd/mm/yyyy">
+                        <div class="ui calendar" id="chargeDateToCal">
+                            <div class="ui input left icon">
+                                <i class="calendar icon"></i>
+                                <input type="text" id="chargeDateTo" placeholder="Date To">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="finance-filter-actions">
@@ -125,6 +137,16 @@
     <script>
         let chargeTable;
         $('.ui.dropdown').dropdown();
+        $('#chargeDateFromCal, #chargeDateToCal').calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date) {
+                    if (!date) return '';
+                    return String(date.getDate()).padStart(2, '0') + '/' + String(date.getMonth() + 1).padStart(2, '0') + '/' + date.getFullYear();
+                }
+            }
+        });
 
         function money(value) {
             return 'Rs ' + Number(value || 0).toFixed(2);

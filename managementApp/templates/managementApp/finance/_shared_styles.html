@@ -106,6 +106,60 @@
         color: var(--app-muted);
     }
 
+    .finance-workflow-tabs.ui.menu {
+        display: flex !important;
+        flex-wrap: nowrap;
+        gap: 0.35rem;
+        width: 100%;
+        margin: 0 0 0.35rem !important;
+        padding: 0.35rem !important;
+        overflow-x: auto;
+        border: 1px solid rgba(148, 163, 184, 0.22) !important;
+        border-radius: 12px !important;
+        background: rgba(248, 250, 252, 0.86) !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+        scrollbar-width: thin;
+    }
+
+    .finance-workflow-tabs.ui.menu::after {
+        display: none !important;
+    }
+
+    .finance-workflow-tabs.ui.three.item.menu .item,
+    .finance-workflow-tabs.ui.menu .item {
+        flex: 1 0 0 !important;
+        width: auto !important;
+        gap: 0.45rem;
+        justify-content: center;
+        min-width: 150px;
+        min-height: 40px;
+        margin: 0 !important;
+        padding: 0.72rem 0.85rem !important;
+        border: 0 !important;
+        border-radius: 9px !important;
+        color: var(--app-muted) !important;
+        font-weight: 800 !important;
+        line-height: 1.15;
+        white-space: nowrap;
+        transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .finance-workflow-tabs.ui.menu .item:hover {
+        background: rgba(37, 99, 235, 0.08) !important;
+        color: var(--app-brand) !important;
+    }
+
+    .finance-workflow-tabs.ui.menu .active.item,
+    .finance-workflow-tabs.ui.menu .active.item:hover {
+        background: #ffffff !important;
+        color: var(--app-brand) !important;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+    }
+
+    .finance-workflow-tabs.ui.menu .item i.icon {
+        margin: 0;
+    }
+
     .finance-highlight-panel {
         display: grid;
         gap: 0.75rem;
@@ -566,6 +620,27 @@
         color: #a8cbff;
     }
 
+    html[data-theme="dark"] .finance-workflow-tabs.ui.menu {
+        border-color: rgba(148, 163, 184, 0.16) !important;
+        background: rgba(15, 23, 42, 0.52) !important;
+        box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.08);
+    }
+
+    html[data-theme="dark"] .finance-workflow-tabs.ui.menu .item {
+        color: #94a3b8 !important;
+    }
+
+    html[data-theme="dark"] .finance-workflow-tabs.ui.menu .item:hover {
+        background: rgba(96, 165, 250, 0.12) !important;
+        color: #dbeafe !important;
+    }
+
+    html[data-theme="dark"] .finance-workflow-tabs.ui.menu .active.item {
+        background: rgba(30, 41, 59, 0.92) !important;
+        color: #a8cbff !important;
+        box-shadow: 0 8px 18px rgba(2, 6, 23, 0.32);
+    }
+
     html[data-theme="dark"] .finance-metric-card,
     html[data-theme="dark"] .finance-panel,
     html[data-theme="dark"] .finance-table-panel {
@@ -722,12 +797,34 @@
             grid-template-columns: 1fr 1fr !important;
         }
 
+        .finance-filter-actions {
+            justify-content: center;
+            align-items: center;
+        }
+
+        .finance-filter-actions .ui.button {
+            margin: 0 !important;
+        }
+
         .finance-summary-grid {
             grid-template-columns: 1fr 1fr !important;
         }
 
         .finance-action-grid {
             grid-template-columns: 1fr 1fr !important;
+        }
+
+        .finance-workflow-tabs.ui.item.menu .item {
+            flex-basis: 42% !important;
+            min-width: 136px;
+        }
+
+        .finance-workflow-tabs.ui.item.menu .active.item {
+            background: #ffffff !important;
+        }
+
+        html[data-theme="dark"] .finance-workflow-tabs.ui.item.menu .active.item {
+            background: rgba(30, 41, 59, 0.92) !important;
         }
 
         .finance-shell .ui.form .two.fields,

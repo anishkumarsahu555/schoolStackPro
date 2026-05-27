@@ -1,0 +1,400 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Money Ledger</title>
+{% endblock %}
+{% block page_title %}Money Ledger{% endblock %}
+{% block page_subtitle %}Track all posted money movement across fees, fines, salary, expenses, refunds, and adjustments.{% endblock %}
+
+{% block css %}
+    {% include 'managementApp/finance/_shared_styles.html' %}
+    <style>
+        .money-ledger-filter-panel {
+            padding: 1rem;
+        }
+
+        .money-ledger-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.85rem;
+            align-items: end;
+        }
+
+        .money-ledger-source-chips,
+        .money-ledger-quick-ranges {
+            display: flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            margin-top: 0.8rem;
+        }
+
+        .money-ledger-filter-actions {
+            display: flex;
+            gap: 0.45rem;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .money-ledger-filter-grid .field:last-child {
+            align-self: end;
+        }
+
+        .money-ledger-filter-grid .field:last-child label {
+            display: block;
+            visibility: hidden;
+        }
+
+        .money-ledger-filter-actions .ui.button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 38px;
+            min-height: 38px;
+            margin: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            line-height: 1 !important;
+        }
+
+        .money-ledger-source-chip.ui.button {
+            margin: 0;
+        }
+
+        .money-ledger-source-chip.active {
+            background: rgba(37, 99, 235, 0.12) !important;
+            color: var(--app-brand) !important;
+            box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.28) !important;
+        }
+
+        html[data-theme="dark"] .money-ledger-source-chip.active {
+            background: rgba(96, 165, 250, 0.16) !important;
+            color: #bfdbfe !important;
+            box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.26) !important;
+        }
+
+        @media (max-width: 1024px) {
+            .money-ledger-filter-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 767px) {
+            .money-ledger-filter-panel {
+                padding: 0.85rem;
+            }
+
+            .money-ledger-filter-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                align-items: end;
+            }
+
+            .money-ledger-filter-grid .field:last-child {
+                grid-column: 1 / -1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .money-ledger-filter-actions {
+                width: 100%;
+            }
+
+            .money-ledger-filter-actions .ui.button {
+                flex: 1 1 0;
+            }
+
+            .money-ledger-source-chips,
+            .money-ledger-quick-ranges {
+                justify-content: center;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui left aligned basic grid">
+        <div class="sixteen wide column">
+            <div class="ui tab active finance-shell" data-tab="user">
+                {% include 'managementApp/finance/_money_ledger_tabs.html' with active='money_ledger' %}
+
+                <div class="ui segment finance-table-panel money-ledger-filter-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="filter icon"></i>
+                        Ledger Filters
+                    </h4>
+                    <div class="finance-panel-subtitle">Filter by source, direction, transaction type, account, and date range.</div>
+
+                    <form class="ui tiny form" id="moneyLedgerFilterForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="ledgerSourceGroup" value="">
+                        <div class="money-ledger-filter-grid">
+                            <div class="field">
+                                <label>Date From</label>
+                                <div class="ui calendar" id="ledgerDateFromCal">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" id="ledgerDateFrom" placeholder="Date From">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label>Date To</label>
+                                <div class="ui calendar" id="ledgerDateToCal">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" id="ledgerDateTo" placeholder="Date To">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label>Direction</label>
+                                <select class="ui dropdown" id="ledgerDirection">
+                                    <option value="">All</option>
+                                    <option value="inflow">Inflow</option>
+                                    <option value="outflow">Outflow</option>
+                                    <option value="receivable">Receivable</option>
+                                    <option value="adjustment">Adjustment</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Transaction Type</label>
+                                <select class="ui search dropdown" id="ledgerTxnType">
+                                    <option value="">All Types</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Source</label>
+                                <select class="ui search dropdown" id="ledgerSourceModule">
+                                    <option value="">All Sources</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Account</label>
+                                <select class="ui search dropdown" id="ledgerAccount">
+                                    <option value="">All Accounts</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>&nbsp;</label>
+                                <div class="money-ledger-filter-actions">
+                                    <button type="button" class="ui green button" onclick="loadMoneyLedger()">
+                                        <i class="search icon"></i>
+                                        Load
+                                    </button>
+                                    <button type="button" class="ui red button" onclick="resetMoneyLedgerFilters()">
+                                        <i class="times circle icon"></i>
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="money-ledger-source-chips" aria-label="Money ledger source filters">
+                            <button type="button" class="ui mini basic button money-ledger-source-chip active" data-source-group="" onclick="setLedgerSourceGroup('')">All</button>
+                            <button type="button" class="ui mini basic button money-ledger-source-chip" data-source-group="fees" onclick="setLedgerSourceGroup('fees')">Fees</button>
+                            <button type="button" class="ui mini basic button money-ledger-source-chip" data-source-group="fines" onclick="setLedgerSourceGroup('fines')">Fines</button>
+                            <button type="button" class="ui mini basic button money-ledger-source-chip" data-source-group="expenses" onclick="setLedgerSourceGroup('expenses')">Expenses</button>
+                            <button type="button" class="ui mini basic button money-ledger-source-chip" data-source-group="payroll" onclick="setLedgerSourceGroup('payroll')">Payroll</button>
+                            <button type="button" class="ui mini basic button money-ledger-source-chip" data-source-group="vendors" onclick="setLedgerSourceGroup('vendors')">Vendors</button>
+                        </div>
+                        <div class="money-ledger-quick-ranges">
+                            <button type="button" class="ui mini basic button" onclick="setLedgerRange('today')">Today</button>
+                            <button type="button" class="ui mini basic button" onclick="setLedgerRange('month')">This Month</button>
+                            <button type="button" class="ui mini basic button" onclick="setLedgerRange('session')">This Session</button>
+                        </div>
+                    </form>
+                </div>
+
+                <section class="finance-summary-grid" id="moneyLedgerSummary" style="display:none;">
+                    <div class="finance-summary-item">
+                        <div class="value" id="ledgerTotalInflow">Rs 0.00</div>
+                        <div class="label">Inflow</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="ledgerTotalOutflow">Rs 0.00</div>
+                        <div class="label">Outflow</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="ledgerNetCashFlow">Rs 0.00</div>
+                        <div class="label">Net Cash Flow</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="ledgerTotalReceivable">Rs 0.00</div>
+                        <div class="label">Receivable Raised</div>
+                    </div>
+                </section>
+
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="exchange alternate icon"></i>
+                        Money Movement
+                    </h4>
+                    <div class="finance-panel-subtitle">Each row is a posted finance transaction, grouped by source and direction.</div>
+
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="moneyLedgerTable" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Txn / Ref</th>
+                                <th>Type</th>
+                                <th>Direction</th>
+                                <th>Source</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let moneyLedgerTable;
+        const ledgerSessionStartDate = '{{ request.session.current_session.SessionStartDate|default:"" }}';
+        const ledgerSessionEndDate = '{{ request.session.current_session.SessionEndDate|default:"" }}';
+
+        $('.ui.dropdown').dropdown();
+        $('#ledgerDateFromCal, #ledgerDateToCal').calendar({
+            monthFirst: false,
+            type: 'date',
+            formatter: {
+                date: function (date) {
+                    if (!date) return '';
+                    return String(date.getDate()).padStart(2, '0') + '/' + String(date.getMonth() + 1).padStart(2, '0') + '/' + date.getFullYear();
+                }
+            }
+        });
+
+        function money(value) {
+            return 'Rs ' + Number(value || 0).toFixed(2);
+        }
+
+        function ledgerFilters() {
+            return {
+                dateFrom: $('#ledgerDateFrom').val(),
+                dateTo: $('#ledgerDateTo').val(),
+                direction: $('#ledgerDirection').val(),
+                txnType: $('#ledgerTxnType').val(),
+                sourceModule: $('#ledgerSourceModule').val(),
+                accountID: $('#ledgerAccount').val(),
+                sourceGroup: $('#ledgerSourceGroup').val()
+            };
+        }
+
+        function formatLedgerDate(value) {
+            if (!value) {
+                return '';
+            }
+            const dateObj = value instanceof Date ? value : new Date(value + 'T00:00:00');
+            if (Number.isNaN(dateObj.getTime())) {
+                return '';
+            }
+            return String(dateObj.getDate()).padStart(2, '0') + '/' + String(dateObj.getMonth() + 1).padStart(2, '0') + '/' + dateObj.getFullYear();
+        }
+
+        function setLedgerSourceGroup(sourceGroup, shouldLoad) {
+            $('#ledgerSourceGroup').val(sourceGroup || '');
+            $('.money-ledger-source-chip').removeClass('active');
+            $('.money-ledger-source-chip[data-source-group="' + (sourceGroup || '') + '"]').addClass('active');
+            if (shouldLoad !== false) {
+                loadMoneyLedger();
+            }
+        }
+
+        function setLedgerRange(rangeKey) {
+            const today = new Date();
+            if (rangeKey === 'today') {
+                $('#ledgerDateFrom').val(formatLedgerDate(today));
+                $('#ledgerDateTo').val(formatLedgerDate(today));
+            } else if (rangeKey === 'month') {
+                $('#ledgerDateFrom').val(formatLedgerDate(new Date(today.getFullYear(), today.getMonth(), 1)));
+                $('#ledgerDateTo').val(formatLedgerDate(today));
+            } else if (rangeKey === 'session') {
+                $('#ledgerDateFrom').val(formatLedgerDate(ledgerSessionStartDate));
+                $('#ledgerDateTo').val(formatLedgerDate(ledgerSessionEndDate));
+            }
+            loadMoneyLedger();
+        }
+
+        function loadMoneyLedgerOptions() {
+            $.get("{% url 'managementAppAPI:get_money_ledger_filter_options_api' %}", function (response) {
+                const data = response.data || {};
+                const typeOptions = ['<option value="">All Types</option>']
+                    .concat((data.transactionTypes || []).map(function (row) {
+                        return '<option value="' + row.value + '">' + row.label + '</option>';
+                    }));
+                const sourceOptions = ['<option value="">All Sources</option>']
+                    .concat((data.sourceModules || []).map(function (source) {
+                        return '<option value="' + source + '">' + String(source).replace(/_/g, ' ') + '</option>';
+                    }));
+                const accountOptions = ['<option value="">All Accounts</option>']
+                    .concat((data.accounts || []).map(function (row) {
+                        return '<option value="' + row.id + '">' + row.label + '</option>';
+                    }));
+                $('#ledgerTxnType').html(typeOptions.join('')).dropdown('refresh');
+                $('#ledgerSourceModule').html(sourceOptions.join('')).dropdown('refresh');
+                $('#ledgerAccount').html(accountOptions.join('')).dropdown('refresh');
+            });
+        }
+
+        function loadMoneyLedgerSummary() {
+            $.get("{% url 'managementAppAPI:get_money_ledger_api' %}", ledgerFilters(), function (response) {
+                const summary = (response.data || {}).summary || {};
+                $('#ledgerTotalInflow').text(money(summary.totalInflow));
+                $('#ledgerTotalOutflow').text(money(summary.totalOutflow));
+                $('#ledgerNetCashFlow').text(money(summary.netCashFlow));
+                $('#ledgerTotalReceivable').text(money(summary.totalReceivable));
+                $('#moneyLedgerSummary').show();
+            });
+        }
+
+        function loadMoneyLedger() {
+            loadMoneyLedgerSummary();
+            if (!moneyLedgerTable) {
+                moneyLedgerTable = $('#moneyLedgerTable').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    searching: true,
+                    ordering: true,
+                    pageLength: 25,
+                    ajax: {
+                        url: "{% url 'managementAppAPI:money_ledger_rows_api' %}",
+                        data: function (d) {
+                            Object.assign(d, ledgerFilters());
+                        }
+                    },
+                    order: [[0, 'desc']]
+                });
+                return;
+            }
+            moneyLedgerTable.ajax.reload();
+        }
+
+        function resetMoneyLedgerFilters() {
+            $('#ledgerDateFrom').val('');
+            $('#ledgerDateTo').val('');
+            $('#ledgerDirection').dropdown('clear');
+            $('#ledgerTxnType').dropdown('clear');
+            $('#ledgerSourceModule').dropdown('clear');
+            $('#ledgerAccount').dropdown('clear');
+            setLedgerSourceGroup('', false);
+            loadMoneyLedger();
+        }
+
+        $('#moneyLedgerFilterForm').on('submit', function (event) {
+            event.preventDefault();
+            loadMoneyLedger();
+        });
+
+        $(function () {
+            loadMoneyLedgerOptions();
+            loadMoneyLedger();
+        });
+    </script>
+{% endblock %}

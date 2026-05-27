@@ -1,7 +1,6 @@
 {% extends 'homeApp/base.html' %}
 
 {% block sidebar %}
-
     <div class="sidenav-header">
         <span class="app-name">School Admin</span>
     </div>
@@ -335,67 +334,31 @@
         <div class="nav-group-links">
             <a class="nav-item {% if request.resolver_match.url_name == 'finance_dashboard' %}active{% endif %}" href="{% url 'managementApp:finance_dashboard' %}">
                 <i class="chart bar icon"></i>
-                <span>Finance Dashboard</span>
+                <span>Dashboard</span>
             </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'manage_receipts' %}active{% endif %}" href="{% url 'managementApp:manage_receipts' %}" data-active-paths="/management/finance/receipt/">
+            <a class="nav-item {% if request.resolver_match.url_name == 'money_ledger' or request.resolver_match.url_name == 'student_finance_ledger' or request.resolver_match.url_name == 'cash_bank_book' or request.resolver_match.url_name == 'vendor_statement' %}active{% endif %}" href="{% url 'managementApp:money_ledger' %}">
+                <i class="exchange alternate icon"></i>
+                <span>Money Ledger</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_receipts' or request.resolver_match.url_name == 'finance_receipt_detail' or request.resolver_match.url_name == 'manage_student_charges' or request.resolver_match.url_name == 'manage_fee_heads' %}active{% endif %}" href="{% url 'managementApp:manage_receipts' %}" data-active-paths="/management/finance/receipt/">
                 <i class="receipt icon"></i>
-                <span>Receipts</span>
+                <span>Collect Fees</span>
             </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'finance_reports' %}active{% endif %}" href="{% url 'managementApp:finance_reports' %}">
-                <i class="chart pie icon"></i>
-                <span>Finance Reports</span>
-            </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'finance_controls' %}active{% endif %}" href="{% url 'managementApp:finance_controls' %}">
-                <i class="shield alternate icon"></i>
-                <span>Finance Controls</span>
-            </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'finance_settings' %}active{% endif %}" href="{% url 'managementApp:finance_settings' %}">
-                <i class="cogs icon"></i>
-                <span>Finance Settings</span>
-            </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'finance_audit_trail' %}active{% endif %}" href="{% url 'managementApp:finance_audit_trail' %}">
-                <i class="stream icon"></i>
-                <span>Audit Trail</span>
-            </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'finance_reconciliation' %}active{% endif %}" href="{% url 'managementApp:finance_reconciliation' %}">
-                <i class="tasks icon"></i>
-                <span>Reconciliation</span>
-            </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'manage_student_charges' %}active{% endif %}" href="{% url 'managementApp:manage_student_charges' %}">
-                <i class="file invoice dollar icon"></i>
-                <span>Student Charges</span>
-            </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'manage_fee_heads' %}active{% endif %}" href="{% url 'managementApp:manage_fee_heads' %}">
-                <i class="tags icon"></i>
-                <span>Fee Heads</span>
-            </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'student_finance_ledger' %}active{% endif %}" href="{% url 'managementApp:student_finance_ledger' %}">
-                <i class="book icon"></i>
-                <span>Student Ledger</span>
+            <a class="nav-item {% if request.resolver_match.url_name == 'manage_expense_vouchers' or request.resolver_match.url_name == 'manage_vendors' or request.resolver_match.url_name == 'vendor_payables' %}active{% endif %}" href="{% url 'managementApp:manage_expense_vouchers' %}">
+                <i class="file alternate outline icon"></i>
+                <span>Expenses</span>
             </a>
             <a class="nav-item {% if request.resolver_match.url_name == 'finance_payroll' %}active{% endif %}" href="{% url 'managementApp:finance_payroll' %}">
                 <i class="money check alternate icon"></i>
                 <span>Payroll</span>
             </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'manage_vendors' %}active{% endif %}" href="{% url 'managementApp:manage_vendors' %}">
-                <i class="truck icon"></i>
-                <span>Vendors</span>
+            <a class="nav-item {% if request.resolver_match.url_name == 'finance_reports' or request.resolver_match.url_name == 'finance_reconciliation' or request.resolver_match.url_name == 'finance_audit_trail' %}active{% endif %}" href="{% url 'managementApp:finance_reports' %}">
+                <i class="chart pie icon"></i>
+                <span>Reports</span>
             </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'vendor_payables' %}active{% endif %}" href="{% url 'managementApp:vendor_payables' %}">
-                <i class="handshake outline icon"></i>
-                <span>Vendor Payables</span>
-            </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'vendor_statement' %}active{% endif %}" href="{% url 'managementApp:vendor_statement' %}">
-                <i class="book open icon"></i>
-                <span>Vendor Statement</span>
-            </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'manage_expense_vouchers' %}active{% endif %}" href="{% url 'managementApp:manage_expense_vouchers' %}">
-                <i class="file alternate outline icon"></i>
-                <span>Expense Vouchers</span>
-            </a>
-            <a class="nav-item {% if request.resolver_match.url_name == 'cash_bank_book' %}active{% endif %}" href="{% url 'managementApp:cash_bank_book' %}">
-                <i class="wallet icon"></i>
-                <span>Cash &amp; Bank Book</span>
+            <a class="nav-item {% if request.resolver_match.url_name == 'finance_settings' or request.resolver_match.url_name == 'finance_controls' %}active{% endif %}" href="{% url 'managementApp:finance_settings' %}">
+                <i class="cogs icon"></i>
+                <span>Settings</span>
             </a>
         </div>
     </div>
