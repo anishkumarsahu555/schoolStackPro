@@ -1,0 +1,18 @@
+<nav class="ui four item pointing secondary menu finance-workflow-tabs" aria-label="Money ledger workflow">
+    <a class="{% if active == 'money_ledger' %}active {% endif %}item" href="{% url 'managementApp:money_ledger' %}">
+        <i class="exchange alternate icon"></i>
+        <span>All Money Flow</span>
+    </a>
+    <a class="{% if active == 'student_ledger' %}active {% endif %}item" href="{% url 'managementApp:student_finance_ledger' %}">
+        <i class="book icon"></i>
+        <span>Student Ledger</span>
+    </a>
+    <a class="{% if active == 'cash_bank' %}active {% endif %}item" href="{% url 'managementApp:cash_bank_book' %}">
+        <i class="wallet icon"></i>
+        <span>Cash &amp; Bank</span>
+    </a>
+    <a class="{% if active == 'vendor_statement' %}active {% endif %}item" href="{% url 'managementApp:vendor_statement' %}">
+        <i class="book open icon"></i>
+        <span>Vendor Statement</span>
+    </a>
+</nav>

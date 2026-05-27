@@ -14,6 +14,8 @@
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
             <div class="ui tab active finance-shell" data-tab="user">
+                {% include 'managementApp/finance/_reports_tabs.html' with active='reports' %}
+
                 <div class="ui segment">
                     <h4 class="ui horizontal left aligned divider header">
                         <i class="filter icon"></i>
@@ -95,7 +97,47 @@
                         <div class="value" id="reportNetSurplus">Rs 0.00</div>
                         <div class="label">Net Surplus</div>
                     </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="reportCashInflow">Rs 0.00</div>
+                        <div class="label">Cash Inflow</div>
+                    </div>
+                    <div class="finance-summary-item">
+                        <div class="value" id="reportCashOutflow">Rs 0.00</div>
+                        <div class="label">Cash Outflow</div>
+                    </div>
                 </section>
+
+                <div class="ui segment finance-table-panel">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="exchange alternate icon"></i>
+                        Money Flow
+                    </h4>
+                    <div class="finance-panel-subtitle">Posted cash inflow, outflow, and receivable movement across fees, fines, salary, refunds, and expenses.</div>
+
+                    <div class="finance-table-wrap">
+                        <table class="ui unstackable tiny sortable celled very compact table" style="width:100%;">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Reference</th>
+                                <th>Type</th>
+                                <th>Direction</th>
+                                <th>Source</th>
+                                <th>Amount</th>
+                            </tr>
+                            </thead>
+                            <tbody id="moneyFlowRows">
+                            <tr><td colspan="6" class="center aligned">Load reports to view money flow.</td></tr>
+                            </tbody>
+                            <tfoot>
+                            <tr>
+                                <th colspan="5">Net Cash Flow</th>
+                                <th id="moneyFlowNet">Rs 0.00</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
 
                 <div class="ui segment finance-table-panel">
                     <h4 class="ui horizontal left aligned divider header">
@@ -562,13 +604,32 @@
                 const incomeStatement = data.incomeStatement || {};
                 const balanceSheet = data.balanceSheet || {};
                 const generalLedger = data.generalLedger || {};
+                const moneyFlow = data.moneyFlow || {};
+                const moneyFlowSummary = moneyFlow.summary || {};
 
                 $('#reportAssetTotal').text(money(summary.assetTotal));
                 $('#reportLiabilityTotal').text(money(summary.liabilityTotal));
                 $('#reportIncomeTotal').text(money(summary.incomeTotal));
                 $('#reportExpenseTotal').text(money(summary.expenseTotal));
                 $('#reportNetSurplus').text(money(summary.netSurplus));
+                $('#reportCashInflow').text(money(moneyFlowSummary.totalInflow));
+                $('#reportCashOutflow').text(money(moneyFlowSummary.totalOutflow));
+                $('#moneyFlowNet').text(money(moneyFlowSummary.netCashFlow));
                 $('#financeReportSummary').show();
+
+                const moneyFlowRows = moneyFlow.rows || [];
+                $('#moneyFlowRows').html(
+                    moneyFlowRows.length ? moneyFlowRows.map(function (row) {
+                        return '<tr>' +
+                            '<td>' + row.date + '</td>' +
+                            '<td><strong>' + row.reference + '</strong></td>' +
+                            '<td style="text-transform:capitalize;">' + String(row.txnType || '').replace(/_/g, ' ') + '</td>' +
+                            '<td style="text-transform:capitalize;">' + String(row.direction || '').replace(/_/g, ' ') + '</td>' +
+                            '<td>' + (row.sourceModule || '-') + '</td>' +
+                            '<td>' + money(row.amount) + '</td>' +
+                            '</tr>';
+                    }).join('') : '<tr><td colspan="6" class="center aligned">No posted money movement found for the selected range.</td></tr>'
+                );
 
                 if (!trialBalance.length) {
                     $('#trialBalanceBody').html('<tr><td colspan="7" class="center aligned">No posted finance entries found for the selected range.</td></tr>');

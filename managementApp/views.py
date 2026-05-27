@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 
-from financeApp.models import ExpenseCategory, ExpenseVoucher, FeeHead, FinanceAccount, FinanceApprovalRule, FinanceConfiguration, FinanceEntry, FinanceParty, FinancePeriod, PaymentReceipt, PayrollRun, StudentCharge
+from financeApp.models import ExpenseCategory, ExpenseVoucher, FeeHead, FinanceAccount, FinanceApprovalRule, FinanceConfiguration, FinanceEntry, FinanceParty, FinancePeriod, FinanceTransaction, PaymentReceipt, PayrollLine, PayrollRun, StudentCharge
 from financeApp.services import bootstrap_expense_categories, bootstrap_school_finance, get_finance_configuration
 from homeApp.models import AuditLog, SchoolDetail, SchoolSession
 from homeApp.owner_access import school_owner_user_q
@@ -477,6 +477,7 @@ def finance_dashboard(request):
     current_session = request.session.get('current_session', {})
     session_id = current_session.get('Id')
     school_id = current_session.get('SchoolID')
+    session_obj = SchoolSession.objects.filter(pk=session_id).first() if session_id else None
     if school_id and session_id:
         bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=request.user)
         bootstrap_expense_categories(school_id=school_id, session_id=session_id, user_obj=request.user)
@@ -485,6 +486,8 @@ def finance_dashboard(request):
     charge_qs = StudentCharge.objects.filter(isDeleted=False)
     receipt_qs = PaymentReceipt.objects.filter(isDeleted=False)
     expense_qs = ExpenseVoucher.objects.filter(isDeleted=False)
+    payroll_line_qs = PayrollLine.objects.select_related('payrollRunID').filter(payrollRunID__isDeleted=False)
+    transaction_qs = FinanceTransaction.objects.filter(isDeleted=False)
     finance_accounts_qs = FinanceAccount.objects.filter(isDeleted=False)
 
     if school_id:
@@ -492,12 +495,16 @@ def finance_dashboard(request):
         charge_qs = charge_qs.filter(schoolID_id=school_id)
         receipt_qs = receipt_qs.filter(schoolID_id=school_id)
         expense_qs = expense_qs.filter(schoolID_id=school_id)
+        payroll_line_qs = payroll_line_qs.filter(payrollRunID__schoolID_id=school_id)
+        transaction_qs = transaction_qs.filter(schoolID_id=school_id)
         finance_accounts_qs = finance_accounts_qs.filter(schoolID_id=school_id)
     if session_id:
         fee_heads_qs = fee_heads_qs.filter(sessionID_id=session_id)
         charge_qs = charge_qs.filter(sessionID_id=session_id)
         receipt_qs = receipt_qs.filter(sessionID_id=session_id)
         expense_qs = expense_qs.filter(sessionID_id=session_id)
+        payroll_line_qs = payroll_line_qs.filter(payrollRunID__sessionID_id=session_id)
+        transaction_qs = transaction_qs.filter(sessionID_id=session_id)
         finance_accounts_qs = finance_accounts_qs.filter(sessionID_id=session_id)
 
     charge_summary = charge_qs.aggregate(
@@ -507,6 +514,8 @@ def finance_dashboard(request):
     )
     confirmed_receipt_qs = receipt_qs.filter(status='confirmed')
     paid_expense_qs = expense_qs.filter(approvalStatus='paid')
+    paid_payroll_line_qs = payroll_line_qs.filter(paymentStatus='paid')
+    pending_payroll_line_qs = payroll_line_qs.exclude(paymentStatus='paid')
 
     cash_account = finance_accounts_qs.filter(accountCode='CASH_ON_HAND').first()
     bank_account = finance_accounts_qs.filter(accountCode='BANK_MAIN').first()
@@ -524,6 +533,80 @@ def finance_dashboard(request):
         )
         return (totals.get('debit_total') or Decimal('0.00')) - (totals.get('credit_total') or Decimal('0.00'))
 
+    def decimal_to_float(value):
+        return float(value or Decimal('0.00'))
+
+    def sum_amount(queryset, field_name):
+        return queryset.aggregate(total=Sum(field_name)).get('total') or Decimal('0.00')
+
+    month_sequence = get_session_month_sequence(session_obj, max_months=12)
+    month_labels = [f'{month_name[:3]} {year}' for month_name, year, month_no, start_date, end_date in month_sequence]
+    monthly_receipts = []
+    monthly_expenses = []
+    monthly_payroll = []
+    monthly_net_cash = []
+    monthly_charges = []
+    for month_name, year, month_no, start_date, end_date in month_sequence:
+        receipt_total = sum_amount(
+            confirmed_receipt_qs.filter(receiptDate__gte=start_date, receiptDate__lte=end_date),
+            'amountReceived',
+        )
+        expense_total = sum_amount(
+            paid_expense_qs.filter(voucherDate__gte=start_date, voucherDate__lte=end_date),
+            'netAmount',
+        )
+        payroll_total = sum_amount(
+            paid_payroll_line_qs.filter(paymentDate__gte=start_date, paymentDate__lte=end_date),
+            'netAmount',
+        )
+        charge_total = sum_amount(
+            charge_qs.filter(chargeDate__gte=start_date, chargeDate__lte=end_date).exclude(status='cancelled'),
+            'netAmount',
+        )
+        total_outflow = expense_total + payroll_total
+        monthly_receipts.append(decimal_to_float(receipt_total))
+        monthly_expenses.append(decimal_to_float(expense_total))
+        monthly_payroll.append(decimal_to_float(payroll_total))
+        monthly_net_cash.append(decimal_to_float(receipt_total - total_outflow))
+        monthly_charges.append(decimal_to_float(charge_total))
+
+    charge_status_rows = list(
+        charge_qs.exclude(status='cancelled')
+        .values('status')
+        .annotate(total=Sum('balanceAmount'), count=Count('id'))
+        .order_by('status')
+    )
+    charge_status_labels = [str(row['status'] or 'unknown').replace('_', ' ').title() for row in charge_status_rows]
+    charge_status_values = [decimal_to_float(row.get('total')) for row in charge_status_rows]
+
+    expense_category_rows = list(
+        paid_expense_qs.values('expenseCategoryID__name')
+        .annotate(total=Sum('netAmount'))
+        .order_by('-total')[:6]
+    )
+    expense_category_labels = [row['expenseCategoryID__name'] or 'Uncategorised' for row in expense_category_rows]
+    expense_category_values = [decimal_to_float(row.get('total')) for row in expense_category_rows]
+
+    payment_mode_rows = list(
+        confirmed_receipt_qs.values('paymentModeID__name')
+        .annotate(total=Sum('amountReceived'))
+        .order_by('-total')[:6]
+    )
+    payment_mode_labels = [row['paymentModeID__name'] or 'Mode not set' for row in payment_mode_rows]
+    payment_mode_values = [decimal_to_float(row.get('total')) for row in payment_mode_rows]
+
+    posted_txn_count = transaction_qs.filter(status='posted').count()
+    reversed_txn_count = transaction_qs.filter(status='reversed').count()
+    payroll_paid_total = sum_amount(paid_payroll_line_qs, 'netAmount')
+    payroll_pending_total = sum_amount(pending_payroll_line_qs, 'netAmount')
+    receipt_total = sum_amount(confirmed_receipt_qs, 'amountReceived')
+    expense_total = sum_amount(paid_expense_qs, 'netAmount')
+    net_cash_flow = receipt_total - expense_total - payroll_paid_total
+    liquidity_total = account_balance(cash_account) + account_balance(bank_account)
+    collection_rate = Decimal('0.00')
+    if charge_summary.get('total_due'):
+        collection_rate = ((charge_summary.get('total_paid') or Decimal('0.00')) / charge_summary.get('total_due')) * Decimal('100.00')
+
     context = {
         'fee_heads_count': fee_heads_qs.count(),
         'open_charges_count': charge_qs.exclude(status__in=['paid', 'cancelled']).count(),
@@ -531,13 +614,33 @@ def finance_dashboard(request):
         'charge_total_paid': charge_summary.get('total_paid') or Decimal('0.00'),
         'charge_total_balance': charge_summary.get('total_balance') or Decimal('0.00'),
         'receipt_count': confirmed_receipt_qs.count(),
-        'receipt_total': confirmed_receipt_qs.aggregate(total=Sum('amountReceived')).get('total') or Decimal('0.00'),
+        'receipt_total': receipt_total,
         'expense_voucher_count': paid_expense_qs.count(),
-        'expense_total': paid_expense_qs.aggregate(total=Sum('netAmount')).get('total') or Decimal('0.00'),
+        'expense_total': expense_total,
+        'payroll_paid_total': payroll_paid_total,
+        'payroll_pending_total': payroll_pending_total,
+        'net_cash_flow': net_cash_flow,
+        'liquidity_total': liquidity_total,
+        'collection_rate': collection_rate,
+        'posted_txn_count': posted_txn_count,
+        'reversed_txn_count': reversed_txn_count,
         'cash_balance': account_balance(cash_account),
         'bank_balance': account_balance(bank_account),
+        'finance_account_options': finance_accounts_qs.order_by('accountType', 'accountName'),
         'recent_receipts': confirmed_receipt_qs.select_related('studentID', 'paymentModeID').order_by('-receiptDate', '-id')[:5],
         'recent_expenses': expense_qs.select_related('expenseCategoryID', 'paymentModeID').order_by('-voucherDate', '-id')[:5],
+        'month_labels_json': json.dumps(month_labels),
+        'monthly_receipts_json': json.dumps(monthly_receipts),
+        'monthly_expenses_json': json.dumps(monthly_expenses),
+        'monthly_payroll_json': json.dumps(monthly_payroll),
+        'monthly_net_cash_json': json.dumps(monthly_net_cash),
+        'monthly_charges_json': json.dumps(monthly_charges),
+        'charge_status_labels_json': json.dumps(charge_status_labels),
+        'charge_status_values_json': json.dumps(charge_status_values),
+        'expense_category_labels_json': json.dumps(expense_category_labels),
+        'expense_category_values_json': json.dumps(expense_category_values),
+        'payment_mode_labels_json': json.dumps(payment_mode_labels),
+        'payment_mode_values_json': json.dumps(payment_mode_values),
     }
     return render(request, 'managementApp/finance/dashboard.html', context)
 
@@ -579,6 +682,17 @@ def finance_reports(request):
         bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=request.user)
     context = {}
     return render(request, 'managementApp/finance/reports.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def money_ledger(request):
+    current_session = request.session.get('current_session', {})
+    session_id = current_session.get('Id')
+    school_id = current_session.get('SchoolID')
+    if school_id and session_id:
+        bootstrap_school_finance(school_id=school_id, session_id=session_id, user_obj=request.user)
+    return render(request, 'managementApp/finance/money_ledger.html', {})
 
 
 @login_required

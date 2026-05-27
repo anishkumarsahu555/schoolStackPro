@@ -4,130 +4,865 @@
     <title>Finance Dashboard</title>
 {% endblock %}
 {% block page_title %}Finance Dashboard{% endblock %}
-{% block page_subtitle %}Track collections, open student dues, outgoing payments, and liquidity from one place.{% endblock %}
+{% block page_subtitle %}Monitor liquidity, receivables, collections, expenses, payroll, and posted money movement.{% endblock %}
 
 {% block css %}
     {% include 'managementApp/finance/_shared_styles.html' %}
+    <style>
+        .finance-dashboard-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .finance-dashboard-filter {
+            padding: 0.9rem 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: var(--app-radius-md);
+            background: rgba(255, 255, 255, 0.88);
+            box-shadow: var(--app-shadow-sm);
+        }
+
+        .finance-dashboard-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 0.75rem;
+            align-items: end;
+        }
+
+        .finance-dashboard-quick-ranges {
+            display: flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+
+        .finance-dashboard-filter-actions {
+            display: flex;
+            gap: 0.45rem;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .finance-dashboard-filter-grid .field:nth-child(5) {
+            align-self: end;
+        }
+
+        .finance-dashboard-filter-grid .field:nth-child(5) label {
+            display: block;
+            visibility: hidden;
+        }
+
+        .finance-dashboard-filter-actions .ui.button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 38px;
+            min-height: 38px;
+            margin: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            line-height: 1 !important;
+        }
+
+        .finance-dashboard-hero {
+            display: grid;
+            gap: 1rem;
+            padding: 1.1rem;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: var(--app-radius-md);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.96));
+            box-shadow: var(--app-shadow-sm);
+        }
+
+        .finance-dashboard-hero-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .finance-dashboard-label {
+            color: var(--app-muted);
+            font-size: 0.76rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .finance-dashboard-value {
+            margin-top: 0.25rem;
+            color: var(--app-text);
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .finance-dashboard-note {
+            margin-top: 0.4rem;
+            color: var(--app-muted);
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+
+        .finance-dashboard-actions {
+            display: flex;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+        }
+
+        .finance-dashboard-actions .ui.button {
+            margin: 0;
+        }
+
+        .finance-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+
+        .finance-kpi-card {
+            display: grid;
+            gap: 0.3rem;
+            min-height: 118px;
+            padding: 0.95rem;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: var(--app-radius-md);
+            background: rgba(255, 255, 255, 0.82);
+            box-shadow: var(--app-shadow-sm);
+        }
+
+        .finance-kpi-card .label {
+            color: var(--app-muted);
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .finance-kpi-card .value {
+            color: var(--app-text);
+            font-size: 1.35rem;
+            font-weight: 800;
+            line-height: 1.1;
+            word-break: break-word;
+        }
+
+        .finance-kpi-card .meta {
+            color: var(--app-muted);
+            font-size: 0.82rem;
+            line-height: 1.35;
+        }
+
+        .finance-chart-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+            gap: 1rem;
+        }
+
+        .finance-chart-panel {
+            display: grid;
+            gap: 0.75rem;
+            min-width: 0;
+            padding: 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: var(--app-radius-md);
+            background: rgba(255, 255, 255, 0.86);
+            box-shadow: var(--app-shadow-sm);
+        }
+
+        .finance-chart-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .finance-chart-title {
+            margin: 0;
+            color: var(--app-text);
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        .finance-chart-subtitle {
+            margin-top: 0.25rem;
+            color: var(--app-muted);
+            font-size: 0.84rem;
+            line-height: 1.4;
+        }
+
+        .finance-chart-wrap {
+            position: relative;
+            width: 100%;
+            min-height: 280px;
+        }
+
+        .finance-chart-wrap.compact {
+            min-height: 235px;
+        }
+
+        .finance-chart-wrap canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .finance-health-list {
+            display: grid;
+            gap: 0.65rem;
+        }
+
+        .finance-health-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.78rem 0.85rem;
+            border-radius: 12px;
+            background: rgba(248, 250, 252, 0.88);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+        }
+
+        .finance-health-row strong {
+            color: var(--app-text);
+        }
+
+        .finance-health-row span {
+            color: var(--app-muted);
+            font-size: 0.84rem;
+        }
+
+        .finance-health-row .amount {
+            color: var(--app-text);
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .finance-activity-columns {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        html[data-theme="dark"] .finance-dashboard-hero,
+        html[data-theme="dark"] .finance-dashboard-filter,
+        html[data-theme="dark"] .finance-kpi-card,
+        html[data-theme="dark"] .finance-chart-panel {
+            background: linear-gradient(180deg, rgba(20, 28, 39, 0.98), rgba(21, 30, 44, 0.98));
+            border-color: rgba(148, 163, 184, 0.18);
+            box-shadow: 0 16px 28px rgba(2, 8, 23, 0.2);
+        }
+
+        html[data-theme="dark"] .finance-health-row {
+            background: rgba(15, 23, 42, 0.42);
+            border-color: rgba(148, 163, 184, 0.16);
+        }
+
+        @media (max-width: 1100px) {
+            .finance-dashboard-grid,
+            .finance-dashboard-filter-grid,
+            .finance-chart-grid,
+            .finance-activity-columns {
+                grid-template-columns: 1fr;
+            }
+
+            .finance-kpi-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 767px) {
+            .finance-dashboard-filter-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                align-items: end;
+            }
+
+            .finance-dashboard-filter-grid .field:nth-child(5) {
+                grid-column: 1 / -1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .finance-dashboard-filter-actions {
+                width: 100%;
+            }
+
+            .finance-dashboard-filter-actions .ui.button {
+                flex: 1 1 0;
+            }
+
+            .finance-dashboard-quick-ranges {
+                justify-content: center;
+            }
+
+            .finance-dashboard-hero,
+            .finance-dashboard-filter,
+            .finance-kpi-card,
+            .finance-chart-panel {
+                padding: 0.85rem;
+                border-radius: 12px;
+            }
+
+            .finance-dashboard-value {
+                font-size: 1.55rem;
+            }
+
+            .finance-kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .finance-chart-wrap,
+            .finance-chart-wrap.compact {
+                min-height: 230px;
+            }
+
+            .finance-health-row {
+                flex-direction: column;
+                gap: 0.35rem;
+            }
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
     <div class="ui left aligned basic grid">
         <div class="sixteen wide column">
             <div class="ui tab active finance-shell" data-tab="user">
-
-        <div class="ui segment finance-highlight-panel">
-            <div class="finance-highlight-label">Outstanding Student Dues</div>
-            <div class="finance-highlight-value">Rs {{ charge_total_balance|floatformat:2 }}</div>
-            <div class="finance-highlight-note">
-                {{ open_charges_count }} active charge{{ open_charges_count|pluralize }} still need settlement across the current school session.
-            </div>
-            <div class="finance-summary-grid" style="gap:0.65rem;">
-                <div class="finance-summary-item">
-                    <div class="value">Rs {{ cash_balance|floatformat:2 }}</div>
-                    <div class="label">Cash Balance</div>
-                </div>
-                <div class="finance-summary-item">
-                    <div class="value">Rs {{ bank_balance|floatformat:2 }}</div>
-                    <div class="label">Bank Balance</div>
-                </div>
-            </div>
-        </div>
-
-        <section class="finance-metric-grid">
-            <div class="finance-metric-card">
-                <div class="finance-metric-label">Fee Heads</div>
-                <div class="finance-metric-value">{{ fee_heads_count }}</div>
-                <div class="finance-metric-meta">Configured finance-backed charging heads.</div>
-            </div>
-            <div class="finance-metric-card">
-                <div class="finance-metric-label">Charged</div>
-                <div class="finance-metric-value">Rs {{ charge_total_due|floatformat:2 }}</div>
-                <div class="finance-metric-meta">Total dues posted into the finance ledger.</div>
-            </div>
-            <div class="finance-metric-card">
-                <div class="finance-metric-label">Collected</div>
-                <div class="finance-metric-value">Rs {{ receipt_total|floatformat:2 }}</div>
-                <div class="finance-metric-meta">{{ receipt_count }} confirmed receipt{{ receipt_count|pluralize }} recorded.</div>
-            </div>
-            <div class="finance-metric-card">
-                <div class="finance-metric-label">Expenses Paid</div>
-                <div class="finance-metric-value">Rs {{ expense_total|floatformat:2 }}</div>
-                <div class="finance-metric-meta">{{ expense_voucher_count }} paid voucher{{ expense_voucher_count|pluralize }} moved through finance.</div>
-            </div>
-        </section>
-
-        <div class="ui stackable two column grid" style="margin:0;">
-            <div class="column">
-                <div class="ui segment finance-activity-section">
-                    <h4 class="ui horizontal left aligned divider header">
-                        <i class="filter icon"></i>
-                        Recent Receipts
-                    </h4>
-                    <div class="finance-panel-subtitle">Latest confirmed collections entering the finance books.</div>
-                        <span class="finance-badge"><i class="arrow down icon"></i>Incoming</span>
-
-                    <div class="finance-activity-list">
-                        {% for receipt in recent_receipts %}
-                            <article class="finance-activity-card">
-                                <div class="finance-activity-top">
-                                    <div class="finance-activity-heading">
-                                        <div class="finance-activity-ref">{{ receipt.receiptNo }}</div>
-                                        <div class="finance-activity-date">{{ receipt.receiptDate|date:"d M Y" }}</div>
+                <section class="finance-dashboard-filter">
+                    <form class="ui tiny form" id="financeDashboardFilterForm">
+                        <div class="finance-dashboard-filter-grid">
+                            <div class="field">
+                                <label>Date From</label>
+                                <div class="ui calendar" id="dashboardDateFromCal">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" id="dashboardDateFrom" placeholder="Date From">
                                     </div>
-                                    <div class="finance-activity-amount">Rs {{ receipt.amountReceived|floatformat:2 }}</div>
                                 </div>
-                                <div class="finance-activity-main">
-                                    <div class="finance-activity-title">{{ receipt.studentID.name|default:receipt.receivedFromName|default:'-' }}</div>
-                                    <div class="finance-activity-meta">{{ receipt.paymentModeID.name|default:'Mode not set' }}</div>
-                                </div>
-                                <div class="finance-activity-actions">
-                                    <a class="finance-page-link finance-activity-link" href="{% url 'managementApp:finance_receipt_detail' receipt.id %}">Open Receipt</a>
-                                </div>
-                            </article>
-                        {% empty %}
-                            <div class="finance-empty">No confirmed receipts yet.</div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-
-            <div class="column">
-                <div class="ui segment finance-activity-section">
-                    <h4 class="ui horizontal left aligned divider header">
-                        <i class="filter icon"></i>
-                        Recent Expense Vouchers
-                    </h4>
-                    <div class="finance-panel-subtitle">Outgoing finance activity posted from vouchers.</div>
-                        <span class="finance-badge" style="background:rgba(245, 158, 11, 0.12); color:#b45309;">
-                            <i class="arrow up icon"></i>Outgoing
-                        </span>
-
-                    <div class="finance-activity-list">
-                        {% for voucher in recent_expenses %}
-                            <article class="finance-activity-card">
-                                <div class="finance-activity-top">
-                                    <div class="finance-activity-heading">
-                                        <div class="finance-activity-ref">{{ voucher.voucherNo }}</div>
-                                        <div class="finance-activity-date">{{ voucher.voucherDate|date:"d M Y" }}</div>
+                            </div>
+                            <div class="field">
+                                <label>Date To</label>
+                                <div class="ui calendar" id="dashboardDateToCal">
+                                    <div class="ui input left icon">
+                                        <i class="calendar icon"></i>
+                                        <input type="text" id="dashboardDateTo" placeholder="Date To">
                                     </div>
-                                    <div class="finance-activity-amount">Rs {{ voucher.netAmount|floatformat:2 }}</div>
                                 </div>
-                                <div class="finance-activity-main">
-                                    <div class="finance-activity-title">{{ voucher.expenseCategoryID.name }}</div>
-                                    <div class="finance-activity-meta">{{ voucher.get_approvalStatus_display }}</div>
+                            </div>
+                            <div class="field">
+                                <label>Source</label>
+                                <select class="ui dropdown" id="dashboardSource">
+                                    <option value="all">All Money</option>
+                                    <option value="fees">Fees</option>
+                                    <option value="fines">Fines</option>
+                                    <option value="expenses">Expenses</option>
+                                    <option value="payroll">Payroll</option>
+                                    <option value="vendors">Vendors</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Account</label>
+                                <select class="ui search dropdown" id="dashboardAccount">
+                                    <option value="">All Accounts</option>
+                                    {% for account in finance_account_options %}
+                                        <option value="{{ account.id }}">{{ account.accountName }} ({{ account.accountCode }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>&nbsp;</label>
+                                <div class="finance-dashboard-filter-actions">
+                                    <button type="button" class="ui green button" onclick="loadFinanceDashboard()">
+                                        <i class="sync icon"></i>
+                                        Apply
+                                    </button>
+                                    <button type="button" class="ui red button" onclick="resetFinanceDashboardFilters()">
+                                        <i class="times circle icon"></i>
+                                        Clear
+                                    </button>
                                 </div>
-                                <div class="finance-activity-actions">
-                                    <a class="finance-page-link finance-activity-link" href="{% url 'managementApp:manage_expense_vouchers' %}">Open Vouchers</a>
-                                </div>
-                            </article>
-                        {% empty %}
-                            <div class="finance-empty">No expense vouchers yet.</div>
-                        {% endfor %}
+                            </div>
+                        </div>
+                    </form>
+                    <div class="finance-dashboard-quick-ranges">
+                        <button type="button" class="ui mini basic button" onclick="setDashboardRange('today')">Today</button>
+                        <button type="button" class="ui mini basic button" onclick="setDashboardRange('month')">This Month</button>
+                        <button type="button" class="ui mini basic button" onclick="setDashboardRange('session')">This Session</button>
                     </div>
-                </div>
-            </div>
-        </div>
+                </section>
+
+                <section class="finance-dashboard-grid">
+                    <div class="finance-dashboard-hero">
+                        <div class="finance-dashboard-hero-top">
+                            <div>
+                                <div class="finance-dashboard-label">Net Cash Flow</div>
+                                <div class="finance-dashboard-value" id="dashboardNetCashFlow">Rs {{ net_cash_flow|floatformat:2 }}</div>
+                                <div class="finance-dashboard-note">
+                                    Collections less paid expenses and salary payments for the active session.
+                                </div>
+                            </div>
+                            <div class="finance-dashboard-actions">
+                                <a class="ui green button" href="{% url 'managementApp:manage_receipts' %}">
+                                    <i class="plus icon"></i>
+                                    Collect Fees
+                                </a>
+                                <a class="ui blue button" href="{% url 'managementApp:money_ledger' %}">
+                                    <i class="exchange alternate icon"></i>
+                                    Money Ledger
+                                </a>
+                                <a class="ui basic button" href="{% url 'managementApp:finance_reports' %}">
+                                    <i class="chart pie icon"></i>
+                                    Reports
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="finance-kpi-grid">
+                            <article class="finance-kpi-card">
+                                <div class="label">Liquidity</div>
+                                <div class="value" id="dashboardLiquidityTotal">Rs {{ liquidity_total|floatformat:2 }}</div>
+                                <div class="meta" id="dashboardLiquidityMeta">Cash: Rs {{ cash_balance|floatformat:2 }} · Bank: Rs {{ bank_balance|floatformat:2 }}</div>
+                            </article>
+                            <article class="finance-kpi-card">
+                                <div class="label">Receivables</div>
+                                <div class="value" id="dashboardReceivables">Rs {{ charge_total_balance|floatformat:2 }}</div>
+                                <div class="meta" id="dashboardReceivablesMeta">{{ open_charges_count }} open charge{{ open_charges_count|pluralize }}.</div>
+                            </article>
+                            <article class="finance-kpi-card">
+                                <div class="label">Collected</div>
+                                <div class="value" id="dashboardCollected">Rs {{ receipt_total|floatformat:2 }}</div>
+                                <div class="meta" id="dashboardCollectedMeta">{{ receipt_count }} confirmed receipt{{ receipt_count|pluralize }}.</div>
+                            </article>
+                            <article class="finance-kpi-card">
+                                <div class="label">Collection Rate</div>
+                                <div class="value" id="dashboardCollectionRate">{{ collection_rate|floatformat:1 }}%</div>
+                                <div class="meta" id="dashboardCollectionRateMeta">Paid against Rs {{ charge_total_due|floatformat:2 }} charged.</div>
+                            </article>
+                        </div>
+                    </div>
+
+                    <aside class="finance-chart-panel">
+                        <div class="finance-chart-head">
+                            <div>
+                                <h3 class="finance-chart-title">Finance Health</h3>
+                                <div class="finance-chart-subtitle">Useful session totals for quick review.</div>
+                            </div>
+                            <span class="finance-badge"><i class="check circle icon"></i><span id="dashboardPostedTxnCount">{{ posted_txn_count }}</span> posted</span>
+                        </div>
+                        <div class="finance-health-list">
+                            <div class="finance-health-row">
+                                <div><strong>Expenses Paid</strong><br><span>{{ expense_voucher_count }} paid voucher{{ expense_voucher_count|pluralize }}</span></div>
+                                <div class="amount" id="dashboardExpenseTotal">Rs {{ expense_total|floatformat:2 }}</div>
+                            </div>
+                            <div class="finance-health-row">
+                                <div><strong>Salary Paid</strong><br><span>Payroll outflow settled</span></div>
+                                <div class="amount" id="dashboardPayrollPaidTotal">Rs {{ payroll_paid_total|floatformat:2 }}</div>
+                            </div>
+                            <div class="finance-health-row">
+                                <div><strong>Salary Pending</strong><br><span>Payroll still unpaid or on hold</span></div>
+                                <div class="amount" id="dashboardPayrollPendingTotal">Rs {{ payroll_pending_total|floatformat:2 }}</div>
+                            </div>
+                            <div class="finance-health-row">
+                                <div><strong>Fee Heads</strong><br><span>Active finance charging setup</span></div>
+                                <div class="amount" id="dashboardFeeHeadsCount">{{ fee_heads_count }}</div>
+                            </div>
+                            <div class="finance-health-row">
+                                <div><strong>Reversed Txns</strong><br><span>Transactions needing review awareness</span></div>
+                                <div class="amount" id="dashboardReversedTxnCount">{{ reversed_txn_count }}</div>
+                            </div>
+                        </div>
+                    </aside>
+                </section>
+
+                <section class="finance-chart-grid">
+                    <div class="finance-chart-panel">
+                        <div class="finance-chart-head">
+                            <div>
+                                <h3 class="finance-chart-title">Monthly Money Movement</h3>
+                                <div class="finance-chart-subtitle">Collections compared with paid expenses and salaries.</div>
+                            </div>
+                        </div>
+                        <div class="finance-chart-wrap">
+                            <canvas id="financeCashFlowChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="finance-chart-panel">
+                        <div class="finance-chart-head">
+                            <div>
+                                <h3 class="finance-chart-title">Receivable Status</h3>
+                                <div class="finance-chart-subtitle">Outstanding balance by student charge status.</div>
+                            </div>
+                        </div>
+                        <div class="finance-chart-wrap compact">
+                            <canvas id="financeReceivableChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="finance-chart-grid">
+                    <div class="finance-chart-panel">
+                        <div class="finance-chart-head">
+                            <div>
+                                <h3 class="finance-chart-title">Charged vs Collected</h3>
+                                <div class="finance-chart-subtitle">Monthly student dues posted against fee collection.</div>
+                            </div>
+                        </div>
+                        <div class="finance-chart-wrap compact">
+                            <canvas id="financeChargeCollectionChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="finance-chart-panel">
+                        <div class="finance-chart-head">
+                            <div>
+                                <h3 class="finance-chart-title">Payment Mode Mix</h3>
+                                <div class="finance-chart-subtitle">How confirmed receipts are entering accounts.</div>
+                            </div>
+                        </div>
+                        <div class="finance-chart-wrap compact">
+                            <canvas id="financePaymentModeChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="finance-chart-grid">
+                    <div class="finance-chart-panel">
+                        <div class="finance-chart-head">
+                            <div>
+                                <h3 class="finance-chart-title">Expense Categories</h3>
+                                <div class="finance-chart-subtitle">Top paid voucher categories by net amount.</div>
+                            </div>
+                        </div>
+                        <div class="finance-chart-wrap compact">
+                            <canvas id="financeExpenseCategoryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="finance-chart-panel">
+                        <div class="finance-chart-head">
+                            <div>
+                                <h3 class="finance-chart-title">Recent Finance Activity</h3>
+                                <div class="finance-chart-subtitle">Latest incoming and outgoing records.</div>
+                            </div>
+                        </div>
+                        <div class="finance-activity-columns">
+                            <div class="finance-activity-list">
+                                {% for receipt in recent_receipts %}
+                                    <article class="finance-activity-card">
+                                        <div class="finance-activity-top">
+                                            <div class="finance-activity-heading">
+                                                <div class="finance-activity-ref">{{ receipt.receiptNo }}</div>
+                                                <div class="finance-activity-date">{{ receipt.receiptDate|date:"d M Y" }}</div>
+                                            </div>
+                                            <div class="finance-activity-amount">Rs {{ receipt.amountReceived|floatformat:2 }}</div>
+                                        </div>
+                                        <div class="finance-activity-main">
+                                            <div class="finance-activity-title">{{ receipt.studentID.name|default:receipt.receivedFromName|default:'-' }}</div>
+                                            <div class="finance-activity-meta">{{ receipt.paymentModeID.name|default:'Mode not set' }}</div>
+                                        </div>
+                                        <div class="finance-activity-actions">
+                                            <a class="finance-page-link finance-activity-link" href="{% url 'managementApp:finance_receipt_detail' receipt.id %}">Open Receipt</a>
+                                        </div>
+                                    </article>
+                                {% empty %}
+                                    <div class="finance-empty">No confirmed receipts yet.</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="finance-activity-list">
+                                {% for voucher in recent_expenses %}
+                                    <article class="finance-activity-card">
+                                        <div class="finance-activity-top">
+                                            <div class="finance-activity-heading">
+                                                <div class="finance-activity-ref">{{ voucher.voucherNo }}</div>
+                                                <div class="finance-activity-date">{{ voucher.voucherDate|date:"d M Y" }}</div>
+                                            </div>
+                                            <div class="finance-activity-amount">Rs {{ voucher.netAmount|floatformat:2 }}</div>
+                                        </div>
+                                        <div class="finance-activity-main">
+                                            <div class="finance-activity-title">{{ voucher.expenseCategoryID.name }}</div>
+                                            <div class="finance-activity-meta">{{ voucher.get_approvalStatus_display }}</div>
+                                        </div>
+                                        <div class="finance-activity-actions">
+                                            <a class="finance-page-link finance-activity-link" href="{% url 'managementApp:manage_expense_vouchers' %}">Open Vouchers</a>
+                                        </div>
+                                    </article>
+                                {% empty %}
+                                    <div class="finance-empty">No expense vouchers yet.</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        (function () {
+            $('.ui.dropdown').dropdown();
+            $('#dashboardDateFromCal, #dashboardDateToCal').calendar({
+                monthFirst: false,
+                type: 'date',
+                formatter: {
+                    date: function (date) {
+                        if (!date) return '';
+                        return String(date.getDate()).padStart(2, '0') + '/' + String(date.getMonth() + 1).padStart(2, '0') + '/' + date.getFullYear();
+                    }
+                }
+            });
+
+            const sessionStartDate = '{{ request.session.current_session.SessionStartDate|default:"" }}';
+            const sessionEndDate = '{{ request.session.current_session.SessionEndDate|default:"" }}';
+            const styles = getComputedStyle(document.documentElement);
+            const textColor = styles.getPropertyValue('--app-text').trim() || '#1f2937';
+            const borderColor = styles.getPropertyValue('--app-border').trim() || '#dfe3ea';
+            const palette = ['#2563eb', '#059669', '#f59e0b', '#7c3aed', '#dc2626', '#0891b2'];
+            const dashboardCharts = {};
+            let dashboardData = {
+                summary: {
+                    feeHeadsCount: Number('{{ fee_heads_count|default:0 }}'),
+                    openChargesCount: Number('{{ open_charges_count|default:0 }}'),
+                    chargeTotalDue: Number('{{ charge_total_due|default:0 }}'),
+                    chargeTotalPaid: Number('{{ charge_total_paid|default:0 }}'),
+                    chargeTotalBalance: Number('{{ charge_total_balance|default:0 }}'),
+                    receiptCount: Number('{{ receipt_count|default:0 }}'),
+                    receiptTotal: Number('{{ receipt_total|default:0 }}'),
+                    expenseVoucherCount: Number('{{ expense_voucher_count|default:0 }}'),
+                    expenseTotal: Number('{{ expense_total|default:0 }}'),
+                    payrollPaidTotal: Number('{{ payroll_paid_total|default:0 }}'),
+                    payrollPendingTotal: Number('{{ payroll_pending_total|default:0 }}'),
+                    netCashFlow: Number('{{ net_cash_flow|default:0 }}'),
+                    liquidityTotal: Number('{{ liquidity_total|default:0 }}'),
+                    cashBalance: Number('{{ cash_balance|default:0 }}'),
+                    bankBalance: Number('{{ bank_balance|default:0 }}'),
+                    collectionRate: Number('{{ collection_rate|default:0 }}'),
+                    postedTxnCount: Number('{{ posted_txn_count|default:0 }}'),
+                    reversedTxnCount: Number('{{ reversed_txn_count|default:0 }}')
+                },
+                charts: {
+                    monthLabels: {{ month_labels_json|safe }},
+                    monthlyReceipts: {{ monthly_receipts_json|safe }},
+                    monthlyExpenses: {{ monthly_expenses_json|safe }},
+                    monthlyPayroll: {{ monthly_payroll_json|safe }},
+                    monthlyNetCash: {{ monthly_net_cash_json|safe }},
+                    monthlyCharges: {{ monthly_charges_json|safe }},
+                    chargeStatusLabels: {{ charge_status_labels_json|safe }},
+                    chargeStatusValues: {{ charge_status_values_json|safe }},
+                    expenseCategoryLabels: {{ expense_category_labels_json|safe }},
+                    expenseCategoryValues: {{ expense_category_values_json|safe }},
+                    paymentModeLabels: {{ payment_mode_labels_json|safe }},
+                    paymentModeValues: {{ payment_mode_values_json|safe }}
+                }
+            };
+
+            function moneyTick(value) {
+                const numberValue = Number(value || 0);
+                if (Math.abs(numberValue) >= 100000) {
+                    return 'Rs ' + (numberValue / 100000).toFixed(1) + 'L';
+                }
+                if (Math.abs(numberValue) >= 1000) {
+                    return 'Rs ' + (numberValue / 1000).toFixed(0) + 'K';
+                }
+                return 'Rs ' + numberValue.toFixed(0);
+            }
+
+            function moneyFull(value) {
+                return 'Rs ' + Number(value || 0).toFixed(2);
+            }
+
+            function formatInputDate(dateValue) {
+                if (!dateValue) {
+                    return '';
+                }
+                const dateObj = dateValue instanceof Date ? dateValue : new Date(dateValue + 'T00:00:00');
+                if (Number.isNaN(dateObj.getTime())) {
+                    return '';
+                }
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                return day + '/' + month + '/' + dateObj.getFullYear();
+            }
+
+            function chartOptions(extra) {
+                return Object.assign({
+                    maintainAspectRatio: false,
+                    legend: {labels: {fontColor: textColor}},
+                    tooltips: {
+                        callbacks: {
+                            label: function (tooltipItem, data) {
+                                const dataset = data.datasets[tooltipItem.datasetIndex] || {};
+                                const label = dataset.label || data.labels[tooltipItem.index] || '';
+                                const value = dataset.data[tooltipItem.index] || tooltipItem.yLabel || 0;
+                                return label + ': ' + moneyTick(value);
+                            }
+                        }
+                    }
+                }, extra || {});
+            }
+
+            function updateChart(chart, labels, datasets) {
+                chart.data.labels = labels || [];
+                datasets.forEach(function (dataset, index) {
+                    chart.data.datasets[index].data = dataset || [];
+                });
+                chart.update();
+            }
+
+            function renderSummary(summary) {
+                $('#dashboardNetCashFlow').text(moneyFull(summary.netCashFlow));
+                $('#dashboardLiquidityTotal').text(moneyFull(summary.liquidityTotal));
+                $('#dashboardLiquidityMeta').text('Cash: ' + moneyFull(summary.cashBalance) + ' · Bank: ' + moneyFull(summary.bankBalance));
+                $('#dashboardReceivables').text(moneyFull(summary.chargeTotalBalance));
+                $('#dashboardReceivablesMeta').text(summary.openChargesCount + ' open charge' + (summary.openChargesCount === 1 ? '.' : 's.'));
+                $('#dashboardCollected').text(moneyFull(summary.receiptTotal));
+                $('#dashboardCollectedMeta').text(summary.receiptCount + ' confirmed receipt' + (summary.receiptCount === 1 ? '.' : 's.'));
+                $('#dashboardCollectionRate').text(Number(summary.collectionRate || 0).toFixed(1) + '%');
+                $('#dashboardCollectionRateMeta').text('Paid against ' + moneyFull(summary.chargeTotalDue) + ' charged.');
+                $('#dashboardPostedTxnCount').text(summary.postedTxnCount || 0);
+                $('#dashboardExpenseTotal').text(moneyFull(summary.expenseTotal));
+                $('#dashboardPayrollPaidTotal').text(moneyFull(summary.payrollPaidTotal));
+                $('#dashboardPayrollPendingTotal').text(moneyFull(summary.payrollPendingTotal));
+                $('#dashboardFeeHeadsCount').text(summary.feeHeadsCount || 0);
+                $('#dashboardReversedTxnCount').text(summary.reversedTxnCount || 0);
+            }
+
+            function renderCharts(charts) {
+                updateChart(dashboardCharts.cashFlow, charts.monthLabels, [
+                    charts.monthlyReceipts,
+                    charts.monthlyExpenses,
+                    charts.monthlyPayroll,
+                    charts.monthlyNetCash
+                ]);
+                updateChart(dashboardCharts.receivable, charts.chargeStatusLabels, [charts.chargeStatusValues]);
+                updateChart(dashboardCharts.chargeCollection, charts.monthLabels, [charts.monthlyCharges, charts.monthlyReceipts]);
+                updateChart(dashboardCharts.paymentMode, charts.paymentModeLabels, [charts.paymentModeValues]);
+                updateChart(dashboardCharts.expenseCategory, charts.expenseCategoryLabels, [charts.expenseCategoryValues]);
+            }
+
+            function initCharts(charts) {
+                const cashFlowCanvas = document.getElementById('financeCashFlowChart');
+                dashboardCharts.cashFlow = new Chart(cashFlowCanvas.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: charts.monthLabels,
+                        datasets: [
+                            {label: 'Collections', data: charts.monthlyReceipts, backgroundColor: 'rgba(5, 150, 105, 0.72)', borderColor: '#059669', borderWidth: 1},
+                            {label: 'Expenses', data: charts.monthlyExpenses, backgroundColor: 'rgba(245, 158, 11, 0.72)', borderColor: '#f59e0b', borderWidth: 1},
+                            {label: 'Salary', data: charts.monthlyPayroll, backgroundColor: 'rgba(220, 38, 38, 0.64)', borderColor: '#dc2626', borderWidth: 1},
+                            {label: 'Net Cash', data: charts.monthlyNetCash, type: 'line', fill: false, borderColor: '#2563eb', backgroundColor: '#2563eb', pointRadius: 3, lineTension: 0.25}
+                        ]
+                    },
+                    options: chartOptions({
+                        scales: {
+                            yAxes: [{ticks: {beginAtZero: true, fontColor: textColor, callback: moneyTick}, gridLines: {color: borderColor}}],
+                            xAxes: [{ticks: {fontColor: textColor}, gridLines: {display: false}}]
+                        }
+                    })
+                });
+
+                dashboardCharts.receivable = new Chart(document.getElementById('financeReceivableChart').getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: charts.chargeStatusLabels,
+                        datasets: [{data: charts.chargeStatusValues, backgroundColor: palette}]
+                    },
+                    options: chartOptions({cutoutPercentage: 64})
+                });
+
+                dashboardCharts.chargeCollection = new Chart(document.getElementById('financeChargeCollectionChart').getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: charts.monthLabels,
+                        datasets: [
+                            {label: 'Charged', data: charts.monthlyCharges, borderColor: '#7c3aed', backgroundColor: 'rgba(124, 58, 237, 0.12)', pointRadius: 3, lineTension: 0.25},
+                            {label: 'Collected', data: charts.monthlyReceipts, borderColor: '#059669', backgroundColor: 'rgba(5, 150, 105, 0.12)', pointRadius: 3, lineTension: 0.25}
+                        ]
+                    },
+                    options: chartOptions({
+                        scales: {
+                            yAxes: [{ticks: {beginAtZero: true, fontColor: textColor, callback: moneyTick}, gridLines: {color: borderColor}}],
+                            xAxes: [{ticks: {fontColor: textColor}, gridLines: {display: false}}]
+                        }
+                    })
+                });
+
+                dashboardCharts.paymentMode = new Chart(document.getElementById('financePaymentModeChart').getContext('2d'), {
+                    type: 'pie',
+                    data: {
+                        labels: charts.paymentModeLabels,
+                        datasets: [{data: charts.paymentModeValues, backgroundColor: palette}]
+                    },
+                    options: chartOptions()
+                });
+
+                dashboardCharts.expenseCategory = new Chart(document.getElementById('financeExpenseCategoryChart').getContext('2d'), {
+                    type: 'horizontalBar',
+                    data: {
+                        labels: charts.expenseCategoryLabels,
+                        datasets: [{label: 'Paid Expense', data: charts.expenseCategoryValues, backgroundColor: 'rgba(245, 158, 11, 0.76)', borderColor: '#f59e0b', borderWidth: 1}]
+                    },
+                    options: chartOptions({
+                        legend: {display: false},
+                        scales: {
+                            xAxes: [{ticks: {beginAtZero: true, fontColor: textColor, callback: moneyTick}, gridLines: {color: borderColor}}],
+                            yAxes: [{ticks: {fontColor: textColor}, gridLines: {display: false}}]
+                        }
+                    })
+                });
+            }
+
+            window.loadFinanceDashboard = function () {
+                $.get("{% url 'managementAppAPI:get_finance_dashboard_api' %}", {
+                    dateFrom: $('#dashboardDateFrom').val(),
+                    dateTo: $('#dashboardDateTo').val(),
+                    source: $('#dashboardSource').val() || 'all',
+                    accountID: $('#dashboardAccount').val() || ''
+                }, function (response) {
+                    if (!response.success) {
+                        addErrorNotification(response.message || 'Unable to load finance dashboard.');
+                        return;
+                    }
+                    dashboardData = response.data || dashboardData;
+                    renderSummary(dashboardData.summary || {});
+                    renderCharts(dashboardData.charts || {});
+                }).fail(function () {
+                    addErrorNotification('Unable to load finance dashboard.');
+                });
+            };
+
+            window.setDashboardRange = function (rangeKey) {
+                const today = new Date();
+                if (rangeKey === 'today') {
+                    $('#dashboardDateFrom').val(formatInputDate(today));
+                    $('#dashboardDateTo').val(formatInputDate(today));
+                } else if (rangeKey === 'month') {
+                    $('#dashboardDateFrom').val(formatInputDate(new Date(today.getFullYear(), today.getMonth(), 1)));
+                    $('#dashboardDateTo').val(formatInputDate(today));
+                } else if (rangeKey === 'session') {
+                    $('#dashboardDateFrom').val(formatInputDate(sessionStartDate));
+                    $('#dashboardDateTo').val(formatInputDate(sessionEndDate));
+                }
+                loadFinanceDashboard();
+            };
+
+            window.resetFinanceDashboardFilters = function () {
+                $('#dashboardDateFrom').val('');
+                $('#dashboardDateTo').val('');
+                $('#dashboardSource').dropdown('set selected', 'all');
+                $('#dashboardAccount').dropdown('clear');
+                loadFinanceDashboard();
+            };
+
+            $('#financeDashboardFilterForm').on('submit', function (event) {
+                event.preventDefault();
+                loadFinanceDashboard();
+            });
+
+            initCharts(dashboardData.charts || {});
+        })();
+    </script>
 {% endblock %}
