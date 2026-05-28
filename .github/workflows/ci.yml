@@ -40,6 +40,14 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libcairo2-dev \
+            pkg-config \
+            python3-dev
+
       - name: Install dependencies
         run: uv sync --frozen
 
@@ -54,4 +62,3 @@ jobs:
 
       - name: Verify static assets
         run: uv run python manage.py collectstatic --noinput --clear
-
