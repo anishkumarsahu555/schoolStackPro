@@ -17,6 +17,7 @@ env:
   DJANGO_SETTINGS_MODULE: schoolStackPro.settings
   SECRET_KEY: ci-test-secret-key
   PYTHON_VERSION: "3.14"
+  db: sqlite
   DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
   DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/root/schoolManagement/schoolStackPro' }}
   DEPLOY_BRANCH: ${{ vars.DEPLOY_BRANCH || 'main' }}
