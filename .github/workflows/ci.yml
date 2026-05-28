@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DJANGO_SETTINGS_MODULE: schoolStackPro.settings
+  SECRET_KEY: ci-test-secret-key
+  PYTHON_VERSION: "3.14"
+  db: sqlite
+
+jobs:
+  django:
+    name: Django checks and tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libcairo2-dev \
+            pkg-config \
+            python3-dev
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Django system check
+        run: uv run python manage.py check
+
+      - name: Generate local migrations
+        run: uv run python manage.py makemigrations --noinput
+
+      - name: Run tests
+        run: uv run python manage.py test --noinput
+
+      - name: Verify static assets
+        run: uv run python manage.py collectstatic --noinput --clear

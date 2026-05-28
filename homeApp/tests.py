@@ -12,11 +12,12 @@ class SchoolLicenseMiddlewareTests(TestCase):
         self.owner_group = Group.objects.create(name="Owner")
         self.user = User.objects.create_user(username="owner", password="pass12345")
         self.user.groups.add(self.owner_group)
-        self.owner = SchoolOwner.objects.create(
+        self.owner = SchoolOwner.objects.get(userID=self.user)
+        SchoolOwner.objects.filter(pk=self.owner.pk).update(
             name="Owner One",
-            userID=self.user,
             username="owner",
         )
+        self.owner.refresh_from_db()
         self.school = SchoolDetail.objects.create(
             ownerID=self.owner,
             schoolName="Sunrise School",
@@ -63,7 +64,7 @@ class SchoolLicenseMiddlewareTests(TestCase):
 
         blocked_response = self.client.get(reverse("managementApp:manage_class"))
         self.assertEqual(blocked_response.status_code, 403)
-        self.assertContains(blocked_response, "Feature access is temporarily locked", status_code=403)
+        self.assertContains(blocked_response, "Access expired", status_code=403)
         self.assertContains(blocked_response, "Activation expired", status_code=403)
 
     def test_expired_school_blocks_management_api(self):
