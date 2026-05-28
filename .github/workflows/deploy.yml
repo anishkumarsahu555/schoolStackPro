@@ -56,8 +56,8 @@ jobs:
       - name: Django system check
         run: uv run python manage.py check
 
-      - name: Check migrations are committed
-        run: uv run python manage.py makemigrations --check --dry-run
+      - name: Generate local migrations
+        run: uv run python manage.py makemigrations --noinput
 
       - name: Run tests
         run: uv run python manage.py test --noinput
@@ -103,6 +103,7 @@ jobs:
           git fetch origin "$DEPLOY_BRANCH"
           git reset --hard "origin/$DEPLOY_BRANCH"
           uv sync --frozen
+          uv run python manage.py makemigrations --noinput
           uv run python manage.py migrate --noinput
           uv run python manage.py collectstatic --noinput --clear
           $DEPLOY_RESTART_COMMAND

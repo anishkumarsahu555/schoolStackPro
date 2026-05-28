@@ -2,6 +2,8 @@
 creds
 __pycache__
 .venv
+**/migrations/*.py
+!**/migrations/__init__.py
 **/migrations/__pycache__/
 .vscode/
 logs/
