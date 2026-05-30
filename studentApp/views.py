@@ -14,6 +14,7 @@ from homeApp.utils import login_required
 from libraryApp.models import LibraryMember
 from libraryApp.services import build_member_card_render_context, get_or_create_active_member_card_design
 from libraryApp.views import _member_card_context, _school_fallback
+from hostelApp.portal_services import build_my_hostel_context
 from managementApp.models import *
 from managementApp.reporting import build_report_cards_for_student
 from managementApp.services.id_cards import build_id_card_context
@@ -177,6 +178,26 @@ def student_my_transport(request):
         })
     logger.info(f'Student transport page opened user={request.user.id} student={student.id if student else None}')
     return render(request, 'studentApp/my_transport.html', context)
+
+
+@login_required
+@check_groups('Student')
+def student_my_hostel(request):
+    student, current_session_id = _bootstrap_student_context(request)
+    context = {
+        'profile_missing': not bool(student and current_session_id),
+    }
+    if student and current_session_id:
+        context.update(build_my_hostel_context(student, current_session_id))
+    else:
+        context.update({
+            'hostel_assignment': None,
+            'hostel_recent_fee_records': [],
+            'hostel_current_fee_record': None,
+            'hostel_fee_summary': {'net': 0, 'paid': 0, 'due': 0},
+        })
+    logger.info(f'Student hostel page opened user={request.user.id} student={student.id if student else None}')
+    return render(request, 'studentApp/my_hostel.html', context)
 
 
 @login_required

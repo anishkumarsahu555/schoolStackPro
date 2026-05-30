@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "managementApp",
     "studentApp",
     "transportApp",
+    "hostelApp",
     "libraryApp",
     "pwa",
     "teacherApp",

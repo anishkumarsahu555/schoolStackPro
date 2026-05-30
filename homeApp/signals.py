@@ -20,6 +20,7 @@ AUDITED_APP_LABELS = {
     'chatApp',
     'transportApp',
     'libraryApp',
+    'hostelApp',
 }
 AUDIT_EXCLUDED_MODELS = {
     ('homeApp', 'AuditLog'),

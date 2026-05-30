@@ -1,0 +1,308 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Hostel Reports</title>{% endblock %}
+{% block page_title %}Hostel Reports{% endblock %}
+{% block page_subtitle %}Review occupancy, residents, admissions, and hostel dues{% endblock %}
+{% block page_actions %}
+    <a class="ui blue button class-page-action" href="{% url 'hostelAppAPI:resident_manifest_csv' %}">
+        <i class="download icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Resident CSV</span><span class="mobile-label">CSV</span></span>
+    </a>
+{% endblock %}
+{% block body %}
+{% include 'hostelApp/_management_table_styles.html' %}
+<style>
+    .hostel-report-summary {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: minmax(260px, .7fr) minmax(0, 1.3fr);
+        margin-bottom: 16px;
+    }
+    .hostel-report-card,
+    .hostel-report-status-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        min-width: 0;
+        padding: 12px;
+    }
+    .hostel-report-card-title {
+        color: #0f172a;
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+    }
+    .hostel-report-status-grid {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .hostel-report-status-card .label {
+        color: #64748b;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .hostel-report-status-card .value {
+        color: #0f172a;
+        font-size: 20px;
+        font-weight: 850;
+        margin-top: 4px;
+    }
+    .hostel-report-breakdown {
+        display: grid;
+        gap: 8px;
+    }
+    .hostel-report-breakdown-row {
+        align-items: center;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 120px 1fr 70px;
+    }
+    .hostel-report-breakdown-label,
+    .hostel-report-muted {
+        color: #64748b;
+        font-size: 12px;
+    }
+    .hostel-report-bar {
+        background: #e2e8f0;
+        border-radius: 999px;
+        height: 8px;
+        overflow: hidden;
+    }
+    .hostel-report-bar-fill {
+        background: #2563eb;
+        border-radius: inherit;
+        height: 100%;
+    }
+    .hostel-report-table-wrap {
+        margin-bottom: 16px;
+        overflow-x: auto;
+        width: 100%;
+    }
+    .hostel-report-table-wrap table.ui.table {
+        margin-top: 5px;
+        width: 100%;
+    }
+    .hostel-report-table-wrap table.ui.table thead th {
+        white-space: nowrap;
+    }
+    .hostel-report-table-wrap .ui.progress {
+        margin: 0;
+        min-width: 100px;
+    }
+    .hostel-report-empty {
+        border: 1px dashed rgba(34, 36, 38, .20);
+        border-radius: 8px;
+        color: #64748b;
+        padding: 18px;
+        text-align: center;
+    }
+    html[data-theme="dark"] .hostel-report-card,
+    body.dark .hostel-report-card,
+    .dark-mode .hostel-report-card,
+    html[data-theme="dark"] .hostel-report-status-card,
+    body.dark .hostel-report-status-card,
+    .dark-mode .hostel-report-status-card,
+    html[data-theme="dark"] .hostel-report-table-wrap table.ui.table,
+    body.dark .hostel-report-table-wrap table.ui.table,
+    .dark-mode .hostel-report-table-wrap table.ui.table {
+        background: var(--app-surface) !important;
+        border-color: var(--app-border) !important;
+        color: var(--app-text) !important;
+        box-shadow: none;
+    }
+    html[data-theme="dark"] .hostel-report-card-title,
+    body.dark .hostel-report-card-title,
+    .dark-mode .hostel-report-card-title,
+    html[data-theme="dark"] .hostel-report-status-card .value,
+    body.dark .hostel-report-status-card .value,
+    .dark-mode .hostel-report-status-card .value,
+    html[data-theme="dark"] .hostel-report-table-wrap table.ui.table tbody td,
+    body.dark .hostel-report-table-wrap table.ui.table tbody td,
+    .dark-mode .hostel-report-table-wrap table.ui.table tbody td {
+        color: var(--app-text) !important;
+    }
+    html[data-theme="dark"] .hostel-report-status-card .label,
+    body.dark .hostel-report-status-card .label,
+    .dark-mode .hostel-report-status-card .label,
+    html[data-theme="dark"] .hostel-report-breakdown-label,
+    body.dark .hostel-report-breakdown-label,
+    .dark-mode .hostel-report-breakdown-label,
+    html[data-theme="dark"] .hostel-report-muted,
+    body.dark .hostel-report-muted,
+    .dark-mode .hostel-report-muted,
+    html[data-theme="dark"] .hostel-report-empty,
+    body.dark .hostel-report-empty,
+    .dark-mode .hostel-report-empty {
+        color: var(--app-muted) !important;
+    }
+    html[data-theme="dark"] .hostel-report-bar,
+    body.dark .hostel-report-bar,
+    .dark-mode .hostel-report-bar {
+        background: var(--app-hover) !important;
+    }
+    html[data-theme="dark"] .hostel-report-table-wrap table.ui.table thead th,
+    body.dark .hostel-report-table-wrap table.ui.table thead th,
+    .dark-mode .hostel-report-table-wrap table.ui.table thead th {
+        background: var(--app-hover) !important;
+        border-color: var(--app-border) !important;
+        color: var(--app-text) !important;
+    }
+    html[data-theme="dark"] .hostel-report-table-wrap table.ui.celled.table tr td,
+    html[data-theme="dark"] .hostel-report-table-wrap table.ui.celled.table tr th,
+    body.dark .hostel-report-table-wrap table.ui.celled.table tr td,
+    body.dark .hostel-report-table-wrap table.ui.celled.table tr th,
+    .dark-mode .hostel-report-table-wrap table.ui.celled.table tr td,
+    .dark-mode .hostel-report-table-wrap table.ui.celled.table tr th {
+        border-color: var(--app-border) !important;
+    }
+    @media (max-width: 900px) {
+        .hostel-report-summary {
+            grid-template-columns: 1fr;
+        }
+        .hostel-report-status-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 767px) {
+        .hostel-report-breakdown-row {
+            grid-template-columns: 88px 1fr 54px;
+        }
+    }
+    @media (max-width: 360px) {
+        .hostel-kpi-grid,
+        .hostel-report-status-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header"><i class="chart pie icon"></i>Report overview</h4>
+    <div class="hostel-kpi-grid">
+        <div class="hostel-kpi"><div class="label">Buildings</div><div class="value" id="buildings">0</div></div>
+        <div class="hostel-kpi"><div class="label">Rooms</div><div class="value" id="rooms">0</div></div>
+        <div class="hostel-kpi"><div class="label">Beds</div><div class="value" id="beds">0</div></div>
+        <div class="hostel-kpi"><div class="label">Residents</div><div class="value" id="activeResidents">0</div></div>
+        <div class="hostel-kpi"><div class="label">Available Beds</div><div class="value" id="availableBeds">0</div></div>
+        <div class="hostel-kpi"><div class="label">Admissions</div><div class="value" id="admissions">0</div></div>
+        <div class="hostel-kpi"><div class="label">Fee Paid</div><div class="value" id="feePaid">0.00</div></div>
+        <div class="hostel-kpi"><div class="label">Fee Due</div><div class="value" id="feeDue">0.00</div></div>
+    </div>
+
+    <h4 class="ui horizontal left aligned divider header"><i class="list alternate outline icon"></i>Status breakdown</h4>
+    <div class="hostel-report-summary">
+        <div class="hostel-report-card">
+            <div class="hostel-report-card-title">Resident mix</div>
+            <div class="hostel-report-breakdown" id="residentBreakdown"></div>
+        </div>
+        <div class="hostel-report-card">
+            <div class="hostel-report-card-title">Bed status</div>
+            <div class="hostel-report-status-grid" id="bedStatusCards"></div>
+        </div>
+    </div>
+
+    <h4 class="ui horizontal left aligned divider header"><i class="building icon"></i>Building occupancy report</h4>
+    <div class="wide hostel-report-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table">
+            <thead><tr><th>Building</th><th>Code</th><th>Warden</th><th>Rooms</th><th>Beds</th><th>Occupied</th><th>Available</th><th>Maintenance</th><th>Occupancy</th></tr></thead>
+            <tbody id="buildingReportRows"><tr><td colspan="9" class="center aligned">Loading...</td></tr></tbody>
+        </table>
+    </div>
+
+    <h4 class="ui horizontal left aligned divider header"><i class="home icon"></i>Room occupancy report</h4>
+    <div class="wide hostel-report-table-wrap">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table">
+            <thead><tr><th>Building</th><th>Floor</th><th>Room</th><th>Type</th><th>Capacity</th><th>Beds</th><th>Occupied</th><th>Available</th><th>Reserved</th><th>Maintenance</th><th>Occupancy</th></tr></thead>
+            <tbody id="roomReportRows"><tr><td colspan="11" class="center aligned">Loading...</td></tr></tbody>
+        </table>
+    </div>
+    <div class="hostel-report-muted" id="reportRoomLimitNote" style="display:none;margin-top:-8px;">Showing first 80 rooms.</div>
+</div>
+{% endblock %}
+{% block js %}
+<script>
+function hostelReportEscape(value){
+    return $('<div>').text(value == null ? '' : value).html();
+}
+function hostelReportCount(value){
+    return Number(value || 0).toLocaleString('en-IN');
+}
+function hostelReportMoney(value){
+    return Number(value || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+function renderBreakdown(container, labels, values){
+    const total = (values || []).reduce(function(sum, value){ return sum + Number(value || 0); }, 0);
+    const html = (labels || []).map(function(label, index){
+        const value = Number((values || [])[index] || 0);
+        const percent = total > 0 ? Math.round((value / total) * 100) : 0;
+        return '<div class="hostel-report-breakdown-row"><div class="hostel-report-breakdown-label">' + hostelReportEscape(label) + '</div><div class="hostel-report-bar"><div class="hostel-report-bar-fill" style="width:' + percent + '%"></div></div><div class="hostel-report-muted">' + hostelReportCount(value) + '</div></div>';
+    }).join('');
+    $(container).html(html || '<div class="hostel-report-empty">No data found.</div>');
+}
+function renderBedStatusCards(charts){
+    const labels = charts.bedStatusLabels || [];
+    const values = charts.bedStatusValues || [];
+    const html = labels.map(function(label, index){
+        return '<div class="hostel-report-status-card"><div class="label">' + hostelReportEscape(label) + '</div><div class="value">' + hostelReportCount(values[index] || 0) + '</div></div>';
+    }).join('');
+    $('#bedStatusCards').html(html || '<div class="hostel-report-empty">No bed status found.</div>');
+}
+function progressCell(percent){
+    return '<div class="hostel-report-bar"><div class="hostel-report-bar-fill" style="width:' + Number(percent || 0) + '%"></div></div><div class="hostel-report-muted">' + hostelReportCount(percent) + '%</div>';
+}
+function renderBuildingReport(rows){
+    const html = (rows || []).map(function(row){
+        return '<tr>' +
+            '<td>' + hostelReportEscape(row.name) + '</td>' +
+            '<td>' + hostelReportEscape(row.code || 'N/A') + '</td>' +
+            '<td>' + hostelReportEscape(row.warden || 'N/A') + '</td>' +
+            '<td>' + hostelReportCount(row.rooms) + '</td>' +
+            '<td>' + hostelReportCount(row.beds) + '</td>' +
+            '<td>' + hostelReportCount(row.occupied) + '</td>' +
+            '<td>' + hostelReportCount(row.available) + '</td>' +
+            '<td>' + hostelReportCount(row.maintenance) + '</td>' +
+            '<td>' + progressCell(row.occupancyPercent) + '</td>' +
+        '</tr>';
+    }).join('');
+    $('#buildingReportRows').html(html || '<tr><td colspan="9" class="center aligned">No hostel buildings found.</td></tr>');
+}
+function renderRoomReport(rows, truncated){
+    const html = (rows || []).map(function(row){
+        return '<tr>' +
+            '<td>' + hostelReportEscape(row.building) + '</td>' +
+            '<td>' + hostelReportEscape(row.floor) + '</td>' +
+            '<td>' + hostelReportEscape(row.room) + '</td>' +
+            '<td>' + hostelReportEscape(row.roomType) + '</td>' +
+            '<td>' + hostelReportCount(row.capacity) + '</td>' +
+            '<td>' + hostelReportCount(row.beds) + '</td>' +
+            '<td>' + hostelReportCount(row.occupied) + '</td>' +
+            '<td>' + hostelReportCount(row.available) + '</td>' +
+            '<td>' + hostelReportCount(row.reserved) + '</td>' +
+            '<td>' + hostelReportCount(row.maintenance) + '</td>' +
+            '<td>' + progressCell(row.occupancyPercent) + '</td>' +
+        '</tr>';
+    }).join('');
+    $('#roomReportRows').html(html || '<tr><td colspan="11" class="center aligned">No active rooms found.</td></tr>');
+    $('#reportRoomLimitNote').toggle(!!truncated);
+}
+$(function(){
+    $.get("{% url 'hostelAppAPI:hostel_report_summary_api' %}",function(resp){
+        if(!resp || !resp.success) {
+            addErrorNotification('Unable to load hostel reports.');
+            return;
+        }
+        const d = resp.data || {};
+        const charts = d.charts || {};
+        ['buildings','rooms','beds','activeResidents','availableBeds','admissions'].forEach(function(k){ $('#' + k).text(hostelReportCount(d[k] || 0)); });
+        ['feePaid','feeDue'].forEach(function(k){ $('#' + k).text(hostelReportMoney(d[k] || 0)); });
+        renderBreakdown('#residentBreakdown', charts.residentTypeLabels || [], charts.residentTypeValues || []);
+        renderBedStatusCards(charts);
+        renderBuildingReport(d.buildingOccupancy || []);
+        renderRoomReport(d.roomBoard || [], d.roomBoardTruncated);
+    }).fail(function(){
+        addErrorNotification('Unable to load hostel reports.');
+    });
+});
+</script>
+{% endblock %}

@@ -63,6 +63,7 @@ from financeApp.services import (
     sync_student_charge,
 )
 from managementApp.models import *
+from managementApp.cached_api.cached_views import invalidate_cached_student_list, invalidate_cached_teacher_list
 from managementApp.reporting import build_report_cards_for_student, upsert_progress_report_snapshot
 from managementApp.services.id_cards import (
     DEFAULT_FIELDS_CONFIG,
@@ -3011,6 +3012,10 @@ def add_teacher_api(request):
                 # Continue with teacher update even if group assignment fails
             pre_save_with_user.send(sender=TeacherDetail, instance=instance, user=request.user.pk)
             instance.save()
+            invalidate_cached_teacher_list(
+                request.session['current_session'].get('SchoolID'),
+                request.session['current_session'].get('Id'),
+            )
             return _api_response(
                 {'status': 'success', 'message': 'New Teacher added successfully.', 'color': 'success'},
                 safe=False)
@@ -3093,6 +3098,10 @@ def update_teacher_api(request):
                 # Continue with teacher update even if group assignment fails
             pre_save_with_user.send(sender=TeacherDetail, instance=instance, user=request.user.pk)
             instance.save()
+            invalidate_cached_teacher_list(
+                request.session['current_session'].get('SchoolID'),
+                request.session['current_session'].get('Id'),
+            )
             logger.info("Teacher details updated successfully.")
             return SuccessResponse(
                     'Teacher details updated successfully.'
@@ -3193,6 +3202,10 @@ def delete_teacher(request):
             user.save()
             pre_save_with_user.send(sender=TeacherDetail, instance=instance, user=request.user.pk)
             instance.save()
+            invalidate_cached_teacher_list(
+                request.session['current_session'].get('SchoolID'),
+                request.session['current_session'].get('Id'),
+            )
             return _api_response(
                 {'status': 'success', 'message': 'Teacher/Staff detail deleted successfully.',
                  'color': 'success'}, safe=False)
@@ -3482,6 +3495,10 @@ def add_student_api(request):
     except Exception as exc:
         logger.error(f"Finance sync failed for add_student_api student={student_obj.id}: {exc}")
 
+    invalidate_cached_student_list(
+        request.session['current_session'].get('SchoolID'),
+        request.session['current_session'].get('Id'),
+    )
     return SuccessResponse(
         "New Student added successfully.",
         data={'status': 'success', 'message': 'New Student added successfully.', 'color': 'success'},
@@ -3891,6 +3908,10 @@ def delete_student(request):
             user.save()
             pre_save_with_user.send(sender=Student, instance=instance, user=request.user.pk)
             instance.save()
+            invalidate_cached_student_list(
+                request.session['current_session'].get('SchoolID'),
+                request.session['current_session'].get('Id'),
+            )
             return _api_response(
                 {'status': 'success', 'message': 'Student detail deleted successfully.',
                  'color': 'success'}, safe=False)
@@ -3995,6 +4016,10 @@ def edit_student_api(request):
         except Exception as exc:
             logger.error(f"Finance sync failed for edit_student_api student={student_obj.id}: {exc}")
 
+        invalidate_cached_student_list(
+            request.session['current_session'].get('SchoolID'),
+            request.session['current_session'].get('Id'),
+        )
         logger.info("Student details updated successfully.")
         return SuccessResponse(
             "Student details updated successfully.",

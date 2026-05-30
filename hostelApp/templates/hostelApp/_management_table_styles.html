@@ -1,0 +1,255 @@
+<style>
+    .hostel-kpi-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(4, minmax(150px, 1fr));
+    }
+    .hostel-kpi,
+    .hostel-panel {
+        background: #fff;
+        border: 1px solid rgba(34, 36, 38, .10);
+        border-radius: 6px;
+        padding: 14px;
+    }
+    .hostel-kpi .label {
+        color: #667085;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .hostel-kpi .value {
+        color: #111827;
+        font-size: 28px;
+        font-weight: 850;
+        line-height: 1.1;
+        margin-top: 7px;
+    }
+    .hostel-grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 14px;
+    }
+    .hostel-modal-section {
+        border: 1px solid rgba(34, 36, 38, .10);
+        border-radius: 6px;
+        margin-bottom: 12px;
+        padding: 12px;
+    }
+    .hostel-modal-section-title {
+        color: #1f2937;
+        font-size: 13px;
+        font-weight: 850;
+        margin-bottom: 10px;
+    }
+    .hostel-active-row {
+        align-items: end;
+        display: flex;
+        min-height: 56px;
+    }
+    .hostel-data-table-card .wide {
+        overflow-x: auto;
+    }
+    .hostel-data-table-card table.dataTable {
+        margin-top: 5px !important;
+        width: 100% !important;
+    }
+    .hostel-data-table-card .dataTables_length {
+        left: 20px;
+        position: absolute;
+        width: auto;
+    }
+    .hostel-data-table-card .dataTables_filter {
+        float: right;
+        text-align: right;
+        width: 50%;
+    }
+    .hostel-data-table-card .dt-buttons {
+        display: none;
+    }
+    .hostel-data-table-card input[type=search] {
+        width: 100px !important;
+    }
+    .hostel-data-table-card .dataTables_wrapper {
+        min-height: 430px;
+    }
+    .ui.modal .actions {
+        align-items: center;
+        display: flex;
+        gap: 0.65rem;
+        justify-content: flex-end;
+    }
+    .ui.modal .actions .ui.button {
+        border-radius: 10px !important;
+        min-width: 104px;
+        white-space: nowrap;
+    }
+    .ui.modal .actions .ui.button i.icon {
+        margin: 0 0 0 0.45rem !important;
+    }
+    @media (max-width: 900px) {
+        .hostel-kpi-grid,
+        .hostel-grid {
+            grid-template-columns: 1fr;
+        }
+        .hostel-data-table-card .dataTables_length,
+        .hostel-data-table-card .dataTables_filter {
+            left: auto;
+            position: static;
+        }
+        .hostel-data-table-card .dataTables_length {
+            float: left;
+            width: 46%;
+        }
+        .hostel-data-table-card .dataTables_filter {
+            float: right;
+            text-align: right;
+            width: 52%;
+        }
+    }
+    @media (max-width: 767px) {
+        .hostel-data-table-card {
+            margin-left: -0.25rem !important;
+            margin-right: -0.25rem !important;
+            padding: 0.75rem !important;
+        }
+        .hostel-data-table-card .ui.horizontal.divider.header {
+            font-size: 13px;
+            margin: 0.75rem 0 1rem;
+            white-space: normal;
+        }
+        .hostel-data-table-card .dataTables_wrapper {
+            min-height: 0;
+        }
+        .hostel-data-table-card .dataTables_length,
+        .hostel-data-table-card .dataTables_filter,
+        .hostel-data-table-card .dataTables_info,
+        .hostel-data-table-card .dataTables_paginate {
+            margin: 0.45rem 0 !important;
+        }
+        .hostel-data-table-card .dataTables_length {
+            float: left !important;
+            left: auto !important;
+            position: static !important;
+            width: 46% !important;
+        }
+        .hostel-data-table-card .dataTables_filter {
+            float: right !important;
+            left: auto !important;
+            position: static !important;
+            text-align: right !important;
+            width: 52% !important;
+        }
+        .hostel-data-table-card .dataTables_info,
+        .hostel-data-table-card .dataTables_paginate {
+            clear: both;
+            float: none !important;
+            text-align: left !important;
+            width: 100% !important;
+        }
+        .hostel-data-table-card .dataTables_filter label,
+        .hostel-data-table-card .dataTables_length label {
+            align-items: center;
+            display: inline-flex;
+            flex-direction: row;
+            gap: 0.35rem;
+            white-space: nowrap;
+            width: auto;
+        }
+        .hostel-data-table-card input[type=search],
+        .hostel-data-table-card .dataTables_length select {
+            min-height: 38px;
+            width: 100px !important;
+        }
+        .hostel-data-table-card .dataTables_scroll,
+        .hostel-data-table-card .dataTables_scrollBody {
+            width: 100% !important;
+        }
+        .hostel-data-table-card .dataTables_paginate .ui.pagination.menu {
+            max-width: 100%;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .ui.modal .content {
+            padding: 1rem !important;
+        }
+        .ui.modal .ui.form .fields {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 0.5rem !important;
+            margin: 0 0 0.5rem !important;
+        }
+        .ui.modal .ui.form .fields > .field {
+            flex: 1 1 100% !important;
+            margin: 0 !important;
+            min-width: 100% !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        .hostel-active-row {
+            align-items: center;
+            min-height: 38px;
+        }
+        .ui.modal .actions {
+            justify-content: center;
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+        }
+        .ui.modal .actions .ui.button {
+            min-width: 96px;
+        }
+    }
+</style>
+<div class="ui basic modal custom" id="hostelDeleteModal">
+    <div class="ui icon header">
+        <i class="trash alternate icon red"></i>
+        <span id="hostelDeleteTitle">Hostel Details will be Deleted</span>
+    </div>
+    <div class="content">
+        <p id="hostelDeleteMessage" style="text-align: center">The selected hostel record will be deleted, are you sure to delete this record?</p>
+    </div>
+    <div class="actions">
+        <div class="ui red basic cancel inverted button">
+            <i class="remove icon"></i>
+            No
+        </div>
+        <input type="hidden" id="hostelDeleteID">
+        <div class="ui green ok inverted button" onclick="confirmHostelDeleteAction()">
+            <i class="checkmark icon"></i>
+            Yes
+        </div>
+    </div>
+</div>
+<script>
+window.hostelDeleteState = window.hostelDeleteState || {callback: null};
+function showHostelDeleteModal(id, title, message, callback){
+    $('#hostelDeleteID').val(id);
+    $('#hostelDeleteTitle').text(title || 'Hostel Details will be Deleted');
+    $('#hostelDeleteMessage').text(message || 'The selected hostel record will be deleted, are you sure to delete this record?');
+    window.hostelDeleteState.callback = callback;
+    $('#hostelDeleteModal').modal('show');
+}
+function confirmHostelDeleteAction(){
+    const id = $('#hostelDeleteID').val();
+    if (typeof window.hostelDeleteState.callback === 'function') {
+        window.hostelDeleteState.callback(id);
+    }
+}
+function initHostelCalendars(){
+    $('.hostel-date-calendar').calendar({
+        monthFirst: false,
+        type: 'date',
+        formatter: {
+            date: function(date){
+                if(!date) return '';
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return date.getFullYear() + '-' + month + '-' + day;
+            }
+        }
+    });
+}
+$(function(){
+    initHostelCalendars();
+});
+</script>

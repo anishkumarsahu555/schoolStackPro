@@ -514,6 +514,62 @@
     <div class="nav-group">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
+                <span>Manage Hostel</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+               href="{% url 'hostelApp:dashboard' %}">
+                <i class="home icon"></i>
+                <span>Hostel Dashboard</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_admissions' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_admissions' %}">
+                <i class="clipboard check icon"></i>
+                <span>Admissions</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_buildings' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_buildings' %}">
+                <i class="building icon"></i>
+                <span>Buildings</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_rooms' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_rooms' %}">
+                <i class="door open icon"></i>
+                <span>Rooms</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_beds' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_beds' %}">
+                <i class="bed icon"></i>
+                <span>Beds</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_assignments' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_assignments' %}">
+                <i class="users icon"></i>
+                <span>Assignments</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_fee_mapping' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_fee_mapping' %}">
+                <i class="rupee sign icon"></i>
+                <span>Fee Mapping</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_fee_tracking' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_fee_tracking' %}">
+                <i class="money bill alternate outline icon"></i>
+                <span>Fee Tracking</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_reports' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_reports' %}">
+                <i class="chart bar icon"></i>
+                <span>Reports</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="nav-group">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
                 <span>Audit Manager</span>
             </span>
             <i class="chevron down icon nav-section-chevron"></i>

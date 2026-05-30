@@ -1,0 +1,62 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Hostel Fee Tracking</title>{% endblock %}
+{% block page_title %}Hostel Fee Tracking{% endblock %}
+{% block page_subtitle %}Generate monthly hostel dues and track paid, pending, waived, or cancelled fees{% endblock %}
+{% block page_actions %}<button class="ui green button class-page-action" type="button" onclick="generateFeeRecords()"><i class="sync icon"></i><span class="class-page-action-label">Generate Monthly Fees</span></button>{% endblock %}
+{% block body %}
+{% include 'hostelApp/_management_table_styles.html' %}
+<form>{% csrf_token %}</form>
+<div class="ui segment"><form class="ui tiny form"><div class="four fields"><div class="field"><label>Year</label><select class="ui fluid dropdown" id="filterFeeYear"></select></div><div class="field"><label>Month</label><select class="ui fluid dropdown" id="filterFeeMonth"></select></div><div class="field"><label>Status</label><select class="ui fluid dropdown" id="filterStatus"><option value="">All</option><option value="pending">Pending</option><option value="partial">Partial</option><option value="paid">Paid</option><option value="waived">Waived</option><option value="cancelled">Cancelled</option></select></div><div class="field" style="padding-top:1.55rem;"><button type="button" class="ui mini green button" onclick="reloadFeeRecords()"><i class="search icon"></i>Search</button><button type="button" class="ui mini red button" onclick="clearFeeFilters()"><i class="times circle icon"></i>Clear</button></div></div></form></div>
+<div class="ui segment hostel-data-table-card"><h4 class="ui horizontal left aligned divider header"><i class="money bill alternate outline icon"></i>Hostel fee list</h4><div class="wide"><table class="ui unstackable tiny sortable celled very nowrap very compact table" id="FeeRecordTable" style="margin-top: 5px;width:100%"><thead><tr><th>Period</th><th>Type</th><th>Resident</th><th>Building</th><th>Room</th><th>Bed</th><th>Net</th><th>Paid</th><th>Due</th><th>Status</th><th>Due Date</th><th>Actions</th></tr></thead></table></div></div>
+<div class="ui modal" id="paymentModal"><i class="close icon"></i><div class="header">Record Hostel Fee Payment</div><div class="content"><form class="ui tiny form"><input type="hidden" id="feeRecordID"><div class="ui small message" id="feeRecordSummary"></div><div class="four fields"><div class="field required"><label>Paid Amount</label><input type="number" step="0.01" id="paidAmount"></div><div class="field"><label>Payment Date</label><div class="ui calendar hostel-date-calendar" id="paymentDateCal"><div class="ui input left icon"><i class="calendar icon"></i><input type="text" id="paymentDate" placeholder="YYYY-MM-DD"></div></div></div><div class="field"><label>Payment Mode</label><input id="paymentMode"></div><div class="field"><label>Reference No</label><input id="referenceNo"></div></div><div class="field"><label>Notes</label><textarea id="paymentNotes" rows="2"></textarea></div></form></div><div class="actions"><div class="ui cancel button">Cancel</div><button class="ui green button" onclick="recordPayment()">Submit<i class="checkmark icon"></i></button></div></div>
+{% endblock %}
+{% block js %}
+{{ hostel_fee_period_config|json_script:"hostelFeePeriodConfig" }}
+<script>
+let feeRecordTable;
+let hostelFeePeriodConfig = {periods: [], defaultMonth: null, defaultYear: null};
+try {
+    hostelFeePeriodConfig = JSON.parse(document.getElementById('hostelFeePeriodConfig').textContent || '{}');
+} catch (error) {
+    hostelFeePeriodConfig = {periods: [], defaultMonth: null, defaultYear: null};
+}
+function rebuildFeeYearOptions() {
+    const years = [...new Set((hostelFeePeriodConfig.periods || []).map(period => String(period.year)))];
+    const $year = $('#filterFeeYear');
+    $year.empty();
+    years.forEach(year => $year.append('<option value="' + year + '">' + year + '</option>'));
+    if (!years.length && hostelFeePeriodConfig.defaultYear) {
+        $year.append('<option value="' + hostelFeePeriodConfig.defaultYear + '">' + hostelFeePeriodConfig.defaultYear + '</option>');
+    }
+    $year.dropdown('refresh');
+    $year.dropdown('set selected', String(hostelFeePeriodConfig.defaultYear || years[0] || ''));
+}
+function rebuildFeeMonthOptions(selectedMonth) {
+    const selectedYear = String($('#filterFeeYear').val() || hostelFeePeriodConfig.defaultYear || '');
+    const monthRows = (hostelFeePeriodConfig.periods || []).filter(period => String(period.year) === selectedYear);
+    const $month = $('#filterFeeMonth');
+    $month.empty();
+    monthRows.forEach(period => $month.append('<option value="' + period.month + '">' + period.monthShortLabel + '</option>'));
+    if (!monthRows.length && hostelFeePeriodConfig.defaultMonth) {
+        $month.append('<option value="' + hostelFeePeriodConfig.defaultMonth + '">' + hostelFeePeriodConfig.defaultMonth + '</option>');
+    }
+    const targetMonth = selectedMonth || (String(selectedYear) === String(hostelFeePeriodConfig.defaultYear) ? hostelFeePeriodConfig.defaultMonth : (monthRows[0] || {}).month);
+    $month.dropdown('refresh');
+    $month.dropdown('set selected', String(targetMonth || ''));
+}
+$(function(){
+    $('.ui.dropdown').dropdown({fullTextSearch:true});
+    rebuildFeeYearOptions();
+    rebuildFeeMonthOptions(hostelFeePeriodConfig.defaultMonth);
+    $('#filterFeeYear').dropdown({fullTextSearch:true,onChange:function(){ rebuildFeeMonthOptions(); }});
+    feeRecordTable=$('#FeeRecordTable').DataTable({dom:'Blfrtip',scrollY:'350px',scrollX:true,stateSave:true,fixedColumns:{left:1,right:1},lengthMenu:[[10,25,50,100,-1],[10,25,50,100,'All']],pageLength:10,processing:true,serverSide:true,ajax:{url:"{% url 'hostelAppAPI:FeeRecordListJson' %}",data:function(d){ d.feeMonth=$('#filterFeeMonth').val(); d.feeYear=$('#filterFeeYear').val(); d.status=$('#filterStatus').val();}},columnDefs:[{targets:11,orderable:false}]});
+});
+function reloadFeeRecords(){ feeRecordTable.ajax.reload(null,false); }
+function clearFeeFilters(){ $('#filterStatus').dropdown('clear'); $('#filterFeeYear').dropdown('set selected',String(hostelFeePeriodConfig.defaultYear || '')); rebuildFeeMonthOptions(hostelFeePeriodConfig.defaultMonth); reloadFeeRecords(); }
+function generateFeeRecords(){ const data=new FormData(); data.append('feeMonth',$('#filterFeeMonth').val()); data.append('feeYear',$('#filterFeeYear').val()); data.append('csrfmiddlewaretoken',$("input[name='csrfmiddlewaretoken']").val()); $.ajax({url:"{% url 'hostelAppAPI:generate_hostel_fee_records_api' %}",type:'POST',data:data,contentType:false,processData:false,success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); reloadFeeRecords(); } else addErrorNotification(r.message); }}); }
+function showPaymentModal(id){ $.get("{% url 'hostelAppAPI:hostel_fee_record_detail_api' %}",{id:id},function(r){ if(!r.success){ addErrorNotification(r.message); return; } const d=r.data||{}; $('#feeRecordID').val(d.id); $('#feeRecordSummary').html('<b>'+(d.residentName || d.studentName)+'</b> / '+d.period+'<br>Net: '+d.netAmount+' | Paid: '+d.paidAmount+' | Due: '+d.balanceAmount); $('#paidAmount').val(d.balanceAmount || d.netAmount || 0); $('#paymentDate').val(new Date().toISOString().slice(0,10)); $('#paymentMode').val(d.paymentMode || 'Cash'); $('#referenceNo').val(d.referenceNo || ''); $('#paymentNotes').val(d.notes || ''); $('#paymentModal').modal('show'); });}
+function recordPayment(){ const data=new FormData(); [['id','feeRecordID'],['paidAmount','paidAmount'],['paymentDate','paymentDate'],['paymentMode','paymentMode'],['referenceNo','referenceNo'],['notes','paymentNotes']].forEach(i=>data.append(i[0],$('#'+i[1]).val())); data.append('csrfmiddlewaretoken',$("input[name='csrfmiddlewaretoken']").val()); $.ajax({url:"{% url 'hostelAppAPI:record_hostel_fee_payment_api' %}",type:'POST',data:data,contentType:false,processData:false,success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); $('#paymentModal').modal('hide'); reloadFeeRecords(); } else addErrorNotification(r.message); }}); }
+function updateFeeStatus(id,status){ const data=new FormData(); data.append('id',id); data.append('status',status); data.append('csrfmiddlewaretoken',$("input[name='csrfmiddlewaretoken']").val()); $.ajax({url:"{% url 'hostelAppAPI:update_hostel_fee_status_api' %}",type:'POST',data:data,contentType:false,processData:false,success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); reloadFeeRecords(); } else addErrorNotification(r.message); }}); }
+function waiveFeeRecord(id){ updateFeeStatus(id,'waived'); } function cancelFeeRecord(id){ updateFeeStatus(id,'cancelled'); }
+</script>
+{% endblock %}
