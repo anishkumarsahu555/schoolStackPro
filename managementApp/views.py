@@ -3,6 +3,7 @@ from decimal import Decimal
 from datetime import date, timedelta, datetime
 
 from django.db.models import Count, Q, Sum
+from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -13,6 +14,15 @@ from homeApp.models import AuditLog, SchoolDetail, SchoolSession
 from homeApp.owner_access import school_owner_user_q
 from homeApp.session_utils import get_session_month_sequence
 from homeApp.utils import login_required
+from managementApp.access_control import (
+    ACTION_FIELD_MAP,
+    MANAGEMENT_ACTIONS,
+    MANAGEMENT_MODULES,
+    MODULE_ICONS,
+    MODULE_LABELS,
+    bootstrap_staff_roles,
+    ensure_staff_login_group,
+)
 from managementApp.models import *
 from managementApp.reporting import build_report_cards_for_student
 from managementApp.services.id_cards import (
@@ -421,6 +431,145 @@ def teacher_detail(request, id=None):
         'instance': instance,
     }
     return render(request, 'managementApp/teacher/teacher_detail.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def manage_staff_access(request):
+    school_id = request.session.get('current_session', {}).get('SchoolID')
+    current_session_id = request.session.get('current_session', {}).get('Id')
+
+    if school_id:
+        bootstrap_staff_roles(school_id, request.user)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'assign_access':
+            staff_id = request.POST.get('staff_id')
+            role_id = request.POST.get('role_id') or None
+            enabled = request.POST.get('enabled') == 'on'
+            notes = request.POST.get('notes', '').strip()
+            staff = get_object_or_404(TeacherDetail, pk=staff_id, schoolID_id=school_id, isDeleted=False)
+            StaffAccess.objects.update_or_create(
+                staffID=staff,
+                defaults={
+                    'roleID_id': role_id,
+                    'isManagementAccessEnabled': enabled,
+                    'notes': notes,
+                    'updatedByUserID': request.user,
+                    'lastEditedBy': request.user.username,
+                },
+            )
+            if enabled and staff.userID_id:
+                ensure_staff_login_group(staff.userID)
+            messages.success(request, f'Access updated for {staff.name}.')
+            return redirect('managementApp:manage_staff_access')
+
+        if action == 'create_role':
+            role_name = request.POST.get('role_name', '').strip()
+            description = request.POST.get('description', '').strip()
+            if role_name:
+                role, created = StaffRole.objects.get_or_create(
+                    schoolID_id=school_id,
+                    name=role_name,
+                    isDeleted=False,
+                    defaults={
+                        'description': description,
+                        'updatedByUserID': request.user,
+                        'lastEditedBy': request.user.username,
+                    },
+                )
+                if not created:
+                    role.description = description
+                    role.isActive = True
+                    role.updatedByUserID = request.user
+                    role.lastEditedBy = request.user.username
+                    role.save(update_fields=['description', 'isActive', 'updatedByUserID', 'lastEditedBy', 'lastUpdatedOn'])
+                messages.success(request, f'Role "{role.name}" is ready.')
+                return redirect('managementApp:edit_staff_role', id=role.id)
+            messages.error(request, 'Role name is required.')
+            return redirect('managementApp:manage_staff_access')
+
+    role_qs = StaffRole.objects.filter(schoolID_id=school_id, isDeleted=False).order_by('name')
+    staff_qs = TeacherDetail.objects.select_related('userID', 'managementAccess__roleID').filter(
+        schoolID_id=school_id,
+        isDeleted=False,
+    ).order_by('name')
+    if current_session_id:
+        staff_qs = staff_qs.filter(Q(sessionID_id=current_session_id) | Q(sessionID__isnull=True))
+
+    access_records = StaffAccess.objects.select_related('staffID', 'roleID').filter(
+        staffID__schoolID_id=school_id,
+        staffID__isDeleted=False,
+    )
+    enabled_count = access_records.filter(isManagementAccessEnabled=True).count()
+    context = {
+        'roles': role_qs,
+        'staff_list': staff_qs,
+        'enabled_count': enabled_count,
+        'disabled_count': staff_qs.count() - enabled_count,
+        'module_count': len(MANAGEMENT_MODULES),
+        'action_count': len(MANAGEMENT_ACTIONS),
+    }
+    return render(request, 'managementApp/access/staff_access.html', context)
+
+
+@login_required
+@check_groups('Admin', 'Owner')
+def edit_staff_role(request, id=None):
+    school_id = request.session.get('current_session', {}).get('SchoolID')
+    role = get_object_or_404(StaffRole, pk=id, schoolID_id=school_id, isDeleted=False)
+
+    if request.method == 'POST':
+        role.name = request.POST.get('role_name', role.name).strip() or role.name
+        role.description = request.POST.get('description', '').strip()
+        role.isActive = request.POST.get('is_active') == 'on'
+        role.updatedByUserID = request.user
+        role.lastEditedBy = request.user.username
+        role.save(update_fields=['name', 'description', 'isActive', 'updatedByUserID', 'lastEditedBy', 'lastUpdatedOn'])
+
+        for module_key, label, icon in MANAGEMENT_MODULES:
+            defaults = {}
+            for action_key, action_label in MANAGEMENT_ACTIONS:
+                field = ACTION_FIELD_MAP[action_key]
+                defaults[field] = request.POST.get(f'perm_{module_key}_{action_key}') == 'on'
+            StaffRolePermission.objects.update_or_create(
+                roleID=role,
+                moduleKey=module_key,
+                defaults=defaults,
+            )
+        messages.success(request, f'Permissions saved for {role.name}.')
+        return redirect('managementApp:edit_staff_role', id=role.id)
+
+    permission_rows = []
+    existing = {
+        perm.moduleKey: perm
+        for perm in StaffRolePermission.objects.filter(roleID=role)
+    }
+    for module_key, label, icon in MANAGEMENT_MODULES:
+        perm = existing.get(module_key)
+        permission_rows.append({
+            'key': module_key,
+            'label': label,
+            'icon': icon,
+            'actions': [
+                {
+                    'key': action_key,
+                    'label': action_label,
+                    'enabled': bool(getattr(perm, ACTION_FIELD_MAP[action_key], False)) if perm else False,
+                }
+                for action_key, action_label in MANAGEMENT_ACTIONS
+            ],
+        })
+
+    context = {
+        'role': role,
+        'permission_rows': permission_rows,
+        'actions': MANAGEMENT_ACTIONS,
+        'module_icons': MODULE_ICONS,
+        'module_labels': MODULE_LABELS,
+    }
+    return render(request, 'managementApp/access/edit_staff_role.html', context)
 
 
 

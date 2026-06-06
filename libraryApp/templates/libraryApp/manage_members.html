@@ -3,11 +3,11 @@
 {% block page_title %}Library Members{% endblock %}
 {% block page_subtitle %}Manage student and staff memberships{% endblock %}
 {% block page_actions %}
-    <a class="ui button class-page-action library-secondary-action" href="{% url 'libraryApp:member_card_design' %}">
+    {% if management_permissions.library.edit %}<a class="ui button class-page-action library-secondary-action" href="{% url 'libraryApp:member_card_design' %}">
         <i class="paint brush icon"></i>
         <span><span class="desktop-label">Card Design</span><span class="mobile-label">Design</span></span>
-    </a>
-    <button class="ui green button class-page-action" onclick="showMemberModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Member</span><span class="mobile-label">Add</span></span></button>
+    </a>{% endif %}
+    {% if management_permissions.library.add %}<button class="ui green button class-page-action" onclick="showMemberModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Member</span><span class="mobile-label">Add</span></span></button>{% endif %}
 {% endblock %}
 {% block body %}
 {% include 'libraryApp/_library_styles.html' %}

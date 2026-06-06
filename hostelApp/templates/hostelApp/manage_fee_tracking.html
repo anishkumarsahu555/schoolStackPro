@@ -2,7 +2,7 @@
 {% block title %}<title>Hostel Fee Tracking</title>{% endblock %}
 {% block page_title %}Hostel Fee Tracking{% endblock %}
 {% block page_subtitle %}Generate monthly hostel dues and track paid, pending, waived, or cancelled fees{% endblock %}
-{% block page_actions %}<button class="ui green button class-page-action" type="button" onclick="generateFeeRecords()"><i class="sync icon"></i><span class="class-page-action-label">Generate Monthly Fees</span></button>{% endblock %}
+{% block page_actions %}{% if management_permissions.hostel.add %}<button class="ui green button class-page-action" type="button" onclick="generateFeeRecords()"><i class="sync icon"></i><span class="class-page-action-label">Generate Monthly Fees</span></button>{% endif %}{% endblock %}
 {% block body %}
 {% include 'hostelApp/_management_table_styles.html' %}
 <form>{% csrf_token %}</form>

@@ -3,10 +3,12 @@
 {% block page_title %}Hostel Dashboard{% endblock %}
 {% block page_subtitle %}Monitor admissions, occupancy, residents, and hostel fee collection{% endblock %}
 {% block page_actions %}
+    {% if management_permissions.hostel.add %}
     <a class="ui green button class-page-action" href="{% url 'hostelApp:manage_admissions' %}">
         <i class="plus icon"></i>
         <span class="class-page-action-label"><span class="desktop-label">New Admission</span><span class="mobile-label">Admission</span></span>
     </a>
+    {% endif %}
     <a class="ui blue button class-page-action" href="{% url 'hostelApp:manage_fee_tracking' %}">
         <i class="rupee sign icon"></i>
         <span class="class-page-action-label"><span class="desktop-label">Fee Tracking</span><span class="mobile-label">Fees</span></span>
@@ -361,11 +363,13 @@
         <i class="home icon"></i>
         Room board
     </h4>
-    <div class="hostel-panel">
-        <div class="hostel-section-title">
-            <h4 class="ui header"><i class="home icon"></i><span class="content">Room Board</span></h4>
-            <a class="ui tiny green button" href="{% url 'hostelApp:manage_rooms' %}"><i class="plus icon"></i>Add Room</a>
-        </div>
+        <div class="hostel-panel">
+            <div class="hostel-section-title">
+                <h4 class="ui header"><i class="home icon"></i><span class="content">Room Board</span></h4>
+                {% if management_permissions.hostel.add %}
+                <a class="ui tiny green button" href="{% url 'hostelApp:manage_rooms' %}"><i class="plus icon"></i>Add Room</a>
+                {% endif %}
+            </div>
         <div class="hostel-room-board" id="roomBoard"></div>
         <div class="hostel-muted" id="roomBoardLimitNote" style="display:none;margin-top:10px;">Showing first 80 rooms.</div>
     </div>

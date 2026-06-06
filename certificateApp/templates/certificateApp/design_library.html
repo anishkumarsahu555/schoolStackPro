@@ -6,10 +6,10 @@
 {% block page_title %}Certificate Designs{% endblock %}
 {% block page_subtitle %}Browse reusable templates, school designs, and certificate artwork{% endblock %}
 {% block page_actions %}
-    <a class="ui green button" href="{% url 'certificateApp:create_design' %}">
+    {% if management_permissions.certificates.add %}<a class="ui green button" href="{% url 'certificateApp:create_design' %}">
         <i class="paint brush icon"></i>
         <span><span class="desktop-label">Add Custom Design</span><span class="mobile-label">Add</span></span>
-    </a>
+    </a>{% endif %}
 {% endblock %}
 
 {% block css %}

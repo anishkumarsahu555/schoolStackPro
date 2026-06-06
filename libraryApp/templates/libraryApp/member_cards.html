@@ -3,10 +3,12 @@
 {% block page_title %}Library Member Cards{% endblock %}
 {% block page_subtitle %}Preview and print library membership cards{% endblock %}
 {% block page_actions %}
+    {% if management_permissions.library.edit %}
     <a class="ui button class-page-action no-print" href="{% url 'libraryApp:member_card_design' %}">
         <i class="paint brush icon"></i>
         <span>Design</span>
     </a>
+    {% endif %}
     <button class="ui blue button class-page-action no-print" type="button" onclick="window.print()">
         <i class="print icon"></i>
         <span>Print</span>

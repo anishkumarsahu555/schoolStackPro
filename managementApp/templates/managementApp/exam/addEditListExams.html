@@ -1,5 +1,6 @@
 {% extends 'managementApp/index.html' %}
 {% load static %}
+{% load management_access %}
 {% block title %}
     <title>Manage Exams</title>
 {% endblock %}
@@ -8,6 +9,8 @@
 {% block css %}
 {% endblock %}
 {% block body %}
+    {% can_manage 'exams' 'add' as can_add_exams %}
+    {% can_manage 'exams' 'edit' as can_edit_exams %}
 
     <style>
 
@@ -83,21 +86,25 @@
 
 
                             <div class="field exam-form-actions">
-                                <button type="button" id="saveBtn" class="ui mini green button saveBtn"
-                                        onclick="addData()">
-                                    <i class="icon plus square"></i>
-                                    Add
-                                </button>
-                                <button style="display: none" type="button" id="saveBtnUpdate"
-                                        onclick="editData()"
-                                        class="ui mini orange button saveBtnUpdate">
-                                    <i class="icon redo"></i>
-                                    Update
-                                </button>
-                                <button style="display: none" class="ui right labeled icon button green saveBtnLoad">
-                                    Saving ...
-                                    <i class="checkmark icon"></i>
-                                </button>
+                                {% if can_add_exams %}
+                                    <button type="button" id="saveBtn" class="ui mini green button saveBtn"
+                                            onclick="addData()">
+                                        <i class="icon plus square"></i>
+                                        Add
+                                    </button>
+                                    <button style="display: none" class="ui right labeled icon button green saveBtnLoad">
+                                        Saving ...
+                                        <i class="checkmark icon"></i>
+                                    </button>
+                                {% endif %}
+                                {% if can_edit_exams %}
+                                    <button style="display: none" type="button" id="saveBtnUpdate"
+                                            onclick="editData()"
+                                            class="ui mini orange button saveBtnUpdate">
+                                        <i class="icon redo"></i>
+                                        Update
+                                    </button>
+                                {% endif %}
                                 <button class="ui mini red button" type="button" onclick="clearAndReset()">
                                     <i class="icon times circle"></i>
                                     Clear

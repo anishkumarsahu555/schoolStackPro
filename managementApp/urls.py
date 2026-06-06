@@ -23,6 +23,8 @@ urlpatterns = [
     path('edit_teacher/<int:id>/', edit_teacher, name='edit_teacher'),
     path('teacher_list/', teacher_list, name='teacher_list'),
     path('teacher_detail/<int:id>/', teacher_detail, name='teacher_detail'),
+    path('staff-access/', manage_staff_access, name='manage_staff_access'),
+    path('staff-access/roles/<int:id>/', edit_staff_role, name='edit_staff_role'),
 
     # Student
     path('add_student/', add_student, name='add_student'),

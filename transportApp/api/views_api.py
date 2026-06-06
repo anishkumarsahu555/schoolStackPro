@@ -15,6 +15,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from managementApp.models import Student, TeacherDetail
 from financeApp.services import clear_payment_receipt, sync_payment_receipt, sync_student_charge
+from managementApp.access_control import has_management_permission
 from transportApp.models import (
     TransportAssignment,
     TransportDriver,
@@ -117,42 +118,54 @@ def _fee_status_pill(status):
     return f'<span class="ui {color} tiny label">{escape(label)}</span>'
 
 
-def _actions(edit_fn, delete_fn, obj_id):
-    return (
-        f'<button data-tooltip="Edit" data-position="left center" data-variation="mini" '
-        f'onclick="{edit_fn}({obj_id})" class="ui circular green icon button"><i class="pencil icon"></i></button>'
-        f'<button data-tooltip="Delete" data-position="left center" data-variation="mini" '
-        f'onclick="{delete_fn}({obj_id})" class="ui circular red icon button" style="margin-left:3px;">'
-        f'<i class="trash alternate icon"></i></button>'
-    )
+def _transport_button_allowed(request, action):
+    return has_management_permission(request.user, 'transport', action)
 
 
-def _dt_actions(edit_fn, delete_fn, obj_id):
-    return (
-        f'<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" '
-        f'data-variation="mini" style="font-size:10px;" onclick="{edit_fn}({obj_id})" '
-        f'class="ui circular facebook icon button green"><i class="pen icon"></i></button>'
-        f'<button data-inverted="" data-tooltip="Delete" data-position="left center" '
-        f'data-variation="mini" style="font-size:10px; margin-left:3px;" onclick="{delete_fn}({obj_id})" '
-        f'class="ui circular youtube icon button"><i class="trash alternate icon"></i></button>'
-    )
+def _actions(edit_fn, delete_fn, obj_id, request=None):
+    buttons = []
+    if not request or _transport_button_allowed(request, 'edit'):
+        buttons.append(
+            f'<button data-tooltip="Edit" data-position="left center" data-variation="mini" '
+            f'onclick="{edit_fn}({obj_id})" class="ui circular green icon button"><i class="pencil icon"></i></button>'
+        )
+    if not request or _transport_button_allowed(request, 'delete'):
+        buttons.append(
+            f'<button data-tooltip="Delete" data-position="left center" data-variation="mini" '
+            f'onclick="{delete_fn}({obj_id})" class="ui circular red icon button" style="margin-left:3px;">'
+            f'<i class="trash alternate icon"></i></button>'
+        )
+    return ''.join(buttons) or '<span class="ui tiny grey label">View only</span>'
 
 
-def _route_dt_actions(obj_id):
-    return (
+def _dt_actions(edit_fn, delete_fn, obj_id, request=None):
+    return _actions(edit_fn, delete_fn, obj_id, request=request)
+
+
+def _route_dt_actions(obj_id, request=None):
+    buttons = [
         f'<button data-inverted="" data-tooltip="View Stops" data-position="left center" '
         f'data-variation="mini" style="font-size:10px;" onclick="viewRouteDetail({obj_id})" '
         f'class="ui circular teal icon button"><i class="eye icon"></i></button>'
-        f'<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" '
-        f'data-variation="mini" style="font-size:10px; margin-left:3px;" onclick="editRoute({obj_id})" '
-        f'class="ui circular facebook icon button green"><i class="pen icon"></i></button>'
-        f'<button data-inverted="" data-tooltip="Delete" data-position="left center" '
-        f'data-variation="mini" style="font-size:10px; margin-left:3px;" onclick="confirmDeleteRoute({obj_id})" '
-        f'class="ui circular youtube icon button"><i class="trash alternate icon"></i></button>'
-    )
+    ]
+    if not request or _transport_button_allowed(request, 'edit'):
+        buttons.append(
+            f'<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" '
+            f'data-variation="mini" style="font-size:10px; margin-left:3px;" onclick="editRoute({obj_id})" '
+            f'class="ui circular facebook icon button green"><i class="pen icon"></i></button>'
+        )
+    if not request or _transport_button_allowed(request, 'delete'):
+        buttons.append(
+            f'<button data-inverted="" data-tooltip="Delete" data-position="left center" '
+            f'data-variation="mini" style="font-size:10px; margin-left:3px;" onclick="confirmDeleteRoute({obj_id})" '
+            f'class="ui circular youtube icon button"><i class="trash alternate icon"></i></button>'
+        )
+    return ''.join(buttons)
 
 
-def _fee_record_actions(obj_id):
+def _fee_record_actions(obj_id, request=None):
+    if request and not _transport_button_allowed(request, 'edit'):
+        return '<span class="ui tiny grey label">View only</span>'
     return (
         f'<button data-inverted="" data-tooltip="Record Payment" data-position="left center" '
         f'data-variation="mini" style="font-size:10px;" onclick="showPaymentModal({obj_id})" '
@@ -191,7 +204,7 @@ class TransportRouteListJson(BaseDatatableView):
             escape(item.endPoint or 'N/A'),
             _status_pill(item.isActive),
             escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
-            _route_dt_actions(item.id),
+            _route_dt_actions(item.id, request=self.request),
         ] for item in qs]
 
 
@@ -220,7 +233,7 @@ class TransportStopListJson(BaseDatatableView):
             escape(str(item.monthlyFee)),
             escape(item.displayOrder),
             _status_pill(item.isActive),
-            _dt_actions('editStop', 'confirmDeleteStop', item.id),
+            _dt_actions('editStop', 'confirmDeleteStop', item.id, request=self.request),
         ] for item in qs]
 
 
@@ -244,7 +257,7 @@ class TransportDriverListJson(BaseDatatableView):
             escape(item.licenseNumber or 'N/A'),
             escape(item.licenseExpiryDate.strftime('%d-%m-%Y') if item.licenseExpiryDate else 'N/A'),
             _status_pill(item.isActive),
-            _dt_actions('editDriver', 'confirmDeleteDriver', item.id),
+            _dt_actions('editDriver', 'confirmDeleteDriver', item.id, request=self.request),
         ] for item in qs]
 
 
@@ -278,7 +291,7 @@ class TransportFeeMappingListJson(BaseDatatableView):
             escape(item.effectiveFrom.strftime('%d-%m-%Y') if item.effectiveFrom else 'N/A'),
             escape(item.effectiveTo.strftime('%d-%m-%Y') if item.effectiveTo else 'N/A'),
             _status_pill(item.isActive),
-            _dt_actions('editFeeMapping', 'confirmDeleteFeeMapping', item.id),
+            _dt_actions('editFeeMapping', 'confirmDeleteFeeMapping', item.id, request=self.request),
         ] for item in qs]
 
 
@@ -305,7 +318,7 @@ class TransportVehicleListJson(BaseDatatableView):
             escape(item.driverID.name if item.driverID else 'N/A'),
             escape(item.routeID.routeName if item.routeID else 'N/A'),
             _status_pill(item.isActive),
-            _dt_actions('editVehicle', 'confirmDeleteVehicle', item.id),
+            _dt_actions('editVehicle', 'confirmDeleteVehicle', item.id, request=self.request),
         ] for item in qs]
 
 
@@ -343,7 +356,7 @@ class TransportAssignmentListJson(BaseDatatableView):
             escape(str(item.monthlyFee)),
             escape(item.get_feeMode_display()),
             _status_pill(item.isActive),
-            _dt_actions('editAssignment', 'confirmDeleteAssignment', item.id),
+            _dt_actions('editAssignment', 'confirmDeleteAssignment', item.id, request=self.request),
         ] for item in qs]
 
 
@@ -395,12 +408,12 @@ class TransportFeeRecordListJson(BaseDatatableView):
                 escape(str(item.balanceAmount)),
                 _fee_status_pill(item.status),
                 escape(item.dueDate.strftime('%d-%m-%Y') if item.dueDate else 'N/A'),
-                _fee_record_actions(item.id),
+                _fee_record_actions(item.id, request=self.request),
             ])
         return rows
 
 
-def _route_row(route):
+def _route_row(route, request=None):
     return {
         'id': route.id,
         'routeCode': route.routeCode,
@@ -409,11 +422,11 @@ def _route_row(route):
         'endPoint': route.endPoint or 'N/A',
         'status': _status_pill(route.isActive),
         'updatedOn': route.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if route.lastUpdatedOn else '',
-        'actions': _actions('editRoute', 'confirmDeleteRoute', route.id),
+        'actions': _actions('editRoute', 'confirmDeleteRoute', route.id, request=request),
     }
 
 
-def _stop_row(stop):
+def _stop_row(stop, request=None):
     return {
         'id': stop.id,
         'route': stop.routeID.routeName if stop.routeID else 'N/A',
@@ -423,11 +436,11 @@ def _stop_row(stop):
         'monthlyFee': str(stop.monthlyFee),
         'displayOrder': stop.displayOrder,
         'status': _status_pill(stop.isActive),
-        'actions': _actions('editStop', 'confirmDeleteStop', stop.id),
+        'actions': _actions('editStop', 'confirmDeleteStop', stop.id, request=request),
     }
 
 
-def _driver_row(driver):
+def _driver_row(driver, request=None):
     return {
         'id': driver.id,
         'photoUrl': safe_image_url(driver.photo, fallback_path='images/add_photo.svg'),
@@ -436,11 +449,11 @@ def _driver_row(driver):
         'licenseNumber': driver.licenseNumber or 'N/A',
         'licenseExpiryDate': driver.licenseExpiryDate.strftime('%Y-%m-%d') if driver.licenseExpiryDate else 'N/A',
         'status': _status_pill(driver.isActive),
-        'actions': _actions('editDriver', 'confirmDeleteDriver', driver.id),
+        'actions': _actions('editDriver', 'confirmDeleteDriver', driver.id, request=request),
     }
 
 
-def _fee_mapping_row(mapping):
+def _fee_mapping_row(mapping, request=None):
     return {
         'id': mapping.id,
         'route': mapping.routeID.routeName if mapping.routeID else 'N/A',
@@ -451,11 +464,11 @@ def _fee_mapping_row(mapping):
         'effectiveFrom': mapping.effectiveFrom.strftime('%Y-%m-%d') if mapping.effectiveFrom else '',
         'effectiveTo': mapping.effectiveTo.strftime('%Y-%m-%d') if mapping.effectiveTo else '',
         'status': _status_pill(mapping.isActive),
-        'actions': _actions('editFeeMapping', 'confirmDeleteFeeMapping', mapping.id),
+        'actions': _actions('editFeeMapping', 'confirmDeleteFeeMapping', mapping.id, request=request),
     }
 
 
-def _vehicle_row(vehicle):
+def _vehicle_row(vehicle, request=None):
     return {
         'id': vehicle.id,
         'vehicleNumber': vehicle.vehicleNumber,
@@ -464,11 +477,11 @@ def _vehicle_row(vehicle):
         'driver': vehicle.driverID.name if vehicle.driverID else 'N/A',
         'route': vehicle.routeID.routeName if vehicle.routeID else 'N/A',
         'status': _status_pill(vehicle.isActive),
-        'actions': _actions('editVehicle', 'confirmDeleteVehicle', vehicle.id),
+        'actions': _actions('editVehicle', 'confirmDeleteVehicle', vehicle.id, request=request),
     }
 
 
-def _assignment_row(assignment):
+def _assignment_row(assignment, request=None):
     return {
         'id': assignment.id,
         'assigneeType': assignment.get_assigneeType_display(),
@@ -480,7 +493,7 @@ def _assignment_row(assignment):
         'monthlyFee': str(assignment.monthlyFee),
         'feeMode': assignment.get_feeMode_display(),
         'status': _status_pill(assignment.isActive),
-        'actions': _actions('editAssignment', 'confirmDeleteAssignment', assignment.id),
+        'actions': _actions('editAssignment', 'confirmDeleteAssignment', assignment.id, request=request),
     }
 
 
@@ -896,7 +909,7 @@ def routes_api(request):
     try:
         if request.method == 'GET':
             routes = _scoped_for_request(request, TransportRoute).order_by('routeCode')
-            return JsonResponse({'success': True, 'data': [_route_row(route) for route in routes]})
+            return JsonResponse({'success': True, 'data': [_route_row(route, request=request) for route in routes]})
         route_id = request.POST.get('id')
         route = _scoped_object_or_new(request, TransportRoute, route_id)
         if route_id and not route:
@@ -911,7 +924,7 @@ def routes_api(request):
         route.full_clean()
         route.save()
         logger.info(f'Transport route saved id={route.id} code={route.routeCode}')
-        return SuccessResponse('Route saved successfully.', data=_route_row(route)).to_json_response()
+        return SuccessResponse('Route saved successfully.', data=_route_row(route, request=request)).to_json_response()
     except (ValidationError, IntegrityError) as exc:
         logger.error(f'Transport route validation failed: {exc}')
         return ErrorResponse(_validation_message(exc, 'Route could not be saved. Check duplicate code and required fields.')).to_json_response()
@@ -961,7 +974,7 @@ def stops_api(request):
             route_id = request.GET.get('routeID')
             if route_id:
                 qs = qs.filter(routeID_id=route_id)
-            return JsonResponse({'success': True, 'data': [_stop_row(stop) for stop in qs]})
+            return JsonResponse({'success': True, 'data': [_stop_row(stop, request=request) for stop in qs]})
         stop_id = request.POST.get('id')
         stop = _scoped_object_or_new(request, TransportStop, stop_id)
         if stop_id and not stop:
@@ -977,7 +990,7 @@ def stops_api(request):
         stop.full_clean()
         stop.save()
         logger.info(f'Transport stop saved id={stop.id} route={stop.routeID_id}')
-        return SuccessResponse('Stop saved successfully.', data=_stop_row(stop)).to_json_response()
+        return SuccessResponse('Stop saved successfully.', data=_stop_row(stop, request=request)).to_json_response()
     except (ValidationError, IntegrityError, ValueError) as exc:
         logger.error(f'Transport stop validation failed: {exc}')
         return ErrorResponse(_validation_message(exc, 'Stop could not be saved. Check route, duplicate stop name, and required fields.')).to_json_response()
@@ -1014,7 +1027,7 @@ def drivers_api(request):
     try:
         if request.method == 'GET':
             drivers = _scoped_for_request(request, TransportDriver).order_by('name')
-            return JsonResponse({'success': True, 'data': [_driver_row(driver) for driver in drivers]})
+            return JsonResponse({'success': True, 'data': [_driver_row(driver, request=request) for driver in drivers]})
         driver_id = request.POST.get('id')
         driver = _scoped_object_or_new(request, TransportDriver, driver_id)
         if driver_id and not driver:
@@ -1031,7 +1044,7 @@ def drivers_api(request):
         driver.full_clean()
         driver.save()
         logger.info(f'Transport driver saved id={driver.id} name={driver.name}')
-        return SuccessResponse('Driver saved successfully.', data=_driver_row(driver)).to_json_response()
+        return SuccessResponse('Driver saved successfully.', data=_driver_row(driver, request=request)).to_json_response()
     except ValidationError as exc:
         logger.error(f'Transport driver validation failed: {exc}')
         return ErrorResponse(_validation_message(exc, 'Driver could not be saved. Check required fields.')).to_json_response()
@@ -1071,7 +1084,7 @@ def fee_mappings_api(request):
             route_id = request.GET.get('routeID')
             if route_id:
                 qs = qs.filter(routeID_id=route_id)
-            return JsonResponse({'success': True, 'data': [_fee_mapping_row(mapping) for mapping in qs]})
+            return JsonResponse({'success': True, 'data': [_fee_mapping_row(mapping, request=request) for mapping in qs]})
         mapping_id = request.POST.get('id')
         mapping = _scoped_object_or_new(request, TransportFeeMapping, mapping_id)
         if mapping_id and not mapping:
@@ -1089,7 +1102,7 @@ def fee_mappings_api(request):
         mapping.full_clean()
         mapping.save()
         logger.info(f'Transport fee mapping saved id={mapping.id} route={mapping.routeID_id} stop={mapping.stopID_id}')
-        return SuccessResponse('Fee mapping saved successfully.', data=_fee_mapping_row(mapping)).to_json_response()
+        return SuccessResponse('Fee mapping saved successfully.', data=_fee_mapping_row(mapping, request=request)).to_json_response()
     except (ValidationError, IntegrityError, ValueError) as exc:
         logger.error(f'Transport fee mapping validation failed: {exc}')
         return ErrorResponse(_validation_message(exc, 'Fee mapping could not be saved. Check route, stop, and fee details.')).to_json_response()
@@ -1129,7 +1142,7 @@ def vehicles_api(request):
     try:
         if request.method == 'GET':
             vehicles = _scoped_for_request(request, TransportVehicle).select_related('driverID', 'routeID').order_by('vehicleNumber')
-            return JsonResponse({'success': True, 'data': [_vehicle_row(vehicle) for vehicle in vehicles]})
+            return JsonResponse({'success': True, 'data': [_vehicle_row(vehicle, request=request) for vehicle in vehicles]})
         vehicle_id = request.POST.get('id')
         vehicle = _scoped_object_or_new(request, TransportVehicle, vehicle_id)
         if vehicle_id and not vehicle:
@@ -1147,7 +1160,7 @@ def vehicles_api(request):
         vehicle.full_clean()
         vehicle.save()
         logger.info(f'Transport vehicle saved id={vehicle.id} number={vehicle.vehicleNumber}')
-        return SuccessResponse('Vehicle saved successfully.', data=_vehicle_row(vehicle)).to_json_response()
+        return SuccessResponse('Vehicle saved successfully.', data=_vehicle_row(vehicle, request=request)).to_json_response()
     except (ValidationError, IntegrityError, ValueError) as exc:
         logger.error(f'Transport vehicle validation failed: {exc}')
         return ErrorResponse(_validation_message(exc, 'Vehicle could not be saved. Check duplicate number and required fields.')).to_json_response()
@@ -1191,7 +1204,7 @@ def assignments_api(request):
             assignee_type = request.GET.get('assigneeType')
             if assignee_type:
                 qs = qs.filter(assigneeType=assignee_type)
-            return JsonResponse({'success': True, 'data': [_assignment_row(assignment) for assignment in qs]})
+            return JsonResponse({'success': True, 'data': [_assignment_row(assignment, request=request) for assignment in qs]})
         with transaction.atomic():
             assignment_id = request.POST.get('id')
             assignment = _scoped_object_or_new(request, TransportAssignment, assignment_id)
@@ -1215,7 +1228,7 @@ def assignments_api(request):
             assignment.full_clean()
             assignment.save()
         logger.info(f'Transport assignment saved id={assignment.id} type={assignment.assigneeType}')
-        return SuccessResponse('Transport assignment saved successfully.', data=_assignment_row(assignment)).to_json_response()
+        return SuccessResponse('Transport assignment saved successfully.', data=_assignment_row(assignment, request=request)).to_json_response()
     except (ValidationError, IntegrityError) as exc:
         logger.error(f'Transport assignment validation failed: {exc}')
         return ErrorResponse(_validation_message(exc, 'Assignment could not be saved. Check duplicate active assignment and required fields.')).to_json_response()

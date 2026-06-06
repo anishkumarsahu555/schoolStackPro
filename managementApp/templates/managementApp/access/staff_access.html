@@ -1,0 +1,533 @@
+{% extends 'managementApp/index.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Staff Access</title>
+{% endblock %}
+{% block page_title %}Staff Access{% endblock %}
+{% block page_subtitle %}Assign management access to staff with role-based permissions{% endblock %}
+
+{% block css %}
+    <style>
+        .staff-access-page {
+            margin-top: 0 !important;
+        }
+
+        .staff-access-page .ui.segment {
+            padding: 1.2rem 1.2rem 1.35rem !important;
+        }
+
+        .access-summary {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+            justify-content: flex-end;
+            margin: 0.1rem 0 1rem;
+        }
+
+        .access-summary .ui.label {
+            border-radius: 999px;
+            font-weight: 700;
+        }
+
+        .access-layout {
+            display: grid;
+            gap: 1.1rem;
+            grid-template-columns: minmax(0, 1fr) 320px;
+            text-align: left;
+        }
+
+        .access-panel {
+            background: var(--app-surface);
+            border: 1px solid var(--app-border);
+            border-radius: 6px;
+        }
+
+        .access-panel-head {
+            align-items: center;
+            border-bottom: 1px solid var(--app-border);
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0.85rem;
+        }
+
+        .access-panel-head h3 {
+            color: var(--app-text);
+            font-size: 0.98rem;
+            margin: 0;
+        }
+
+        .staff-access-list {
+            display: grid;
+        }
+
+        .staff-access-row {
+            align-items: center;
+            border-bottom: 1px solid var(--app-border);
+            display: grid;
+            gap: 0.75rem;
+            grid-template-columns: minmax(220px, 1fr) 180px 104px 96px;
+            min-height: 58px;
+            padding: 0.55rem 0.8rem;
+        }
+
+        .staff-access-row:last-child {
+            border-bottom: 0;
+        }
+
+        .staff-person {
+            align-items: center;
+            display: flex;
+            gap: 0.75rem;
+            min-width: 0;
+        }
+
+        .staff-avatar {
+            align-items: center;
+            background: var(--app-hover);
+            border: 1px solid var(--app-border);
+            border-radius: 50%;
+            color: var(--app-brand);
+            display: inline-flex;
+            flex: 0 0 36px;
+            font-weight: 800;
+            height: 36px;
+            justify-content: center;
+            width: 36px;
+        }
+
+        .staff-person strong,
+        .role-card strong {
+            color: var(--app-text);
+            display: block;
+            font-size: 0.92rem;
+            overflow-wrap: anywhere;
+        }
+
+        .staff-person span,
+        .role-card span {
+            color: var(--app-muted);
+            display: block;
+            font-size: 0.82rem;
+            margin-top: 0.18rem;
+        }
+
+        .access-chip {
+            border-radius: 999px;
+            display: inline-flex;
+            font-size: 0.72rem;
+            font-weight: 800;
+            justify-content: center;
+            padding: 0.28rem 0.58rem;
+            text-transform: uppercase;
+        }
+
+        .access-chip.on {
+            background: rgba(16, 185, 129, 0.12);
+            color: #047857;
+        }
+
+        .access-chip.off {
+            background: rgba(100, 116, 139, 0.12);
+            color: #475569;
+        }
+
+        .role-list {
+            display: grid;
+            gap: 0.55rem;
+            max-height: 350px;
+            overflow-y: auto;
+            padding: 0.8rem;
+        }
+
+        .role-card {
+            align-items: center;
+            border: 1px solid var(--app-border);
+            border-radius: 6px;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: space-between;
+            padding: 0.6rem 0.65rem;
+        }
+
+        .create-role {
+            border-top: 1px solid var(--app-border);
+            padding: 0.85rem;
+        }
+
+        .access-modal-grid {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        #staffAccessModal {
+            border-radius: 10px !important;
+            overflow: hidden;
+            width: 620px !important;
+        }
+
+        #staffAccessModal .access-modal-header {
+            align-items: center;
+            background: var(--app-hover);
+            border-bottom: 1px solid var(--app-border);
+            display: flex;
+            gap: 0.85rem;
+            padding: 1rem 1.15rem;
+        }
+
+        #staffAccessModal .access-modal-icon {
+            align-items: center;
+            background: var(--app-active);
+            border: 1px solid var(--app-border);
+            border-radius: 10px;
+            color: var(--app-brand);
+            display: inline-flex;
+            flex: 0 0 42px;
+            height: 42px;
+            justify-content: center;
+            width: 42px;
+        }
+
+        #staffAccessModal .access-modal-icon i.icon {
+            margin: 0 !important;
+        }
+
+        #staffAccessModal .access-modal-title {
+            color: var(--app-text);
+            font-size: 1.08rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        #staffAccessModal .access-modal-subtitle {
+            color: var(--app-muted);
+            font-size: 0.86rem;
+            margin-top: 0.2rem;
+        }
+
+        #staffAccessModal .content {
+            padding: 1.05rem 1.15rem 1.15rem !important;
+        }
+
+        .access-modal-staff-card {
+            align-items: center;
+            background: var(--app-bg);
+            border: 1px solid var(--app-border);
+            border-radius: 8px;
+            display: flex;
+            gap: 0.75rem;
+            padding: 0.75rem;
+        }
+
+        .access-modal-staff-card .staff-avatar {
+            flex-basis: 40px;
+            height: 40px;
+            width: 40px;
+        }
+
+        .access-modal-staff-card strong {
+            color: var(--app-text);
+            display: block;
+            font-size: 0.98rem;
+        }
+
+        .access-modal-staff-card span {
+            color: var(--app-muted);
+            display: block;
+            font-size: 0.82rem;
+            margin-top: 0.18rem;
+        }
+
+        .access-modal-role-row {
+            display: grid;
+            gap: 0.8rem;
+            grid-template-columns: minmax(0, 1fr) 150px;
+        }
+
+        .access-enable-card {
+            align-items: center;
+            background: rgba(33, 186, 69, 0.08);
+            border: 1px solid rgba(33, 186, 69, 0.2);
+            border-radius: 8px;
+            display: flex;
+            gap: 0.7rem;
+            min-height: 100%;
+            padding: 0.72rem 0.78rem;
+        }
+
+        .access-enable-card label {
+            color: var(--app-text) !important;
+            font-size: 0.86rem !important;
+            font-weight: 700;
+            padding-left: 3.8rem !important;
+        }
+
+        #staffAccessModal textarea {
+            min-height: 86px;
+            resize: vertical;
+        }
+
+        #staffAccessModal .actions {
+            align-items: center;
+            background: var(--app-surface);
+            border-top: 1px solid var(--app-border);
+            display: flex;
+            gap: 0.65rem;
+            justify-content: flex-end;
+            padding: 0.8rem 1.15rem !important;
+        }
+
+        #staffAccessModal .actions .ui.button {
+            border-radius: 8px !important;
+            min-width: 104px;
+        }
+
+        html[data-theme="dark"] .access-chip.on {
+            background: rgba(16, 185, 129, 0.18);
+            color: #86efac;
+        }
+
+        html[data-theme="dark"] .access-chip.off {
+            background: rgba(148, 163, 184, 0.18);
+            color: #cbd5e1;
+        }
+
+        html[data-theme="dark"] #staffAccessModal.ui.modal {
+            background: var(--app-surface) !important;
+        }
+
+        @media (max-width: 980px) {
+            .access-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .staff-access-row {
+                align-items: flex-start;
+                grid-template-columns: 1fr;
+            }
+
+            .access-summary {
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 640px) {
+            #staffAccessModal {
+                width: 94% !important;
+            }
+
+            .access-modal-role-row {
+                grid-template-columns: 1fr;
+            }
+
+            #staffAccessModal .actions {
+                flex-direction: column-reverse;
+            }
+
+            #staffAccessModal .actions .ui.button {
+                width: 100%;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui right aligned basic grid staff-access-page">
+        <div class="sixteen wide column">
+            <div class="ui tab active" data-tab="user">
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="user shield icon"></i>
+                        Staff access list
+                    </h4>
+
+                    <div class="access-summary">
+                        <span class="ui green basic label">{{ enabled_count }} Enabled</span>
+                        <span class="ui grey basic label">{{ staff_list|length }} Staff</span>
+                        <span class="ui blue basic label">{{ roles|length }} Roles</span>
+                        <span class="ui teal basic label">{{ module_count }} Modules</span>
+                    </div>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="ui {{ message.tags }} message">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="access-layout">
+                        <section class="access-panel">
+                            <div class="access-panel-head">
+                                <h3>Staff assignments</h3>
+                                <span class="ui basic mini label">Role access</span>
+                            </div>
+                            <div class="staff-access-list">
+                                {% for staff in staff_list %}
+                                    <div class="staff-access-row">
+                                        <div class="staff-person">
+                                            <span class="staff-avatar">{{ staff.name|default:'S'|slice:":1" }}</span>
+                                            <div>
+                                                <strong>{{ staff.name|default:'Unnamed staff' }}</strong>
+                                                <span>{{ staff.staffType|default:'Staff' }}{% if staff.employeeCode %} · {{ staff.employeeCode }}{% endif %}</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <strong>{{ staff.managementAccess.roleID.name|default:'No role assigned' }}</strong>
+                                            <span>{{ staff.userID.username|default:'No login user' }}</span>
+                                        </div>
+                                        <div>
+                                            {% if staff.managementAccess.isManagementAccessEnabled %}
+                                                <span class="access-chip on">Enabled</span>
+                                            {% else %}
+                                                <span class="access-chip off">Disabled</span>
+                                            {% endif %}
+                                        </div>
+                                        <button
+                                            class="ui blue mini button access-edit-btn"
+                                            type="button"
+                                            data-staff-id="{{ staff.id }}"
+                                            data-staff-name="{{ staff.name|default:'Staff' }}"
+                                            data-role-id="{{ staff.managementAccess.roleID_id|default:'' }}"
+                                            data-enabled="{% if staff.managementAccess.isManagementAccessEnabled %}1{% else %}0{% endif %}"
+                                            data-notes="{{ staff.managementAccess.notes|default_if_none:'' }}">
+                                            <i class="sliders horizontal icon"></i>
+                                            Access
+                                        </button>
+                                    </div>
+                                {% empty %}
+                                    <div class="staff-access-row">
+                                        <div class="staff-person">
+                                            <span class="staff-avatar">S</span>
+                                            <div>
+                                                <strong>No staff found</strong>
+                                                <span>Add staff profiles before assigning access.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </section>
+
+                        <aside class="access-panel">
+                            <div class="access-panel-head">
+                                <h3>Roles</h3>
+                                <span class="ui basic mini label">{{ action_count }} actions</span>
+                            </div>
+                            <div class="role-list">
+                                {% for role in roles %}
+                                    <div class="role-card">
+                                        <div>
+                                            <strong>{{ role.name }}</strong>
+                                            <span>{% if role.isSystemRole %}Preset{% else %}Custom{% endif %} · {% if role.isActive %}Active{% else %}Paused{% endif %}</span>
+                                        </div>
+                                        <a class="ui mini basic button" href="{% url 'managementApp:edit_staff_role' role.id %}">
+                                            <i class="edit outline icon"></i>
+                                            Edit
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <form class="create-role ui tiny form" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="create_role">
+                                <div class="field">
+                                    <label>New role</label>
+                                    <input type="text" name="role_name" placeholder="e.g. Front Desk">
+                                </div>
+                                <div class="field">
+                                    <label>Description</label>
+                                    <textarea name="description" rows="2" placeholder="Role responsibility"></textarea>
+                                </div>
+                                <button class="ui fluid green button" type="submit">
+                                    <i class="plus icon"></i>
+                                    Create role
+                                </button>
+                            </form>
+                        </aside>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui small modal" id="staffAccessModal">
+        <i class="close icon"></i>
+        <form class="ui form" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="assign_access">
+            <input type="hidden" name="staff_id" id="accessStaffId">
+            <div class="access-modal-header">
+                <span class="access-modal-icon">
+                    <i class="user shield icon"></i>
+                </span>
+                <div>
+                    <h3 class="access-modal-title">Manage staff access</h3>
+                    <div class="access-modal-subtitle">Assign a role and enable management access.</div>
+                </div>
+            </div>
+            <div class="content access-modal-grid">
+                <div class="access-modal-staff-card">
+                    <span class="staff-avatar" id="accessStaffInitial">S</span>
+                    <div>
+                        <strong id="accessStaffNameText">Staff member</strong>
+                        <span>Management app permissions</span>
+                    </div>
+                    <input type="hidden" id="accessStaffName">
+                </div>
+                <div class="access-modal-role-row">
+                    <div class="field">
+                        <label>Role</label>
+                        <select class="ui fluid dropdown" name="role_id" id="accessRoleId">
+                            <option value="">No role</option>
+                            {% for role in roles %}
+                                <option value="{{ role.id }}">{{ role.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Status</label>
+                        <div class="access-enable-card">
+                            <div class="ui toggle checkbox">
+                                <input type="checkbox" name="enabled" id="accessEnabled">
+                                <label>Enabled</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Notes</label>
+                    <textarea name="notes" id="accessNotes" rows="3" placeholder="Optional note for why this access was given"></textarea>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="ui basic cancel button" type="button">
+                    Cancel
+                </button>
+                <button class="ui blue button" type="submit">
+                    <i class="save outline icon"></i>
+                    Save access
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        $('.ui.dropdown').dropdown();
+        $('.ui.checkbox').checkbox();
+
+        $('.access-edit-btn').on('click', function () {
+            const button = $(this);
+            const staffName = String(button.data('staff-name') || 'Staff');
+            $('#accessStaffId').val(button.data('staff-id'));
+            $('#accessStaffName').val(staffName);
+            $('#accessStaffNameText').text(staffName);
+            $('#accessStaffInitial').text(staffName.trim().charAt(0).toUpperCase() || 'S');
+            $('#accessRoleId').dropdown('set selected', String(button.data('role-id') || ''));
+            $('#accessNotes').val(button.data('notes') || '');
+            $('#accessEnabled').prop('checked', String(button.data('enabled')) === '1').closest('.ui.checkbox').checkbox('refresh');
+            $('#staffAccessModal').modal('show');
+        });
+    </script>
+{% endblock %}

@@ -39,6 +39,7 @@ from libraryApp.services import (
     normalize_library_card_fields,
 )
 from financeApp.services import sync_library_fine_finance
+from managementApp.access_control import has_management_permission
 from utils.custom_response import ErrorResponse, SuccessResponse
 from utils.logger import logger
 
@@ -202,15 +203,29 @@ def _fine_status_pill(status):
     return _status_pill(status.title(), colors.get(status, 'grey'))
 
 
-def _dt_actions(edit_fn, delete_fn, obj_id):
-    return (
-        f'<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" '
-        f'style="font-size:10px;" onclick="{edit_fn}({obj_id})" class="ui circular facebook icon button green">'
-        f'<i class="pen icon"></i></button>'
-        f'<button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" '
-        f'style="font-size:10px; margin-left:3px;" onclick="{delete_fn}({obj_id})" class="ui circular youtube icon button">'
-        f'<i class="trash alternate icon"></i></button>'
-    )
+def _library_button_allowed(request, action):
+    return has_management_permission(request.user, 'library', action)
+
+
+def _view_only_label():
+    return '<span class="ui tiny grey label">View only</span>'
+
+
+def _dt_actions(edit_fn, delete_fn, obj_id, request=None):
+    buttons = []
+    if not request or _library_button_allowed(request, 'edit'):
+        buttons.append(
+            f'<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" '
+            f'style="font-size:10px;" onclick="{edit_fn}({obj_id})" class="ui circular facebook icon button green">'
+            f'<i class="pen icon"></i></button>'
+        )
+    if not request or _library_button_allowed(request, 'delete'):
+        buttons.append(
+            f'<button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" '
+            f'style="font-size:10px; margin-left:3px;" onclick="{delete_fn}({obj_id})" class="ui circular youtube icon button">'
+            f'<i class="trash alternate icon"></i></button>'
+        )
+    return ''.join(buttons) or _view_only_label()
 
 
 def _history_button(history_fn, obj_id, label='Issue History'):
@@ -221,27 +236,29 @@ def _history_button(history_fn, obj_id, label='Issue History'):
     )
 
 
-def _book_actions(obj_id):
-    return _dt_actions('editBook', 'confirmDeleteBook', obj_id) + _history_button('viewBookHistory', obj_id)
+def _book_actions(obj_id, request=None):
+    return _dt_actions('editBook', 'confirmDeleteBook', obj_id, request=request) + _history_button('viewBookHistory', obj_id)
 
 
-def _member_actions(obj_id):
+def _member_actions(obj_id, request=None):
     card_url = reverse('libraryApp:member_cards') + f'?member={obj_id}'
-    card_button = (
+    card_button = ''
+    if not request or _library_button_allowed(request, 'report'):
+        card_button = (
         f'<a data-inverted="" data-tooltip="View Member Card" data-position="left center" data-variation="mini" '
         f'style="font-size:10px; margin-left:3px;" href="{card_url}" target="_blank" class="ui circular blue icon button">'
         f'<i class="id card outline icon"></i></a>'
-    )
-    return _dt_actions('editMember', 'confirmDeleteMember', obj_id) + _history_button('viewMemberHistory', obj_id) + card_button
+        )
+    return _dt_actions('editMember', 'confirmDeleteMember', obj_id, request=request) + _history_button('viewMemberHistory', obj_id) + card_button
 
 
-def _copy_actions(obj_id):
-    return _dt_actions('editCopy', 'confirmDeleteCopy', obj_id) + _history_button('viewCopyHistory', obj_id)
+def _copy_actions(obj_id, request=None):
+    return _dt_actions('editCopy', 'confirmDeleteCopy', obj_id, request=request) + _history_button('viewCopyHistory', obj_id)
 
 
-def _reservation_actions(obj):
-    actions = [_dt_actions('editReservation', 'confirmDeleteReservation', obj.id)]
-    if obj.status == 'pending':
+def _reservation_actions(obj, request=None):
+    actions = [_dt_actions('editReservation', 'confirmDeleteReservation', obj.id, request=request)]
+    if obj.status == 'pending' and (not request or _library_button_allowed(request, 'add')):
         actions.append(
             f'<button data-inverted="" data-tooltip="Issue Reserved Book" data-position="left center" data-variation="mini" '
             f'style="font-size:10px; margin-left:3px;" onclick="issueReservation({obj.id})" class="ui circular green icon button">'
@@ -250,26 +267,28 @@ def _reservation_actions(obj):
     return ''.join(actions)
 
 
-def _fine_actions(obj):
-    actions = [_dt_actions('editFine', 'confirmDeleteFine', obj.id)]
+def _fine_actions(obj, request=None):
+    actions = [_dt_actions('editFine', 'confirmDeleteFine', obj.id, request=request)]
     if obj.status == 'pending':
-        actions.append(
-            f'<button data-inverted="" data-tooltip="Pay Fine" data-position="left center" data-variation="mini" '
-            f'style="font-size:10px; margin-left:3px;" onclick="showPayFineModal({obj.id})" class="ui circular green icon button">'
-            f'<i class="money bill alternate icon"></i></button>'
-        )
-        actions.append(
-            f'<button data-inverted="" data-tooltip="Waive Fine" data-position="left center" data-variation="mini" '
-            f'style="font-size:10px; margin-left:3px;" onclick="waiveFine({obj.id})" class="ui circular blue icon button">'
-            f'<i class="handshake icon"></i></button>'
-        )
+        if not request or _library_button_allowed(request, 'edit'):
+            actions.append(
+                f'<button data-inverted="" data-tooltip="Pay Fine" data-position="left center" data-variation="mini" '
+                f'style="font-size:10px; margin-left:3px;" onclick="showPayFineModal({obj.id})" class="ui circular green icon button">'
+                f'<i class="money bill alternate icon"></i></button>'
+            )
+        if not request or _library_button_allowed(request, 'approve'):
+            actions.append(
+                f'<button data-inverted="" data-tooltip="Waive Fine" data-position="left center" data-variation="mini" '
+                f'style="font-size:10px; margin-left:3px;" onclick="waiveFine({obj.id})" class="ui circular blue icon button">'
+                f'<i class="handshake icon"></i></button>'
+            )
     return ''.join(actions)
 
 
-def _issue_actions(obj):
+def _issue_actions(obj, request=None):
     actions = []
     actions.append(f'<button class="ui circular blue icon button" data-tooltip="Issue Detail" onclick="showIssueDetailModal({obj.id})"><i class="info circle icon"></i></button>')
-    if obj.status == 'issued':
+    if obj.status == 'issued' and (not request or _library_button_allowed(request, 'edit')):
         actions.append(f'<button class="ui circular green icon button" data-tooltip="Return" onclick="showReturnModal({obj.id})"><i class="undo icon"></i></button>')
         actions.append(f'<button class="ui circular teal icon button" data-tooltip="Renew" onclick="showRenewModal({obj.id})"><i class="redo icon"></i></button>')
     return ''.join(actions) or 'N/A'
@@ -411,7 +430,7 @@ class LibraryCategoryListJson(BaseDatatableView):
             _active_pill(item.isActive),
             escape(item.lastEditedBy or 'N/A'),
             escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
-            _dt_actions('editCategory', 'confirmDeleteCategory', item.id),
+            _dt_actions('editCategory', 'confirmDeleteCategory', item.id, request=self.request),
         ] for item in qs]
 
 
@@ -428,7 +447,7 @@ class LibraryAuthorListJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.name), escape(i.country or 'N/A'), _active_pill(i.isActive), escape(i.lastEditedBy or 'N/A'), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _dt_actions('editAuthor', 'confirmDeleteAuthor', i.id)] for i in qs]
+        return [[escape(i.name), escape(i.country or 'N/A'), _active_pill(i.isActive), escape(i.lastEditedBy or 'N/A'), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _dt_actions('editAuthor', 'confirmDeleteAuthor', i.id, request=self.request)] for i in qs]
 
 
 class LibraryPublisherListJson(BaseDatatableView):
@@ -444,7 +463,7 @@ class LibraryPublisherListJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.name), escape(i.phoneNumber or 'N/A'), escape(i.email or 'N/A'), _active_pill(i.isActive), escape(i.lastEditedBy or 'N/A'), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _dt_actions('editPublisher', 'confirmDeletePublisher', i.id)] for i in qs]
+        return [[escape(i.name), escape(i.phoneNumber or 'N/A'), escape(i.email or 'N/A'), _active_pill(i.isActive), escape(i.lastEditedBy or 'N/A'), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _dt_actions('editPublisher', 'confirmDeletePublisher', i.id, request=self.request)] for i in qs]
 
 
 class LibraryBookListJson(BaseDatatableView):
@@ -473,7 +492,7 @@ class LibraryBookListJson(BaseDatatableView):
                 escape(item.publisher.name if item.publisher_id else 'N/A'),
                 escape(item.shelfLocation or 'N/A'),
                 _active_pill(item.isActive),
-                _book_actions(item.id),
+                _book_actions(item.id, request=self.request),
             ])
         return rows
 
@@ -494,7 +513,7 @@ class LibraryBookCopyListJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.accessionNumber), escape(i.book.title), _copy_status_pill(i.status), escape(i.condition.title()), escape(i.barcodeValue or i.qrCodeValue or 'N/A'), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _copy_actions(i.id)] for i in qs]
+        return [[escape(i.accessionNumber), escape(i.book.title), _copy_status_pill(i.status), escape(i.condition.title()), escape(i.barcodeValue or i.qrCodeValue or 'N/A'), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _copy_actions(i.id, request=self.request)] for i in qs]
 
 
 class LibraryMemberListJson(BaseDatatableView):
@@ -513,7 +532,7 @@ class LibraryMemberListJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.memberCode), escape(i.get_memberType_display()), escape(_member_name(i) or 'N/A'), escape(i.maxBooksAllowed), escape(str(_open_fine_balance(i))), _active_pill(i.isActive), _member_actions(i.id)] for i in qs]
+        return [[escape(i.memberCode), escape(i.get_memberType_display()), escape(_member_name(i) or 'N/A'), escape(i.maxBooksAllowed), escape(str(_open_fine_balance(i))), _active_pill(i.isActive), _member_actions(i.id, request=self.request)] for i in qs]
 
 
 class LibraryIssueListJson(BaseDatatableView):
@@ -555,7 +574,7 @@ class LibraryIssueListJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.copy.book.title), escape(i.copy.accessionNumber), escape(i.member.memberCode), escape(_member_name(i.member) or 'N/A'), escape(i.issueDate.strftime('%d-%m-%Y')), _issue_due_date_cell(i), _issue_status_cell(i), escape(str(i.fineAmount)), _issue_actions(i)] for i in qs]
+        return [[escape(i.copy.book.title), escape(i.copy.accessionNumber), escape(i.member.memberCode), escape(_member_name(i.member) or 'N/A'), escape(i.issueDate.strftime('%d-%m-%Y')), _issue_due_date_cell(i), _issue_status_cell(i), escape(str(i.fineAmount)), _issue_actions(i, request=self.request)] for i in qs]
 
 
 class LibraryReservationListJson(BaseDatatableView):
@@ -574,7 +593,7 @@ class LibraryReservationListJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.book.title), escape(i.member.memberCode), escape(_member_name(i.member) or 'N/A'), escape(i.reservationDate.strftime('%d-%m-%Y')), escape(i.expiryDate.strftime('%d-%m-%Y') if i.expiryDate else 'N/A'), _status_pill(i.status.title(), 'orange' if i.status == 'pending' else 'grey'), _reservation_actions(i)] for i in qs]
+        return [[escape(i.book.title), escape(i.member.memberCode), escape(_member_name(i.member) or 'N/A'), escape(i.reservationDate.strftime('%d-%m-%Y')), escape(i.expiryDate.strftime('%d-%m-%Y') if i.expiryDate else 'N/A'), _status_pill(i.status.title(), 'orange' if i.status == 'pending' else 'grey'), _reservation_actions(i, request=self.request)] for i in qs]
 
 
 class LibraryFineListJson(BaseDatatableView):
@@ -593,7 +612,7 @@ class LibraryFineListJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.member.memberCode), escape(_member_name(i.member) or 'N/A'), escape(i.reason.title()), escape(str(i.amount)), escape(str(i.paidAmount)), escape(str(i.balance)), escape(i.paidDate.strftime('%d-%m-%Y') if i.paidDate else 'N/A'), _fine_status_pill(i.status), _fine_actions(i)] for i in qs]
+        return [[escape(i.member.memberCode), escape(_member_name(i.member) or 'N/A'), escape(i.reason.title()), escape(str(i.amount)), escape(str(i.paidAmount)), escape(str(i.balance)), escape(i.paidDate.strftime('%d-%m-%Y') if i.paidDate else 'N/A'), _fine_status_pill(i.status), _fine_actions(i, request=self.request)] for i in qs]
 
 
 class LibraryOverdueReportListJson(LibraryIssueListJson):

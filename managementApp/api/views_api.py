@@ -76,6 +76,8 @@ from managementApp.services.id_cards import (
 )
 from managementApp.services.session_rollover import preview_session_import, run_session_import
 from managementApp.signals import pre_save_with_user
+from managementApp.access_control import ensure_staff_login_group
+from managementApp.access_control import has_management_permission
 from managementApp.leave_utils import (
     ATTENDANCE_STATUS_ABSENT,
     ATTENDANCE_STATUS_HOLIDAY,
@@ -247,15 +249,36 @@ def _assert_finance_date_open(*, school_id, session_id, txn_date, label='Transac
     )
 
 
-def _management_edit_delete_buttons(*, edit_handler, delete_handler=None):
-    actions = [
-        (
+def _management_action_buttons(request, module_key, *, view_href=None, edit_href=None, edit_handler=None, delete_handler=None, extra_buttons=None):
+    def allowed(action):
+        if request is None:
+            return True
+        return has_management_permission(request.user, module_key, action)
+
+    actions = []
+    if view_href and allowed('view'):
+        actions.append(
+            f'<a href="{escape(view_href)}" data-inverted="" data-tooltip="View Detail" data-position="left center" '
+            f'data-variation="mini" style="font-size:10px;" class="ui circular facebook icon button purple">'
+            f'<i class="eye icon"></i></a>'
+        )
+    for button in extra_buttons or []:
+        button_action = button.get('action', 'view')
+        if allowed(button_action):
+            actions.append(button.get('html', ''))
+    if edit_href and allowed('edit'):
+        actions.append(
+            f'<a href="{escape(edit_href)}" data-inverted="" data-tooltip="Edit Detail" data-position="left center" '
+            f'data-variation="mini" style="font-size:10px;" class="ui circular facebook icon button green">'
+            f'<i class="pen icon"></i></a>'
+        )
+    if edit_handler and allowed('edit'):
+        actions.append(
             f'<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" '
             f'data-variation="mini" style="font-size:10px;" onclick="{escape(edit_handler)}" '
-            f'class="ui circular facebook icon button green"><i class="pencil icon"></i></button>'
+            f'class="ui circular facebook icon button green"><i class="pen icon"></i></button>'
         )
-    ]
-    if delete_handler:
+    if delete_handler and allowed('delete'):
         actions.append(
             (
                 f'<button data-inverted="" data-tooltip="Delete" data-position="left center" '
@@ -263,7 +286,16 @@ def _management_edit_delete_buttons(*, edit_handler, delete_handler=None):
                 f'class="ui circular youtube icon button"><i class="trash alternate icon"></i></button>'
             )
         )
-    return ''.join(actions)
+    return ''.join(actions) or '<span class="ui tiny grey label">No actions</span>'
+
+
+def _management_edit_delete_buttons(*, edit_handler, delete_handler=None):
+    return _management_action_buttons(
+        None,
+        '',
+        edit_handler=edit_handler,
+        delete_handler=delete_handler,
+    )
 
 
 @login_required
@@ -1390,12 +1422,12 @@ class StandardListJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            action = '''<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
-                <i class="pen icon"></i>
-              </button>
-              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
-                <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk)
+            action = _management_action_buttons(
+                self.request,
+                'classes',
+                edit_handler=f"GetDataDetails('{item.pk}')",
+                delete_handler=f"delData('{item.pk}')",
+            )
             teacher = item.classTeacher.name if item.classTeacher and item.classTeacher.name else "N/A"
             json_data.append([
                 escape(item.name),
@@ -1524,12 +1556,12 @@ class SubjectListJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            action = '''<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
-                <i class="pen icon"></i>
-              </button>
-              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
-                <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk),
+            action = _management_action_buttons(
+                self.request,
+                'exams',
+                edit_handler=f"GetDataDetails('{item.pk}')",
+                delete_handler=f"delData('{item.pk}')",
+            )
 
             json_data.append([
                 escape(item.name),
@@ -2998,15 +3030,17 @@ def add_teacher_api(request):
                 instance.save()
 
                 # Handle group assignment more efficiently
+            ensure_staff_login_group(new_user)
             try:
-                group, created = Group.objects.get_or_create(name=staffType)
-                if created:
-                    logger.info(f"Created new group: {staffType}")
-                
-                # Only add user to group if not already a member
-                if not group.user_set.filter(id=new_user.pk).exists():
-                    group.user_set.add(new_user.pk)
-                    logger.info(f"Added user {new_user.pk} to group {staffType}")
+                if staffType:
+                    group, created = Group.objects.get_or_create(name=staffType)
+                    if created:
+                        logger.info(f"Created new group: {staffType}")
+
+                    # Only add user to group if not already a member
+                    if not group.user_set.filter(id=new_user.pk).exists():
+                        group.user_set.add(new_user.pk)
+                        logger.info(f"Added user {new_user.pk} to group {staffType}")
             except Exception as e:
                 logger.error(f"Error handling group assignment: {e}")
                 # Continue with teacher update even if group assignment fails
@@ -3084,15 +3118,17 @@ def update_teacher_api(request):
             user = User.objects.get(id=instance.userID_id)
 
             # Handle group assignment more efficiently
+            ensure_staff_login_group(user)
             try:
-                group, created = Group.objects.get_or_create(name=staffType)
-                if created:
-                    logger.info(f"Created new group: {staffType}")
-                
-                # Only add user to group if not already a member
-                if not group.user_set.filter(id=user.pk).exists():
-                    group.user_set.add(user.pk)
-                    logger.info(f"Added user {user.pk} to group {staffType}")
+                if staffType:
+                    group, created = Group.objects.get_or_create(name=staffType)
+                    if created:
+                        logger.info(f"Created new group: {staffType}")
+
+                    # Only add user to group if not already a member
+                    if not group.user_set.filter(id=user.pk).exists():
+                        group.user_set.add(user.pk)
+                        logger.info(f"Added user {user.pk} to group {staffType}")
             except Exception as e:
                 logger.error(f"Error handling group assignment: {e}")
                 # Continue with teacher update even if group assignment fails
@@ -3157,15 +3193,13 @@ class TeacherListJson(BaseDatatableView):
         for item in qs:
             images = _avatar_image_html(item.photo)
 
-            action = '''<a href="/management/teacher_detail/{}/" data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button purple">
-                <i class="eye icon"></i>
-              </a>
-            <a href="/management/edit_teacher/{}/" data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
-                <i class="pen icon"></i>
-              </a>
-              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
-                <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk,item.pk, item.pk, item.pk, item.pk),
+            action = _management_action_buttons(
+                self.request,
+                'staff',
+                view_href=f'/management/teacher_detail/{item.pk}/',
+                edit_href=f'/management/edit_teacher/{item.pk}/',
+                delete_handler=f"delData('{item.pk}')",
+            )
 
             json_data.append([
                 images,
@@ -3577,18 +3611,20 @@ class StudentListJson(BaseDatatableView):
         for item in qs:
             images = _avatar_image_html(item.photo)
 
-            action = '''<a href="/management/student_detail/{}/" data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button purple">
-                <i class="eye icon"></i>
-              </a>
-            <button type="button" onclick="openStudentIdCardModal('{}')" data-inverted="" data-tooltip="ID Card" data-position="left center" data-variation="mini" style="font-size:10px;" class="ui circular blue icon button">
-                <i class="id card outline icon"></i>
-              </button>
-            <a href="/management/edit_student/{}/" data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
-                <i class="pen icon"></i>
-              </a>
-              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
-                <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk, item.pk, item.pk, item.pk, item.pk)
+            id_card_button = (
+                '<button type="button" onclick="openStudentIdCardModal(\'{}\')" data-inverted="" '
+                'data-tooltip="ID Card" data-position="left center" data-variation="mini" '
+                'style="font-size:10px;" class="ui circular blue icon button">'
+                '<i class="id card outline icon"></i></button>'
+            ).format(item.pk)
+            action = _management_action_buttons(
+                self.request,
+                'students',
+                view_href=f'/management/student_detail/{item.pk}/',
+                edit_href=f'/management/edit_student/{item.pk}/',
+                delete_handler=f"delData('{item.pk}')",
+                extra_buttons=[{'action': 'report', 'html': id_card_button}],
+            )
             if item.standardID.section:
                 standard = item.standardID.name + ' - ' + item.standardID.section
             else:
@@ -4387,12 +4423,12 @@ class ExamTimeTableListJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            action = '''<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
-                <i class="pen icon"></i>
-              </button>
-              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
-                <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk)
+            action = _management_action_buttons(
+                self.request,
+                'subjects',
+                edit_handler=f"GetDataDetails('{item.pk}')",
+                delete_handler=f"delData('{item.pk}')",
+            )
             section = item.standardID.section if item.standardID and item.standardID.section else 'N/A'
             json_data.append([
                 escape(item.standardID.name if item.standardID else 'N/A'),
@@ -7104,13 +7140,12 @@ class EventTypeListJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            action = '''
-              <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetTypeDataDetails('{}')" class="ui circular facebook icon button green">
-                <i class="pen icon"></i>
-              </button>
-              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delTypeData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
-                <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk)
+            action = _management_action_buttons(
+                self.request,
+                'events',
+                edit_handler=f"GetTypeDataDetails('{item.pk}')",
+                delete_handler=f"delTypeData('{item.pk}')",
+            )
             json_data.append([
                 escape(item.name or 'N/A'),
                 escape(item.get_audience_display()),
@@ -7289,13 +7324,12 @@ class HolidayListJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            action = '''
-              <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
-                <i class="pen icon"></i>
-              </button>
-              <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
-                <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk)
+            action = _management_action_buttons(
+                self.request,
+                'events',
+                edit_handler=f"GetDataDetails('{item.pk}')",
+                delete_handler=f"delData('{item.pk}')",
+            )
             json_data.append([
                 escape(item.title or 'N/A'),
                 escape(item.get_holidayType_display()),
@@ -7697,13 +7731,12 @@ class ParentsListJson(BaseDatatableView):
     def prepare_results(self, qs):
         json_data = []
         for item in qs:
-            action = '''
-              <a href="/management/parent_detail/{}/" data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" class="ui circular facebook icon button purple">
-                <i class="eye icon"></i>
-              </a>
-              <a href="/management/edit_parent/{}/" data-inverted="" data-tooltip="Edit Parent" data-position="left center" data-variation="mini" style="font-size:10px;" class="ui circular icon button blue">
-                <i class="edit icon"></i>
-              </a>'''.format(item.pk, item.pk)
+            action = _management_action_buttons(
+                self.request,
+                'parents',
+                view_href=f'/management/parent_detail/{item.pk}/',
+                edit_href=f'/management/edit_parent/{item.pk}/',
+            )
             students = getattr(item, 'active_students', [])
             student_html = []
             for s in students:

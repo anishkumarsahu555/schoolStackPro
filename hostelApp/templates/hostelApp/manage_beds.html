@@ -2,7 +2,7 @@
 {% block title %}<title>Hostel Beds</title>{% endblock %}
 {% block page_title %}Hostel Beds{% endblock %}
 {% block page_subtitle %}Manage beds and bed availability inside hostel rooms{% endblock %}
-{% block page_actions %}<button class="ui green button class-page-action" type="button" onclick="showBedModal()"><i class="plus icon"></i><span class="class-page-action-label">Add Bed</span></button>{% endblock %}
+{% block page_actions %}{% if management_permissions.hostel.add %}<button class="ui green button class-page-action" type="button" onclick="showBedModal()"><i class="plus icon"></i><span class="class-page-action-label">Add Bed</span></button>{% endif %}{% endblock %}
 {% block body %}
 {% include 'hostelApp/_management_table_styles.html' %}
 <form>{% csrf_token %}</form>

@@ -14,6 +14,7 @@ from django.utils.html import escape
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from financeApp.services import clear_payment_receipt, sync_payment_receipt, sync_student_charge
+from managementApp.access_control import has_management_permission
 from hostelApp.models import (
     HostelAdmission,
     HostelAssignment,
@@ -133,18 +134,30 @@ def _fee_status_pill(status):
     return _choice_pill(label, color)
 
 
-def _dt_actions(edit_fn, delete_fn, obj_id):
-    return (
-        f'<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" '
-        f'data-variation="mini" style="font-size:10px;" onclick="{edit_fn}({obj_id})" '
-        f'class="ui circular facebook icon button green"><i class="pen icon"></i></button>'
-        f'<button data-inverted="" data-tooltip="Delete" data-position="left center" '
-        f'data-variation="mini" style="font-size:10px; margin-left:3px;" onclick="{delete_fn}({obj_id})" '
-        f'class="ui circular youtube icon button"><i class="trash alternate icon"></i></button>'
-    )
+def _hostel_button_allowed(request, action):
+    return has_management_permission(request.user, 'hostel', action)
 
 
-def _fee_record_actions(obj_id):
+def _dt_actions(edit_fn, delete_fn, obj_id, request=None):
+    buttons = []
+    if not request or _hostel_button_allowed(request, 'edit'):
+        buttons.append(
+            f'<button data-inverted="" data-tooltip="Edit Detail" data-position="left center" '
+            f'data-variation="mini" style="font-size:10px;" onclick="{edit_fn}({obj_id})" '
+            f'class="ui circular facebook icon button green"><i class="pen icon"></i></button>'
+        )
+    if not request or _hostel_button_allowed(request, 'delete'):
+        buttons.append(
+            f'<button data-inverted="" data-tooltip="Delete" data-position="left center" '
+            f'data-variation="mini" style="font-size:10px; margin-left:3px;" onclick="{delete_fn}({obj_id})" '
+            f'class="ui circular youtube icon button"><i class="trash alternate icon"></i></button>'
+        )
+    return ''.join(buttons) or '<span class="ui tiny grey label">View only</span>'
+
+
+def _fee_record_actions(obj_id, request=None):
+    if request and not _hostel_button_allowed(request, 'edit'):
+        return '<span class="ui tiny grey label">View only</span>'
     return (
         f'<button data-inverted="" data-tooltip="Record Payment" data-position="left center" '
         f'data-variation="mini" style="font-size:10px;" onclick="showPaymentModal({obj_id})" '
@@ -283,7 +296,7 @@ class HostelBuildingListJson(HostelDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.buildingCode), escape(i.buildingName), escape(i.wardenName or 'N/A'), escape(i.wardenPhone or 'N/A'), _status_pill(i.isActive), _dt_actions('editBuilding', 'confirmDeleteBuilding', i.id)] for i in qs]
+        return [[escape(i.buildingCode), escape(i.buildingName), escape(i.wardenName or 'N/A'), escape(i.wardenPhone or 'N/A'), _status_pill(i.isActive), _dt_actions('editBuilding', 'confirmDeleteBuilding', i.id, request=self.request)] for i in qs]
 
 
 class HostelFloorListJson(HostelDatatableView):
@@ -303,7 +316,7 @@ class HostelFloorListJson(HostelDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.buildingID.buildingName), escape(i.floorName), escape(i.displayOrder), _status_pill(i.isActive), _dt_actions('editFloor', 'confirmDeleteFloor', i.id)] for i in qs]
+        return [[escape(i.buildingID.buildingName), escape(i.floorName), escape(i.displayOrder), _status_pill(i.isActive), _dt_actions('editFloor', 'confirmDeleteFloor', i.id, request=self.request)] for i in qs]
 
 
 class HostelRoomTypeListJson(HostelDatatableView):
@@ -317,7 +330,7 @@ class HostelRoomTypeListJson(HostelDatatableView):
         return qs.filter(name__icontains=search) if search else qs
 
     def prepare_results(self, qs):
-        return [[escape(i.name), escape(i.capacity), escape(str(i.defaultMonthlyFee)), _status_pill(i.isActive), _dt_actions('editRoomType', 'confirmDeleteRoomType', i.id)] for i in qs]
+        return [[escape(i.name), escape(i.capacity), escape(str(i.defaultMonthlyFee)), _status_pill(i.isActive), _dt_actions('editRoomType', 'confirmDeleteRoomType', i.id, request=self.request)] for i in qs]
 
 
 class HostelRoomListJson(HostelDatatableView):
@@ -336,7 +349,7 @@ class HostelRoomListJson(HostelDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.buildingID.buildingName), escape(i.floorID.floorName if i.floorID else 'N/A'), escape(i.roomNumber), escape(i.roomTypeID.name if i.roomTypeID else 'N/A'), escape(i.capacity), escape(str(i.monthlyFee)), _status_pill(i.isActive), _dt_actions('editRoom', 'confirmDeleteRoom', i.id)] for i in qs]
+        return [[escape(i.buildingID.buildingName), escape(i.floorID.floorName if i.floorID else 'N/A'), escape(i.roomNumber), escape(i.roomTypeID.name if i.roomTypeID else 'N/A'), escape(i.capacity), escape(str(i.monthlyFee)), _status_pill(i.isActive), _dt_actions('editRoom', 'confirmDeleteRoom', i.id, request=self.request)] for i in qs]
 
 
 class HostelBedListJson(HostelDatatableView):
@@ -356,7 +369,7 @@ class HostelBedListJson(HostelDatatableView):
 
     def prepare_results(self, qs):
         colors = {'available': 'green', 'occupied': 'orange', 'reserved': 'blue', 'maintenance': 'grey'}
-        return [[escape(i.roomID.buildingID.buildingName), escape(i.roomID.roomNumber), escape(i.bedNumber), _choice_pill(i.get_status_display(), colors.get(i.status, 'grey')), _status_pill(i.isActive), _dt_actions('editBed', 'confirmDeleteBed', i.id)] for i in qs]
+        return [[escape(i.roomID.buildingID.buildingName), escape(i.roomID.roomNumber), escape(i.bedNumber), _choice_pill(i.get_status_display(), colors.get(i.status, 'grey')), _status_pill(i.isActive), _dt_actions('editBed', 'confirmDeleteBed', i.id, request=self.request)] for i in qs]
 
 
 class HostelAdmissionListJson(HostelDatatableView):
@@ -384,7 +397,7 @@ class HostelAdmissionListJson(HostelDatatableView):
 
     def prepare_results(self, qs):
         colors = {'applied': 'blue', 'approved': 'teal', 'waitlisted': 'yellow', 'rejected': 'red', 'admitted': 'green', 'cancelled': 'grey'}
-        return [[escape(i.applicationNo), escape(i.get_residentType_display()), escape(_resident_display(i)), escape(i.applicationDate.strftime('%d-%m-%Y') if i.applicationDate else 'N/A'), escape(i.preferredRoomTypeID.name if i.preferredRoomTypeID else 'N/A'), _choice_pill(i.get_status_display(), colors.get(i.status, 'grey')), escape(str(i.admissionFee)), _status_pill(i.isActive), _dt_actions('editAdmission', 'confirmDeleteAdmission', i.id)] for i in qs]
+        return [[escape(i.applicationNo), escape(i.get_residentType_display()), escape(_resident_display(i)), escape(i.applicationDate.strftime('%d-%m-%Y') if i.applicationDate else 'N/A'), escape(i.preferredRoomTypeID.name if i.preferredRoomTypeID else 'N/A'), _choice_pill(i.get_status_display(), colors.get(i.status, 'grey')), escape(str(i.admissionFee)), _status_pill(i.isActive), _dt_actions('editAdmission', 'confirmDeleteAdmission', i.id, request=self.request)] for i in qs]
 
 
 class HostelAssignmentListJson(HostelDatatableView):
@@ -412,7 +425,7 @@ class HostelAssignmentListJson(HostelDatatableView):
                 escape(i.get_feeMode_display()),
                 escape(i.startDate.strftime('%d-%m-%Y') if i.startDate else 'N/A'),
                 _status_pill(i.isActive),
-                _dt_actions('editAssignment', 'confirmDeleteAssignment', i.id),
+                _dt_actions('editAssignment', 'confirmDeleteAssignment', i.id, request=self.request),
             ])
         return rows
 
@@ -430,7 +443,7 @@ class HostelFeeMappingListJson(HostelDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.buildingID.buildingName if i.buildingID else 'All'), escape(i.roomTypeID.name if i.roomTypeID else 'All'), escape(i.roomID.roomNumber if i.roomID else 'All'), escape(str(i.monthlyFee)), escape(i.effectiveFrom.strftime('%d-%m-%Y') if i.effectiveFrom else 'N/A'), escape(i.effectiveTo.strftime('%d-%m-%Y') if i.effectiveTo else 'N/A'), _status_pill(i.isActive), _dt_actions('editFeeMapping', 'confirmDeleteFeeMapping', i.id)] for i in qs]
+        return [[escape(i.buildingID.buildingName if i.buildingID else 'All'), escape(i.roomTypeID.name if i.roomTypeID else 'All'), escape(i.roomID.roomNumber if i.roomID else 'All'), escape(str(i.monthlyFee)), escape(i.effectiveFrom.strftime('%d-%m-%Y') if i.effectiveFrom else 'N/A'), escape(i.effectiveTo.strftime('%d-%m-%Y') if i.effectiveTo else 'N/A'), _status_pill(i.isActive), _dt_actions('editFeeMapping', 'confirmDeleteFeeMapping', i.id, request=self.request)] for i in qs]
 
 
 def _fee_record_row(record):
@@ -475,7 +488,7 @@ class HostelFeeRecordListJson(HostelDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[f'{calendar.month_abbr[i.feeMonth]} {i.feeYear}', escape(i.assignmentID.get_residentType_display()), escape(i.student_name), escape(i.assignmentID.buildingID.buildingName), escape(i.assignmentID.roomID.roomNumber), escape(i.assignmentID.bedID.bedNumber), escape(str(i.netAmount)), escape(str(i.paidAmount)), escape(str(i.balanceAmount)), _fee_status_pill(i.status), escape(i.dueDate.strftime('%d-%m-%Y') if i.dueDate else 'N/A'), _fee_record_actions(i.id)] for i in qs]
+        return [[f'{calendar.month_abbr[i.feeMonth]} {i.feeYear}', escape(i.assignmentID.get_residentType_display()), escape(i.student_name), escape(i.assignmentID.buildingID.buildingName), escape(i.assignmentID.roomID.roomNumber), escape(i.assignmentID.bedID.bedNumber), escape(str(i.netAmount)), escape(str(i.paidAmount)), escape(str(i.balanceAmount)), _fee_status_pill(i.status), escape(i.dueDate.strftime('%d-%m-%Y') if i.dueDate else 'N/A'), _fee_record_actions(i.id, request=self.request)] for i in qs]
 
 
 def _serialize_common(obj, fields):

@@ -11,6 +11,10 @@ def custom_login_required(func):
         if not request.user.is_authenticated:
             return redirect('homeApp:login_page')
         if not init_session(request):
+            from managementApp.access_control import init_staff_management_session, user_has_management_access
+
+            if user_has_management_access(request.user) and init_staff_management_session(request):
+                return func(request, *args, **kwargs)
             return redirect('homeApp:login_page')
         return func(request, *args, **kwargs)
     return wrapper

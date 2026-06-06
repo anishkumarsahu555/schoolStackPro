@@ -3,8 +3,10 @@
 {% block page_title %}Hostel Rooms{% endblock %}
 {% block page_subtitle %}Create room types and rooms for hostel allocation{% endblock %}
 {% block page_actions %}
+    {% if management_permissions.hostel.add %}
     <button class="ui teal button class-page-action" type="button" onclick="showRoomTypeModal()"><i class="tags icon"></i><span class="class-page-action-label">Room Type</span></button>
     <button class="ui green button class-page-action" type="button" onclick="showRoomModal()"><i class="plus icon"></i><span class="class-page-action-label">Add Room</span></button>
+    {% endif %}
 {% endblock %}
 {% block body %}
 {% include 'hostelApp/_management_table_styles.html' %}

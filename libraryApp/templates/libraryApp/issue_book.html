@@ -3,10 +3,10 @@
 {% block page_title %}Issue / Return Book{% endblock %}
 {% block page_subtitle %}Issue, return, renew, and calculate overdue fines{% endblock %}
 {% block page_actions %}
-    <button class="ui green button class-page-action" type="button" onclick="showIssueModal()">
+    {% if management_permissions.library.add %}<button class="ui green button class-page-action" type="button" onclick="showIssueModal()">
         <i class="plus icon"></i>
         <span><span class="desktop-label">Issue Book</span><span class="mobile-label">Issue</span></span>
-    </button>
+    </button>{% endif %}
 {% endblock %}
 {% block body %}
 {% include 'libraryApp/_library_styles.html' %}

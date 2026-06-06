@@ -3,10 +3,12 @@
 {% block page_title %}Hostel Reports{% endblock %}
 {% block page_subtitle %}Review occupancy, residents, admissions, and hostel dues{% endblock %}
 {% block page_actions %}
+    {% if management_permissions.hostel.report %}
     <a class="ui blue button class-page-action" href="{% url 'hostelAppAPI:resident_manifest_csv' %}">
         <i class="download icon"></i>
         <span class="class-page-action-label"><span class="desktop-label">Resident CSV</span><span class="mobile-label">CSV</span></span>
     </a>
+    {% endif %}
 {% endblock %}
 {% block body %}
 {% include 'hostelApp/_management_table_styles.html' %}

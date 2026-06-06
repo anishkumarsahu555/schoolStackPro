@@ -5,6 +5,15 @@ from django.urls import Resolver404, resolve
 from homeApp.license import build_license_context, resolve_school_for_request
 from homeApp.models import SchoolSession
 from homeApp.session_utils import build_current_session_payload, build_session_list_item
+from managementApp.access_control import (
+    CHAT_POST_ACTION_PERMISSION_MAP,
+    MODULE_LABELS,
+    has_management_permission,
+    init_staff_management_session,
+    is_owner_or_admin,
+    permission_for_resolver,
+    user_has_management_access,
+)
 from managementApp.models import Student, TeacherDetail
 
 
@@ -113,6 +122,122 @@ class RoleSessionBootstrapMiddleware:
                 build_session_list_item(s)
                 for s in session_qs
             ]
+
+
+class ManagementAccessPermissionMiddleware:
+    protected_prefixes = (
+        "/management/",
+        "/certificates/",
+        "/transport/",
+        "/hostel/",
+    )
+    staff_protected_prefixes = (
+        "/chat/",
+    )
+    api_prefixes = (
+        "/management/api/",
+        "/management/library/api/",
+        "/certificates/api/",
+        "/transport/api/",
+        "/hostel/api/",
+        "/chat/api/",
+    )
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if not self._should_check(request):
+            return self.get_response(request)
+
+        match = self._resolve_match(request)
+        permission = self._permission_for_request(match, request)
+        if not permission:
+            return self.get_response(request)
+
+        module_key, action = permission
+        if is_owner_or_admin(request.user):
+            return self.get_response(request)
+
+        if user_has_management_access(request.user) and not request.session.get("current_session"):
+            init_staff_management_session(request)
+
+        if has_management_permission(request.user, module_key, action):
+            return self.get_response(request)
+
+        module_label, action_label, message = self._permission_message(module_key, action)
+        if request.path.startswith(self.api_prefixes):
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": message,
+                    "detail": "Ask an administrator to update your staff access role if you need this permission.",
+                    "permission": {
+                        "module": module_key,
+                        "moduleLabel": module_label,
+                        "action": action,
+                        "actionLabel": action_label,
+                    },
+                },
+                status=403,
+            )
+
+        return render(
+            request,
+            "homeApp/errors/error_page.html",
+            {
+                "error_status_code": 403,
+                "error_title": "Forbidden",
+                "error_heading": "Permission needed",
+                "error_message": message,
+                "error_details": [
+                    f"Required permission: {module_label} - {action_label}",
+                    "Ask an administrator to update your staff access role if you need this page.",
+                ],
+                "error_accent": "rose",
+            },
+            status=403,
+        )
+
+    def _permission_message(self, module_key, action):
+        action_labels = {
+            "view": "View",
+            "add": "Add",
+            "edit": "Edit",
+            "delete": "Delete",
+            "approve": "Approve",
+            "report": "Report",
+            "export": "Report",
+        }
+        module_label = MODULE_LABELS.get(module_key, module_key.replace("_", " ").title())
+        action_label = action_labels.get(action, action.replace("_", " ").title())
+        message = f"You need {action_label} permission for {module_label} to continue."
+        return module_label, action_label, message
+
+    def _should_check(self, request):
+        if not request.user.is_authenticated:
+            return False
+        if request.path.startswith(self.protected_prefixes):
+            return True
+        if request.path.startswith(self.staff_protected_prefixes):
+            return is_owner_or_admin(request.user) or user_has_management_access(request.user)
+        return False
+
+    def _resolve_match(self, request):
+        try:
+            return getattr(request, "resolver_match", None) or resolve(request.path_info)
+        except Resolver404:
+            return None
+
+    def _permission_for_request(self, match, request):
+        if (
+            match
+            and match.namespace == "chatApp"
+            and match.url_name in {"inbox", "room"}
+            and request.method == "POST"
+        ):
+            return CHAT_POST_ACTION_PERMISSION_MAP.get(request.POST.get("action")) or ("communication", "add")
+        return permission_for_resolver(match, request.method)
 
 
 class SchoolLicenseMiddleware:

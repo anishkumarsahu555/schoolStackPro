@@ -1,15 +1,19 @@
 {% extends 'managementApp/index.html' %}
 {% load static %}
+{% load management_access %}
 {% block title %}
     <title>Manage Class</title>
 {% endblock %}
 {% block page_title %}Manage Classes{% endblock %}
 {% block page_subtitle %}Create and maintain class sections and roll ranges{% endblock %}
 {% block page_actions %}
-    <button class="ui green button class-page-action" type="button" onclick="showClassModal()">
-        <i class="plus icon"></i>
-        <span class="class-page-action-label"><span class="desktop-label">Add Class</span><span class="mobile-label">Add</span></span>
-    </button>
+    {% can_manage 'classes' 'add' as can_add_classes %}
+    {% if can_add_classes %}
+        <button class="ui green button class-page-action" type="button" onclick="showClassModal()">
+            <i class="plus icon"></i>
+            <span class="class-page-action-label"><span class="desktop-label">Add Class</span><span class="mobile-label">Add</span></span>
+        </button>
+    {% endif %}
 {% endblock %}
 {% block css %}
 {% endblock %}

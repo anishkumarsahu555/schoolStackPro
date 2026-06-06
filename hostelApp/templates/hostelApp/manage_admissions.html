@@ -2,7 +2,7 @@
 {% block title %}<title>Hostel Admissions</title>{% endblock %}
 {% block page_title %}Hostel Admissions{% endblock %}
 {% block page_subtitle %}Apply, approve, waitlist, and admit students or teachers before bed allocation{% endblock %}
-{% block page_actions %}<button class="ui green button class-page-action" type="button" onclick="showAdmissionModal()"><i class="plus icon"></i><span class="class-page-action-label">Add Admission</span></button>{% endblock %}
+{% block page_actions %}{% if management_permissions.hostel.add %}<button class="ui green button class-page-action" type="button" onclick="showAdmissionModal()"><i class="plus icon"></i><span class="class-page-action-label">Add Admission</span></button>{% endif %}{% endblock %}
 {% block body %}
 {% include 'hostelApp/_management_table_styles.html' %}
 <form>{% csrf_token %}</form>

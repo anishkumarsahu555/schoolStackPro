@@ -3,10 +3,12 @@
 {% block page_title %}Transport Assignments{% endblock %}
 {% block page_subtitle %}Assign transport routes and stops to students and teachers{% endblock %}
 {% block page_actions %}
+    {% if management_permissions.transport.add %}
     <button class="ui green button class-page-action" type="button" onclick="showAssignmentModal()">
         <i class="plus icon"></i>
         <span class="class-page-action-label"><span class="desktop-label">Add Assignment</span><span class="mobile-label">Add</span></span>
     </button>
+    {% endif %}
 {% endblock %}
 {% block body %}
 {% include 'transportApp/_management_table_styles.html' %}

@@ -2,7 +2,7 @@
 {% block title %}<title>Hostel Fee Mapping</title>{% endblock %}
 {% block page_title %}Hostel Fee Mapping{% endblock %}
 {% block page_subtitle %}Define default monthly hostel fees by building, room type, or room{% endblock %}
-{% block page_actions %}<button class="ui green button class-page-action" type="button" onclick="showFeeMappingModal()"><i class="plus icon"></i><span class="class-page-action-label">Add Mapping</span></button>{% endblock %}
+{% block page_actions %}{% if management_permissions.hostel.add %}<button class="ui green button class-page-action" type="button" onclick="showFeeMappingModal()"><i class="plus icon"></i><span class="class-page-action-label">Add Mapping</span></button>{% endif %}{% endblock %}
 {% block body %}
 {% include 'hostelApp/_management_table_styles.html' %}
 <form>{% csrf_token %}</form>

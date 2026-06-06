@@ -65,6 +65,76 @@ class TeacherDetail(models.Model):
         ]
 
 
+class StaffRole(models.Model):
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True, null=True)
+    isSystemRole = models.BooleanField(default=False)
+    isActive = models.BooleanField(default=True)
+    isDeleted = models.BooleanField(default=False)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = 'g1) Staff Roles'
+        indexes = [
+            models.Index(fields=['schoolID', 'isActive', 'isDeleted'], name='staffrole_school_active_idx'),
+        ]
+
+
+class StaffRolePermission(models.Model):
+    ACTION_FIELDS = ('canView', 'canAdd', 'canEdit', 'canDelete', 'canApprove', 'canReport')
+
+    roleID = models.ForeignKey(StaffRole, on_delete=models.CASCADE, related_name='permissions')
+    moduleKey = models.CharField(max_length=80)
+    canView = models.BooleanField(default=False)
+    canAdd = models.BooleanField(default=False)
+    canEdit = models.BooleanField(default=False)
+    canDelete = models.BooleanField(default=False)
+    canApprove = models.BooleanField(default=False)
+    canReport = models.BooleanField(default=False)
+    canExport = models.BooleanField(default=False)
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+
+    def __str__(self):
+        return f'{self.roleID} - {self.moduleKey}'
+
+    class Meta:
+        verbose_name_plural = 'g2) Staff Role Permissions'
+        constraints = [
+            models.UniqueConstraint(fields=['roleID', 'moduleKey'], name='uniq_staff_role_module_perm'),
+        ]
+        indexes = [
+            models.Index(fields=['moduleKey', 'canView'], name='staffperm_module_view_idx'),
+        ]
+
+
+class StaffAccess(models.Model):
+    staffID = models.OneToOneField(TeacherDetail, on_delete=models.CASCADE, related_name='managementAccess')
+    roleID = models.ForeignKey(StaffRole, blank=True, null=True, on_delete=models.SET_NULL)
+    isManagementAccessEnabled = models.BooleanField(default=False)
+    notes = models.TextField(blank=True, null=True)
+    lastEditedBy = models.CharField(max_length=500, blank=True, null=True)
+    updatedByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='+')
+    datetime = models.DateTimeField(auto_now_add=True, auto_now=False)
+    lastUpdatedOn = models.DateTimeField(auto_now_add=False, auto_now=True)
+
+    def __str__(self):
+        return f'{self.staffID} - {self.roleID}'
+
+    class Meta:
+        verbose_name_plural = 'g3) Staff Management Access'
+        indexes = [
+            models.Index(fields=['isManagementAccessEnabled', 'roleID'], name='staffaccess_enabled_role_idx'),
+        ]
+
+
 class Standard(models.Model):
     name = models.CharField(max_length=500, blank=True, null=True)
     classLocation = models.CharField(max_length=500, blank=True, null=True, default='No Data')

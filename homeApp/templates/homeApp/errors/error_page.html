@@ -123,6 +123,39 @@
             line-height: 1.7;
         }
 
+        .error-details {
+            display: grid;
+            gap: 8px;
+            margin: 0;
+            max-width: 520px;
+            padding: 0;
+            text-align: left;
+            width: 100%;
+        }
+
+        .error-details li {
+            align-items: flex-start;
+            background: var(--accent-soft);
+            border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--card-border));
+            border-radius: 14px;
+            color: var(--page-text);
+            display: flex;
+            gap: 10px;
+            line-height: 1.45;
+            list-style: none;
+            padding: 12px 14px;
+        }
+
+        .error-details li::before {
+            background: var(--accent);
+            border-radius: 999px;
+            content: "";
+            flex: 0 0 7px;
+            height: 7px;
+            margin-top: 8px;
+            width: 7px;
+        }
+
         .error-actions {
             display: flex;
             flex-wrap: wrap;
@@ -196,6 +229,13 @@
         <span class="error-badge">{{ error_status_code }}</span>
         <h1 class="error-title">{{ error_heading }}</h1>
         <p class="error-message">{{ error_message }}</p>
+        {% if error_details %}
+            <ul class="error-details">
+                {% for detail in error_details %}
+                    <li>{{ detail }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
         <div class="error-actions">
             <a class="error-btn primary" href="/">Go Home</a>
             <a class="error-btn secondary" href="javascript:history.back()">Go Back</a>

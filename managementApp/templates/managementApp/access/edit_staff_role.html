@@ -1,0 +1,241 @@
+{% extends 'managementApp/index.html' %}
+
+{% block title %}
+    <title>Edit Staff Role</title>
+{% endblock %}
+{% block page_title %}{{ role.name }}{% endblock %}
+{% block page_subtitle %}Choose the modules and actions available to this role{% endblock %}
+
+{% block css %}
+    <style>
+        .role-editor-page {
+            margin-top: 0 !important;
+        }
+
+        .role-editor-page .ui.segment {
+            padding: 1.2rem 1.2rem 1.35rem !important;
+        }
+
+        .role-editor {
+            display: grid;
+            gap: 0.95rem;
+            text-align: left;
+        }
+
+        .role-editor-card {
+            background: var(--app-surface);
+            border: 1px solid var(--app-border);
+            border-radius: 6px;
+            padding: 0.9rem;
+        }
+
+        .role-editor-card.compact {
+            padding: 0;
+        }
+
+        .permission-table-wrap {
+            overflow-x: auto;
+        }
+
+        .permission-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 760px;
+            width: 100%;
+        }
+
+        .permission-table th {
+            background: var(--app-hover);
+            border-bottom: 1px solid var(--app-border);
+            color: var(--app-muted);
+            font-size: 0.78rem;
+            padding: 0.65rem 0.7rem;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .permission-table th:first-child,
+        .permission-table td:first-child {
+            text-align: left;
+        }
+
+        .permission-table td {
+            border-bottom: 1px solid var(--app-border);
+            padding: 0.62rem 0.7rem;
+            text-align: center;
+        }
+
+        .permission-table tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .permission-module {
+            align-items: center;
+            display: flex;
+            gap: 0.6rem;
+            min-width: 220px;
+        }
+
+        .permission-module i {
+            align-items: center;
+            background: var(--app-hover);
+            border: 1px solid var(--app-border);
+            border-radius: 50%;
+            color: var(--app-brand);
+            display: inline-flex;
+            height: 32px;
+            justify-content: center;
+            width: 32px;
+        }
+
+        .permission-module strong {
+            color: var(--app-text);
+            display: block;
+            font-size: 0.92rem;
+        }
+
+        .permission-module span {
+            color: var(--app-muted);
+            display: block;
+            font-size: 0.78rem;
+            margin-top: 0.1rem;
+        }
+
+        .permission-actions {
+            display: flex;
+            gap: 0.65rem;
+            justify-content: flex-end;
+            padding-top: 0.2rem;
+        }
+
+        .permission-actions .ui.button {
+            border-radius: 8px !important;
+            min-width: 118px;
+        }
+
+        .role-editor-card textarea {
+            resize: vertical;
+        }
+
+        html[data-theme="dark"] .permission-table {
+            color: var(--app-text);
+        }
+
+        html[data-theme="dark"] .permission-table tbody tr:hover td {
+            background: var(--app-hover);
+        }
+
+        @media (max-width: 720px) {
+            .permission-actions {
+                flex-direction: column-reverse;
+            }
+
+            .permission-actions .ui.button {
+                width: 100%;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="ui right aligned basic grid role-editor-page">
+        <div class="sixteen wide column">
+            <div class="ui tab active" data-tab="user">
+                <div class="ui segment">
+                    <h4 class="ui horizontal left aligned divider header">
+                        <i class="user shield icon"></i>
+                        Role permissions
+                    </h4>
+
+                    <form class="role-editor ui form" method="post">
+                        {% csrf_token %}
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="ui {{ message.tags }} message">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <section class="role-editor-card">
+                            <div class="three fields">
+                                <div class="field">
+                                    <label>Role name</label>
+                                    <input type="text" name="role_name" value="{{ role.name }}" required>
+                                </div>
+                                <div class="field">
+                                    <label>Status</label>
+                                    <div class="ui toggle checkbox" style="margin-top: 0.65rem;">
+                                        <input type="checkbox" name="is_active" {% if role.isActive %}checked{% endif %}>
+                                        <label>Active</label>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label>Type</label>
+                                    <input type="text" value="{% if role.isSystemRole %}Preset role{% else %}Custom role{% endif %}" readonly>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label>Description</label>
+                                <textarea name="description" rows="2">{{ role.description|default_if_none:'' }}</textarea>
+                            </div>
+                        </section>
+
+                        <section class="role-editor-card compact">
+                            <div class="permission-table-wrap">
+                                <table class="permission-table">
+                                    <thead>
+                                    <tr>
+                                        <th>Module</th>
+                                        {% for action_key, action_label in actions %}
+                                            <th>{{ action_label }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for row in permission_rows %}
+                                        <tr>
+                                            <td>
+                                                <div class="permission-module">
+                                                    <i class="{{ row.icon }} icon"></i>
+                                                    <div>
+                                                        <strong>{{ row.label }}</strong>
+                                                        <span>{{ row.key }}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            {% for action in row.actions %}
+                                                <td>
+                                                    <div class="ui fitted toggle checkbox">
+                                                        <input
+                                                            type="checkbox"
+                                                            name="perm_{{ row.key }}_{{ action.key }}"
+                                                            {% if action.enabled %}checked{% endif %}>
+                                                        <label></label>
+                                                    </div>
+                                                </td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <div class="permission-actions">
+                            <a class="ui basic button" href="{% url 'managementApp:manage_staff_access' %}">Cancel</a>
+                            <button class="ui blue button" type="submit">
+                                <i class="save outline icon"></i>
+                                Save permissions
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        $('.ui.checkbox').checkbox();
+    </script>
+{% endblock %}

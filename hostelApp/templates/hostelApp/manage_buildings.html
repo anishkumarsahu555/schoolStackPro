@@ -3,8 +3,10 @@
 {% block page_title %}Hostel Buildings{% endblock %}
 {% block page_subtitle %}Create hostel buildings and warden contact details{% endblock %}
 {% block page_actions %}
+    {% if management_permissions.hostel.add %}
     <button class="ui teal button class-page-action" type="button" onclick="showFloorModal()"><i class="layer group icon"></i><span class="class-page-action-label">Add Floor</span></button>
     <button class="ui green button class-page-action" type="button" onclick="showBuildingModal()"><i class="plus icon"></i><span class="class-page-action-label">Add Building</span></button>
+    {% endif %}
 {% endblock %}
 {% block body %}
 {% include 'hostelApp/_management_table_styles.html' %}

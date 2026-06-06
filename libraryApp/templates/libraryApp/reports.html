@@ -7,9 +7,9 @@
 {% include 'libraryApp/_library_validation.html' %}
 <div class="ui segment">
     <div class="library-actions">
-        <a class="ui green button class-page-action" href="{% url 'libraryAppAPI:library_report_csv' %}?report=overdue"><i class="download icon"></i><span><span class="desktop-label">Overdue CSV</span><span class="mobile-label">Overdue</span></span></a>
+        {% if management_permissions.library.report %}<a class="ui green button class-page-action" href="{% url 'libraryAppAPI:library_report_csv' %}?report=overdue"><i class="download icon"></i><span><span class="desktop-label">Overdue CSV</span><span class="mobile-label">Overdue</span></span></a>
         <a class="ui teal button class-page-action" href="{% url 'libraryAppAPI:library_report_csv' %}?report=stock"><i class="download icon"></i><span><span class="desktop-label">Stock CSV</span><span class="mobile-label">Stock</span></span></a>
-        <a class="ui orange button class-page-action" href="{% url 'libraryAppAPI:library_report_csv' %}?report=fines"><i class="download icon"></i><span><span class="desktop-label">Fines CSV</span><span class="mobile-label">Fines</span></span></a>
+        <a class="ui orange button class-page-action" href="{% url 'libraryAppAPI:library_report_csv' %}?report=fines"><i class="download icon"></i><span><span class="desktop-label">Fines CSV</span><span class="mobile-label">Fines</span></span></a>{% endif %}
     </div>
     <h4 class="ui horizontal left aligned divider header"><i class="clock outline icon"></i>Overdue Books</h4>
     <div class="wide library-table-wrap">
