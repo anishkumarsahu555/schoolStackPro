@@ -7,7 +7,7 @@ from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction, IntegrityError, connection
-from django.db.models import Q, Prefetch, Sum, DecimalField, Value
+from django.db.models import Q, Prefetch, Sum, DecimalField, Value, Max, Exists, OuterRef
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse as DjangoJsonResponse
 from django.utils.crypto import get_random_string
@@ -1712,12 +1712,15 @@ class AssignSubjectToClassListJson(BaseDatatableView):
         json_data = []
         for item in qs:
             action = '''
+              <button data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "showSubjectDetails('{}')" class="ui circular icon button blue">
+                <i class="eye icon"></i>
+              </button>
               <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
                 <i class="pen icon"></i>
               </button>
               <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
                 <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk),
+              </button></td>'''.format(item.pk, item.pk, item.pk),
             if item.standardID.section:
                 name = item.standardID.name + ' - ' + item.standardID.section
             else:
@@ -1823,17 +1826,71 @@ def get_subjects_to_class_assign_list_api(request):
 @login_required
 def get_subjects_to_class_assign_list_with_given_class_api(request):
     standard = request.GET.get('standard')
+    exam = request.GET.get('exam')
+    exam_is_assignment = str(request.GET.get('exam_assignment') or '').lower() in {'1', 'true', 'yes'}
     try:
         standard_id = int(standard)
     except (TypeError, ValueError):
 
         return _api_response({'status': 'success', 'data': [], 'color': 'success'}, safe=False)
-    rows = AssignSubjectsToClass.objects.filter(
+    rows = AssignSubjectsToClass.objects.select_related('subjectID').filter(
         isDeleted=False,
         standardID_id=standard_id,
         sessionID_id=_current_session_id(request)
-    ).values('id', 'subjectID__name').order_by('subjectID__name')
-    data = [{'ID': row['id'], 'Name': row['subjectID__name'] or 'N/A'} for row in rows]
+    ).order_by('subjectID__name')
+
+    if exam and str(exam).isdigit():
+        if exam_is_assignment:
+            assigned_exam = AssignExamToClass.objects.filter(
+                isDeleted=False,
+                sessionID_id=_current_session_id(request),
+                standardID_id=standard_id,
+                id=int(exam),
+            ).first()
+        else:
+            assigned_exam = AssignExamToClass.objects.filter(
+                isDeleted=False,
+                sessionID_id=_current_session_id(request),
+                standardID_id=standard_id,
+                examID_id=int(exam),
+            ).order_by('-datetime').first()
+            if not assigned_exam:
+                assigned_exam = AssignExamToClass.objects.filter(
+                    isDeleted=False,
+                    sessionID_id=_current_session_id(request),
+                    standardID_id=standard_id,
+                    id=int(exam),
+                ).first()
+        if assigned_exam:
+            total_component = ExamComponentType.objects.filter(
+                isDeleted=False,
+                sessionID_id=_current_session_id(request),
+                schoolID_id=_current_school_id(request),
+                code='total',
+            ).first()
+            if total_component:
+                total_rule_qs = ExamSubjectComponentRule.objects.filter(
+                    isDeleted=False,
+                    sessionID_id=_current_session_id(request),
+                    examID_id=assigned_exam.id,
+                    componentTypeID_id=total_component.id,
+                )
+                if total_rule_qs.exists():
+                    included_subject_ids = set(
+                        total_rule_qs.filter(isMandatory=True).values_list('subjectID_id', flat=True)
+                    )
+                    excluded_subject_ids = set(
+                        total_rule_qs.filter(isMandatory=False).values_list('subjectID_id', flat=True)
+                    )
+                    rows = rows.exclude(id__in=excluded_subject_ids).filter(
+                        Q(id__in=included_subject_ids) | ~Q(id__in=total_rule_qs.values_list('subjectID_id', flat=True))
+                    )
+
+    data = [{
+        'ID': row.id,
+        'RawSubjectID': row.subjectID_id,
+        'Name': row.subjectID.name if row.subjectID else 'N/A',
+    } for row in rows]
     return _api_response(
         {'status': 'success', 'data': data,
          'color': 'success'}, safe=False)
@@ -2791,12 +2848,15 @@ class AssignSubjectToTeacherListJson(BaseDatatableView):
         json_data = []
         for item in qs:
             action = '''
+              <button data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "showSubjectDetails('{}')" class="ui circular icon button blue">
+                <i class="eye icon"></i>
+              </button>
               <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
                 <i class="pen icon"></i>
               </button>
               <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
                 <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk),
+              </button></td>'''.format(item.pk, item.pk, item.pk)
             if item.assignedSubjectID.standardID.section:
                 section = item.assignedSubjectID.standardID.section
             else:
@@ -2856,12 +2916,15 @@ class AssignSubjectToClassListJson(BaseDatatableView):
         json_data = []
         for item in qs:
             action = '''
+              <button data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "showSubjectDetails('{}')" class="ui circular icon button blue">
+                <i class="eye icon"></i>
+              </button>
               <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
                 <i class="pen icon"></i>
               </button>
               <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
                 <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk),
+              </button></td>'''.format(item.pk, item.pk, item.pk)
             if item.standardID.section:
                 name = item.standardID.name + ' - ' + item.standardID.section
             else:
@@ -4236,7 +4299,7 @@ def _validate_exam_timetable_business_rules(
         sessionID_id=current_session_id,
         standardID_id=standard_id,
         subjectID_id=subject_id,
-    ).exists()
+    ).first()
     if not assign_subject_exists:
         return False, "Selected subject is not assigned to the selected class.", 'red'
 
@@ -4248,6 +4311,25 @@ def _validate_exam_timetable_business_rules(
     ).order_by('-datetime').first()
     if not assigned_exam:
         return False, "Selected exam is not assigned to the selected class.", 'red'
+
+    total_component = ExamComponentType.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        schoolID_id=assigned_exam.schoolID_id,
+        code='total',
+    ).first()
+    if total_component:
+        total_rule_qs = ExamSubjectComponentRule.objects.filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            examID_id=assigned_exam.id,
+            componentTypeID_id=total_component.id,
+        )
+        if total_rule_qs.exists() and not total_rule_qs.filter(
+            subjectID_id=assign_subject_exists.id,
+            isMandatory=True,
+        ).exists():
+            return False, "Selected subject is not included in the selected exam.", 'red'
 
     if assigned_exam.startDate and parsed_exam_date < assigned_exam.startDate:
         return False, "Exam date cannot be before assigned exam start date.", 'red'
@@ -4595,6 +4677,182 @@ def delete_exam_timetable(request):
 
 
 # assign exam to class
+def _get_or_create_total_component_type(request):
+    current_session_id = _current_session_id(request)
+    current_school_id = _current_school_id(request)
+    component = ExamComponentType.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        schoolID_id=current_school_id,
+        code='total',
+    ).first()
+    if component:
+        return component
+
+    next_order = (
+        ExamComponentType.objects.filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            schoolID_id=current_school_id,
+        ).aggregate(Max('displayOrder')).get('displayOrder__max') or 0
+    ) + 1
+    component = ExamComponentType(
+        schoolID_id=current_school_id,
+        sessionID_id=current_session_id,
+        code='total',
+        name='Total',
+        description='Default subject-wise exam marks.',
+        isScholastic=True,
+        isActive=True,
+        displayOrder=next_order,
+    )
+    pre_save_with_user.send(sender=ExamComponentType, instance=component, user=request.user.pk)
+    return component
+
+
+def _parse_subject_marks_payload(raw_value):
+    if not raw_value:
+        return []
+    try:
+        payload = json.loads(raw_value)
+    except Exception:
+        raise ValueError('Invalid subject marks payload.')
+    if not isinstance(payload, list):
+        raise ValueError('Invalid subject marks payload.')
+    return payload
+
+
+def _subject_rule_payload_for_standard(current_session_id, standard_id, subject_marks_payload, fallback_full, fallback_pass):
+    subject_rows = AssignSubjectsToClass.objects.select_related('subjectID').filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=standard_id,
+    ).order_by('subjectID__name')
+    submitted_by_subject = {}
+    for row in subject_marks_payload:
+        if not isinstance(row, dict):
+            continue
+        row_standard_id = str(row.get('standardID') or '').strip()
+        subject_id = str(row.get('assignSubjectID') or row.get('subjectID') or '').strip()
+        if row_standard_id and row_standard_id != str(standard_id):
+            continue
+        if subject_id.isdigit():
+            submitted_by_subject[int(subject_id)] = row
+
+    rules = []
+    for subject_row in subject_rows:
+        submitted = submitted_by_subject.get(subject_row.id, {})
+        include_in_exam = submitted.get('includeInExam', True)
+        if isinstance(include_in_exam, str):
+            include_in_exam = include_in_exam.lower() not in {'false', '0', 'no', 'off'}
+        full_marks = submitted.get('fullMarks', fallback_full)
+        pass_marks = submitted.get('passMarks', fallback_pass)
+        try:
+            full_marks = float(full_marks)
+            pass_marks = float(pass_marks)
+        except (TypeError, ValueError):
+            if include_in_exam:
+                raise ValueError('Subject full/pass marks must be valid numbers.')
+            full_marks = float(fallback_full)
+            pass_marks = float(fallback_pass)
+        if full_marks <= 0 and include_in_exam:
+            raise ValueError('Subject full marks must be greater than zero.')
+        if (pass_marks < 0 or pass_marks > full_marks) and include_in_exam:
+            raise ValueError('Subject pass marks must be between zero and full marks.')
+        if full_marks <= 0 or pass_marks < 0 or pass_marks > full_marks:
+            full_marks = float(fallback_full)
+            pass_marks = float(fallback_pass)
+        rules.append({
+            'subject_assignment': subject_row,
+            'full_marks': full_marks,
+            'pass_marks': pass_marks,
+            'include_in_exam': include_in_exam,
+        })
+    return rules
+
+
+def _sync_exam_subject_total_rules(request, assign_exam, subject_marks_payload):
+    current_session_id = _current_session_id(request)
+    current_school_id = _current_school_id(request)
+    component = _get_or_create_total_component_type(request)
+    rules = _subject_rule_payload_for_standard(
+        current_session_id,
+        assign_exam.standardID_id,
+        subject_marks_payload,
+        assign_exam.fullMarks,
+        assign_exam.passMarks,
+    )
+    active_ids = []
+    for idx, rule in enumerate(rules, start=1):
+        subject_assignment = rule['subject_assignment']
+        rule_obj = ExamSubjectComponentRule.objects.filter(
+            isDeleted=False,
+            sessionID_id=current_session_id,
+            examID_id=assign_exam.id,
+            subjectID_id=subject_assignment.id,
+            componentTypeID_id=component.id,
+        ).first()
+        if not rule_obj:
+            rule_obj = ExamSubjectComponentRule(
+                schoolID_id=current_school_id,
+                sessionID_id=current_session_id,
+                examID_id=assign_exam.id,
+                subjectID_id=subject_assignment.id,
+                componentTypeID_id=component.id,
+            )
+        rule_obj.maxMarks = rule['full_marks']
+        rule_obj.passMarks = rule['pass_marks']
+        rule_obj.weightage = None
+        rule_obj.isMandatory = rule['include_in_exam']
+        rule_obj.displayOrder = idx
+        pre_save_with_user.send(sender=ExamSubjectComponentRule, instance=rule_obj, user=request.user.pk)
+        active_ids.append(rule_obj.id)
+
+    ExamSubjectComponentRule.objects.filter(
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        examID_id=assign_exam.id,
+        componentTypeID_id=component.id,
+    ).exclude(id__in=active_ids).update(isDeleted=True)
+
+
+def _assigned_exam_subject_marks_data(assign_exam):
+    total_component = ExamComponentType.objects.filter(
+        isDeleted=False,
+        sessionID_id=assign_exam.sessionID_id,
+        schoolID_id=assign_exam.schoolID_id,
+        code='total',
+    ).first()
+    rule_by_subject = {}
+    if total_component:
+        rule_by_subject = {
+            row.subjectID_id: row
+            for row in ExamSubjectComponentRule.objects.filter(
+                isDeleted=False,
+                sessionID_id=assign_exam.sessionID_id,
+                examID_id=assign_exam.id,
+                componentTypeID_id=total_component.id,
+            )
+        }
+    data = []
+    subject_rows = AssignSubjectsToClass.objects.select_related('subjectID').filter(
+        isDeleted=False,
+        sessionID_id=assign_exam.sessionID_id,
+        standardID_id=assign_exam.standardID_id,
+    ).order_by('subjectID__name')
+    for subject_row in subject_rows:
+        rule = rule_by_subject.get(subject_row.id)
+        data.append({
+            'standardID': assign_exam.standardID_id,
+            'assignSubjectID': subject_row.id,
+            'SubjectName': subject_row.subjectID.name if subject_row.subjectID else 'N/A',
+            'FullMarks': rule.maxMarks if rule else assign_exam.fullMarks,
+            'PassMarks': rule.passMarks if rule else assign_exam.passMarks,
+            'IncludeInExam': bool(rule.isMandatory) if rule else True,
+        })
+    return data
+
+
 @transaction.atomic
 @csrf_exempt
 @login_required
@@ -4607,6 +4865,7 @@ def add_exam_to_class(request):
             pmark = request.POST.get("pmark")
             sDate = request.POST.get("sDate")
             eDate = request.POST.get("eDate")
+            subject_marks_payload = _parse_subject_marks_payload(request.POST.get("subject_marks"))
             subject_list = [int(x) for x in standard.split(',')]
             for s in subject_list:
                 try:
@@ -4622,10 +4881,13 @@ def add_exam_to_class(request):
                     instance.endDate = datetime.strptime(eDate, '%d/%m/%Y')
                     pre_save_with_user.send(sender=AssignExamToClass, instance=instance, user=request.user.pk)
                     instance.save()
+                    _sync_exam_subject_total_rules(request, instance, subject_marks_payload)
             return _api_response(
                 {'status': 'success', 'message': 'Exam assigned successfully.', 'color': 'success'},
                 safe=False)
-        except:
+        except ValueError as exc:
+            return _api_response({'status': 'error', 'message': str(exc), 'color': 'red'}, safe=False)
+        except Exception:
             return _api_response({'status': 'error'}, safe=False)
 
 
@@ -4673,12 +4935,15 @@ class AssignExamToClassListJson(BaseDatatableView):
         json_data = []
         for item in qs:
             action = '''
+              <button data-inverted="" data-tooltip="View Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "showSubjectDetails('{}')" class="ui circular icon button blue">
+                <i class="eye icon"></i>
+              </button>
               <button data-inverted="" data-tooltip="Edit Detail" data-position="left center" data-variation="mini" style="font-size:10px;" onclick = "GetDataDetails('{}')" class="ui circular facebook icon button green">
                 <i class="pen icon"></i>
               </button>
               <button data-inverted="" data-tooltip="Delete" data-position="left center" data-variation="mini" style="font-size:10px;" onclick ="delData('{}')" class="ui circular youtube icon button" style="margin-left: 3px">
                 <i class="trash alternate icon"></i>
-              </button></td>'''.format(item.pk, item.pk),
+              </button></td>'''.format(item.pk, item.pk, item.pk)
             if item.standardID.section:
                 section = item.standardID.section
             else:
@@ -4713,6 +4978,11 @@ def delete_assign_exam_to_class(request):
             instance.isDeleted = True
             pre_save_with_user.send(sender=AssignExamToClass, instance=instance, user=request.user.pk)
             instance.save()
+            ExamSubjectComponentRule.objects.filter(
+                isDeleted=False,
+                sessionID_id=instance.sessionID_id,
+                examID_id=instance.id,
+            ).update(isDeleted=True)
             return _api_response(
                 {'status': 'success', 'message': 'Assigned Exam detail deleted successfully.',
                  'color': 'success'}, safe=False)
@@ -4730,11 +5000,14 @@ def get_assigned_exam_to_class_detail(request, **kwargs):
         obj_dic = {
             'StandardID': obj.standardID_id,
             'ExamID': obj.examID_id,
+            'ClassName': f"{obj.standardID.name} - {obj.standardID.section}" if obj.standardID and obj.standardID.section else (obj.standardID.name if obj.standardID else 'N/A'),
+            'ExamName': obj.examID.name if obj.examID else 'N/A',
             'FullMarks': obj.fullMarks,
             'PassMarks': obj.passMarks,
             'StartDate': obj.startDate.strftime('%d/%m/%Y'),
             'EndDate': obj.endDate.strftime('%d/%m/%Y'),
             'ID': obj.pk,
+            'SubjectMarks': _assigned_exam_subject_marks_data(obj),
         }
         return _api_response({'status': 'success', 'data': obj_dic}, safe=False)
     except:
@@ -4754,30 +5027,42 @@ def update_exam_to_class(request):
             pmark = request.POST.get("pmark")
             sDate = request.POST.get("sDate")
             eDate = request.POST.get("eDate")
+            subject_marks_payload = _parse_subject_marks_payload(request.POST.get("subject_marks"))
             subject_list = [int(x) for x in standard.split(',')]
-            instance = AssignExamToClass.objects.get(pk=int(editID))
+            if len(subject_list) != 1:
+                return _api_response(
+                    {'status': 'error', 'message': 'Please select one class while updating assigned exam detail.', 'color': 'red'},
+                    safe=False)
+            instance = AssignExamToClass.objects.get(
+                pk=int(editID),
+                isDeleted=False,
+                sessionID_id=request.session['current_session']['Id'],
+            )
             for s in subject_list:
-                try:
-                    AssignExamToClass.objects.get(examID_id=int(exam), standardID_id=int(s),
-                                                  isDeleted=False,
-                                                  sessionID_id=request.session['current_session']['Id']).exclude(
-                        pk=int(editID))
+                if AssignExamToClass.objects.filter(
+                    examID_id=int(exam),
+                    standardID_id=int(s),
+                    isDeleted=False,
+                    sessionID_id=request.session['current_session']['Id'],
+                ).exclude(pk=int(editID)).exists():
                     return _api_response(
                         {'status': 'success', 'message': 'Detail already assigned.', 'color': 'info'},
                         safe=False)
-                except:
-                    instance.standardID_id = int(s)
-                    instance.examID_id = int(exam)
-                    instance.fullMarks = float(fmark)
-                    instance.passMarks = float(pmark)
-                    instance.startDate = datetime.strptime(sDate, '%d/%m/%Y')
-                    instance.endDate = datetime.strptime(eDate, '%d/%m/%Y')
-                    pre_save_with_user.send(sender=AssignExamToClass, instance=instance, user=request.user.pk)
-                    instance.save()
+                instance.standardID_id = int(s)
+                instance.examID_id = int(exam)
+                instance.fullMarks = float(fmark)
+                instance.passMarks = float(pmark)
+                instance.startDate = datetime.strptime(sDate, '%d/%m/%Y')
+                instance.endDate = datetime.strptime(eDate, '%d/%m/%Y')
+                pre_save_with_user.send(sender=AssignExamToClass, instance=instance, user=request.user.pk)
+                instance.save()
+                _sync_exam_subject_total_rules(request, instance, subject_marks_payload)
             return _api_response(
                 {'status': 'success', 'message': 'Detail updated successfully.', 'color': 'success'},
                 safe=False)
-        except:
+        except ValueError as exc:
+            return _api_response({'status': 'error', 'message': str(exc), 'color': 'red'}, safe=False)
+        except Exception:
             return _api_response({'status': 'error'}, safe=False)
 
 
@@ -4798,6 +5083,7 @@ def get_exam_list_by_class_api(request):
 
         data_dic = {
             'ID': obj.pk,
+            'ExamID': obj.examID_id,
             'Name': name
 
         }
@@ -6066,8 +6352,36 @@ def _component_rules_for_exam_subject(session_id, exam_id, subject_id):
             sessionID_id=session_id,
             examID_id=exam_id,
             subjectID_id=subject_id,
-        ).order_by('displayOrder', 'id')
+        ).exclude(componentTypeID__code='total').order_by('displayOrder', 'id')
     )
+
+
+def _subject_marks_limit_for_assigned_exam(assign_exam, subject_id):
+    full_marks = assign_exam.fullMarks if assign_exam else None
+    pass_marks = assign_exam.passMarks if assign_exam else None
+    if not assign_exam or not subject_id:
+        return full_marks, pass_marks
+
+    total_component = ExamComponentType.objects.filter(
+        isDeleted=False,
+        sessionID_id=assign_exam.sessionID_id,
+        schoolID_id=assign_exam.schoolID_id,
+        code='total',
+    ).first()
+    if not total_component:
+        return full_marks, pass_marks
+
+    total_rule = ExamSubjectComponentRule.objects.filter(
+        isDeleted=False,
+        sessionID_id=assign_exam.sessionID_id,
+        examID_id=assign_exam.id,
+        subjectID_id=subject_id,
+        componentTypeID_id=total_component.id,
+    ).first()
+    if total_rule:
+        full_marks = total_rule.maxMarks
+        pass_marks = total_rule.passMarks
+    return full_marks, pass_marks
 
 
 def _component_input_html(mark_row_id, student_id, rules, component_mark_map):
@@ -6148,7 +6462,7 @@ def get_exam_component_type_list_api(request):
         isDeleted=False,
         sessionID_id=current_session_id,
         schoolID_id=current_school_id,
-    ).order_by('displayOrder', 'name')
+    ).exclude(code='total').order_by('displayOrder', 'name')
 
     data = [{
         'id': row.id,
@@ -6199,7 +6513,7 @@ def add_exam_component_type_api(request):
             isDeleted=False,
             sessionID_id=current_session_id,
             schoolID_id=current_school_id,
-        ).aggregate(models.Max('displayOrder')).get('displayOrder__max') or 0
+        ).aggregate(Max('displayOrder')).get('displayOrder__max') or 0
     ) + 1
 
     instance = ExamComponentType(
@@ -6238,6 +6552,16 @@ def get_exam_subject_component_rules_api(request):
     if not (standard.isdigit() and exam.isdigit() and subject.isdigit()):
         return ErrorResponse('Invalid class/exam/subject.', extra={'color': 'red'}).to_json_response()
 
+    assign_exam = AssignExamToClass.objects.filter(
+        id=int(exam),
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=int(standard),
+    ).first()
+    if not assign_exam:
+        return ErrorResponse('Class/exam mapping not found.', extra={'color': 'red'}).to_json_response()
+
+    subject_full_marks, subject_pass_marks = _subject_marks_limit_for_assigned_exam(assign_exam, int(subject))
     rules = _component_rules_for_exam_subject(current_session_id, int(exam), int(subject))
     pass_policy = PassPolicy.objects.filter(
         isDeleted=False,
@@ -6247,6 +6571,11 @@ def get_exam_subject_component_rules_api(request):
     ).first()
 
     data = {
+        'exam': {
+            'id': int(exam),
+            'fullMarks': subject_full_marks,
+            'passMarks': subject_pass_marks,
+        },
         'rules': [{
             'id': row.id,
             'componentTypeID': row.componentTypeID_id,
@@ -6308,6 +6637,10 @@ def save_exam_subject_component_rules_api(request):
     if not assign_exam or not assign_subject:
         return ErrorResponse('Class/exam/subject mapping not found.', extra={'color': 'red'}).to_json_response()
 
+    subject_full_marks, subject_pass_marks = _subject_marks_limit_for_assigned_exam(assign_exam, assign_subject.id)
+    validated_rows = []
+    total_max_marks = 0.0
+    total_pass_marks = 0.0
     active_ids = []
     for idx, row in enumerate(rules_payload):
         component_type_id = str(row.get('componentTypeID') or '').strip()
@@ -6337,7 +6670,38 @@ def save_exam_subject_component_rules_api(request):
         ).first()
         if not component_type:
             return ErrorResponse(f'Component type not found at row {idx + 1}.', extra={'color': 'red'}).to_json_response()
+        if component_type.code == 'total':
+            return ErrorResponse('Total is reserved for subject full/pass marks and cannot be used as a component.', extra={'color': 'red'}).to_json_response()
 
+        total_max_marks += max_marks
+        total_pass_marks += pass_marks
+        validated_rows.append({
+            'index': idx,
+            'source': row,
+            'component_type': component_type,
+            'max_marks': max_marks,
+            'pass_marks': pass_marks,
+            'weightage_value': weightage_value,
+            'is_mandatory': is_mandatory,
+        })
+
+    exam_full_marks = float(subject_full_marks or 0)
+    exam_pass_marks = float(subject_pass_marks or 0)
+    if subject_full_marks is not None and round(total_max_marks, 2) > round(exam_full_marks, 2):
+        return ErrorResponse(
+            f'Total component max marks ({round(total_max_marks, 2)}) cannot exceed subject full marks ({round(exam_full_marks, 2)}).',
+            extra={'color': 'red'}
+        ).to_json_response()
+    if subject_pass_marks is not None and round(total_pass_marks, 2) > round(exam_pass_marks, 2):
+        return ErrorResponse(
+            f'Total component pass marks ({round(total_pass_marks, 2)}) cannot exceed subject pass marks ({round(exam_pass_marks, 2)}).',
+            extra={'color': 'red'}
+        ).to_json_response()
+
+    for validated in validated_rows:
+        idx = validated['index']
+        row = validated['source']
+        component_type = validated['component_type']
         rule_id = row.get('id')
         rule_obj = None
         if str(rule_id).isdigit():
@@ -6358,10 +6722,10 @@ def save_exam_subject_component_rules_api(request):
             )
 
         rule_obj.componentTypeID = component_type
-        rule_obj.maxMarks = max_marks
-        rule_obj.passMarks = pass_marks
-        rule_obj.weightage = weightage_value
-        rule_obj.isMandatory = is_mandatory
+        rule_obj.maxMarks = validated['max_marks']
+        rule_obj.passMarks = validated['pass_marks']
+        rule_obj.weightage = validated['weightage_value']
+        rule_obj.isMandatory = validated['is_mandatory']
         rule_obj.displayOrder = idx + 1
         pre_save_with_user.send(sender=ExamSubjectComponentRule, instance=rule_obj, user=request.user.pk)
         active_ids.append(rule_obj.id)
@@ -6371,7 +6735,7 @@ def save_exam_subject_component_rules_api(request):
         sessionID_id=current_session_id,
         examID_id=assign_exam.id,
         subjectID_id=assign_subject.id,
-    ).exclude(id__in=active_ids).update(isDeleted=True)
+    ).exclude(componentTypeID__code='total').exclude(id__in=active_ids).update(isDeleted=True)
 
     if isinstance(pass_policy_payload, dict):
         pass_policy, _ = PassPolicy.objects.get_or_create(
@@ -6379,11 +6743,11 @@ def save_exam_subject_component_rules_api(request):
             sessionID_id=current_session_id,
             schoolID_id=current_school_id,
             examID_id=assign_exam.id,
-            defaults={'overallPassMarks': assign_exam.passMarks},
+            defaults={'overallPassMarks': subject_pass_marks},
         )
         overall_pass = pass_policy_payload.get('overallPassMarks')
         if overall_pass in (None, '', 'null'):
-            pass_policy.overallPassMarks = assign_exam.passMarks
+            pass_policy.overallPassMarks = subject_pass_marks
         else:
             try:
                 pass_policy.overallPassMarks = float(overall_pass)
@@ -6921,19 +7285,57 @@ class StudentMarksDetailsByClassAndExamJson(BaseDatatableView):
     def prepare_results(self, qs):
         standard = self.request.GET.get("standard")
         exam = self.request.GET.get("exam")
+        session_id = self.request.session["current_session"]["Id"]
+
+        subject_list = AssignSubjectsToClass.objects.select_related('subjectID').filter(
+            standardID_id=int(standard),
+            isDeleted=False,
+            sessionID_id=session_id,
+        ).order_by('subjectID__name')
+        assigned_exam = None
+        if str(exam).isdigit():
+            assigned_exam = AssignExamToClass.objects.filter(
+                id=int(exam),
+                isDeleted=False,
+                sessionID_id=session_id,
+                standardID_id=int(standard),
+            ).first()
+        if assigned_exam:
+            total_component = ExamComponentType.objects.filter(
+                isDeleted=False,
+                sessionID_id=session_id,
+                schoolID_id=assigned_exam.schoolID_id,
+                code='total',
+            ).first()
+            if total_component:
+                total_rule_qs = ExamSubjectComponentRule.objects.filter(
+                    isDeleted=False,
+                    sessionID_id=session_id,
+                    examID_id=assigned_exam.id,
+                    componentTypeID_id=total_component.id,
+                )
+                if total_rule_qs.exists():
+                    included_subject_ids = set(
+                        total_rule_qs.filter(isMandatory=True).values_list('subjectID_id', flat=True)
+                    )
+                    excluded_subject_ids = set(
+                        total_rule_qs.filter(isMandatory=False).values_list('subjectID_id', flat=True)
+                    )
+                    ruled_subject_ids = set(total_rule_qs.values_list('subjectID_id', flat=True))
+                    subject_list = subject_list.exclude(id__in=excluded_subject_ids).filter(
+                        Q(id__in=included_subject_ids) | ~Q(id__in=ruled_subject_ids)
+                    )
 
         json_data = []
         for item in qs:
-            subject_list = AssignSubjectsToClass.objects.filter(standardID_id=int(standard), isDeleted=False, sessionID_id=self.request.session["current_session"]["Id"])
-            subs = [i.subjectID.name for i in subject_list]
             marks = []
-            for s in subs:
+            for subject_row in subject_list:
                 exam_sub_list_by_student = MarkOfStudentsByExam.objects.filter(
                     studentID_id=item.id,
                     isDeleted=False,
                     examID_id=int(exam),
-                    sessionID_id=self.request.session["current_session"]["Id"],
-                    subjectID__subjectID__name=s,
+                    sessionID_id=session_id,
+                    subjectID_id=subject_row.id,
                 ).first()
                 marks.append(exam_sub_list_by_student.mark if exam_sub_list_by_student else 0)
 
@@ -6969,6 +7371,15 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
         try:
             standard = self.request.GET.get("standardByStudent")
             student = self.request.GET.get("student")
+            session_id = self.request.session["current_session"]["Id"]
+            excluded_total_rule = ExamSubjectComponentRule.objects.filter(
+                isDeleted=False,
+                sessionID_id=session_id,
+                examID_id=OuterRef('examID_id'),
+                subjectID_id=OuterRef('subjectID_id'),
+                componentTypeID__code='total',
+                isMandatory=False,
+            )
             return MarkOfStudentsByExam.objects.select_related(
                 'examID',
                 'examID__examID',
@@ -6976,12 +7387,155 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
                 'subjectID__subjectID',
             ).filter(
                 isDeleted=False,
-                sessionID_id=self.request.session["current_session"]["Id"],
+                sessionID_id=session_id,
                 standardID_id=int(standard),
                 studentID_id=int(student),
+            ).annotate(
+                subject_is_excluded=Exists(excluded_total_rule)
+            ).filter(
+                subject_is_excluded=False,
             ).order_by('examID__examID__name', 'subjectID__subjectID__name')
         except Exception:
             return MarkOfStudentsByExam.objects.none()
+
+    def get_context_data(self, *args, **kwargs):
+        try:
+            standard = self.request.GET.get("standardByStudent")
+            student = self.request.GET.get("student")
+            exam = self.request.GET.get("examByStudent")
+            session_id = self.request.session["current_session"]["Id"]
+            if not (str(standard).isdigit() and str(student).isdigit()):
+                return {
+                    "draw": int(self.request.GET.get("draw", 0)),
+                    "recordsTotal": 0,
+                    "recordsFiltered": 0,
+                    "data": [],
+                }
+
+            assigned_exam_qs = AssignExamToClass.objects.select_related('examID').filter(
+                isDeleted=False,
+                sessionID_id=session_id,
+                standardID_id=int(standard),
+            )
+            if str(exam).isdigit():
+                assigned_exam_qs = assigned_exam_qs.filter(id=int(exam))
+            assigned_exams = list(assigned_exam_qs.order_by('examID__name', 'id'))
+            subject_rows = list(AssignSubjectsToClass.objects.select_related('subjectID').filter(
+                isDeleted=False,
+                sessionID_id=session_id,
+                standardID_id=int(standard),
+            ).order_by('subjectID__name', 'id'))
+            exam_ids = [row.id for row in assigned_exams]
+            subject_ids = [row.id for row in subject_rows]
+
+            total_component = ExamComponentType.objects.filter(
+                isDeleted=False,
+                sessionID_id=session_id,
+                code='total',
+            ).first()
+            total_rule_map = {}
+            if total_component and exam_ids and subject_ids:
+                total_rule_map = {
+                    (row.examID_id, row.subjectID_id): row
+                    for row in ExamSubjectComponentRule.objects.filter(
+                        isDeleted=False,
+                        sessionID_id=session_id,
+                        examID_id__in=exam_ids,
+                        subjectID_id__in=subject_ids,
+                        componentTypeID_id=total_component.id,
+                    )
+                }
+
+            mark_map = {
+                (row.examID_id, row.subjectID_id): row
+                for row in MarkOfStudentsByExam.objects.filter(
+                    isDeleted=False,
+                    sessionID_id=session_id,
+                    standardID_id=int(standard),
+                    studentID_id=int(student),
+                    examID_id__in=exam_ids,
+                    subjectID_id__in=subject_ids,
+                )
+            }
+
+            entries = []
+            for exam_row in assigned_exams:
+                exam_rule_keys = [key for key in total_rule_map if key[0] == exam_row.id]
+                exam_has_total_rules = bool(exam_rule_keys)
+                for subject_row in subject_rows:
+                    total_rule = total_rule_map.get((exam_row.id, subject_row.id))
+                    if exam_has_total_rules and total_rule and not total_rule.isMandatory:
+                        continue
+                    if exam_has_total_rules and total_rule is None:
+                        pass
+                    mark_row = mark_map.get((exam_row.id, subject_row.id))
+                    subject_full_mark, subject_pass_mark = _subject_marks_limit_for_assigned_exam(exam_row, subject_row.id)
+                    entries.append({
+                        'exam': exam_row,
+                        'subject': subject_row,
+                        'mark': mark_row,
+                        'full_mark': subject_full_mark if subject_full_mark is not None else 0,
+                        'pass_mark': subject_pass_mark if subject_pass_mark is not None else 0,
+                    })
+
+            search = (self.request.GET.get('search[value]') or '').strip().lower()
+            total_records = len(entries)
+            if search:
+                entries = [
+                    entry for entry in entries
+                    if search in ((entry['exam'].examID.name if entry['exam'].examID else '') or '').lower()
+                    or search in ((entry['subject'].subjectID.name if entry['subject'].subjectID else '') or '').lower()
+                    or search in str(entry['full_mark']).lower()
+                    or search in str(entry['pass_mark']).lower()
+                    or search in str(entry['mark'].mark if entry['mark'] and entry['mark'].mark is not None else 0).lower()
+                    or search in ((entry['mark'].note if entry['mark'] else '') or '').lower()
+                ]
+            filtered_records = len(entries)
+
+            order_column = self.request.GET.get('order[0][column]')
+            order_dir = self.request.GET.get('order[0][dir]', 'asc')
+            reverse = order_dir == 'desc'
+
+            def sort_value(entry):
+                mark_row = entry['mark']
+                if order_column == '1':
+                    return (entry['subject'].subjectID.name if entry['subject'].subjectID else '') or ''
+                if order_column == '2':
+                    return float(entry['full_mark'] or 0)
+                if order_column == '3':
+                    return float(entry['pass_mark'] or 0)
+                if order_column == '4':
+                    return float(mark_row.mark or 0) if mark_row else 0
+                if order_column == '7':
+                    return (mark_row.lastEditedBy if mark_row else '') or ''
+                if order_column == '8':
+                    if not mark_row or not mark_row.lastUpdatedOn:
+                        return 0
+                    last_updated = mark_row.lastUpdatedOn
+                    if timezone.is_naive(last_updated):
+                        last_updated = timezone.make_aware(last_updated, timezone.get_current_timezone())
+                    return last_updated.timestamp()
+                return (entry['exam'].examID.name if entry['exam'].examID else '') or ''
+
+            entries.sort(key=sort_value, reverse=reverse)
+
+            try:
+                start = int(self.request.GET.get('start', 0))
+                length = int(self.request.GET.get('length', 25))
+            except (TypeError, ValueError):
+                start = 0
+                length = 25
+            paged_entries = entries[start:] if length == -1 else entries[start:start + length]
+
+            data = self._prepare_student_subject_rows(paged_entries, session_id, int(student))
+            return {
+                "draw": int(self.request.GET.get("draw", 0)),
+                "recordsTotal": total_records,
+                "recordsFiltered": filtered_records,
+                "data": data,
+            }
+        except Exception as e:
+            return self.handle_exception(e)
 
     def filter_queryset(self, qs):
         search = self.request.GET.get('search[value]', None)
@@ -6999,16 +7553,36 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        row_keys = [(item.studentID_id, item.examID_id, item.subjectID_id) for item in qs]
+        session_id = self.request.session["current_session"]["Id"]
+        entries = []
+        for item in qs:
+            subject_full_mark, subject_pass_mark = _subject_marks_limit_for_assigned_exam(item.examID, item.subjectID_id)
+            entries.append({
+                'exam': item.examID,
+                'subject': item.subjectID,
+                'mark': item,
+                'full_mark': subject_full_mark if subject_full_mark is not None else 0,
+                'pass_mark': subject_pass_mark if subject_pass_mark is not None else 0,
+            })
+        return self._prepare_student_subject_rows(entries, session_id, None)
+
+    def _prepare_student_subject_rows(self, entries, session_id, student_id):
+        row_keys = [
+            (
+                student_id or (entry['mark'].studentID_id if entry['mark'] else None),
+                entry['exam'].id if entry['exam'] else None,
+                entry['subject'].id if entry['subject'] else None,
+            )
+            for entry in entries
+        ]
         exam_ids = list({k[1] for k in row_keys if k[1]})
         subject_ids = list({k[2] for k in row_keys if k[2]})
-        session_id = self.request.session["current_session"]["Id"]
         rule_rows = ExamSubjectComponentRule.objects.select_related('componentTypeID').filter(
             isDeleted=False,
             sessionID_id=session_id,
             examID_id__in=exam_ids,
             subjectID_id__in=subject_ids,
-        ).order_by('displayOrder', 'id')
+        ).exclude(componentTypeID__code='total').order_by('displayOrder', 'id')
         rules_map = {}
         rule_ids = []
         for rule in rule_rows:
@@ -7026,25 +7600,29 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
         component_mark_map = {(row.studentID_id, row.examID_id, row.subjectID_id, row.componentRuleID_id): row for row in component_rows}
 
         json_data = []
-        for item in qs:
+        for entry in entries:
+            item = entry['mark']
+            exam_row = entry['exam']
+            subject_row = entry['subject']
             exam_name = 'N/A'
             subject_name = 'N/A'
-            full_mark = 0
-            pass_mark = 0
+            full_mark = entry['full_mark']
+            pass_mark = entry['pass_mark']
 
-            if item.examID and item.examID.examID:
-                exam_name = item.examID.examID.name or 'N/A'
-                full_mark = item.examID.fullMarks if item.examID.fullMarks is not None else 0
-                pass_mark = item.examID.passMarks if item.examID.passMarks is not None else 0
+            if exam_row and exam_row.examID:
+                exam_name = exam_row.examID.name or 'N/A'
 
-            if item.subjectID and item.subjectID.subjectID:
-                subject_name = item.subjectID.subjectID.name or 'N/A'
+            if subject_row and subject_row.subjectID:
+                subject_name = subject_row.subjectID.name or 'N/A'
 
-            rules = rules_map.get((item.examID_id, item.subjectID_id), [])
+            exam_id = exam_row.id if exam_row else None
+            subject_id = subject_row.id if subject_row else None
+            current_student_id = student_id or (item.studentID_id if item else None)
+            rules = rules_map.get((exam_id, subject_id), [])
             if rules:
                 chunks = []
                 for rule in rules:
-                    comp_row = component_mark_map.get((item.studentID_id, item.examID_id, item.subjectID_id, rule.id))
+                    comp_row = component_mark_map.get((current_student_id, exam_id, subject_id, rule.id))
                     if comp_row is None:
                         chunks.append(f'{rule.componentTypeID.name if rule.componentTypeID else "Component"}: Pending')
                     elif comp_row.isExempt:
@@ -7064,11 +7642,11 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
                 escape(subject_name),
                 escape(full_mark),
                 escape(pass_mark),
-                escape(item.mark if item.mark is not None else 0),
+                escape(item.mark if item and item.mark is not None else 0),
                 escape(component_summary),
-                escape(item.note or ''),
-                escape(item.lastEditedBy or 'N/A'),
-                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
+                escape(item.note if item and item.note else ''),
+                escape(item.lastEditedBy if item and item.lastEditedBy else 'N/A'),
+                escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item and item.lastUpdatedOn else 'N/A'),
             ])
         return json_data
 

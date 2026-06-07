@@ -681,8 +681,36 @@ def _component_rules_for_exam_subject(session_id, exam_id, subject_id):
             sessionID_id=session_id,
             examID_id=exam_id,
             subjectID_id=subject_id,
-        ).order_by('displayOrder', 'id')
+        ).exclude(componentTypeID__code='total').order_by('displayOrder', 'id')
     )
+
+
+def _subject_marks_limit_for_assigned_exam(assign_exam, subject_id):
+    full_marks = assign_exam.fullMarks if assign_exam else None
+    pass_marks = assign_exam.passMarks if assign_exam else None
+    if not assign_exam or not subject_id:
+        return full_marks, pass_marks
+
+    total_component = ExamComponentType.objects.filter(
+        isDeleted=False,
+        sessionID_id=assign_exam.sessionID_id,
+        schoolID_id=assign_exam.schoolID_id,
+        code='total',
+    ).first()
+    if not total_component:
+        return full_marks, pass_marks
+
+    total_rule = ExamSubjectComponentRule.objects.filter(
+        isDeleted=False,
+        sessionID_id=assign_exam.sessionID_id,
+        examID_id=assign_exam.id,
+        subjectID_id=subject_id,
+        componentTypeID_id=total_component.id,
+    ).first()
+    if total_rule:
+        full_marks = total_rule.maxMarks
+        pass_marks = total_rule.passMarks
+    return full_marks, pass_marks
 
 
 def _component_input_html(mark_row_id, student_id, rules, component_mark_map):
@@ -1084,13 +1112,65 @@ def teacher_get_subjects_to_class_assign_list_with_given_class_api(request):
 
     current_session_id, _ = _teacher_current_ids(request, teacher)
     is_class_teacher = _teacher_is_class_teacher_for_standard(teacher.id, current_session_id, standard_id)
+    exam = (request.GET.get('exam') or '').strip()
+    exam_is_assignment = str(request.GET.get('exam_assignment') or '').lower() in {'1', 'true', 'yes'}
+    included_subject_ids = None
+    if exam.isdigit():
+        if exam_is_assignment:
+            assigned_exam = AssignExamToClass.objects.filter(
+                isDeleted=False,
+                sessionID_id=current_session_id,
+                standardID_id=standard_id,
+                id=int(exam),
+            ).first()
+        else:
+            assigned_exam = AssignExamToClass.objects.filter(
+                isDeleted=False,
+                sessionID_id=current_session_id,
+                standardID_id=standard_id,
+                examID_id=int(exam),
+            ).order_by('-datetime').first()
+            if not assigned_exam:
+                assigned_exam = AssignExamToClass.objects.filter(
+                    isDeleted=False,
+                    sessionID_id=current_session_id,
+                    standardID_id=standard_id,
+                    id=int(exam),
+                ).first()
+        if assigned_exam:
+            total_component = ExamComponentType.objects.filter(
+                isDeleted=False,
+                sessionID_id=current_session_id,
+                schoolID_id=assigned_exam.schoolID_id,
+                code='total',
+            ).first()
+            if total_component:
+                total_rule_qs = ExamSubjectComponentRule.objects.filter(
+                    isDeleted=False,
+                    sessionID_id=current_session_id,
+                    examID_id=assigned_exam.id,
+                    componentTypeID_id=total_component.id,
+                )
+                if total_rule_qs.exists():
+                    included_subject_ids = set(
+                        total_rule_qs.filter(isMandatory=True).values_list('subjectID_id', flat=True)
+                    )
+                    excluded_subject_ids = set(
+                        total_rule_qs.filter(isMandatory=False).values_list('subjectID_id', flat=True)
+                    )
+                    ruled_subject_ids = set(total_rule_qs.values_list('subjectID_id', flat=True))
 
     if is_class_teacher:
         subject_rows = AssignSubjectsToClass.objects.filter(
             isDeleted=False,
             sessionID_id=current_session_id,
             standardID_id=standard_id,
-        ).values('id', 'subjectID__name').order_by('subjectID__name')
+        )
+        if included_subject_ids is not None:
+            subject_rows = subject_rows.exclude(id__in=excluded_subject_ids).filter(
+                Q(id__in=included_subject_ids) | ~Q(id__in=ruled_subject_ids)
+            )
+        subject_rows = subject_rows.values('id', 'subjectID__name').order_by('subjectID__name')
     else:
         subject_rows = AssignSubjectsToTeacher.objects.filter(
             isDeleted=False,
@@ -1098,7 +1178,12 @@ def teacher_get_subjects_to_class_assign_list_with_given_class_api(request):
             sessionID_id=current_session_id,
             assignedSubjectID__isDeleted=False,
             assignedSubjectID__standardID_id=standard_id,
-        ).values(
+        )
+        if included_subject_ids is not None:
+            subject_rows = subject_rows.exclude(assignedSubjectID_id__in=excluded_subject_ids).filter(
+                Q(assignedSubjectID_id__in=included_subject_ids) | ~Q(assignedSubjectID_id__in=ruled_subject_ids)
+            )
+        subject_rows = subject_rows.values(
             'assignedSubjectID_id',
             'assignedSubjectID__subjectID__name',
         ).order_by('assignedSubjectID__subjectID__name')
@@ -1109,6 +1194,331 @@ def teacher_get_subjects_to_class_assign_list_with_given_class_api(request):
     else:
         data = [{'ID': row['assignedSubjectID_id'], 'Name': row['assignedSubjectID__subjectID__name'] or 'N/A'} for row in subject_rows]
     return JsonResponse({'success': True, 'data': data}, safe=False)
+
+
+def _teacher_marks_detail_subject_rows(teacher, session_id, standard_id, assigned_exam=None):
+    subject_rows = AssignSubjectsToClass.objects.select_related('subjectID').filter(
+        isDeleted=False,
+        sessionID_id=session_id,
+        standardID_id=standard_id,
+    )
+    if not _teacher_is_class_teacher_for_standard(teacher.id, session_id, standard_id):
+        assigned_subject_ids = AssignSubjectsToTeacher.objects.filter(
+            isDeleted=False,
+            teacherID_id=teacher.id,
+            sessionID_id=session_id,
+            assignedSubjectID__isDeleted=False,
+            assignedSubjectID__standardID_id=standard_id,
+        ).values_list('assignedSubjectID_id', flat=True)
+        subject_rows = subject_rows.filter(id__in=assigned_subject_ids)
+
+    if assigned_exam:
+        total_component = ExamComponentType.objects.filter(
+            isDeleted=False,
+            sessionID_id=session_id,
+            schoolID_id=assigned_exam.schoolID_id,
+            code='total',
+        ).first()
+        if total_component:
+            total_rule_qs = ExamSubjectComponentRule.objects.filter(
+                isDeleted=False,
+                sessionID_id=session_id,
+                examID_id=assigned_exam.id,
+                componentTypeID_id=total_component.id,
+            )
+            if total_rule_qs.exists():
+                included_subject_ids = set(
+                    total_rule_qs.filter(isMandatory=True).values_list('subjectID_id', flat=True)
+                )
+                excluded_subject_ids = set(
+                    total_rule_qs.filter(isMandatory=False).values_list('subjectID_id', flat=True)
+                )
+                ruled_subject_ids = set(total_rule_qs.values_list('subjectID_id', flat=True))
+                subject_rows = subject_rows.exclude(id__in=excluded_subject_ids).filter(
+                    Q(id__in=included_subject_ids) | ~Q(id__in=ruled_subject_ids)
+                )
+
+    return list(subject_rows.order_by('subjectID__name', 'id'))
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(check_groups('Teaching'), name='dispatch')
+class TeacherStudentMarksDetailsByClassAndExamJson(BaseDatatableView):
+    order_columns = ['photo', 'name', 'roll']
+
+    def get_initial_queryset(self):
+        teacher, assigned_class_ids = _get_teacher_and_assigned_class_ids(self.request)
+        standard = (self.request.GET.get('standard') or '').strip()
+        if not teacher or not standard.isdigit() or int(standard) not in set(assigned_class_ids):
+            return Student.objects.none()
+
+        session_id, _ = _teacher_current_ids(self.request, teacher)
+        return Student.objects.filter(
+            isDeleted=False,
+            standardID_id=int(standard),
+            sessionID_id=session_id,
+        ).order_by('roll')
+
+    def filter_queryset(self, qs):
+        search = self.request.GET.get('search[value]', None)
+        if search:
+            qs = qs.filter(
+                Q(name__icontains=search)
+                | Q(roll__icontains=search)
+                | Q(standardID__name__icontains=search)
+                | Q(lastEditedBy__icontains=search)
+                | Q(lastUpdatedOn__icontains=search)
+            )
+        return qs
+
+    def prepare_results(self, qs):
+        teacher, assigned_class_ids = _get_teacher_and_assigned_class_ids(self.request)
+        standard = (self.request.GET.get('standard') or '').strip()
+        exam = (self.request.GET.get('exam') or '').strip()
+        if not teacher or not standard.isdigit() or not exam.isdigit() or int(standard) not in set(assigned_class_ids):
+            return []
+
+        session_id, _ = _teacher_current_ids(self.request, teacher)
+        assigned_exam = AssignExamToClass.objects.filter(
+            id=int(exam),
+            isDeleted=False,
+            sessionID_id=session_id,
+            standardID_id=int(standard),
+        ).first()
+        if not assigned_exam:
+            return []
+
+        subject_list = _teacher_marks_detail_subject_rows(teacher, session_id, int(standard), assigned_exam)
+        subject_ids = [subject.id for subject in subject_list]
+        mark_map = {
+            (row.studentID_id, row.subjectID_id): row
+            for row in MarkOfStudentsByExam.objects.filter(
+                isDeleted=False,
+                sessionID_id=session_id,
+                examID_id=assigned_exam.id,
+                subjectID_id__in=subject_ids,
+                studentID_id__in=[student.id for student in qs],
+            )
+        }
+
+        json_data = []
+        for item in qs:
+            marks = []
+            for subject_row in subject_list:
+                mark_row = mark_map.get((item.id, subject_row.id))
+                marks.append(mark_row.mark if mark_row and mark_row.mark is not None else 0)
+            images = _avatar_image_html(item.photo) if item.photo else _avatar_image_html(None)
+            json_data.append([images, escape(item.name), escape(item.roll or 'N/A')] + marks)
+        return json_data
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(check_groups('Teaching'), name='dispatch')
+class TeacherStudentMarksDetailsByStudentJson(BaseDatatableView):
+    order_columns = [
+        'examID__examID__name',
+        'subjectID__subjectID__name',
+        'examID__fullMarks',
+        'examID__passMarks',
+        'mark',
+        'mark',
+        'note',
+        'lastEditedBy',
+        'lastUpdatedOn',
+    ]
+
+    def get_initial_queryset(self):
+        return MarkOfStudentsByExam.objects.none()
+
+    def get_context_data(self, *args, **kwargs):
+        try:
+            teacher, assigned_class_ids = _get_teacher_and_assigned_class_ids(self.request)
+            standard = (self.request.GET.get('standardByStudent') or '').strip()
+            student = (self.request.GET.get('student') or '').strip()
+            exam = (self.request.GET.get('examByStudent') or '').strip()
+            draw = int(self.request.GET.get('draw', 0))
+            if not teacher or not standard.isdigit() or not student.isdigit() or int(standard) not in set(assigned_class_ids):
+                return {"draw": draw, "recordsTotal": 0, "recordsFiltered": 0, "data": []}
+
+            session_id, _ = _teacher_current_ids(self.request, teacher)
+            if not Student.objects.filter(
+                id=int(student),
+                isDeleted=False,
+                sessionID_id=session_id,
+                standardID_id=int(standard),
+            ).exists():
+                return {"draw": draw, "recordsTotal": 0, "recordsFiltered": 0, "data": []}
+
+            assigned_exam_qs = AssignExamToClass.objects.select_related('examID').filter(
+                isDeleted=False,
+                sessionID_id=session_id,
+                standardID_id=int(standard),
+            )
+            if exam.isdigit():
+                assigned_exam_qs = assigned_exam_qs.filter(id=int(exam))
+            assigned_exams = list(assigned_exam_qs.order_by('examID__name', 'id'))
+
+            exam_ids = [row.id for row in assigned_exams]
+            subject_rows_by_exam = {
+                exam_row.id: _teacher_marks_detail_subject_rows(teacher, session_id, int(standard), exam_row)
+                for exam_row in assigned_exams
+            }
+            subject_ids = list({
+                subject_row.id
+                for subject_rows in subject_rows_by_exam.values()
+                for subject_row in subject_rows
+            })
+            mark_map = {
+                (row.examID_id, row.subjectID_id): row
+                for row in MarkOfStudentsByExam.objects.filter(
+                    isDeleted=False,
+                    sessionID_id=session_id,
+                    standardID_id=int(standard),
+                    studentID_id=int(student),
+                    examID_id__in=exam_ids,
+                    subjectID_id__in=subject_ids,
+                )
+            }
+
+            entries = []
+            for exam_row in assigned_exams:
+                for subject_row in subject_rows_by_exam.get(exam_row.id, []):
+                    subject_full_mark, subject_pass_mark = _subject_marks_limit_for_assigned_exam(exam_row, subject_row.id)
+                    entries.append({
+                        'exam': exam_row,
+                        'subject': subject_row,
+                        'mark': mark_map.get((exam_row.id, subject_row.id)),
+                        'full_mark': subject_full_mark if subject_full_mark is not None else 0,
+                        'pass_mark': subject_pass_mark if subject_pass_mark is not None else 0,
+                    })
+
+            search = (self.request.GET.get('search[value]') or '').strip().lower()
+            total_records = len(entries)
+            if search:
+                entries = [
+                    entry for entry in entries
+                    if search in ((entry['exam'].examID.name if entry['exam'].examID else '') or '').lower()
+                    or search in ((entry['subject'].subjectID.name if entry['subject'].subjectID else '') or '').lower()
+                    or search in str(entry['full_mark']).lower()
+                    or search in str(entry['pass_mark']).lower()
+                    or search in str(entry['mark'].mark if entry['mark'] and entry['mark'].mark is not None else 0).lower()
+                    or search in ((entry['mark'].note if entry['mark'] else '') or '').lower()
+                ]
+            filtered_records = len(entries)
+
+            order_column = self.request.GET.get('order[0][column]')
+            reverse = self.request.GET.get('order[0][dir]', 'asc') == 'desc'
+
+            def sort_value(entry):
+                mark_row = entry['mark']
+                if order_column == '1':
+                    return (entry['subject'].subjectID.name if entry['subject'].subjectID else '') or ''
+                if order_column == '2':
+                    return float(entry['full_mark'] or 0)
+                if order_column == '3':
+                    return float(entry['pass_mark'] or 0)
+                if order_column == '4':
+                    return float(mark_row.mark or 0) if mark_row else 0
+                if order_column == '7':
+                    return (mark_row.lastEditedBy if mark_row else '') or ''
+                if order_column == '8':
+                    if not mark_row or not mark_row.lastUpdatedOn:
+                        return 0
+                    last_updated = mark_row.lastUpdatedOn
+                    if timezone.is_naive(last_updated):
+                        last_updated = timezone.make_aware(last_updated, timezone.get_current_timezone())
+                    return last_updated.timestamp()
+                return (entry['exam'].examID.name if entry['exam'].examID else '') or ''
+
+            entries.sort(key=sort_value, reverse=reverse)
+
+            try:
+                start = int(self.request.GET.get('start', 0))
+                length = int(self.request.GET.get('length', 25))
+            except (TypeError, ValueError):
+                start = 0
+                length = 25
+            paged_entries = entries[start:] if length == -1 else entries[start:start + length]
+            return {
+                "draw": draw,
+                "recordsTotal": total_records,
+                "recordsFiltered": filtered_records,
+                "data": self._prepare_student_subject_rows(paged_entries, session_id, int(student)),
+            }
+        except Exception as exc:
+            return self.handle_exception(exc)
+
+    def _prepare_student_subject_rows(self, entries, session_id, student_id):
+        row_keys = [
+            (student_id, entry['exam'].id if entry['exam'] else None, entry['subject'].id if entry['subject'] else None)
+            for entry in entries
+        ]
+        exam_ids = list({key[1] for key in row_keys if key[1]})
+        subject_ids = list({key[2] for key in row_keys if key[2]})
+        rule_rows = ExamSubjectComponentRule.objects.select_related('componentTypeID').filter(
+            isDeleted=False,
+            sessionID_id=session_id,
+            examID_id__in=exam_ids,
+            subjectID_id__in=subject_ids,
+        ).exclude(componentTypeID__code='total').order_by('displayOrder', 'id')
+        rules_map = {}
+        rule_ids = []
+        for rule in rule_rows:
+            rules_map.setdefault((rule.examID_id, rule.subjectID_id), []).append(rule)
+            rule_ids.append(rule.id)
+
+        component_rows = StudentExamComponentMark.objects.filter(
+            isDeleted=False,
+            sessionID_id=session_id,
+            studentID_id=student_id,
+            examID_id__in=exam_ids,
+            subjectID_id__in=subject_ids,
+            componentRuleID_id__in=rule_ids or [0],
+        )
+        component_mark_map = {
+            (row.examID_id, row.subjectID_id, row.componentRuleID_id): row
+            for row in component_rows
+        }
+
+        json_data = []
+        for entry in entries:
+            mark_row = entry['mark']
+            exam_row = entry['exam']
+            subject_row = entry['subject']
+            exam_name = exam_row.examID.name if exam_row and exam_row.examID else 'N/A'
+            subject_name = subject_row.subjectID.name if subject_row and subject_row.subjectID else 'N/A'
+            rules = rules_map.get((exam_row.id if exam_row else None, subject_row.id if subject_row else None), [])
+            if rules:
+                chunks = []
+                for rule in rules:
+                    comp_row = component_mark_map.get((exam_row.id, subject_row.id, rule.id))
+                    component_name = rule.componentTypeID.name if rule.componentTypeID else 'Component'
+                    if comp_row is None:
+                        chunks.append(f'{component_name}: Pending')
+                    elif comp_row.isExempt:
+                        chunks.append(f'{component_name}: Exempt')
+                    elif comp_row.isAbsent:
+                        chunks.append(f'{component_name}: Absent(0)')
+                    elif comp_row.marksObtained is None:
+                        chunks.append(f'{component_name}: Pending')
+                    else:
+                        chunks.append(f'{component_name}: {comp_row.marksObtained}/{rule.maxMarks}')
+                component_summary = ' | '.join(chunks)
+            else:
+                component_summary = '-'
+
+            json_data.append([
+                escape(exam_name),
+                escape(subject_name),
+                escape(entry['full_mark']),
+                escape(entry['pass_mark']),
+                escape(mark_row.mark if mark_row and mark_row.mark is not None else 0),
+                escape(component_summary),
+                escape(mark_row.note if mark_row and mark_row.note else ''),
+                escape(mark_row.lastEditedBy if mark_row and mark_row.lastEditedBy else 'N/A'),
+                escape(mark_row.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if mark_row and mark_row.lastUpdatedOn else 'N/A'),
+            ])
+        return json_data
 
 
 @login_required
@@ -1148,7 +1558,7 @@ def teacher_get_exam_component_type_list_api(request):
         isDeleted=False,
         sessionID_id=current_session_id,
         schoolID_id=current_school_id,
-    ).order_by('displayOrder', 'name')
+    ).exclude(code='total').order_by('displayOrder', 'name')
     data = [{
         'id': row.id,
         'name': row.name or 'N/A',
@@ -1247,6 +1657,16 @@ def teacher_get_exam_subject_component_rules_api(request):
     if not _teacher_can_manage_subject(teacher.id, current_session_id, standard_id, subject_id):
         return ErrorResponse('You can access only assigned subjects.', extra={'color': 'red'}).to_json_response()
 
+    assign_exam = AssignExamToClass.objects.filter(
+        id=int(exam),
+        isDeleted=False,
+        sessionID_id=current_session_id,
+        standardID_id=standard_id,
+    ).first()
+    if not assign_exam:
+        return ErrorResponse('Class/exam mapping not found.', extra={'color': 'red'}).to_json_response()
+
+    subject_full_marks, subject_pass_marks = _subject_marks_limit_for_assigned_exam(assign_exam, subject_id)
     rules = _component_rules_for_exam_subject(current_session_id, int(exam), subject_id)
     pass_policy = PassPolicy.objects.filter(
         isDeleted=False,
@@ -1255,6 +1675,11 @@ def teacher_get_exam_subject_component_rules_api(request):
         examID_id=int(exam),
     ).first()
     data = {
+        'exam': {
+            'id': int(exam),
+            'fullMarks': subject_full_marks,
+            'passMarks': subject_pass_marks,
+        },
         'rules': [{
             'id': row.id,
             'componentTypeID': row.componentTypeID_id,
@@ -1326,6 +1751,10 @@ def teacher_save_exam_subject_component_rules_api(request):
     if not assign_exam or not assign_subject:
         return ErrorResponse('Class/exam/subject mapping not found.', extra={'color': 'red'}).to_json_response()
 
+    subject_full_marks, subject_pass_marks = _subject_marks_limit_for_assigned_exam(assign_exam, assign_subject.id)
+    validated_rows = []
+    total_max_marks = 0.0
+    total_pass_marks = 0.0
     active_ids = []
     for idx, row in enumerate(rules_payload):
         component_type_id = str(row.get('componentTypeID') or '').strip()
@@ -1355,7 +1784,38 @@ def teacher_save_exam_subject_component_rules_api(request):
         ).first()
         if not component_type:
             return ErrorResponse(f'Component type not found at row {idx + 1}.', extra={'color': 'red'}).to_json_response()
+        if component_type.code == 'total':
+            return ErrorResponse('Total is reserved for subject full/pass marks and cannot be used as a component.', extra={'color': 'red'}).to_json_response()
 
+        total_max_marks += max_marks
+        total_pass_marks += pass_marks
+        validated_rows.append({
+            'index': idx,
+            'source': row,
+            'component_type': component_type,
+            'max_marks': max_marks,
+            'pass_marks': pass_marks,
+            'weightage_value': weightage_value,
+            'is_mandatory': is_mandatory,
+        })
+
+    exam_full_marks = float(subject_full_marks or 0)
+    exam_pass_marks = float(subject_pass_marks or 0)
+    if subject_full_marks is not None and round(total_max_marks, 2) > round(exam_full_marks, 2):
+        return ErrorResponse(
+            f'Total component max marks ({round(total_max_marks, 2)}) cannot exceed subject full marks ({round(exam_full_marks, 2)}).',
+            extra={'color': 'red'}
+        ).to_json_response()
+    if subject_pass_marks is not None and round(total_pass_marks, 2) > round(exam_pass_marks, 2):
+        return ErrorResponse(
+            f'Total component pass marks ({round(total_pass_marks, 2)}) cannot exceed subject pass marks ({round(exam_pass_marks, 2)}).',
+            extra={'color': 'red'}
+        ).to_json_response()
+
+    for validated in validated_rows:
+        idx = validated['index']
+        row = validated['source']
+        component_type = validated['component_type']
         rule_id = row.get('id')
         rule_obj = None
         if str(rule_id).isdigit():
@@ -1376,10 +1836,10 @@ def teacher_save_exam_subject_component_rules_api(request):
             )
 
         rule_obj.componentTypeID = component_type
-        rule_obj.maxMarks = max_marks
-        rule_obj.passMarks = pass_marks
-        rule_obj.weightage = weightage_value
-        rule_obj.isMandatory = is_mandatory
+        rule_obj.maxMarks = validated['max_marks']
+        rule_obj.passMarks = validated['pass_marks']
+        rule_obj.weightage = validated['weightage_value']
+        rule_obj.isMandatory = validated['is_mandatory']
         rule_obj.displayOrder = idx + 1
         pre_save_with_user.send(sender=ExamSubjectComponentRule, instance=rule_obj, user=request.user.pk)
         active_ids.append(rule_obj.id)
@@ -1389,7 +1849,7 @@ def teacher_save_exam_subject_component_rules_api(request):
         sessionID_id=current_session_id,
         examID_id=assign_exam.id,
         subjectID_id=assign_subject.id,
-    ).exclude(id__in=active_ids).update(isDeleted=True)
+    ).exclude(componentTypeID__code='total').exclude(id__in=active_ids).update(isDeleted=True)
 
     if isinstance(pass_policy_payload, dict):
         pass_policy, _ = PassPolicy.objects.get_or_create(
@@ -1397,11 +1857,11 @@ def teacher_save_exam_subject_component_rules_api(request):
             sessionID_id=current_session_id,
             schoolID_id=current_school_id,
             examID_id=assign_exam.id,
-            defaults={'overallPassMarks': assign_exam.passMarks},
+            defaults={'overallPassMarks': subject_pass_marks},
         )
         overall_pass = pass_policy_payload.get('overallPassMarks')
         if overall_pass in (None, '', 'null'):
-            pass_policy.overallPassMarks = assign_exam.passMarks
+            pass_policy.overallPassMarks = subject_pass_marks
         else:
             try:
                 pass_policy.overallPassMarks = float(overall_pass)

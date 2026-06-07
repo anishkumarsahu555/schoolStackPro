@@ -425,7 +425,7 @@
                             <div class="field required">
 
                                 <label>Class-Section</label>
-                                <select class="ui search dropdown" id="standard" onchange="getExamList()">
+                                <select class="ui search dropdown" id="standard">
                                     <option value="">Search By Class Name-Section</option>
                                 </select>
                             </div>
@@ -441,7 +441,7 @@
 
                                 <label>Subjects</label>
                                 <select class="ui search dropdown" id="subject">
-                                    <option value="">Search By Subject</option>
+                                    <option value="">Select class and exam first</option>
                                 </select>
                             </div>
                                 <div class="field marks-filter-actions">
@@ -638,6 +638,8 @@
         let subjectTab;
         let componentTypes = [];
         let activeRuleRows = [];
+        let activeExamFullMarks = null;
+        let activeExamPassMarks = null;
         const marksApiUrls = {
             standardList: "{% if is_teacher_context %}{% url 'teacherAppAPI:get_assigned_class_list_api' %}{% else %}{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}{% endif %}",
             examList: "{% if is_teacher_context %}{% url 'teacherAppAPI:teacher_get_exam_list_by_class_api' %}{% else %}{% url 'managementAppAPI:get_exam_list_by_class_api' %}{% endif %}",
@@ -664,6 +666,17 @@
             });
             $('#componentRuleBody').on('input change', 'input, select', function () {
                 refreshComponentSummaryAndValidation();
+            });
+            $(document).on('change', '#standard', function () {
+                getExamList();
+                resetMarksWorkArea();
+            });
+            $(document).on('change', '#exam', function () {
+                getSubjectsList();
+                resetMarksWorkArea();
+            });
+            $(document).on('change', '#subject', function () {
+                resetMarksWorkArea();
             });
             $(document).on('change', 'input[id^="compabs"], input[id^="compexm"]', function () {
                 const thisId = $(this).attr('id') || '';
@@ -700,7 +713,36 @@
             });
         });
 
-        function getStandardList() {
+        function refreshDropdown($dropdown, selectedValue) {
+            const hasSelection = selectedValue !== undefined && selectedValue !== null && selectedValue !== '';
+            $dropdown.dropdown();
+            $dropdown.val(hasSelection ? String(selectedValue) : '');
+            $dropdown.dropdown('refresh');
+            if (hasSelection) {
+                $dropdown.dropdown('set selected', String(selectedValue));
+            } else {
+                $dropdown.dropdown('clear');
+                const placeholderText = $dropdown.find('option[value=""]').first().text();
+                const $dropdownText = $dropdown.closest('.ui.dropdown').children('.text');
+                if (placeholderText && $dropdownText.length) {
+                    $dropdownText.addClass('default').removeClass('filtered').text(placeholderText);
+                }
+            }
+        }
+
+        function resetMarksWorkArea() {
+            $('#AttendanceTableDiv').hide();
+            $('#componentConfigPanel').hide();
+            $('#componentRuleBody').html('');
+            activeRuleRows = [];
+            activeExamFullMarks = null;
+            activeExamPassMarks = null;
+            if (subjectTab) {
+                subjectTab.clear().draw();
+            }
+        }
+
+        function getStandardList(selectedStandardId, done) {
             $.ajax({
                 type: 'get',
                 url: marksApiUrls.standardList,
@@ -709,49 +751,73 @@
                     for (let j = 0; j < response.data.length; j++) {
                         $('#standard').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
                     }
-                    $('#standard').dropdown('refresh');
+                    refreshDropdown($('#standard'), selectedStandardId);
+                    if (typeof done === 'function') done();
                 },
                 error: function () {
                     addErrorNotification();
+                    if (typeof done === 'function') done(false);
                 }
             });
         }
 
-        function getExamList() {
+        function getExamList(selectedExamId, done) {
+            const standard = $('#standard').val();
+            $('#exam').html('<option value="">Search By Exam</option>');
+            $('#subject').html('<option value="">Select class and exam first</option>');
+            refreshDropdown($('#exam'));
+            refreshDropdown($('#subject'));
+            if (!standard) {
+                if (typeof done === 'function') done();
+                return;
+            }
             $.ajax({
                 type: 'get',
                 url: marksApiUrls.examList,
-                data: {standard: $('#standard').val()},
+                data: {standard: standard},
                 success: function (response) {
-                    $('#exam').dropdown('clear');
                     $('#exam').html('<option value="">Search By Exam</option>');
                     for (let j = 0; j < response.data.length; j++) {
                         $('#exam').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
                     }
-                    $('#exam').dropdown('refresh');
-                    getSubjectsList();
+                    refreshDropdown($('#exam'), selectedExamId);
+                    if (typeof done === 'function') {
+                        done();
+                    } else {
+                        getSubjectsList();
+                    }
                 },
                 error: function () {
                     addErrorNotification();
+                    if (typeof done === 'function') done(false);
                 }
             });
         }
 
-        function getSubjectsList() {
+        function getSubjectsList(selectedSubjectId, done) {
+            const standard = $('#standard').val();
+            const exam = $('#exam').val();
+            if (!standard || !exam) {
+                $('#subject').html('<option value="">Select class and exam first</option>');
+                refreshDropdown($('#subject'));
+                if (typeof done === 'function') done();
+                return;
+            }
             $.ajax({
                 type: 'get',
                 url: marksApiUrls.subjectList,
-                data: {standard: $('#standard').val()},
+                data: {standard: standard, exam: exam, exam_assignment: 1},
                 success: function (response) {
-                    $('#subject').dropdown('clear');
                     $('#subject').html('<option value="">Search By Subject</option>');
                     for (let j = 0; j < response.data.length; j++) {
                         $('#subject').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
                     }
-                    $('#subject').dropdown('refresh');
+                    refreshDropdown($('#subject'), selectedSubjectId);
+                    if (typeof done === 'function') done();
                 },
                 error: function () {
                     addErrorNotification();
+                    if (typeof done === 'function') done(false);
                 }
             });
         }
@@ -798,15 +864,13 @@
         }
 
         function clearAndReset() {
-            $('#standard').val('').dropdown('clear');
-            $('#exam').html('<option value="">Search By Exam</option>').dropdown('clear');
-            $('#subject').html('<option value="">Search By Subject</option>').dropdown('clear');
+            refreshDropdown($('#standard'));
+            $('#exam').html('<option value="">Search By Exam</option>');
+            $('#subject').html('<option value="">Select class and exam first</option>');
+            refreshDropdown($('#exam'));
+            refreshDropdown($('#subject'));
             $('#addFormByClass .field').removeClass('error');
-            $('#AttendanceTableDiv').hide();
-            $('#componentConfigPanel').hide();
-            $('#componentRuleBody').html('');
-            activeRuleRows = [];
-            subjectTab.clear().draw();
+            resetMarksWorkArea();
         }
 
         function componentTypeOptionsHtml(selectedId) {
@@ -821,6 +885,13 @@
         function parseNumeric(value) {
             const parsed = parseFloat(value);
             return Number.isFinite(parsed) ? parsed : null;
+        }
+
+        function formatTotalWithLimit(total, limit) {
+            if (limit === null || limit === undefined || limit === '') {
+                return total;
+            }
+            return total + ' / ' + limit;
         }
 
         function collectRulesForValidation(markInvalidRows = false) {
@@ -903,13 +974,22 @@
                 }
             }
 
+            const roundedMax = Math.round(totalMax * 100) / 100;
+            const roundedPass = Math.round(totalPass * 100) / 100;
+            if (activeExamFullMarks !== null && roundedMax > activeExamFullMarks) {
+                errors.push('Total component max marks cannot exceed subject full marks (' + activeExamFullMarks + ').');
+            }
+            if (activeExamPassMarks !== null && roundedPass > activeExamPassMarks) {
+                errors.push('Total component pass marks cannot exceed subject pass marks (' + activeExamPassMarks + ').');
+            }
+
             return {
                 rows: rows,
                 errors: errors,
                 totals: {
                     count: rows.length,
-                    max: Math.round(totalMax * 100) / 100,
-                    pass: Math.round(totalPass * 100) / 100,
+                    max: roundedMax,
+                    pass: roundedPass,
                     weight: Math.round(totalWeight * 100) / 100
                 }
             };
@@ -918,8 +998,8 @@
         function refreshComponentSummaryAndValidation() {
             const result = collectRulesForValidation(false);
             $('#componentCountValue').text(result.totals.count);
-            $('#componentTotalMaxValue').text(result.totals.max);
-            $('#componentTotalPassValue').text(result.totals.pass);
+            $('#componentTotalMaxValue').text(formatTotalWithLimit(result.totals.max, activeExamFullMarks));
+            $('#componentTotalPassValue').text(formatTotalWithLimit(result.totals.pass, activeExamPassMarks));
             $('#componentTotalWeightValue').text(result.totals.weight);
             if (result.errors.length) {
                 showComponentValidation(result.errors[0]);
@@ -1096,6 +1176,9 @@
                 data: {standard: standard, exam: exam, subject: subject},
                 success: function (response) {
                     const payload = response.data || {};
+                    const examMeta = payload.exam || {};
+                    activeExamFullMarks = examMeta.fullMarks === null || examMeta.fullMarks === undefined ? null : parseNumeric(examMeta.fullMarks);
+                    activeExamPassMarks = examMeta.passMarks === null || examMeta.passMarks === undefined ? null : parseNumeric(examMeta.passMarks);
                     activeRuleRows = [];
                     $('#componentRuleBody').html('');
                     const rules = payload.rules || [];

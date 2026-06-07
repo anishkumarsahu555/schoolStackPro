@@ -97,6 +97,28 @@ def _load_term_remark(session_id, student_id, exam_id):
     ).first()
 
 
+def _included_subjects_for_exam(session_id, standard_id, class_subjects, exam_obj):
+    total_rules = {
+        row.subjectID_id: row
+        for row in ExamSubjectComponentRule.objects.filter(
+            isDeleted=False,
+            sessionID_id=session_id,
+            examID_id=exam_obj.id,
+            componentTypeID__code='total',
+        )
+    }
+    if not total_rules:
+        return list(class_subjects), {}
+
+    included_subjects = []
+    for subject_row in class_subjects:
+        total_rule = total_rules.get(subject_row.id)
+        if total_rule and not total_rule.isMandatory:
+            continue
+        included_subjects.append(subject_row)
+    return included_subjects, total_rules
+
+
 def _load_published_snapshot(session_id, student_id, exam_id):
     report_obj = ProgressReport.objects.filter(
         isDeleted=False,
@@ -247,7 +269,20 @@ def build_report_cards_for_student(
             report_cards.append(card_payload)
             continue
 
-        card_payload = _build_dynamic_card(current_session_id, student_obj, standard_id, class_subjects, exam_obj)
+        included_subjects, total_rule_by_subject = _included_subjects_for_exam(
+            current_session_id,
+            standard_id,
+            class_subjects,
+            exam_obj,
+        )
+        card_payload = _build_dynamic_card(
+            current_session_id,
+            student_obj,
+            standard_id,
+            included_subjects,
+            exam_obj,
+            total_rule_by_subject,
+        )
         card_payload['is_published'] = exam_obj.id in published_exam_ids
         card_payload['ready_to_publish'] = exam_obj.id in ready_exam_ids
         report_cards.append(card_payload)
@@ -255,7 +290,9 @@ def build_report_cards_for_student(
     return report_cards
 
 
-def _build_dynamic_card(current_session_id, student_obj, standard_id, class_subjects, exam_obj):
+def _build_dynamic_card(current_session_id, student_obj, standard_id, class_subjects, exam_obj, total_rule_by_subject=None):
+    total_rule_by_subject = total_rule_by_subject or {}
+    included_subject_ids = [row.id for row in class_subjects]
     pass_policy = PassPolicy.objects.select_related('gradingPolicyID').filter(
         isDeleted=False,
         sessionID_id=current_session_id,
@@ -270,7 +307,8 @@ def _build_dynamic_card(current_session_id, student_obj, standard_id, class_subj
             isDeleted=False,
             sessionID_id=current_session_id,
             examID_id=exam_obj.id,
-        ).order_by('subjectID_id', 'displayOrder', 'id')
+            subjectID_id__in=included_subject_ids,
+        ).exclude(componentTypeID__code='total').order_by('subjectID_id', 'displayOrder', 'id')
     )
     rules_by_subject: Dict[int, List[ExamSubjectComponentRule]] = defaultdict(list)
     for rule in component_rules:
@@ -406,8 +444,9 @@ def _build_dynamic_card(current_session_id, student_obj, standard_id, class_subj
 
         # Legacy single-mark fallback
         mark_obj = legacy_mark_map.get(ass_sub.id)
-        legacy_subject_full = float(exam_obj.fullMarks or 0)
-        legacy_subject_pass = float(exam_obj.passMarks or 0)
+        total_rule = total_rule_by_subject.get(ass_sub.id)
+        legacy_subject_full = float((total_rule.maxMarks if total_rule else exam_obj.fullMarks) or 0)
+        legacy_subject_pass = float((total_rule.passMarks if total_rule else exam_obj.passMarks) or 0)
         subject_failed = False
         if mark_obj is not None:
             mark_value = float(mark_obj.mark or 0)
