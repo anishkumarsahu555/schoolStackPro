@@ -40,25 +40,25 @@
                 <div class="three fields">
                     <div class="field">
                         <label>Father Name</label>
-                        <input type="text" name="fatherName" value="{{ parent.fatherName|default:'' }}" placeholder="Father Name">
+                        <input type="text" name="fatherName" value="{{ parent.fatherName|default_if_none:'' }}" placeholder="Father Name">
                     </div>
                     <div class="field">
                         <label>Father Phone</label>
-                        <input type="text" name="fatherPhone" value="{{ parent.fatherPhone|default:'' }}" placeholder="Father Phone">
+                        <input type="text" name="fatherPhone" value="{{ parent.fatherPhone|default_if_none:'' }}" placeholder="Father Phone">
                     </div>
                     <div class="field">
                         <label>Father Email</label>
-                        <input type="email" name="fatherEmail" value="{{ parent.fatherEmail|default:'' }}" placeholder="Father Email">
+                        <input type="email" name="fatherEmail" value="{{ parent.fatherEmail|default_if_none:'' }}" placeholder="Father Email">
                     </div>
                 </div>
                 <div class="two fields">
                     <div class="field">
                         <label>Father Occupation</label>
-                        <input type="text" name="fatherOccupation" value="{{ parent.fatherOccupation|default:'' }}" placeholder="Father Occupation">
+                        <input type="text" name="fatherOccupation" value="{{ parent.fatherOccupation|default_if_none:'' }}" placeholder="Father Occupation">
                     </div>
                     <div class="field">
                         <label>Father Address</label>
-                        <textarea name="fatherAddress" rows="2" placeholder="Father Address">{{ parent.fatherAddress|default:'' }}</textarea>
+                        <textarea name="fatherAddress" rows="2" placeholder="Father Address">{{ parent.fatherAddress|default_if_none:'' }}</textarea>
                     </div>
                 </div>
 
@@ -66,25 +66,25 @@
                 <div class="three fields">
                     <div class="field">
                         <label>Mother Name</label>
-                        <input type="text" name="motherName" value="{{ parent.motherName|default:'' }}" placeholder="Mother Name">
+                        <input type="text" name="motherName" value="{{ parent.motherName|default_if_none:'' }}" placeholder="Mother Name">
                     </div>
                     <div class="field">
                         <label>Mother Phone</label>
-                        <input type="text" name="motherPhone" value="{{ parent.motherPhone|default:'' }}" placeholder="Mother Phone">
+                        <input type="text" name="motherPhone" value="{{ parent.motherPhone|default_if_none:'' }}" placeholder="Mother Phone">
                     </div>
                     <div class="field">
                         <label>Mother Email</label>
-                        <input type="email" name="motherEmail" value="{{ parent.motherEmail|default:'' }}" placeholder="Mother Email">
+                        <input type="email" name="motherEmail" value="{{ parent.motherEmail|default_if_none:'' }}" placeholder="Mother Email">
                     </div>
                 </div>
                 <div class="two fields">
                     <div class="field">
                         <label>Mother Occupation</label>
-                        <input type="text" name="motherOccupation" value="{{ parent.motherOccupation|default:'' }}" placeholder="Mother Occupation">
+                        <input type="text" name="motherOccupation" value="{{ parent.motherOccupation|default_if_none:'' }}" placeholder="Mother Occupation">
                     </div>
                     <div class="field">
                         <label>Mother Address</label>
-                        <textarea name="motherAddress" rows="2" placeholder="Mother Address">{{ parent.motherAddress|default:'' }}</textarea>
+                        <textarea name="motherAddress" rows="2" placeholder="Mother Address">{{ parent.motherAddress|default_if_none:'' }}</textarea>
                     </div>
                 </div>
 
@@ -92,15 +92,15 @@
                 <div class="three fields">
                     <div class="field">
                         <label>Guardian Name</label>
-                        <input type="text" name="guardianName" value="{{ parent.guardianName|default:'' }}" placeholder="Guardian Name">
+                        <input type="text" name="guardianName" value="{{ parent.guardianName|default_if_none:'' }}" placeholder="Guardian Name">
                     </div>
                     <div class="field">
                         <label>Guardian Phone</label>
-                        <input type="text" name="guardianPhone" value="{{ parent.guardianPhone|default:'' }}" placeholder="Guardian Phone">
+                        <input type="text" name="guardianPhone" value="{{ parent.guardianPhone|default_if_none:'' }}" placeholder="Guardian Phone">
                     </div>
                     <div class="field">
                         <label>Guardian Occupation</label>
-                        <input type="text" name="guardianOccupation" value="{{ parent.guardianOccupation|default:'' }}" placeholder="Guardian Occupation">
+                        <input type="text" name="guardianOccupation" value="{{ parent.guardianOccupation|default_if_none:'' }}" placeholder="Guardian Occupation">
                     </div>
                 </div>
 
@@ -116,19 +116,19 @@
                     </div>
                     <div class="field">
                         <label>Total Family Members</label>
-                        <input type="number" name="totalFamilyMembers" min="1" value="{{ parent.totalFamilyMembers|default:'' }}" placeholder="Total Family Members">
+                        <input type="number" name="totalFamilyMembers" min="1" value="{{ parent.totalFamilyMembers|default_if_none:'' }}" placeholder="Total Family Members">
                     </div>
                     <div class="field">
                         <label>Annual Income</label>
-                        <input type="number" name="annualIncome" min="0" step="0.01" value="{{ parent.annualIncome|default:'' }}" placeholder="Annual Income">
+                        <input type="number" name="annualIncome" min="0" step="0.01" value="{{ parent.annualIncome|default_if_none:'' }}" placeholder="Annual Income">
                     </div>
                     <div class="field">
                         <label>Primary Phone</label>
-                        <input type="text" name="primaryPhone" value="{{ parent.phoneNumber|default:'' }}" placeholder="Primary Phone">
+                        <input type="text" name="primaryPhone" value="{{ parent.phoneNumber|default_if_none:'' }}" placeholder="Primary Phone">
                     </div>
                     <div class="field">
                         <label>Primary Email</label>
-                        <input type="email" name="primaryEmail" value="{{ parent.email|default:'' }}" placeholder="Primary Email">
+                        <input type="email" name="primaryEmail" value="{{ parent.email|default_if_none:'' }}" placeholder="Primary Email">
                     </div>
                 </div>
 
