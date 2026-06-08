@@ -200,6 +200,18 @@
         justify-content: flex-end;
     }
 
+    .email-update-form {
+        margin-top: 0.9rem;
+        padding-top: 0.9rem;
+        border-top: 1px solid var(--app-border);
+    }
+
+    .email-update-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 0.75rem;
+    }
+
     @media (max-width: 900px) {
         .profile-layout { grid-template-columns: 1fr; }
         .profile-head-row { align-items:center; justify-content:space-between; flex-direction:row; }
@@ -212,7 +224,8 @@
         .kv { grid-template-columns: 1fr; gap:4px; }
         .profile-card { border-radius: 14px; }
         .password-actions { justify-content: stretch; }
-        .password-actions .ui.button { width: 100%; }
+        .password-actions .ui.button,
+        .email-update-actions .ui.button { width: 100%; }
     }
 </style>
 
@@ -257,9 +270,23 @@
                 <div style="margin-top:12px;">
                     <div class="kv"><div class="k">Name</div><div class="v">{{ profile_name }}</div></div>
                     <div class="kv"><div class="k">Username</div><div class="v">{{ profile_username }}</div></div>
-                    <div class="kv"><div class="k">Email</div><div class="v">{{ profile_email }}</div></div>
+                    <div class="kv"><div class="k">Email</div><div class="v" id="profileEmailText">{{ profile_email_display }}</div></div>
                     <div class="kv"><div class="k">Phone</div><div class="v">{{ profile_phone }}</div></div>
                 </div>
+
+                <form class="ui form email-update-form" id="profileEmailForm" autocomplete="off">
+                    {% csrf_token %}
+                    <div class="field {% if profile_missing_email %}required{% endif %}">
+                        <label>Email Address</label>
+                        <input type="email" id="profileEmailInput" name="email" value="{{ profile_email }}" placeholder="name@example.com">
+                    </div>
+                    <div class="email-update-actions">
+                        <button class="ui small blue button" type="submit" id="profileEmailBtn">
+                            <i class="mail icon"></i>
+                            Update Email
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -421,5 +448,56 @@
         $('#changePasswordForm input').on('input', function () {
             $(this).closest('.field').removeClass('error');
         });
+
+        const emailForm = document.getElementById('profileEmailForm');
+        if (emailForm) {
+            emailForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const emailInput = document.getElementById('profileEmailInput');
+                const email = emailInput.value.trim();
+                const $field = $('#profileEmailInput').closest('.field');
+                $field.removeClass('error');
+
+                if (!email) {
+                    $field.addClass('error');
+                    addErrorNotification('Email address is required.');
+                    return;
+                }
+
+                const btn = document.getElementById('profileEmailBtn');
+                btn.classList.add('loading', 'disabled');
+                const data = new FormData(emailForm);
+
+                $.ajax({
+                    url: "{% url 'homeApp:update_email' %}",
+                    type: "post",
+                    data: data,
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+                    success: function (response) {
+                        if (response.success) {
+                            document.getElementById('profileEmailText').textContent = response.email || 'N/A';
+                            addSuccessNotification(response.message || 'Email address updated successfully.');
+                        } else {
+                            $field.addClass('error');
+                            addErrorNotification(response.message || 'Unable to update email.');
+                        }
+                    },
+                    error: function (xhr) {
+                        const message = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Unable to update email.';
+                        $field.addClass('error');
+                        addErrorNotification(message);
+                    },
+                    complete: function () {
+                        btn.classList.remove('loading', 'disabled');
+                    }
+                });
+            });
+
+            $('#profileEmailInput').on('input', function () {
+                $(this).closest('.field').removeClass('error');
+            });
+        }
     })();
 </script>

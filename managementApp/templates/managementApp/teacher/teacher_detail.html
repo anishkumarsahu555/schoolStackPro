@@ -171,6 +171,73 @@
         word-break: break-word;
     }
 
+    .access-result {
+        display: none;
+        margin-top: 1rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1rem;
+    }
+
+    .access-result input {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #d7deea;
+        border-radius: 8px;
+        padding: 0.7rem;
+        color: #334155;
+    }
+
+    .access-result-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.75rem;
+    }
+
+    html[data-theme="dark"] #staffAccessLinkModal.ui.modal > .header,
+    html[data-theme="dark"] #staffAccessLinkModal.ui.modal > .content,
+    html[data-theme="dark"] #staffAccessLinkModal.ui.modal > .actions {
+        background: var(--app-surface, #1a1f28) !important;
+        color: var(--app-text, #e5e7eb) !important;
+        border-color: var(--app-border, #2c3440) !important;
+    }
+
+    html[data-theme="dark"] #staffAccessLinkModal .content p,
+    html[data-theme="dark"] #staffAccessLinkModal .ui.form label,
+    html[data-theme="dark"] #staffAccessLinkModal .ui.tiny.grey.text {
+        color: var(--app-text, #e5e7eb) !important;
+    }
+
+    html[data-theme="dark"] #staffAccessLinkModal .ui.selection.dropdown,
+    html[data-theme="dark"] #staffAccessLinkModal .ui.input > input,
+    html[data-theme="dark"] #staffAccessLinkModal .access-result input {
+        background: var(--app-bg, #12161d) !important;
+        color: var(--app-text, #e5e7eb) !important;
+        border-color: var(--app-border, #2c3440) !important;
+    }
+
+    html[data-theme="dark"] #staffAccessLinkModal .ui.selection.dropdown > .text,
+    html[data-theme="dark"] #staffAccessLinkModal .ui.selection.dropdown > .dropdown.icon {
+        color: var(--app-text, #e5e7eb) !important;
+    }
+
+    html[data-theme="dark"] #staffAccessLinkModal .ui.selection.dropdown .menu {
+        background: var(--app-surface, #1a1f28) !important;
+        border-color: var(--app-border, #2c3440) !important;
+    }
+
+    html[data-theme="dark"] #staffAccessLinkModal .access-result {
+        background: var(--app-hover, #242b36) !important;
+        border-color: var(--app-border, #2c3440) !important;
+        color: var(--app-text, #e5e7eb) !important;
+    }
+
+    html[data-theme="dark"] #staffAccessMeta {
+        color: var(--app-muted, #c0c7d1) !important;
+    }
+
     @media (max-width: 767px) {
         .detail-shell {
             padding: 0 0.25rem;
@@ -302,7 +369,15 @@
                         </div>
                         <div class="info-list">
                             <div class="info-line"><span class="k">Username</span><span class="v">{{ instance.username|default:"N/A" }}</span></div>
-                            <div class="info-line"><span class="k">Password</span><span class="v">{{ instance.password|default:"N/A" }}</span></div>
+                            <div class="info-line"><span class="k">Password</span><span class="v"><span class="ui tiny grey label"><i class="eye slash icon"></i>Hidden for security</span></span></div>
+                            <div class="info-line">
+                                <span class="k">Quick Access</span>
+                                <span class="v">
+                                    <button type="button" class="ui mini blue button" id="generateStaffAccessLink">
+                                        <i class="linkify icon"></i>Generate Setup Link
+                                    </button>
+                                </span>
+                            </div>
                             <div class="info-line"><span class="k">Status</span><span class="v">{{ instance.isActive|default:"N/A" }}</span></div>
                             <div class="info-line"><span class="k">Salary</span><span class="v">{{ instance.salary|default:"N/A" }}</span></div>
                             <div class="info-line"><span class="k">Leaving Date</span><span class="v">{{ instance.dateOfLeaving|default:"N/A" }}</span></div>
@@ -313,7 +388,119 @@
             </div>
         </div>
     </div>
+    <div class="ui small modal" id="staffAccessLinkModal">
+        <i class="close icon"></i>
+        <div class="header">
+            <i class="linkify icon"></i>
+            Staff Password Setup Link
+        </div>
+        <div class="content">
+            <p>Create a secure link for <strong>{{ instance.name|default:instance.username }}</strong>. The staff member must set a password before logging in.</p>
+            <div class="ui form">
+                <div class="two fields">
+                    <div class="field">
+                        <label>Expires In</label>
+                        <select class="ui fluid selection dropdown" id="staffAccessExpiry">
+                            <option value="24">24 hours</option>
+                            <option value="48">48 hours</option>
+                            <option value="72">3 days</option>
+                            <option value="168">7 days</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Maximum Uses</label>
+                        <div class="ui fluid input">
+                            <input type="number" id="staffAccessMaxUses" min="1" max="20" value="1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="access-result" id="staffAccessResult">
+                <label>Generated setup link</label>
+                <input type="text" id="staffAccessLinkValue" readonly>
+                <div class="access-result-actions">
+                    <button type="button" class="ui mini button" id="copyStaffAccessLink"><i class="copy icon"></i>Copy</button>
+                    <button type="button" class="ui mini teal button" id="shareStaffAccessLink"><i class="share alternate icon"></i>Share</button>
+                    <a class="ui mini green button" id="whatsappStaffAccessLink" target="_blank" rel="noopener"><i class="whatsapp icon"></i>WhatsApp</a>
+                </div>
+                <div class="ui tiny grey text" id="staffAccessMeta" style="margin-top:.55rem;"></div>
+            </div>
+        </div>
+        <div class="actions">
+            <button type="button" class="ui button cancel">Close</button>
+            <button type="button" class="ui blue button" id="createStaffAccessLink">
+                <i class="linkify icon"></i>Create Link
+            </button>
+        </div>
+    </div>
 {% endblock %}
 
 {% block js %}
+<script>
+    (function () {
+        const $openButton = $('#generateStaffAccessLink');
+        const $createButton = $('#createStaffAccessLink');
+        const $result = $('#staffAccessResult');
+        const $input = $('#staffAccessLinkValue');
+        const $meta = $('#staffAccessMeta');
+        const $whatsapp = $('#whatsappStaffAccessLink');
+
+        $('#staffAccessExpiry').dropdown();
+
+        $openButton.on('click', function () {
+            $('#staffAccessLinkModal').modal('show');
+        });
+
+        $createButton.on('click', function () {
+            $createButton.addClass('loading disabled');
+            $.ajax({
+                type: 'POST',
+                url: "{% url 'homeApp:generate_access_link' 'staff' instance.id %}",
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    expires_hours: $('#staffAccessExpiry').val(),
+                    max_uses: $('#staffAccessMaxUses').val()
+                },
+                success: function (response) {
+                    if (response.success) {
+                        $input.val(response.url);
+                        $meta.text('Expires: ' + response.expiresAt + ' | Uses: ' + response.maxUses);
+                        $whatsapp.attr('href', 'https://wa.me/?text=' + encodeURIComponent('Set your SchoolsStack password using this link: ' + response.url));
+                        $result.show();
+                        $('body').toast({class: 'success', message: 'Password setup link generated.'});
+                    } else {
+                        $('body').toast({class: 'warning', message: response.message || 'Unable to generate link.'});
+                    }
+                },
+                error: function (xhr) {
+                    const message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Unable to generate link.';
+                    $('body').toast({class: 'error', message: message});
+                },
+                complete: function () {
+                    $createButton.removeClass('loading disabled');
+                }
+            });
+        });
+
+        $('#copyStaffAccessLink').on('click', function () {
+            const value = $input.val();
+            if (!value) return;
+            navigator.clipboard.writeText(value).then(function () {
+                $('body').toast({class: 'success', message: 'Link copied.'});
+            });
+        });
+
+        $('#shareStaffAccessLink').on('click', function () {
+            const value = $input.val();
+            if (!value) return;
+            if (navigator.share) {
+                navigator.share({title: 'SchoolsStack password setup', text: 'Set your SchoolsStack password.', url: value});
+            } else {
+                navigator.clipboard.writeText(value).then(function () {
+                    $('body').toast({class: 'success', message: 'Link copied for sharing.'});
+                });
+            }
+        });
+    })();
+</script>
 {% endblock %}

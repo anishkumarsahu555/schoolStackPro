@@ -1,19 +1,41 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.validators import validate_email
+from django.core.mail import EmailMultiAlternatives
+from django.db import transaction
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
+from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.conf import settings
 import os
+import threading
 from io import BytesIO
 
+from homeApp.auth_services import (
+    create_access_link,
+    email_is_configured,
+    get_password_reset_email,
+    get_user_by_username,
+    sync_profile_password,
+    token_hash,
+    update_user_profile_email,
+)
 from homeApp.branding import get_school_branding
-from homeApp.models import SchoolOwner, SchoolDetail
+from homeApp.models import AccessLink, SchoolOwner, SchoolDetail
 from homeApp.owner_access import school_owner_q
 from homeApp.utils import init_session, get_all_session_list, custom_login_required, login_required
-from managementApp.access_control import init_staff_management_session, user_has_management_access
+from managementApp.access_control import has_management_permission, init_staff_management_session, user_has_management_access
 from managementApp.models import TeacherDetail, Student
 from utils.custom_decorators import check_groups
 
@@ -66,10 +88,201 @@ def login_page(request):
     return render(request, 'homeApp/login.html')
 
 
+def forgot_password(request):
+    return render(request, 'homeApp/forgot_password.html')
+
+
+def forgot_password_sent(request):
+    return render(request, 'homeApp/forgot_password_sent.html')
+
+
+def _send_password_reset_email_async(subject, text_message, html_message, recipient_email):
+    def worker():
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[recipient_email],
+        )
+        email.attach_alternative(html_message, "text/html")
+        email.send(fail_silently=True)
+
+    threading.Thread(target=worker, daemon=True).start()
+
+
+@require_POST
+def send_password_reset_link(request):
+    user = get_user_by_username(request.POST.get('userName'))
+    if user:
+        email, role, profile = get_password_reset_email(user)
+        if email and email_is_configured():
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            reset_url = request.build_absolute_uri(
+                reverse('homeApp:reset_password', kwargs={'uidb64': uid, 'token': token})
+            )
+            context = {
+                'user': user,
+                'profile': profile,
+                'role': role,
+                'reset_url': reset_url,
+            }
+            subject = 'Reset your SchoolsStack password'
+            text_message = render_to_string('homeApp/emails/password_reset.txt', context)
+            html_message = render_to_string('homeApp/emails/password_reset.html', context)
+            _send_password_reset_email_async(subject, text_message, html_message, email)
+    return redirect('homeApp:forgot_password_sent')
+
+
+def reset_password(request, uidb64, token):
+    user = None
+    try:
+        user_id = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=user_id, is_active=True)
+    except Exception:
+        user = None
+
+    if not user or not default_token_generator.check_token(user, token):
+        return render(request, 'homeApp/reset_password.html', {'invalid_link': True})
+
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        errors = []
+        if new_password != confirm_password:
+            errors.append('New password and confirm password do not match.')
+        else:
+            try:
+                validate_password(new_password, user)
+            except ValidationError as exc:
+                errors.extend(exc.messages)
+        if errors:
+            return render(request, 'homeApp/reset_password.html', {'errors': errors})
+
+        user.set_password(new_password)
+        user.save()
+        sync_profile_password(user, new_password)
+        return render(request, 'homeApp/reset_password.html', {'reset_complete': True})
+
+    return render(request, 'homeApp/reset_password.html')
+
+
 def user_logout(request):
     request.session.flush()
     logout(request)
     return redirect("homeApp:login_page")
+
+
+def _client_ip(request):
+    forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+    if forwarded:
+        return forwarded.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+
+def _quick_link_target(request, target_type, target_id):
+    current_school_id = request.session.get('current_session', {}).get('SchoolID')
+    if target_type == 'student':
+        if not has_management_permission(request.user, 'students', 'edit'):
+            raise PermissionDenied
+        target = Student.objects.select_related('userID', 'schoolID').filter(pk=target_id, isDeleted=False).first()
+        purpose = 'student_quick_login'
+    elif target_type == 'staff':
+        if not has_management_permission(request.user, 'staff', 'edit'):
+            raise PermissionDenied
+        target = TeacherDetail.objects.select_related('userID', 'schoolID').filter(pk=target_id, isDeleted=False).first()
+        purpose = 'staff_quick_login'
+    else:
+        target = None
+        purpose = None
+
+    if not target or not target.userID_id:
+        return None, None
+    if current_school_id and target.schoolID_id != current_school_id:
+        raise PermissionDenied
+    return target, purpose
+
+
+def _invalid_access_link_response(request):
+    return render(
+        request,
+        'homeApp/login.html',
+        {'access_link_error': 'This access link is invalid, expired, revoked, or already used.'},
+        status=400,
+    )
+
+
+@login_required
+@require_POST
+def generate_access_link(request, target_type, target_id):
+    target, purpose = _quick_link_target(request, target_type, target_id)
+    if not target:
+        return JsonResponse({'success': False, 'message': 'User account is not linked for this profile.'}, status=404)
+
+    try:
+        expires_hours = int(request.POST.get('expires_hours') or 24)
+        max_uses = int(request.POST.get('max_uses') or 1)
+    except ValueError:
+        expires_hours = 24
+        max_uses = 1
+
+    expires_hours = min(max(expires_hours, 1), 168)
+    max_uses = min(max(max_uses, 1), 20)
+    access_link, access_url = create_access_link(
+        target_user=target.userID,
+        created_by=request.user,
+        purpose=purpose,
+        request=request,
+        expires_hours=expires_hours,
+        max_uses=max_uses,
+    )
+    return JsonResponse({
+        'success': True,
+        'url': access_url,
+        'expiresAt': access_link.expiresAt.strftime('%d-%m-%Y %I:%M %p'),
+        'maxUses': access_link.maxUses,
+    })
+
+
+def access_link_login(request, token):
+    hashed_token = token_hash(token or '')
+    access_link = AccessLink.objects.select_related('userID').filter(tokenHash=hashed_token).first()
+    if not access_link or not access_link.is_usable or not access_link.userID.is_active:
+        return _invalid_access_link_response(request)
+
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        errors = []
+        if new_password != confirm_password:
+            errors.append('New password and confirm password do not match.')
+        else:
+            try:
+                validate_password(new_password, access_link.userID)
+            except ValidationError as exc:
+                errors.extend(exc.messages)
+        if errors:
+            return render(request, 'homeApp/access_link_set_password.html', {
+                'access_link': access_link,
+                'errors': errors,
+            })
+
+        with transaction.atomic():
+            access_link = AccessLink.objects.select_for_update().select_related('userID').filter(tokenHash=hashed_token).first()
+            if not access_link or not access_link.is_usable or not access_link.userID.is_active:
+                return _invalid_access_link_response(request)
+            user = access_link.userID
+            user.set_password(new_password)
+            user.save()
+            sync_profile_password(user, new_password)
+            access_link.usedCount += 1
+            access_link.usedAt = timezone.now()
+            access_link.lastUsedIpAddress = _client_ip(request)
+            access_link.save(update_fields=['usedCount', 'usedAt', 'lastUsedIpAddress', 'lastUpdatedOn'])
+
+        return render(request, 'homeApp/access_link_set_password.html', {'password_set': True})
+
+    return render(request, 'homeApp/access_link_set_password.html', {'access_link': access_link})
 
 
 @csrf_exempt
@@ -150,7 +363,7 @@ def profile_page(request):
 
     role_label = 'Owner'
     profile_name = user.get_full_name() or user.username
-    profile_email = user.email or 'N/A'
+    profile_email = user.email or ''
     profile_phone = 'N/A'
     profile_photo_url = None
     profile_photo_small_url = None
@@ -206,6 +419,8 @@ def profile_page(request):
         'role_label': role_label,
         'profile_name': profile_name,
         'profile_email': profile_email,
+        'profile_email_display': profile_email or 'N/A',
+        'profile_missing_email': not bool(profile_email),
         'profile_phone': profile_phone,
         'profile_photo_url': profile_photo_url,
         'profile_photo_small_url': profile_photo_small_url or profile_photo_url,
@@ -217,6 +432,24 @@ def profile_page(request):
     if role_label == 'Teacher':
         return render(request, 'teacherApp/profile.html', context)
     return render(request, 'managementApp/profile.html', context)
+
+
+@login_required
+def update_email(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'}, safe=False, status=405)
+
+    email = (request.POST.get('email') or '').strip()
+    if not email:
+        return JsonResponse({'success': False, 'message': 'Email address is required.'}, safe=False, status=400)
+
+    try:
+        validate_email(email)
+    except ValidationError:
+        return JsonResponse({'success': False, 'message': 'Enter a valid email address.'}, safe=False, status=400)
+
+    update_user_profile_email(request.user, email)
+    return JsonResponse({'success': True, 'message': 'Email address updated successfully.', 'email': email}, safe=False)
 
 
 @login_required

@@ -175,6 +175,47 @@ class WebPushSubscription(models.Model):
         ]
 
 
+class AccessLink(models.Model):
+    PURPOSE_CHOICES = (
+        ('student_quick_login', 'Student Quick Login'),
+        ('staff_quick_login', 'Staff Quick Login'),
+    )
+
+    userID = models.ForeignKey(User, on_delete=models.CASCADE, related_name='access_links')
+    createdByUserID = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='created_access_links')
+    schoolID = models.ForeignKey(SchoolDetail, blank=True, null=True, on_delete=models.SET_NULL)
+    purpose = models.CharField(max_length=40, choices=PURPOSE_CHOICES)
+    tokenHash = models.CharField(max_length=64, unique=True)
+    expiresAt = models.DateTimeField()
+    usedAt = models.DateTimeField(blank=True, null=True)
+    maxUses = models.PositiveIntegerField(default=1)
+    usedCount = models.PositiveIntegerField(default=0)
+    isRevoked = models.BooleanField(default=False)
+    lastUsedIpAddress = models.GenericIPAddressField(blank=True, null=True)
+    datetime = models.DateTimeField(auto_now_add=True)
+    lastUpdatedOn = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.get_purpose_display()} for {self.userID}'
+
+    @property
+    def is_usable(self):
+        from django.utils import timezone
+
+        return (
+            not self.isRevoked
+            and self.usedCount < self.maxUses
+            and self.expiresAt >= timezone.now()
+        )
+
+    class Meta:
+        verbose_name_plural = 'g) Access Links.'
+        indexes = [
+            models.Index(fields=['userID', 'purpose', 'isRevoked'], name='access_user_purpose_idx'),
+            models.Index(fields=['schoolID', 'expiresAt'], name='access_school_exp_idx'),
+        ]
+
+
 class AuditLog(models.Model):
     ACTION_CHOICES = (
         ('create', 'Create'),
