@@ -610,6 +610,10 @@
             display: none;
         }
 
+        .report-page .print-report-layout {
+            display: none;
+        }
+
         .report-page .filter-actions {
             display: flex;
             flex-wrap: wrap;
@@ -628,6 +632,8 @@
 
             .material-sidenav,
             .ui.top.fixed.menu,
+            .app-title-bar,
+            .universal-back-bar,
             .report-page .filter-segment,
             .report-page .ui.pointing.secondary.menu,
             .report-page .remark-edit-btn,
@@ -664,6 +670,225 @@
 
             .report-page .print-only {
                 display: block !important;
+            }
+
+            .report-page #reportContent > .print-header,
+            .app-title-bar,
+            .universal-back-bar,
+            .report-page .report-card > .card-head,
+            .report-page .report-card > .card-body {
+                display: none !important;
+            }
+
+            .report-page .report-card {
+                border: 0 !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                page-break-after: always;
+                background: #fff !important;
+            }
+
+            .report-page .report-card:last-child {
+                page-break-after: auto;
+            }
+
+            .report-page .print-report-layout {
+                display: block !important;
+                width: 100%;
+                min-height: 278mm;
+                color: #223047;
+                background: #fff;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+
+            .report-page .print-hero {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                min-height: 34mm;
+                margin: -8mm -8mm 8mm;
+                padding: 10mm 24mm 9mm;
+                background: #173d7d;
+                color: #fff;
+            }
+
+            .report-page .print-hero-title {
+                margin: 0;
+                font-size: 22px;
+                line-height: 1.15;
+                font-weight: 800;
+                color: #fff;
+            }
+
+            .report-page .print-hero-subtitle,
+            .report-page .print-hero-generated {
+                margin-top: 4px;
+                font-size: 13px;
+                font-weight: 700;
+                color: #fff;
+            }
+
+            .report-page .print-card-section {
+                margin: 0 14mm 7mm;
+                border: 1px solid #dbe5f3;
+                border-radius: 7px;
+                background: #fff;
+                overflow: hidden;
+            }
+
+            .report-page .print-school-section {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                min-height: 24mm;
+                padding: 8mm 13mm;
+                background: #f3f8ff;
+            }
+
+            .report-page .print-school-section .print-school-logo {
+                width: 20mm;
+                height: 20mm;
+                object-fit: contain;
+                flex: 0 0 auto;
+            }
+
+            .report-page .print-school-section .print-school-name {
+                margin: 0 0 2px;
+                font-size: 15px;
+                font-weight: 800;
+                color: #223047;
+            }
+
+            .report-page .print-school-section .print-school-meta {
+                font-size: 12px;
+                line-height: 1.45;
+                color: #223047;
+            }
+
+            .report-page .print-student-grid {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 0;
+                padding: 4mm 7mm;
+            }
+
+            .report-page .print-field-label {
+                font-size: 12px;
+                font-weight: 800;
+                color: #223047;
+                margin-bottom: 2px;
+            }
+
+            .report-page .print-field-value {
+                font-size: 13px;
+                color: #223047;
+            }
+
+            .report-page .print-summary-section {
+                padding: 5mm 7mm;
+                background: #fbfdff;
+            }
+
+            .report-page .print-summary-top {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                gap: 10px;
+                margin-bottom: 3mm;
+            }
+
+            .report-page .print-summary-date,
+            .report-page .print-summary-result {
+                font-size: 15px;
+                font-weight: 800;
+                color: #223047;
+            }
+
+            .report-page .print-summary-meta {
+                font-size: 12px;
+                line-height: 1.5;
+                color: #223047;
+            }
+
+            .report-page .print-subject-table {
+                width: calc(100% - 28mm);
+                margin: 0 14mm 7mm;
+                border-collapse: collapse;
+                table-layout: fixed;
+                color: #223047;
+                font-size: 11px;
+            }
+
+            .report-page .print-subject-table th {
+                padding: 4px 5px;
+                background: #214f9d;
+                color: #fff !important;
+                font-weight: 800;
+                text-align: left;
+                border: 1px solid #cbd8eb;
+            }
+
+            .report-page .print-subject-table td {
+                padding: 5px 5px;
+                vertical-align: top;
+                border: 1px solid #d7e2f2;
+                color: #223047 !important;
+            }
+
+            .report-page .print-subject-table tbody tr:nth-child(odd) td {
+                background: #f6f9ff !important;
+            }
+
+            .report-page .print-subject-table th:nth-child(1),
+            .report-page .print-subject-table td:nth-child(1) { width: 19%; }
+            .report-page .print-subject-table th:nth-child(2),
+            .report-page .print-subject-table td:nth-child(2) { width: 12%; }
+            .report-page .print-subject-table th:nth-child(3),
+            .report-page .print-subject-table td:nth-child(3) { width: 45%; }
+            .report-page .print-subject-table th:nth-child(4),
+            .report-page .print-subject-table td:nth-child(4) { width: 11%; }
+            .report-page .print-subject-table th:nth-child(5),
+            .report-page .print-subject-table td:nth-child(5) { width: 13%; }
+
+            .report-page .print-component-table {
+                width: 100%;
+                border-collapse: collapse;
+                table-layout: fixed;
+                font-size: 9px;
+            }
+
+            .report-page .print-component-table th,
+            .report-page .print-component-table td {
+                padding: 1px 3px;
+                border: 1px solid #c8d5e8;
+                background: #f6faff !important;
+                color: #223047 !important;
+            }
+
+            .report-page .print-component-table th {
+                color: #4a5d7a !important;
+                font-weight: 800;
+            }
+
+            .report-page .print-status-pass { color: #16b83e !important; font-weight: 800; }
+            .report-page .print-status-fail { color: #db2828 !important; font-weight: 800; }
+            .report-page .print-status-pending { color: #d68312 !important; font-weight: 800; }
+            .report-page .print-status-exempt { color: #2185d0 !important; font-weight: 800; }
+
+            .report-page .print-remark-line {
+                display: grid;
+                grid-template-columns: 42mm 1fr;
+                gap: 4mm;
+                margin: 0 14mm;
+                padding-top: 5mm;
+                border-top: 1px solid #e1e8f3;
+                font-size: 12px;
+                color: #223047;
+            }
+
+            .report-page .print-remark-label {
+                font-weight: 800;
             }
 
             .report-page .print-header {
@@ -989,6 +1214,299 @@
                 text-overflow: ellipsis;
             }
         }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+
+            html,
+            body {
+                width: 210mm !important;
+                min-height: 297mm !important;
+                background: #fff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .report-page .print-only {
+                display: block !important;
+            }
+
+            .report-page #reportContent > .print-header,
+            .app-title-bar,
+            .universal-back-bar,
+            .report-page .student-banner,
+            .report-page .report-card > .card-head,
+            .report-page .report-card > .card-body {
+                display: none !important;
+            }
+
+            .report-page .cards-wrap,
+            .report-page .report-card,
+            body.print-single .report-page .cards-wrap .report-card.print-target {
+                display: block !important;
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: 0 !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                background: #fff !important;
+                overflow: visible !important;
+            }
+
+            body.print-single .report-page .cards-wrap .report-card {
+                display: none !important;
+            }
+
+            body.print-single .report-page .cards-wrap .report-card.print-target {
+                display: block !important;
+            }
+
+            .report-page .report-card {
+                page-break-after: always;
+                break-after: page;
+            }
+
+            .report-page .report-card:last-child,
+            body.print-single .report-page .cards-wrap .report-card.print-target {
+                page-break-after: auto;
+                break-after: auto;
+            }
+
+            .report-page .print-report-layout {
+                display: block !important;
+                width: 210mm !important;
+                min-height: 297mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+                color: #1f2d44 !important;
+                font-family: Arial, Helvetica, sans-serif !important;
+                font-size: 12px;
+            }
+
+            .report-page .print-hero {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                width: 210mm !important;
+                min-height: 34mm !important;
+                margin: 0 0 8mm 0 !important;
+                padding: 11mm 24mm 9mm 24mm !important;
+                box-sizing: border-box !important;
+                background: #173d7d !important;
+                color: #fff !important;
+            }
+
+            .report-page .print-hero-title {
+                margin: 0 !important;
+                color: #fff !important;
+                font-size: 22px !important;
+                line-height: 1.1 !important;
+                font-weight: 800 !important;
+            }
+
+            .report-page .print-hero-subtitle {
+                margin-top: 4px !important;
+                color: #fff !important;
+                font-size: 13px !important;
+                line-height: 1.2 !important;
+                font-weight: 700 !important;
+            }
+
+            .report-page .print-hero-generated {
+                color: #fff !important;
+                font-size: 13px !important;
+                line-height: 1.2 !important;
+                font-weight: 700 !important;
+                white-space: nowrap !important;
+            }
+
+            .report-page .print-card-section {
+                width: 174mm !important;
+                margin: 0 auto 7mm !important;
+                border: 1px solid #dbe6f4 !important;
+                border-radius: 7px !important;
+                background: #fff !important;
+                overflow: hidden !important;
+                box-sizing: border-box !important;
+            }
+
+            .report-page .print-school-section {
+                display: flex !important;
+                align-items: center !important;
+                gap: 11mm !important;
+                min-height: 29mm !important;
+                padding: 7mm 21mm !important;
+                background: #f3f8ff !important;
+            }
+
+            .report-page .print-school-section .print-school-logo {
+                width: 22mm !important;
+                height: 22mm !important;
+                object-fit: contain !important;
+                flex: 0 0 auto !important;
+            }
+
+            .report-page .print-school-section .print-school-logo[style*="display: none"] {
+                display: none !important;
+            }
+
+            .report-page .print-school-section .print-school-name {
+                margin: 0 0 2px !important;
+                color: #1f2d44 !important;
+                font-size: 15px !important;
+                line-height: 1.2 !important;
+                font-weight: 800 !important;
+            }
+
+            .report-page .print-school-section .print-school-meta {
+                color: #1f2d44 !important;
+                font-size: 12px !important;
+                line-height: 1.55 !important;
+            }
+
+            .report-page .print-student-grid {
+                display: grid !important;
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+                padding: 4.5mm 7mm !important;
+                gap: 0 !important;
+            }
+
+            .report-page .print-field-label {
+                margin: 0 0 2px !important;
+                color: #1f2d44 !important;
+                font-size: 12px !important;
+                line-height: 1.2 !important;
+                font-weight: 800 !important;
+            }
+
+            .report-page .print-field-value {
+                color: #1f2d44 !important;
+                font-size: 13px !important;
+                line-height: 1.25 !important;
+                font-weight: 400 !important;
+            }
+
+            .report-page .print-summary-section {
+                padding: 5mm 7mm !important;
+                background: #fbfdff !important;
+            }
+
+            .report-page .print-summary-top {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: baseline !important;
+                margin-bottom: 3mm !important;
+            }
+
+            .report-page .print-summary-date,
+            .report-page .print-summary-result {
+                color: #1f2d44 !important;
+                font-size: 15px !important;
+                line-height: 1.2 !important;
+                font-weight: 800 !important;
+            }
+
+            .report-page .print-summary-meta {
+                color: #1f2d44 !important;
+                font-size: 12px !important;
+                line-height: 1.5 !important;
+            }
+
+            .report-page .print-subject-table {
+                width: 174mm !important;
+                min-width: 174mm !important;
+                margin: 0 auto 7mm !important;
+                border-collapse: collapse !important;
+                table-layout: fixed !important;
+                color: #1f2d44 !important;
+                font-size: 11.5px !important;
+            }
+
+            .report-page .print-subject-table th {
+                padding: 3.5mm 2mm !important;
+                background: #214f9d !important;
+                color: #fff !important;
+                font-weight: 800 !important;
+                text-align: left !important;
+                border: 1px solid #cbd8eb !important;
+                line-height: 1.1 !important;
+            }
+
+            .report-page .print-subject-table td {
+                padding: 3mm 2mm !important;
+                vertical-align: top !important;
+                border: 1px solid #d7e2f2 !important;
+                color: #1f2d44 !important;
+                line-height: 1.15 !important;
+                background: #fff !important;
+            }
+
+            .report-page .print-subject-table tbody tr:nth-child(odd) td {
+                background: #f6f9ff !important;
+            }
+
+            .report-page .print-subject-table th:nth-child(1),
+            .report-page .print-subject-table td:nth-child(1) { width: 19% !important; }
+            .report-page .print-subject-table th:nth-child(2),
+            .report-page .print-subject-table td:nth-child(2) { width: 12% !important; }
+            .report-page .print-subject-table th:nth-child(3),
+            .report-page .print-subject-table td:nth-child(3) { width: 45% !important; }
+            .report-page .print-subject-table th:nth-child(4),
+            .report-page .print-subject-table td:nth-child(4) { width: 11% !important; }
+            .report-page .print-subject-table th:nth-child(5),
+            .report-page .print-subject-table td:nth-child(5) { width: 13% !important; }
+
+            .report-page .print-component-table {
+                width: 100% !important;
+                min-width: 0 !important;
+                border-collapse: collapse !important;
+                table-layout: fixed !important;
+                font-size: 9.5px !important;
+                white-space: normal !important;
+            }
+
+            .report-page .print-component-table th,
+            .report-page .print-component-table td {
+                padding: 1px 3px !important;
+                border: 1px solid #c8d5e8 !important;
+                background: #f6faff !important;
+                color: #1f2d44 !important;
+                line-height: 1.1 !important;
+            }
+
+            .report-page .print-component-table th {
+                color: #4a5d7a !important;
+                font-weight: 800 !important;
+            }
+
+            .report-page .print-status-pass { color: #16b83e !important; font-weight: 800 !important; }
+            .report-page .print-status-fail { color: #db2828 !important; font-weight: 800 !important; }
+            .report-page .print-status-pending { color: #d68312 !important; font-weight: 800 !important; }
+            .report-page .print-status-exempt { color: #2185d0 !important; font-weight: 800 !important; }
+
+            .report-page .print-remark-line {
+                display: grid !important;
+                grid-template-columns: 31mm 1fr !important;
+                gap: 7mm !important;
+                width: 174mm !important;
+                margin: 0 auto !important;
+                padding-top: 5mm !important;
+                border-top: 1px solid #e1e8f3 !important;
+                color: #1f2d44 !important;
+                font-size: 12px !important;
+                line-height: 1.35 !important;
+            }
+
+            .report-page .print-remark-label {
+                font-weight: 800 !important;
+            }
+        }
     </style>
 {% endblock %}
 
@@ -1040,11 +1558,11 @@
                 data-student-roll="{{ selected_student.roll|default:'N/A'|escape }}"
                 data-student-class="{% if selected_student.standardID %}{{ selected_student.standardID.name|default:'N/A'|escape }}{% if selected_student.standardID.section %} - {{ selected_student.standardID.section|escape }}{% endif %}{% else %}N/A{% endif %}"
                 data-session-text="{{ request.session.current_session.currentSessionYear|default:'N/A'|escape }}"
-                data-school-name="{% if selected_student.schoolID and selected_student.schoolID.schoolName %}{{ selected_student.schoolID.schoolName|escape }}{% elif selected_student.schoolID and selected_student.schoolID.name %}{{ selected_student.schoolID.name|escape }}{% else %}School Name{% endif %}"
-                data-school-address="{% if selected_student.schoolID %}{{ selected_student.schoolID.address|default_if_none:''|escape }}{% if selected_student.schoolID.city %}, {{ selected_student.schoolID.city|escape }}{% endif %}{% if selected_student.schoolID.state %}, {{ selected_student.schoolID.state|escape }}{% endif %}{% endif %}"
-                data-school-phone="{{ selected_student.schoolID.phoneNumber|default_if_none:''|escape }}"
-                data-school-email="{{ selected_student.schoolID.email|default_if_none:''|escape }}"
-                data-school-logo="{% if selected_student.schoolID and selected_student.schoolID.logo %}{{ selected_student.schoolID.logo.url|escape }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}"
+                data-school-name="{% if selected_student.schoolID and selected_student.schoolID.schoolName %}{{ selected_student.schoolID.schoolName|escape }}{% elif selected_student.schoolID and selected_student.schoolID.name %}{{ selected_student.schoolID.name|escape }}{% elif school_detail and school_detail.schoolName %}{{ school_detail.schoolName|escape }}{% elif school_detail and school_detail.name %}{{ school_detail.name|escape }}{% else %}School Name{% endif %}"
+                data-school-address="{% if selected_student.schoolID %}{{ selected_student.schoolID.address|default_if_none:''|escape }}{% if selected_student.schoolID.city %}, {{ selected_student.schoolID.city|escape }}{% endif %}{% if selected_student.schoolID.state %}, {{ selected_student.schoolID.state|escape }}{% endif %}{% elif school_detail %}{{ school_detail.address|default_if_none:''|escape }}{% if school_detail.city %}, {{ school_detail.city|escape }}{% endif %}{% if school_detail.state %}, {{ school_detail.state|escape }}{% endif %}{% endif %}"
+                data-school-phone="{% if selected_student.schoolID and selected_student.schoolID.phoneNumber %}{{ selected_student.schoolID.phoneNumber|escape }}{% elif school_detail and school_detail.phoneNumber %}{{ school_detail.phoneNumber|escape }}{% endif %}"
+                data-school-email="{% if selected_student.schoolID and selected_student.schoolID.email %}{{ selected_student.schoolID.email|escape }}{% elif school_detail and school_detail.email %}{{ school_detail.email|escape }}{% endif %}"
+                data-school-logo="{% if selected_student.schoolID and selected_student.schoolID.logo %}{{ selected_student.schoolID.logo.url|escape }}{% elif school_detail and school_detail.logo %}{{ school_detail.logo.url|escape }}{% else %}{% static 'images/default_avatar.svg' %}{% endif %}"
             >
             {% if selected_student %}
                 <div class="print-only print-header">
@@ -1099,6 +1617,137 @@
                             data-result-decision="{{ card.term_remark.overall_result_decision|default:'' }}"
                             data-result-decider="{{ card.term_remark.result_decided_by_role|default:'' }}"
                         >
+                            <div class="print-report-layout print-only">
+                                <div class="print-hero">
+                                    <div>
+                                        <h1 class="print-hero-title">{{ card.exam_name }}</h1>
+                                        <div class="print-hero-subtitle">Exam Report ({{ forloop.counter }}/{{ report_cards|length }})</div>
+                                    </div>
+                                    <div class="print-hero-generated">Generated: {% now "n/j/Y, g:i:s A" %}</div>
+                                </div>
+
+                                <div class="print-card-section print-school-section">
+                                    {% if selected_student.schoolID and selected_student.schoolID.logo %}
+                                        <img class="print-school-logo" src="{{ selected_student.schoolID.logo.url }}" alt="School Logo">
+                                    {% elif school_detail and school_detail.logo %}
+                                        <img class="print-school-logo" src="{{ school_detail.logo.url }}" alt="School Logo">
+                                    {% else %}
+                                        <img class="print-school-logo" src="{% static 'images/default_avatar.svg' %}" alt="School Logo">
+                                    {% endif %}
+                                    <div>
+                                        <h2 class="print-school-name">
+                                            {% if selected_student.schoolID and selected_student.schoolID.schoolName %}{{ selected_student.schoolID.schoolName }}{% elif selected_student.schoolID and selected_student.schoolID.name %}{{ selected_student.schoolID.name }}{% elif school_detail and school_detail.schoolName %}{{ school_detail.schoolName }}{% elif school_detail and school_detail.name %}{{ school_detail.name }}{% else %}School Name{% endif %}
+                                        </h2>
+                                        <div class="print-school-meta">
+                                            {% if selected_student.schoolID %}
+                                                {{ selected_student.schoolID.address|default_if_none:'' }}{% if selected_student.schoolID.city %}, {{ selected_student.schoolID.city }}{% endif %}{% if selected_student.schoolID.state %}, {{ selected_student.schoolID.state }}{% endif %}
+                                                <br>
+                                                {% if selected_student.schoolID.phoneNumber %}Phone: {{ selected_student.schoolID.phoneNumber }}{% endif %}{% if selected_student.schoolID.email %} | Email: {{ selected_student.schoolID.email }}{% endif %}
+                                            {% elif school_detail %}
+                                                {{ school_detail.address|default_if_none:'' }}{% if school_detail.city %}, {{ school_detail.city }}{% endif %}{% if school_detail.state %}, {{ school_detail.state }}{% endif %}
+                                                <br>
+                                                {% if school_detail.phoneNumber %}Phone: {{ school_detail.phoneNumber }}{% endif %}{% if school_detail.email %} | Email: {{ school_detail.email }}{% endif %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="print-card-section">
+                                    <div class="print-student-grid">
+                                        <div>
+                                            <div class="print-field-label">Student</div>
+                                            <div class="print-field-value">{{ selected_student.name|default:'N/A' }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="print-field-label">Roll</div>
+                                            <div class="print-field-value">{{ selected_student.roll|default:'N/A' }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="print-field-label">Class</div>
+                                            <div class="print-field-value">{% if selected_student.standardID %}{{ selected_student.standardID.name }}{% if selected_student.standardID.section %} - {{ selected_student.standardID.section }}{% endif %}{% else %}N/A{% endif %}</div>
+                                        </div>
+                                        <div>
+                                            <div class="print-field-label">Session</div>
+                                            <div class="print-field-value">{{ session_year|default:'N/A' }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="print-card-section print-summary-section">
+                                    <div class="print-summary-top">
+                                        <div class="print-summary-date">{{ card.exam_date|date:'d M Y'|default:'N/A' }} | Entries: {{ card.entered_marks_count }}/{{ card.subject_count }}</div>
+                                        <div class="print-summary-result">Result: {{ card.result }}</div>
+                                    </div>
+                                    <div class="print-summary-meta">
+                                        Obtained: {{ card.total_obtained }}
+                                        &nbsp; | &nbsp; Full: {{ card.full_marks }}
+                                        &nbsp; | &nbsp; Pass: {{ card.pass_marks }}
+                                        &nbsp; | &nbsp; Percentage: {% if card.percentage != None %}{{ card.percentage }}%{% else %}N/A{% endif %}
+                                        &nbsp; | &nbsp; Grade: {{ card.grade }}
+                                        &nbsp; | &nbsp; Completion: {{ card.entered_marks_count }}/{{ card.subject_count }}
+                                        &nbsp; | &nbsp; Scheme: {% if card.uses_component_scheme %}Component{% else %}Single Mark{% endif %}
+                                    </div>
+                                </div>
+
+                                <table class="print-subject-table">
+                                    <thead>
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th>Marks</th>
+                                        <th>Components</th>
+                                        <th>Status</th>
+                                        <th>Note</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for row in card.subject_rows %}
+                                        <tr>
+                                            <td>{{ row.subject_name }}</td>
+                                            <td>{% if row.mark != None %}{{ row.mark }}{% else %}Pending{% endif %}</td>
+                                            <td>
+                                                {% if row.components %}
+                                                    <table class="print-component-table">
+                                                        <thead>
+                                                        <tr>
+                                                            <th>Component</th>
+                                                            <th>FM</th>
+                                                            <th>PM</th>
+                                                            <th>SM</th>
+                                                            <th>ST</th>
+                                                        </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                        {% for comp in row.components %}
+                                                            <tr>
+                                                                <td>{{ comp.name }}</td>
+                                                                <td>{{ comp.max_marks|default:'-' }}</td>
+                                                                <td>{{ comp.pass_marks|default:'-' }}</td>
+                                                                <td>{% if comp.obtained != None %}{{ comp.obtained }}{% else %}-{% endif %}</td>
+                                                                <td class="{% if comp.status == 'Entered' %}print-status-pass{% elif comp.status == 'Absent' %}print-status-fail{% elif comp.status == 'Exempt' %}print-status-exempt{% else %}print-status-pending{% endif %}">
+                                                                    {% if comp.status == 'Entered' %}P{% elif comp.status == 'Absent' %}A{% elif comp.status == 'Exempt' %}X{% else %}-{% endif %}
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td class="{% if row.subject_result == 'Pass' or row.subject_result == 'Entered' %}print-status-pass{% elif row.subject_result == 'Fail' %}print-status-fail{% else %}print-status-pending{% endif %}">
+                                                {% if row.subject_result == 'Entered' %}Pass{% else %}{{ row.subject_result|default:'-' }}{% endif %}
+                                            </td>
+                                            <td>{{ row.note|default:'-' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+
+                                <div class="print-remark-line">
+                                    <div class="print-remark-label">Teacher Remark:</div>
+                                    <div>{{ card.term_remark.overall_remark|default:'No remark added yet.' }}</div>
+                                </div>
+                            </div>
                             <div class="card-head">
                                 <div>
                                     <h4 class="card-title">{{ card.exam_name }}</h4>
@@ -1573,7 +2222,11 @@
                 img.onerror = function () {
                     resolve(null);
                 };
-                img.src = src;
+                try {
+                    img.src = new URL(src, window.location.origin).href;
+                } catch (e) {
+                    img.src = src;
+                }
             });
         }
 

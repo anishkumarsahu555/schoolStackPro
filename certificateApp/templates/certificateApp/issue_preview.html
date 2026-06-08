@@ -6,24 +6,24 @@
 {% block page_title %}Certificate Preview{% endblock %}
 {% block page_subtitle %}{{ issue.certificateNumber }} · {{ issue.issueStatus|default:'issued'|title }}{% endblock %}
 {% block page_actions %}
-    <a class="ui primary button" href="{{ preview_urls.print_url }}" target="_blank">
+    {% if management_permissions.certificates.report %}<a class="ui primary button" href="{{ preview_urls.print_url }}" target="_blank">
         <i class="print icon"></i>
         <span><span class="desktop-label">Print</span><span class="mobile-label">Print</span></span>
-    </a>
+    </a>{% endif %}
     {% if preview_urls.verify_url %}
         <a class="ui button" href="{{ preview_urls.verify_url }}" target="_blank">
             <i class="check circle outline icon"></i>
             <span><span class="desktop-label">Verify</span><span class="mobile-label">Verify</span></span>
         </a>
     {% endif %}
-    <a class="ui blue button" href="{{ preview_urls.download_url }}">
+    {% if management_permissions.certificates.report %}<a class="ui blue button" href="{{ preview_urls.download_url }}">
         <i class="download icon"></i>
         <span><span class="desktop-label">Download PDF</span><span class="mobile-label">PDF</span></span>
-    </a>
-    <a class="ui green button" href="{% url 'certificateApp:generator' %}">
+    </a>{% endif %}
+    {% if management_permissions.certificates.add %}<a class="ui green button" href="{% url 'certificateApp:generator' %}">
         <i class="plus square icon"></i>
         <span><span class="desktop-label">Generate Another</span><span class="mobile-label">New</span></span>
-    </a>
+    </a>{% endif %}
 {% endblock %}
 
 {% block css %}

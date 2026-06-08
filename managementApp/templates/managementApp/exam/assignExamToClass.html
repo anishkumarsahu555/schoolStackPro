@@ -70,6 +70,94 @@
             white-space: nowrap !important;
         }
 
+        .subject-marks-panel {
+            margin-top: 1rem;
+        }
+
+        .subject-marks-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.45rem;
+        }
+
+        .subject-marks-title {
+            font-weight: 600;
+            font-size: 0.92rem;
+        }
+
+        #subjectMarksTable input {
+            min-width: 84px;
+        }
+
+        #subjectMarksEmpty {
+            color: var(--app-muted, #6b7280);
+            font-size: 0.86rem;
+            padding: 0.65rem 0;
+        }
+
+        #subjectMarksTable tr.subject-excluded td {
+            color: var(--app-muted, #6b7280) !important;
+            background: color-mix(in srgb, var(--app-surface, #ffffff) 92%, var(--app-muted, #6b7280) 8%) !important;
+        }
+
+        html[data-theme="dark"] #subjectMarksTable tr.subject-excluded td {
+            color: var(--app-muted, #c0c7d1) !important;
+            background: color-mix(in srgb, var(--app-surface, #1b2029) 88%, #ffffff 6%) !important;
+        }
+
+        html[data-theme="dark"] #subjectMarksTable .ui.toggle.checkbox label {
+            color: var(--app-text, #eef2f7) !important;
+        }
+
+        .exam-subject-detail-meta {
+            color: var(--app-muted, #6b7280);
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .exam-subject-status {
+            display: inline-flex;
+            align-items: center;
+            min-width: 72px;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 0.18rem 0.5rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .exam-subject-status.included {
+            color: #047857;
+            background: rgba(16, 185, 129, 0.12);
+        }
+
+        .exam-subject-status.excluded {
+            color: var(--app-muted, #6b7280);
+            background: color-mix(in srgb, var(--app-surface, #ffffff) 90%, var(--app-muted, #6b7280) 10%);
+        }
+
+        html[data-theme="dark"] .exam-subject-status.included {
+            color: #7dd3fc;
+            background: rgba(14, 165, 233, 0.18);
+        }
+
+        html[data-theme="dark"] .exam-subject-status.excluded {
+            color: var(--app-muted, #c0c7d1);
+            background: color-mix(in srgb, var(--app-surface, #1b2029) 82%, #ffffff 8%);
+        }
+
+        html[data-theme="dark"] #SubjectTable .ui.blue.icon.button {
+            background: #2563eb !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 0 1px rgba(147, 197, 253, 0.28) inset !important;
+        }
+
+        html[data-theme="dark"] #SubjectTable .ui.blue.icon.button:hover {
+            background: #1d4ed8 !important;
+        }
+
         @media (max-width: 767px) {
             #tableFilterForm .fields {
                 display: flex !important;
@@ -209,6 +297,29 @@
                             </div>
                         </div>
 
+                        <div class="subject-marks-panel">
+                            <div class="subject-marks-toolbar">
+                                <div class="subject-marks-title">Subject-wise full/pass marks</div>
+                                <button type="button" class="ui mini basic blue button" onclick="applyDefaultMarksToSubjects()">
+                                    <i class="copy outline icon"></i>
+                                    Apply Defaults
+                                </button>
+                            </div>
+                            <div id="subjectMarksEmpty">Select class to load assigned subjects.</div>
+                            <table class="ui unstackable very compact celled table" id="subjectMarksTable" style="display:none;">
+                                <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Exam</th>
+                                    <th>Subject</th>
+                                    <th>Full Mark</th>
+                                    <th>Pass Mark</th>
+                                </tr>
+                                </thead>
+                                <tbody id="subjectMarksBody"></tbody>
+                            </table>
+                        </div>
+
                     </form>
                 </div>
 
@@ -292,6 +403,33 @@
                     </div>
                 </div>
 
+                <div class="ui small modal" id="subjectDetailsModal">
+                    <div class="header">
+                        <i class="book icon"></i>
+                        Exam Subjects
+                    </div>
+                    <div class="content">
+                        <div class="exam-subject-detail-meta" id="subjectDetailsMeta"></div>
+                        <table class="ui unstackable very compact celled table">
+                            <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Status</th>
+                                <th>Full Mark</th>
+                                <th>Pass Mark</th>
+                            </tr>
+                            </thead>
+                            <tbody id="subjectDetailsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="actions">
+                        <button type="button" class="ui mini basic cancel button">
+                            Close
+                        </button>
+                    </div>
+                </div>
+
 
             </div>
         </div>
@@ -346,6 +484,15 @@
 
         $(getStandardList());
         $(getExamList());
+        let editSubjectMarks = [];
+        let suppressStandardSubjectReload = false;
+
+        $('#standard').on('change', function () {
+            if (suppressStandardSubjectReload) {
+                return;
+            }
+            loadSubjectMarksRows();
+        });
 
 
         function getStandardList() {
@@ -426,6 +573,186 @@
 
         let subjectTab
 
+        function htmlEscape(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function selectedStandardIds() {
+            const selected = $('#standard').val();
+            if (!selected) return [];
+            return Array.isArray(selected) ? selected : [selected];
+        }
+
+        function defaultFullMark() {
+            return $('#fmark').val() || '';
+        }
+
+        function defaultPassMark() {
+            return $('#pmark').val() || '';
+        }
+
+        function subjectMarkOverride(standardId, assignSubjectId, fieldName) {
+            for (let i = 0; i < editSubjectMarks.length; i++) {
+                const row = editSubjectMarks[i];
+                if (String(row.StandardID || row.standardID) === String(standardId)
+                    && String(row.assignSubjectID) === String(assignSubjectId)) {
+                    if (row[fieldName] !== undefined && row[fieldName] !== null) {
+                        return row[fieldName];
+                    }
+                    const alternateName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+                    if (row[alternateName] !== undefined && row[alternateName] !== null) {
+                        return row[alternateName];
+                    }
+                    return '';
+                }
+            }
+            return '';
+        }
+
+        function subjectIncludeOverride(standardId, assignSubjectId) {
+            for (let i = 0; i < editSubjectMarks.length; i++) {
+                const row = editSubjectMarks[i];
+                if (String(row.StandardID || row.standardID) === String(standardId)
+                    && String(row.assignSubjectID) === String(assignSubjectId)) {
+                    if (row.IncludeInExam !== undefined && row.IncludeInExam !== null) {
+                        return row.IncludeInExam === true || row.IncludeInExam === 'true' || row.IncludeInExam === 1 || row.IncludeInExam === '1';
+                    }
+                    if (row.includeInExam !== undefined && row.includeInExam !== null) {
+                        return row.includeInExam === true || row.includeInExam === 'true' || row.includeInExam === 1 || row.includeInExam === '1';
+                    }
+                }
+            }
+            return false;
+        }
+
+        function syncSubjectIncludeRow($row) {
+            const checked = $row.find('.subject-include-exam').is(':checked');
+            $row.toggleClass('subject-excluded', !checked);
+            const $fullMark = $row.find('.subject-full-mark');
+            const $passMark = $row.find('.subject-pass-mark');
+            if (!$fullMark.val()) {
+                $fullMark.val(defaultFullMark());
+            }
+            if (!$passMark.val()) {
+                $passMark.val(defaultPassMark());
+            }
+        }
+
+        function loadSubjectMarksRows() {
+            const standardIds = selectedStandardIds();
+            $('#subjectMarksBody').html('');
+            if (standardIds.length === 0) {
+                $('#subjectMarksTable').hide();
+                $('#subjectMarksEmpty').text('Select class to load assigned subjects.').show();
+                return;
+            }
+
+            $('#subjectMarksEmpty').text('Loading assigned subjects...').show();
+            $('#subjectMarksTable').hide();
+            let pending = standardIds.length;
+            let rowsHtml = '';
+
+            for (let i = 0; i < standardIds.length; i++) {
+                const standardId = standardIds[i];
+                const classLabel = $('#standard option[value="' + standardId + '"]').text() || 'Class';
+                $.ajax({
+                    type: 'get',
+                    url: "{% url 'managementAppAPI:get_subjects_to_class_assign_list_with_given_class_api' %}",
+                    data: {standard: standardId},
+                    success: function (response) {
+                        const rows = response.data || [];
+                        for (let j = 0; j < rows.length; j++) {
+                            const fullOverride = subjectMarkOverride(standardId, rows[j]['ID'], 'FullMarks');
+                            const passOverride = subjectMarkOverride(standardId, rows[j]['ID'], 'PassMarks');
+                            const includeChecked = subjectIncludeOverride(standardId, rows[j]['ID']);
+                            rowsHtml += '<tr data-standard-id="' + htmlEscape(standardId) + '" data-subject-id="' + htmlEscape(rows[j]['ID']) + '">'
+                                + '<td>' + htmlEscape(classLabel) + '</td>'
+                                + '<td><div class="ui toggle checkbox"><input type="checkbox" class="subject-include-exam" ' + (includeChecked ? 'checked' : '') + '><label>Include</label></div></td>'
+                                + '<td>' + htmlEscape(rows[j]['Name']) + '</td>'
+                                + '<td><input type="number" step="0.01" min="0" class="subject-full-mark" value="' + htmlEscape(fullOverride !== '' ? fullOverride : defaultFullMark()) + '"></td>'
+                                + '<td><input type="number" step="0.01" min="0" class="subject-pass-mark" value="' + htmlEscape(passOverride !== '' ? passOverride : defaultPassMark()) + '"></td>'
+                                + '</tr>';
+                        }
+                    },
+                    error: function () {
+                        addErrorNotification();
+                    },
+                    complete: function () {
+                        pending -= 1;
+                        if (pending === 0) {
+                            $('#subjectMarksBody').html(rowsHtml);
+                            $('#subjectMarksBody .ui.checkbox').checkbox();
+                            $('#subjectMarksBody tr').each(function () {
+                                syncSubjectIncludeRow($(this));
+                            });
+                            if (rowsHtml) {
+                                $('#subjectMarksEmpty').hide();
+                                $('#subjectMarksTable').show();
+                            } else {
+                                $('#subjectMarksTable').hide();
+                                $('#subjectMarksEmpty').text('No subjects are assigned to selected class.').show();
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function applyDefaultMarksToSubjects() {
+            $('#subjectMarksBody tr').each(function () {
+                $(this).find('.subject-full-mark').val(defaultFullMark());
+                $(this).find('.subject-pass-mark').val(defaultPassMark());
+            });
+        }
+
+        $('#subjectMarksBody').on('change', '.subject-include-exam', function () {
+            const $row = $(this).closest('tr');
+            setTimeout(function () {
+                syncSubjectIncludeRow($row);
+            }, 0);
+        });
+
+        $('#subjectMarksBody').on('click', '.ui.toggle.checkbox', function () {
+            const $row = $(this).closest('tr');
+            setTimeout(function () {
+                syncSubjectIncludeRow($row);
+            }, 0);
+        });
+
+        function collectSubjectMarks() {
+            const rows = [];
+            let isValid = true;
+            $('#subjectMarksBody tr').each(function () {
+                const includeInExam = $(this).find('.subject-include-exam').is(':checked');
+                const fullMark = $(this).find('.subject-full-mark').val();
+                const passMark = $(this).find('.subject-pass-mark').val();
+                const fullNumber = parseFloat(fullMark);
+                const passNumber = parseFloat(passMark);
+                $(this).removeClass('error');
+                if (includeInExam && (!Number.isFinite(fullNumber) || fullNumber <= 0 || !Number.isFinite(passNumber) || passNumber < 0 || passNumber > fullNumber)) {
+                    $(this).addClass('error');
+                    isValid = false;
+                }
+                rows.push({
+                    standardID: $(this).data('standard-id'),
+                    assignSubjectID: $(this).data('subject-id'),
+                    includeInExam: includeInExam,
+                    fullMarks: fullMark,
+                    passMarks: passMark
+                });
+            });
+            if (!isValid) {
+                addErrorNotification('Subject marks must be valid and pass mark cannot exceed full mark.');
+                return null;
+            }
+            return rows;
+        }
+
         function addData() {
             showLoading();
             let standard = $('#standard').val();
@@ -434,10 +761,15 @@
             let pmark = $('#pmark').val();
             let sDate = $('#sDate').val();
             let eDate = $('#eDate').val();
-            if (exam.trim() === '' ||fmark.trim() === '' ||pmark.trim() === '' ||sDate.trim() === '' ||eDate.trim() === '' || standard.length <= 0) {
+            if (!exam || exam.trim() === '' ||fmark.trim() === '' ||pmark.trim() === '' ||sDate.trim() === '' ||eDate.trim() === '' || !standard || standard.length <= 0) {
                 requiredFieldError();
                 hideLoading();
             } else {
+                const subjectMarks = collectSubjectMarks();
+                if (subjectMarks === null) {
+                    hideLoading();
+                    return;
+                }
 
                 let data = new FormData();
                 data.append('standard', standard);
@@ -446,6 +778,7 @@
                 data.append('pmark', pmark.trim());
                 data.append('eDate', eDate.trim());
                 data.append('sDate', sDate.trim());
+                data.append('subject_marks', JSON.stringify(subjectMarks));
                 data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
                 $.ajax({
                     type: 'post',
@@ -462,7 +795,7 @@
                             clearAndReset();
                             hideLoading(false);
                         } else {
-                            addErrorNotification();
+                            addErrorNotification(response.message || 'Unable to assign exam.');
                             hideLoading();
 
                         }
@@ -548,6 +881,48 @@
             $('#dataID').val(id)
         }
 
+        function showSubjectDetails(id) {
+            $('#subjectDetailsMeta').text('Loading subject details...');
+            $('#subjectDetailsBody').html('');
+            $('#subjectDetailsModal').modal('show');
+            $.ajax({
+                type: 'get',
+                data: {id: id},
+                url: "{% url 'managementAppAPI:get_assigned_exam_to_class_detail' %}",
+                success: function (response) {
+                    if (!response.success) {
+                        $('#subjectDetailsMeta').text('Unable to load subject details.');
+                        addErrorNotification();
+                        return;
+                    }
+                    const data = response.data || {};
+                    const subjects = data.SubjectMarks || [];
+                    const classLabel = data.ClassName || $('#filter_standard option[value="' + data.StandardID + '"]').text() || 'Class';
+                    const examLabel = data.ExamName || $('#filter_exam option[value="' + data.ExamID + '"]').text() || 'Exam';
+                    $('#subjectDetailsMeta').text(classLabel + ' | ' + examLabel + ' | ' + subjects.length + ' subjects');
+                    let rowsHtml = '';
+                    for (let i = 0; i < subjects.length; i++) {
+                        const row = subjects[i];
+                        const included = row.IncludeInExam === true || row.IncludeInExam === 'true' || row.IncludeInExam === 1 || row.IncludeInExam === '1';
+                        rowsHtml += '<tr class="' + (included ? '' : 'subject-excluded') + '">'
+                            + '<td>' + htmlEscape(row.SubjectName || 'N/A') + '</td>'
+                            + '<td><span class="exam-subject-status ' + (included ? 'included' : 'excluded') + '">' + (included ? 'Included' : 'Excluded') + '</span></td>'
+                            + '<td>' + htmlEscape(row.FullMarks) + '</td>'
+                            + '<td>' + htmlEscape(row.PassMarks) + '</td>'
+                            + '</tr>';
+                    }
+                    if (!rowsHtml) {
+                        rowsHtml = '<tr><td colspan="4">No subject details found.</td></tr>';
+                    }
+                    $('#subjectDetailsBody').html(rowsHtml);
+                },
+                error: function () {
+                    $('#subjectDetailsMeta').text('Unable to load subject details.');
+                    addErrorNotification();
+                }
+            });
+        }
+
         function deleteData() {
             let id = $('#dataID').val();
             let data = new FormData();
@@ -589,13 +964,17 @@
 
                 success: function (response) {
                     if (response.success) {
-                        $('#standard').val(response.data['StandardID']).change();
+                        editSubjectMarks = response.data['SubjectMarks'] || [];
                         $('#exam').val(response.data['ExamID']).change();
                         $('#fmark').val(response.data['FullMarks']);
                         $('#pmark').val(response.data['PassMarks']);
                         $('#sDate').val(response.data['StartDate']);
                         $('#eDate').val(response.data['EndDate']);
                         $('#editID').val(response.data['ID']);
+                        suppressStandardSubjectReload = true;
+                        $('#standard').val([String(response.data['StandardID'])]).change();
+                        suppressStandardSubjectReload = false;
+                        loadSubjectMarksRows();
                     } else {
                         addErrorNotification();
                     }
@@ -619,10 +998,15 @@
             let sDate = $('#sDate').val();
             let eDate = $('#eDate').val();
             let editID = $('#editID').val();
-            if (standard === '' ||fmark.trim() === '' ||pmark.trim() === '' ||sDate.trim() === '' ||eDate.trim() === '' || exam.length <= 0) {
+            if (!standard || standard.length !== 1 || !exam || exam.length <= 0 ||fmark.trim() === '' ||pmark.trim() === '' ||sDate.trim() === '' ||eDate.trim() === '') {
                 requiredFieldError();
                 hideLoading();
             } else {
+                const subjectMarks = collectSubjectMarks();
+                if (subjectMarks === null) {
+                    hideLoading();
+                    return;
+                }
 
                 let data = new FormData();
                 data.append('standard', standard);
@@ -632,6 +1016,7 @@
                 data.append('sDate', sDate.trim());
                 data.append('eDate', eDate.trim());
                 data.append('editID', editID);
+                data.append('subject_marks', JSON.stringify(subjectMarks));
                 data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
                 $.ajax({
                     type: 'post',
@@ -648,7 +1033,7 @@
                             clearAndReset();
                             hideLoading(false);
                         } else {
-                            addErrorNotification();
+                            addErrorNotification(response.message || 'Unable to update assigned exam.');
                             hideLoading();
 
                         }
@@ -670,6 +1055,10 @@
             myOwnReset();
             $('#saveBtn').css('display', '');
             $('#saveBtnUpdate').css('display', 'none');
+            editSubjectMarks = [];
+            $('#subjectMarksBody').html('');
+            $('#subjectMarksTable').hide();
+            $('#subjectMarksEmpty').text('Select class to load assigned subjects.').show();
             if (typeof currentLoadingMode !== 'undefined') {
                 currentLoadingMode = 'save';
             }

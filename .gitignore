@@ -4,6 +4,8 @@ __pycache__
 .venv
 **/migrations/*.py
 !**/migrations/__init__.py
+!managementApp/migrations/0005_staff_access_control.py
+!managementApp/migrations/0006_staff_role_permission_report.py
 **/migrations/__pycache__/
 .vscode/
 logs/

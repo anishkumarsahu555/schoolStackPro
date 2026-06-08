@@ -1,0 +1,503 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Hostel Dashboard</title>{% endblock %}
+{% block page_title %}Hostel Dashboard{% endblock %}
+{% block page_subtitle %}Monitor admissions, occupancy, residents, and hostel fee collection{% endblock %}
+{% block page_actions %}
+    {% if management_permissions.hostel.add %}
+    <a class="ui green button class-page-action" href="{% url 'hostelApp:manage_admissions' %}">
+        <i class="plus icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">New Admission</span><span class="mobile-label">Admission</span></span>
+    </a>
+    {% endif %}
+    <a class="ui blue button class-page-action" href="{% url 'hostelApp:manage_fee_tracking' %}">
+        <i class="rupee sign icon"></i>
+        <span class="class-page-action-label"><span class="desktop-label">Fee Tracking</span><span class="mobile-label">Fees</span></span>
+    </a>
+{% endblock %}
+{% block body %}
+{% include 'hostelApp/_management_table_styles.html' %}
+<style>
+    .hostel-dashboard {
+        display: grid;
+        gap: 12px;
+    }
+    .hostel-dashboard .hostel-kpi {
+        border-radius: 8px;
+        min-height: 96px;
+        padding: 14px;
+    }
+    .hostel-kpi-top {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+    .hostel-kpi-icon {
+        align-items: center;
+        background: #f8fafc;
+        border-radius: 6px;
+        color: #2563eb;
+        display: inline-flex;
+        height: 34px;
+        justify-content: center;
+        width: 34px;
+    }
+    .hostel-kpi-note {
+        color: #64748b;
+        font-size: 12px;
+        margin-top: 6px;
+    }
+    .hostel-dashboard-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr);
+    }
+    .hostel-chart-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .hostel-chart-wrap {
+        height: 220px;
+        position: relative;
+    }
+    .hostel-dashboard .hostel-panel {
+        border-radius: 8px;
+        padding: 12px;
+    }
+    .hostel-section-title {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .hostel-section-title .ui.header {
+        margin: 0;
+    }
+    .hostel-building-list,
+    .hostel-room-board,
+    .hostel-resident-list {
+        display: grid;
+        gap: 10px;
+    }
+    .hostel-building-card,
+    .hostel-room-card,
+    .hostel-resident-row {
+        border: 1px solid rgba(34, 36, 38, .10);
+        border-radius: 8px;
+        padding: 12px;
+    }
+    .hostel-building-head,
+    .hostel-room-head,
+    .hostel-resident-row {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .hostel-building-name,
+    .hostel-room-name,
+    .hostel-resident-name {
+        color: #0f172a;
+        font-weight: 850;
+    }
+    .hostel-muted {
+        color: #64748b;
+        font-size: 12px;
+    }
+    .hostel-progress {
+        background: #e2e8f0;
+        border-radius: 999px;
+        height: 8px;
+        margin: 11px 0 10px;
+        overflow: hidden;
+    }
+    .hostel-progress-bar {
+        background: #2563eb;
+        border-radius: inherit;
+        height: 100%;
+        min-width: 0;
+    }
+    .hostel-building-metrics,
+    .hostel-room-metrics {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .hostel-room-board {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .hostel-room-card {
+        background: #fff;
+    }
+    .hostel-room-card.full .hostel-progress-bar {
+        background: #ef4444;
+    }
+    .hostel-room-card.open .hostel-progress-bar {
+        background: #2dbf63;
+    }
+    .hostel-room-card.busy .hostel-progress-bar {
+        background: #f59e0b;
+    }
+    .hostel-metric-label {
+        color: #64748b;
+        display: block;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .hostel-metric-value {
+        color: #0f172a;
+        display: block;
+        font-size: 15px;
+        font-weight: 850;
+    }
+    .hostel-empty {
+        border: 1px dashed rgba(34, 36, 38, .20);
+        border-radius: 6px;
+        color: #64748b;
+        padding: 18px;
+        text-align: center;
+    }
+    html[data-theme="dark"] .hostel-dashboard .hostel-kpi,
+    body.dark .hostel-dashboard .hostel-kpi,
+    .dark-mode .hostel-dashboard .hostel-kpi,
+    html[data-theme="dark"] .hostel-dashboard .hostel-panel,
+    body.dark .hostel-dashboard .hostel-panel,
+    .dark-mode .hostel-dashboard .hostel-panel,
+    html[data-theme="dark"] .hostel-building-card,
+    body.dark .hostel-building-card,
+    .dark-mode .hostel-building-card,
+    html[data-theme="dark"] .hostel-room-card,
+    body.dark .hostel-room-card,
+    .dark-mode .hostel-room-card,
+    html[data-theme="dark"] .hostel-resident-row,
+    body.dark .hostel-resident-row,
+    .dark-mode .hostel-resident-row {
+        background: var(--app-surface) !important;
+        border-color: var(--app-border) !important;
+        box-shadow: none;
+    }
+    html[data-theme="dark"] .hostel-kpi-icon,
+    body.dark .hostel-kpi-icon,
+    .dark-mode .hostel-kpi-icon {
+        background: var(--app-hover) !important;
+        color: #60a5fa !important;
+    }
+    html[data-theme="dark"] .hostel-dashboard .label,
+    body.dark .hostel-dashboard .label,
+    .dark-mode .hostel-dashboard .label,
+    html[data-theme="dark"] .hostel-kpi-note,
+    body.dark .hostel-kpi-note,
+    .dark-mode .hostel-kpi-note,
+    html[data-theme="dark"] .hostel-muted,
+    body.dark .hostel-muted,
+    .dark-mode .hostel-muted,
+    html[data-theme="dark"] .hostel-metric-label,
+    body.dark .hostel-metric-label,
+    .dark-mode .hostel-metric-label,
+    html[data-theme="dark"] .hostel-empty,
+    body.dark .hostel-empty,
+    .dark-mode .hostel-empty {
+        color: var(--app-muted) !important;
+    }
+    html[data-theme="dark"] .hostel-dashboard .value,
+    body.dark .hostel-dashboard .value,
+    .dark-mode .hostel-dashboard .value,
+    html[data-theme="dark"] .hostel-building-name,
+    body.dark .hostel-building-name,
+    .dark-mode .hostel-building-name,
+    html[data-theme="dark"] .hostel-room-name,
+    body.dark .hostel-room-name,
+    .dark-mode .hostel-room-name,
+    html[data-theme="dark"] .hostel-resident-name,
+    body.dark .hostel-resident-name,
+    .dark-mode .hostel-resident-name,
+    html[data-theme="dark"] .hostel-metric-value,
+    body.dark .hostel-metric-value,
+    .dark-mode .hostel-metric-value,
+    html[data-theme="dark"] .hostel-section-title .ui.header,
+    body.dark .hostel-section-title .ui.header,
+    .dark-mode .hostel-section-title .ui.header {
+        color: var(--app-text) !important;
+    }
+    html[data-theme="dark"] .hostel-progress,
+    body.dark .hostel-progress,
+    .dark-mode .hostel-progress {
+        background: var(--app-hover) !important;
+    }
+    html[data-theme="dark"] .hostel-empty,
+    body.dark .hostel-empty,
+    .dark-mode .hostel-empty {
+        border-color: var(--app-border) !important;
+    }
+    @media (max-width: 1180px) {
+        .hostel-dashboard-grid,
+        .hostel-chart-grid,
+        .hostel-room-board {
+            grid-template-columns: 1fr;
+        }
+    }
+    @media (max-width: 767px) {
+        .hostel-kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .hostel-dashboard .hostel-kpi {
+            min-height: 88px;
+            padding: 12px;
+        }
+        .hostel-kpi .value {
+            font-size: 22px;
+        }
+        .hostel-chart-wrap {
+            height: 220px;
+        }
+        .hostel-building-head,
+        .hostel-room-head,
+        .hostel-resident-row {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+        .hostel-building-metrics,
+        .hostel-room-metrics {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 360px) {
+        .hostel-kpi-grid,
+        .hostel-dashboard-grid,
+        .hostel-chart-grid,
+        .hostel-room-board {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+<div class="ui segment">
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="chart pie icon"></i>
+        Hostel overview
+    </h4>
+<div class="hostel-dashboard">
+    <div class="hostel-kpi-grid">
+        <div class="hostel-kpi">
+            <div class="hostel-kpi-top"><div class="label">Buildings</div><span class="hostel-kpi-icon"><i class="building icon"></i></span></div>
+            <div class="value" id="buildings">0</div>
+            <div class="hostel-kpi-note">Active hostel blocks</div>
+        </div>
+        <div class="hostel-kpi">
+            <div class="hostel-kpi-top"><div class="label">Rooms</div><span class="hostel-kpi-icon"><i class="door open icon"></i></span></div>
+            <div class="value" id="rooms">0</div>
+            <div class="hostel-kpi-note">Ready room inventory</div>
+        </div>
+        <div class="hostel-kpi">
+            <div class="hostel-kpi-top"><div class="label">Available Beds</div><span class="hostel-kpi-icon"><i class="bed icon"></i></span></div>
+            <div class="value" id="availableBeds">0</div>
+            <div class="hostel-kpi-note"><span id="occupiedBeds">0</span> occupied beds</div>
+        </div>
+        <div class="hostel-kpi">
+            <div class="hostel-kpi-top"><div class="label">Active Residents</div><span class="hostel-kpi-icon"><i class="users icon"></i></span></div>
+            <div class="value" id="activeResidents">0</div>
+            <div class="hostel-kpi-note"><span id="admissions">0</span> open admissions</div>
+        </div>
+        <div class="hostel-kpi">
+            <div class="hostel-kpi-top"><div class="label">Fee Net</div><span class="hostel-kpi-icon"><i class="rupee sign icon"></i></span></div>
+            <div class="value" id="feeNet">0.00</div>
+            <div class="hostel-kpi-note">Generated hostel dues</div>
+        </div>
+        <div class="hostel-kpi">
+            <div class="hostel-kpi-top"><div class="label">Fee Paid</div><span class="hostel-kpi-icon"><i class="check circle icon"></i></span></div>
+            <div class="value" id="feePaid">0.00</div>
+            <div class="hostel-kpi-note">Collected amount</div>
+        </div>
+        <div class="hostel-kpi">
+            <div class="hostel-kpi-top"><div class="label">Fee Due</div><span class="hostel-kpi-icon"><i class="clock outline icon"></i></span></div>
+            <div class="value" id="feeDue">0.00</div>
+            <div class="hostel-kpi-note">Outstanding balance</div>
+        </div>
+        <div class="hostel-kpi">
+            <div class="hostel-kpi-top"><div class="label">Total Beds</div><span class="hostel-kpi-icon"><i class="th large icon"></i></span></div>
+            <div class="value" id="beds">0</div>
+            <div class="hostel-kpi-note">Across all active rooms</div>
+        </div>
+    </div>
+
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="chart bar outline icon"></i>
+        Occupancy charts
+    </h4>
+    <div class="hostel-dashboard-grid">
+        <div class="hostel-panel">
+            <div class="hostel-section-title">
+                <h4 class="ui header"><i class="chart bar icon"></i><span class="content">Building Occupancy</span></h4>
+                <a class="ui tiny button" href="{% url 'hostelApp:manage_rooms' %}"><i class="tasks icon"></i>Manage Rooms</a>
+            </div>
+            <div class="hostel-chart-wrap"><canvas id="buildingOccupancyChart"></canvas></div>
+            <div class="hostel-building-list" id="buildingOccupancyList"></div>
+        </div>
+        <div class="hostel-panel">
+            <div class="hostel-section-title">
+                <h4 class="ui header"><i class="bed icon"></i><span class="content">Bed Status</span></h4>
+                <a class="ui tiny button" href="{% url 'hostelApp:manage_beds' %}"><i class="edit icon"></i>Beds</a>
+            </div>
+            <div class="hostel-chart-wrap"><canvas id="bedStatusChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="hostel-chart-grid">
+        <div class="hostel-panel">
+            <div class="hostel-section-title">
+                <h4 class="ui header"><i class="user circle icon"></i><span class="content">Residents</span></h4>
+            </div>
+            <div class="hostel-chart-wrap"><canvas id="residentTypeChart"></canvas></div>
+        </div>
+        <div class="hostel-panel">
+            <div class="hostel-section-title">
+                <h4 class="ui header"><i class="money bill alternate outline icon"></i><span class="content">Fee Due By Status</span></h4>
+            </div>
+            <div class="hostel-chart-wrap"><canvas id="feeStatusChart"></canvas></div>
+        </div>
+    </div>
+
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="home icon"></i>
+        Room board
+    </h4>
+        <div class="hostel-panel">
+            <div class="hostel-section-title">
+                <h4 class="ui header"><i class="home icon"></i><span class="content">Room Board</span></h4>
+                {% if management_permissions.hostel.add %}
+                <a class="ui tiny green button" href="{% url 'hostelApp:manage_rooms' %}"><i class="plus icon"></i>Add Room</a>
+                {% endif %}
+            </div>
+        <div class="hostel-room-board" id="roomBoard"></div>
+        <div class="hostel-muted" id="roomBoardLimitNote" style="display:none;margin-top:10px;">Showing first 80 rooms.</div>
+    </div>
+
+    <h4 class="ui horizontal left aligned divider header">
+        <i class="history icon"></i>
+        Recent residents
+    </h4>
+    <div class="hostel-panel">
+        <div class="hostel-section-title">
+            <h4 class="ui header"><i class="users icon"></i><span class="content">Recent Residents</span></h4>
+            <a class="ui tiny button" href="{% url 'hostelApp:manage_assignments' %}"><i class="exchange icon"></i>Assignments</a>
+        </div>
+        <div class="hostel-resident-list" id="recentResidents"></div>
+    </div>
+</div>
+</div>
+{% endblock %}
+{% block js %}
+<script>
+let hostelDashboardCharts = {};
+function hostelEscape(value){
+    return $('<div>').text(value == null ? '' : value).html();
+}
+function hostelMoney(value){
+    const numberValue = Number(value || 0);
+    return numberValue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+function hostelCount(value){
+    return Number(value || 0).toLocaleString('en-IN');
+}
+function hostelChartColors(){
+    const styles = getComputedStyle(document.documentElement);
+    return {
+        text: styles.getPropertyValue('--app-text').trim() || '#1f2937',
+        grid: styles.getPropertyValue('--app-border').trim() || '#dfe3ea',
+        blue: '#1f77d2',
+        green: '#2dbf63',
+        amber: '#f59e0b',
+        red: '#ef4444',
+        violet: '#8b5cf6',
+        slate: '#64748b'
+    };
+}
+function buildChart(id, config){
+    const canvas = document.getElementById(id);
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (hostelDashboardCharts[id]) hostelDashboardCharts[id].destroy();
+    hostelDashboardCharts[id] = new Chart(canvas.getContext('2d'), config);
+}
+function renderDashboardCharts(charts){
+    const c = hostelChartColors();
+    buildChart('bedStatusChart', {
+        type: 'doughnut',
+        data: {labels: charts.bedStatusLabels || [], datasets: [{data: charts.bedStatusValues || [], backgroundColor: [c.green, c.blue, c.amber, c.red]}]},
+        options: {maintainAspectRatio: false, legend: {position: 'bottom', labels: {fontColor: c.text}}}
+    });
+    buildChart('residentTypeChart', {
+        type: 'pie',
+        data: {labels: charts.residentTypeLabels || [], datasets: [{data: charts.residentTypeValues || [], backgroundColor: [c.blue, c.violet]}]},
+        options: {maintainAspectRatio: false, legend: {position: 'bottom', labels: {fontColor: c.text}}}
+    });
+    buildChart('feeStatusChart', {
+        type: 'horizontalBar',
+        data: {labels: charts.feeStatusLabels || [], datasets: [{label: 'Due', data: charts.feeStatusValues || [], backgroundColor: c.amber, borderColor: c.amber, borderWidth: 1}]},
+        options: {maintainAspectRatio: false, legend: {display: false}, scales: {xAxes: [{ticks: {beginAtZero: true, fontColor: c.text}, gridLines: {color: c.grid}}], yAxes: [{ticks: {fontColor: c.text}, gridLines: {display: false}}]}}
+    });
+    buildChart('buildingOccupancyChart', {
+        type: 'bar',
+        data: {
+            labels: charts.buildingLabels || [],
+            datasets: [
+                {label: 'Occupied', data: charts.buildingOccupiedValues || [], backgroundColor: c.blue, borderColor: c.blue, borderWidth: 1},
+                {label: 'Available', data: charts.buildingAvailableValues || [], backgroundColor: c.green, borderColor: c.green, borderWidth: 1}
+            ]
+        },
+        options: {maintainAspectRatio: false, legend: {position: 'bottom', labels: {fontColor: c.text}}, scales: {yAxes: [{ticks: {beginAtZero: true, fontColor: c.text}, gridLines: {color: c.grid}}], xAxes: [{ticks: {fontColor: c.text}, gridLines: {display: false}}]}}
+    });
+}
+function renderBuildingList(rows){
+    const html = (rows || []).map(function(row){
+        return '<div class="hostel-building-card">' +
+            '<div class="hostel-building-head"><div><div class="hostel-building-name">' + hostelEscape(row.name) + '</div><div class="hostel-muted">' + hostelEscape(row.code || 'No code') + (row.warden ? ' | Warden: ' + hostelEscape(row.warden) : '') + '</div></div><div class="ui tiny label">' + hostelCount(row.occupancyPercent) + '% occupied</div></div>' +
+            '<div class="hostel-progress"><div class="hostel-progress-bar" style="width:' + Number(row.occupancyPercent || 0) + '%"></div></div>' +
+            '<div class="hostel-building-metrics"><div><span class="hostel-metric-label">Rooms</span><span class="hostel-metric-value">' + hostelCount(row.rooms) + '</span></div><div><span class="hostel-metric-label">Beds</span><span class="hostel-metric-value">' + hostelCount(row.beds) + '</span></div><div><span class="hostel-metric-label">Occupied</span><span class="hostel-metric-value">' + hostelCount(row.occupied) + '</span></div><div><span class="hostel-metric-label">Available</span><span class="hostel-metric-value">' + hostelCount(row.available) + '</span></div></div>' +
+        '</div>';
+    }).join('');
+    $('#buildingOccupancyList').html(html || '<div class="hostel-empty">No hostel buildings found.</div>');
+}
+function roomState(row){
+    if (Number(row.beds || 0) > 0 && Number(row.available || 0) === 0) return 'full';
+    if (Number(row.occupied || 0) === 0) return 'open';
+    return 'busy';
+}
+function renderRoomBoard(rows, truncated){
+    const html = (rows || []).map(function(row){
+        const state = roomState(row);
+        return '<div class="hostel-room-card ' + state + '">' +
+            '<div class="hostel-room-head"><div><div class="hostel-room-name">Room ' + hostelEscape(row.room) + '</div><div class="hostel-muted">' + hostelEscape(row.building) + ' | ' + hostelEscape(row.floor) + ' | ' + hostelEscape(row.roomType) + '</div></div><div class="ui tiny ' + (state === 'full' ? 'red' : state === 'open' ? 'green' : 'yellow') + ' label">' + hostelCount(row.occupancyPercent) + '%</div></div>' +
+            '<div class="hostel-progress"><div class="hostel-progress-bar" style="width:' + Number(row.occupancyPercent || 0) + '%"></div></div>' +
+            '<div class="hostel-room-metrics"><div><span class="hostel-metric-label">Beds</span><span class="hostel-metric-value">' + hostelCount(row.beds) + '</span></div><div><span class="hostel-metric-label">Occupied</span><span class="hostel-metric-value">' + hostelCount(row.occupied) + '</span></div><div><span class="hostel-metric-label">Available</span><span class="hostel-metric-value">' + hostelCount(row.available) + '</span></div><div><span class="hostel-metric-label">Maint.</span><span class="hostel-metric-value">' + hostelCount(row.maintenance) + '</span></div></div>' +
+        '</div>';
+    }).join('');
+    $('#roomBoard').html(html || '<div class="hostel-empty">No active rooms found.</div>');
+    $('#roomBoardLimitNote').toggle(!!truncated);
+}
+function renderRecentResidents(rows){
+    const html = (rows || []).map(function(row){
+        return '<div class="hostel-resident-row"><div><div class="hostel-resident-name">' + hostelEscape(row.resident) + '</div><div class="hostel-muted">' + hostelEscape(row.residentType) + ' | ' + hostelEscape(row.building) + ' | Room ' + hostelEscape(row.room) + '</div></div><div class="ui tiny label">Bed ' + hostelEscape(row.bed) + '</div></div>';
+    }).join('');
+    $('#recentResidents').html(html || '<div class="hostel-empty">No active residents yet.</div>');
+}
+$(function(){
+    $.get("{% url 'hostelAppAPI:dashboard_summary' %}", function(resp){
+        if(!resp || !resp.success) {
+            addErrorNotification('Unable to load hostel dashboard.');
+            return;
+        }
+        const d = resp.data || {};
+        ['buildings','rooms','beds','occupiedBeds','availableBeds','admissions','activeResidents'].forEach(function(k){ $('#' + k).text(hostelCount(d[k] || 0)); });
+        ['feeNet','feePaid','feeDue'].forEach(function(k){ $('#' + k).text(hostelMoney(d[k] || 0)); });
+        renderDashboardCharts(d.charts || {});
+        renderBuildingList(d.buildingOccupancy || []);
+        renderRoomBoard(d.roomBoard || [], d.roomBoardTruncated);
+        renderRecentResidents(d.recentResidents || []);
+    }).fail(function(){
+        addErrorNotification('Unable to load hostel dashboard.');
+    });
+});
+</script>
+{% endblock %}

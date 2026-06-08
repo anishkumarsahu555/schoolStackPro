@@ -1,19 +1,26 @@
 {% extends 'managementApp/index.html' %}
 {% load static %}
+{% load management_access %}
 {% block title %}
     <title>Student List</title>
 {% endblock %}
 {% block page_title %}Student List{% endblock %}
 {% block page_subtitle %}Manage student records, class filters, and ID card workflows{% endblock %}
 {% block page_actions %}
-    <a class="ui primary button" href="{% url 'managementApp:student_id_cards' %}">
-        <i class="id card outline icon"></i>
-        <span><span class="desktop-label">ID Cards</span><span class="mobile-label">IDs</span></span>
-    </a>
-    <a class="ui green button" href="{% url 'managementApp:add_student' %}">
-        <i class="plus icon"></i>
-        <span><span class="desktop-label">Add Student</span><span class="mobile-label">Add</span></span>
-    </a>
+    {% can_manage 'students' 'report' as can_report_students %}
+    {% can_manage 'students' 'add' as can_add_students %}
+    {% if can_report_students %}
+        <a class="ui primary button" href="{% url 'managementApp:student_id_cards' %}">
+            <i class="id card outline icon"></i>
+            <span><span class="desktop-label">ID Cards</span><span class="mobile-label">IDs</span></span>
+        </a>
+    {% endif %}
+    {% if can_add_students %}
+        <a class="ui green button" href="{% url 'managementApp:add_student' %}">
+            <i class="plus icon"></i>
+            <span><span class="desktop-label">Add Student</span><span class="mobile-label">Add</span></span>
+        </a>
+    {% endif %}
 {% endblock %}
 {% block css %}
 {% endblock %}

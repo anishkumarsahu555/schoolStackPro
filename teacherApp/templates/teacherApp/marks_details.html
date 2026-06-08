@@ -177,27 +177,30 @@
             $.ajax({
                 type: 'get',
                 url: "{% url 'managementAppAPI:get_subjects_to_class_assign_list_with_given_class_api' %}",
-                data: {standard: standard},
+                cache: false,
+                data: {standard: standard, exam: exam, exam_assignment: 1, _: Date.now()},
                 success: function (response) {
                     if (!response.success || !Array.isArray(response.data)) {
                         addErrorNotification(response.message || 'Unable to load subjects');
                         return;
                     }
 
+                    if (marksTable) {
+                        marksTable.destroy();
+                        marksTable = null;
+                    }
+                    $('#MarksDetailTable thead').empty();
+                    $('#MarksDetailTable tbody').empty();
+
                     const columns = buildColumns(response.data);
                     buildHead(columns);
                     $('#MarksTableDiv').show();
-
-                    if (marksTable) {
-                        marksTable.destroy();
-                        $('#MarksDetailTable tbody').empty();
-                    }
 
                     marksTable = $('#MarksDetailTable').DataTable({
                         dom: 'Blfrtip',
                         scrollY: '350px',
                         scrollX: true,
-                        stateSave: true,
+                        stateSave: false,
                         buttons: [{
                             extend: 'excel'
                         }],

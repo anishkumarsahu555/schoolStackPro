@@ -9,6 +9,7 @@ urlpatterns = [
     path('my-details/', student_my_details, name='student_my_details'),
     path('id-card/', student_id_card, name='student_id_card'),
     path('my-transport/', student_my_transport, name='student_my_transport'),
+    path('my-hostel/', student_my_hostel, name='student_my_hostel'),
     path('library/', student_library, name='student_library'),
     path('library/id-card/', student_library_id_card, name='student_library_id_card'),
 

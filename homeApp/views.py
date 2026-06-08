@@ -13,6 +13,7 @@ from homeApp.branding import get_school_branding
 from homeApp.models import SchoolOwner, SchoolDetail
 from homeApp.owner_access import school_owner_q
 from homeApp.utils import init_session, get_all_session_list, custom_login_required, login_required
+from managementApp.access_control import init_staff_management_session, user_has_management_access
 from managementApp.models import TeacherDetail, Student
 from utils.custom_decorators import check_groups
 
@@ -90,6 +91,14 @@ def post_login(request):
                     }, safe=False)
                 get_all_session_list(request)
                 return JsonResponse({'message': 'success', 'data': '/home/'}, safe=False)
+            elif user_has_management_access(user):
+                if init_staff_management_session(request):
+                    return JsonResponse({'message': 'success', 'data': '/home/'}, safe=False)
+                logout(request)
+                return JsonResponse({
+                    'message': 'fail',
+                    'detail': 'No active school session is assigned to this staff account.',
+                }, safe=False)
             elif 'Teaching' in groups:
                 return JsonResponse({'message': 'success', 'data': '/teacher/home/'}, safe=False)
             elif 'Student' in groups:
@@ -108,6 +117,9 @@ def homepage(request):
             'Admin' in request.user.groups.values_list('name', flat=True) or 'Owner' in request.user.groups.values_list(
             'name', flat=True)):
         return redirect('managementApp:admin_home')
+    elif request.user.is_authenticated and user_has_management_access(request.user):
+        if init_staff_management_session(request):
+            return redirect('managementApp:admin_home')
     elif request.user.is_authenticated and 'Teaching' in request.user.groups.values_list('name', flat=True):
         return redirect('teacherApp:teacher_home')
     elif request.user.is_authenticated and 'Student' in request.user.groups.values_list('name', flat=True):

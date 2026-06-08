@@ -3,10 +3,12 @@
 {% block page_title %}Transport Fee Mapping{% endblock %}
 {% block page_subtitle %}Configure default transport fee rules used during student and staff assignment{% endblock %}
 {% block page_actions %}
+    {% if management_permissions.transport.add %}
     <button class="ui green button class-page-action" type="button" onclick="showFeeMappingModal()">
         <i class="plus icon"></i>
         <span class="class-page-action-label"><span class="desktop-label">Add Fee Mapping</span><span class="mobile-label">Add</span></span>
     </button>
+    {% endif %}
 {% endblock %}
 {% block body %}
 {% include 'transportApp/_management_table_styles.html' %}

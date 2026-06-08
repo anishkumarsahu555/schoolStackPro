@@ -1,4 +1,5 @@
 {% extends 'homeApp/base.html' %}
+{% load management_access %}
 
 {% block sidebar %}
     <div class="sidenav-header">
@@ -18,7 +19,7 @@
         </label>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="dashboard school_settings">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>General</span>
@@ -26,25 +27,34 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
+            {% can_manage 'dashboard' 'view' as can_view_dashboard_nav %}
+            {% can_manage 'school_settings' 'view' as can_view_school_settings_nav %}
+            {% can_manage 'school_settings' 'edit' as can_edit_school_settings_nav %}
+            {% if can_view_dashboard_nav %}
             <a class="nav-item {% if request.resolver_match.url_name == 'admin_home' %}active{% endif %}"
                href="{% url 'managementApp:admin_home' %}">
                 <i class="tachometer alternate icon"></i>
                 <span>Dashboard</span>
             </a>
+            {% endif %}
+            {% if can_view_school_settings_nav %}
             <a class="nav-item {% if request.resolver_match.url_name == 'school_detail' %}active{% endif %}"
                href="{% url 'managementApp:school_detail' %}">
                 <i class="school icon"></i>
                 <span>School Details</span>
             </a>
+            {% endif %}
+            {% if can_edit_school_settings_nav %}
             <a class="nav-item {% if request.resolver_match.url_name == 'manage_session_import' %}active{% endif %}"
                href="{% url 'managementApp:manage_session_import' %}">
                 <i class="copy outline icon"></i>
                 <span>Session Import</span>
             </a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="classes">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Classes</span>
@@ -52,14 +62,17 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
+            {% can_manage 'classes' 'view' as can_view_classes %}
+            {% if can_view_classes %}
             <a class="nav-item" href="{% url 'managementApp:manage_class' %}">
                 <i class="chalkboard icon"></i>
                 <span>Manage Classes</span>
             </a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="timetable">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Timetable</span>
@@ -67,14 +80,17 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
+            {% can_manage 'timetable' 'view' as can_view_timetable_nav %}
+            {% if can_view_timetable_nav %}
             <a class="nav-item {% if request.resolver_match.url_name == 'manage_school_timetable' %}active{% endif %}" href="{% url 'managementApp:manage_school_timetable' %}">
                 <i class="calendar alternate outline icon"></i>
                 <span>School Timetable</span>
             </a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="staff">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Teachers</span>
@@ -82,18 +98,30 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
+            {% can_manage 'staff' 'add' as can_add_staff_nav %}
+            {% can_manage 'staff' 'view' as can_view_staff_nav %}
+            {% if can_add_staff_nav %}
             <a class="nav-item" href="{% url 'managementApp:add_teacher' %}">
                 <i class="chalkboard teacher icon"></i>
                 <span>Add Teacher</span>
             </a>
+            {% endif %}
+            {% if can_view_staff_nav %}
             <a class="nav-item" href="{% url 'managementApp:teacher_list' %}" data-active-paths="/management/teacher_detail/ /management/edit_teacher/">
                 <i class="list alternate outline icon"></i>
                 <span>Teacher List</span>
             </a>
+            {% endif %}
+            {% if management_can.access_control %}
+                <a class="nav-item {% if request.resolver_match.url_name == 'manage_staff_access' or request.resolver_match.url_name == 'edit_staff_role' %}active{% endif %}" href="{% url 'managementApp:manage_staff_access' %}">
+                    <i class="user shield icon"></i>
+                    <span>Staff Access</span>
+                </a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="subjects">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Subjects</span>
@@ -101,10 +129,15 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
+            {% can_manage 'subjects' 'view' as can_view_subjects_nav %}
+            {% can_manage 'subjects' 'edit' as can_edit_subjects_nav %}
+            {% if can_view_subjects_nav %}
             <a class="nav-item" href="{% url 'managementApp:manage_subjects' %}">
                 <i class="book icon"></i>
                 <span>Add Subjects</span>
             </a>
+            {% endif %}
+            {% if can_edit_subjects_nav %}
             <a class="nav-item" href="{% url 'managementApp:assign_subjects_to_class' %}">
                 <i class="linkify icon"></i>
                 <span>Assign to Class</span>
@@ -113,14 +146,17 @@
                 <i class="linkify icon"></i>
                 <span>Assign to Teacher</span>
             </a>
+            {% endif %}
+            {% if can_view_subjects_nav %}
             <a class="nav-item {% if request.resolver_match.url_name == 'manage_subject_notes' %}active{% endif %}" href="{% url 'managementApp:manage_subject_notes' %}">
                 <i class="sticky note outline icon"></i>
                 <span>Subject Notes</span>
             </a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="students">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Students</span>
@@ -128,22 +164,31 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
+            {% can_manage 'students' 'add' as can_add_students_nav %}
+            {% can_manage 'students' 'view' as can_view_students_nav %}
+            {% can_manage 'students' 'report' as can_report_students_nav %}
+            {% if can_add_students_nav %}
             <a class="nav-item" href="{% url 'managementApp:add_student' %}">
                 <i class="users icon"></i>
                 <span>Add Student</span>
             </a>
+            {% endif %}
+            {% if can_view_students_nav %}
             <a class="nav-item" href="{% url 'managementApp:student_list' %}" data-active-paths="/management/student_detail/ /management/edit_student/">
                 <i class="list alternate outline icon"></i>
                 <span>Student List</span>
             </a>
+            {% endif %}
+            {% if can_report_students_nav %}
             <a class="nav-item {% if request.resolver_match.url_name == 'student_id_cards' or request.resolver_match.url_name == 'student_id_card_detail' %}active{% endif %}" href="{% url 'managementApp:student_id_cards' %}" data-active-paths="/management/student_id_card/ /management/student_id_card_design/">
                 <i class="id card outline icon"></i>
                 <span>Student ID Cards</span>
             </a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="certificates">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Certificates</span>
@@ -164,7 +209,7 @@
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="parents">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Parents</span>
@@ -179,7 +224,7 @@
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="attendance">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Attendance</span>
@@ -187,26 +232,36 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
+            {% can_manage 'attendance' 'add' as can_add_attendance_nav %}
+            {% can_manage 'attendance' 'view' as can_view_attendance_nav %}
+            {% if can_add_attendance_nav %}
             <a class="nav-item" href="{% url 'managementApp:student_attendance' %}">
                 <i class="tasks icon"></i>
                 <span>Add Student Attendance</span>
             </a>
+            {% endif %}
+            {% if can_view_attendance_nav %}
             <a class="nav-item" href="{% url 'managementApp:student_attendance_history' %}">
                 <i class="list alternate outline icon"></i>
                 <span>Student Attendance History</span>
             </a>
+            {% endif %}
+            {% if can_add_attendance_nav %}
             <a class="nav-item" href="{% url 'managementApp:staff_attendance' %}">
                 <i class="tasks icon"></i>
                 <span>Add Staff Attendance</span>
             </a>
+            {% endif %}
+            {% if can_view_attendance_nav %}
             <a class="nav-item" href="{% url 'managementApp:staff_attendance_history' %}">
                 <i class="list alternate outline icon"></i>
                 <span>Staff Attendance History</span>
             </a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="fees">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Fees</span>
@@ -214,18 +269,24 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
+            {% can_manage 'fees' 'add' as can_add_fees_nav %}
+            {% can_manage 'fees' 'view' as can_view_fees_nav %}
+            {% if can_add_fees_nav %}
             <a class="nav-item" href="{% url 'managementApp:student_fee' %}">
                 <i class="hand holding usd icon"></i>
                 <span>Add Fees</span>
             </a>
+            {% endif %}
+            {% if can_view_fees_nav %}
             <a class="nav-item" href="{% url 'managementApp:student_fee_details' %}">
                 <i class="list alternate outline icon"></i>
                 <span>Fee Details</span>
             </a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="exams">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Exams</span>
@@ -233,10 +294,15 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
+            {% can_manage 'exams' 'view' as can_view_exams_nav %}
+            {% can_manage 'exams' 'edit' as can_edit_exams_nav %}
+            {% if can_view_exams_nav %}
             <a class="nav-item" href="{% url 'managementApp:manage_exams' %}">
                 <i class="clipboard outline icon"></i>
                 <span>Add Exam</span>
             </a>
+            {% endif %}
+            {% if can_edit_exams_nav %}
             <a class="nav-item" href="{% url 'managementApp:assign_exams_to_class' %}">
                 <i class="linkify icon"></i>
                 <span>Assign Exam to Class</span>
@@ -245,10 +311,11 @@
                 <i class="calendar alternate outline icon"></i>
                 <span>Exam Time Table</span>
             </a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="marks">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Marks</span>
@@ -256,22 +323,31 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
+            {% can_manage 'marks' 'add' as can_add_marks_nav %}
+            {% can_manage 'marks' 'view' as can_view_marks_nav %}
+            {% can_manage 'marks' 'report' as can_report_marks_nav %}
+            {% if can_add_marks_nav %}
             <a class="nav-item" href="{% url 'managementApp:student_marks' %}">
                 <i class="edit outline icon"></i>
                 <span>Add Marks</span>
             </a>
+            {% endif %}
+            {% if can_view_marks_nav %}
             <a class="nav-item" href="{% url 'managementApp:exam_marks_details' %}">
                 <i class="list alternate outline icon"></i>
                 <span>Marks Details</span>
             </a>
+            {% endif %}
+            {% if can_report_marks_nav %}
             <a class="nav-item" href="{% url 'managementApp:progress_report_cards' %}">
                 <i class="chart bar outline icon"></i>
                 <span>Progress Report Cards</span>
             </a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="events">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Events</span>
@@ -290,7 +366,7 @@
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="holidays">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Holidays</span>
@@ -305,7 +381,7 @@
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="leave">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Leave</span>
@@ -324,7 +400,7 @@
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="finance">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Finance &amp; Accounts</span>
@@ -363,7 +439,7 @@
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="communication">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Communication</span>
@@ -376,15 +452,17 @@
                 <i class="comments outline icon"></i>
                 <span>Chat<span data-chat-unread-count>{% if chat_unread_count %} ({{ chat_unread_count }}){% endif %}</span></span>
             </a>
+            {% if management_permissions.communication.approve %}
             <a class="nav-item {% if request.resolver_match.namespace == 'chatApp' and request.resolver_match.url_name == 'moderation' %}active{% endif %}"
                href="{% url 'chatApp:moderation' %}">
                 <i class="shield alternate icon"></i>
                 <span>Moderation{% if chat_open_report_count %} ({{ chat_open_report_count }}){% endif %}</span>
             </a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="library">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Manage Library</span>
@@ -460,7 +538,7 @@
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="transport">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Manage Transport</span>
@@ -511,7 +589,63 @@
         </div>
     </div>
 
-    <div class="nav-group">
+    <div class="nav-group" data-management-module="hostel">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Manage Hostel</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+               href="{% url 'hostelApp:dashboard' %}">
+                <i class="home icon"></i>
+                <span>Hostel Dashboard</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_admissions' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_admissions' %}">
+                <i class="clipboard check icon"></i>
+                <span>Admissions</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_buildings' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_buildings' %}">
+                <i class="building icon"></i>
+                <span>Buildings</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_rooms' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_rooms' %}">
+                <i class="door open icon"></i>
+                <span>Rooms</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_beds' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_beds' %}">
+                <i class="bed icon"></i>
+                <span>Beds</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_assignments' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_assignments' %}">
+                <i class="users icon"></i>
+                <span>Assignments</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_fee_mapping' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_fee_mapping' %}">
+                <i class="rupee sign icon"></i>
+                <span>Fee Mapping</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_fee_tracking' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_fee_tracking' %}">
+                <i class="money bill alternate outline icon"></i>
+                <span>Fee Tracking</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'hostelApp' and request.resolver_match.url_name == 'manage_reports' %}active{% endif %}"
+               href="{% url 'hostelApp:manage_reports' %}">
+                <i class="chart bar icon"></i>
+                <span>Reports</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="nav-group" data-management-module="audit">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
                 <span>Audit Manager</span>
@@ -526,5 +660,20 @@
             </a>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const allowedModules = new Set({{ management_visible_modules_json|default:'[]'|safe }});
+            document.querySelectorAll('[data-management-module]').forEach(function (group) {
+                const modules = (group.getAttribute('data-management-module') || '').split(/\s+/).filter(Boolean);
+                const visible = modules.some(function (moduleName) {
+                    return allowedModules.has(moduleName);
+                });
+                if (!visible) {
+                    group.hidden = true;
+                }
+            });
+        })();
+    </script>
 
 {% endblock %}

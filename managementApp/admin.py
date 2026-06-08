@@ -25,6 +25,9 @@ from .models import (
     ProgressReportSnapshot,
     SchoolHoliday,
     Standard,
+    StaffAccess,
+    StaffRole,
+    StaffRolePermission,
     Student,
     StudentAttendance,
     StudentExamComponentMark,
@@ -82,6 +85,9 @@ class AllFieldsAdmin(admin.ModelAdmin):
 
 MODELS = [
     TeacherDetail,
+    StaffRole,
+    StaffRolePermission,
+    StaffAccess,
     Standard,
     Student,
     Parent,

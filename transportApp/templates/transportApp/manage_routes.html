@@ -3,6 +3,7 @@
 {% block page_title %}Routes & Stops{% endblock %}
 {% block page_subtitle %}Create transport routes and route-wise pickup/drop stops{% endblock %}
 {% block page_actions %}
+    {% if management_permissions.transport.add %}
     <button class="ui green button class-page-action" type="button" onclick="showRouteModal()">
         <i class="plus icon"></i>
         <span class="class-page-action-label"><span class="desktop-label">Add Route</span><span class="mobile-label">Route</span></span>
@@ -11,6 +12,7 @@
         <i class="map marker alternate icon"></i>
         <span class="class-page-action-label"><span class="desktop-label">Add Stop</span><span class="mobile-label">Stop</span></span>
     </button>
+    {% endif %}
 {% endblock %}
 {% block body %}
 {% include 'transportApp/_management_table_styles.html' %}

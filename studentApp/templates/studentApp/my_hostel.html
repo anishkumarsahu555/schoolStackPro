@@ -1,0 +1,36 @@
+{% extends 'studentApp/index.html' %}
+{% block title %}<title>My Hostel</title>{% endblock %}
+{% block page_title %}My Hostel{% endblock %}
+{% block page_subtitle %}View your hostel admission, room, bed, and hostel fee status{% endblock %}
+{% block body %}
+{% include 'hostelApp/_management_table_styles.html' %}
+{% if profile_missing %}
+    <div class="ui warning message">Student profile is not available for the current session.</div>
+{% elif not hostel_assignment %}
+    <div class="ui info message">No active hostel allocation is available for your profile.</div>
+{% else %}
+    <div class="hostel-kpi-grid">
+        <div class="hostel-kpi"><div class="label">Building</div><div class="value" style="font-size:22px;">{{ hostel_assignment.buildingID.buildingName }}</div></div>
+        <div class="hostel-kpi"><div class="label">Room</div><div class="value">{{ hostel_assignment.roomID.roomNumber }}</div></div>
+        <div class="hostel-kpi"><div class="label">Bed</div><div class="value">{{ hostel_assignment.bedID.bedNumber }}</div></div>
+        <div class="hostel-kpi"><div class="label">Monthly Fee</div><div class="value">{{ hostel_assignment.monthlyFee }}</div></div>
+        <div class="hostel-kpi"><div class="label">Total Fee</div><div class="value">{{ hostel_fee_summary.net }}</div></div>
+        <div class="hostel-kpi"><div class="label">Paid</div><div class="value">{{ hostel_fee_summary.paid }}</div></div>
+        <div class="hostel-kpi"><div class="label">Due</div><div class="value">{{ hostel_fee_summary.due }}</div></div>
+        <div class="hostel-kpi"><div class="label">Start Date</div><div class="value" style="font-size:22px;">{{ hostel_assignment.startDate|default:"N/A" }}</div></div>
+    </div>
+    <div class="ui segment" style="margin-top:14px;">
+        <h4 class="ui horizontal left aligned divider header"><i class="money bill alternate outline icon"></i>Recent hostel fees</h4>
+        <table class="ui unstackable tiny celled compact table">
+            <thead><tr><th>Period</th><th>Net</th><th>Paid</th><th>Due</th><th>Status</th></tr></thead>
+            <tbody>
+                {% for fee in hostel_recent_fee_records %}
+                    <tr><td>{{ fee.feeMonth }}/{{ fee.feeYear }}</td><td>{{ fee.netAmount }}</td><td>{{ fee.paidAmount }}</td><td>{{ fee.balanceAmount }}</td><td>{{ fee.get_status_display }}</td></tr>
+                {% empty %}
+                    <tr><td colspan="5" class="center aligned">No hostel fee records yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+{% endblock %}

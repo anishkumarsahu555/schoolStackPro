@@ -13,6 +13,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from homeApp.push_service import send_chat_push_notifications
 from homeApp.utils import login_required
+from managementApp.access_control import has_management_permission, is_owner_or_admin, user_has_management_access
 from managementApp.models import AssignSubjectsToClass, AssignSubjectsToTeacher, Standard, Student, TeacherDetail
 from utils.custom_decorators import check_groups
 
@@ -92,6 +93,16 @@ def _base_template_for_role(role):
     if role == 'student':
         return 'studentApp/index.html'
     return 'managementApp/index.html'
+
+
+def _communication_permissions(user):
+    actions = ('view', 'add', 'edit', 'delete', 'approve', 'report')
+    if is_owner_or_admin(user) or not user_has_management_access(user):
+        return {action: True for action in actions}
+    return {
+        action: has_management_permission(user, 'communication', action)
+        for action in actions
+    }
 
 
 def _room_route_name_for_request(request):
@@ -459,12 +470,14 @@ def _mark_room_read(room, user):
 def _message_payload(message, user):
     local_dt = _local_message_datetime(message.datetime)
     attachment = _attachment_payload(message)
+    communication_permissions = _communication_permissions(user)
+    is_own = message.senderID_id == user.id
     return {
         'id': message.id,
         'body': message.body or '',
         'sender_name': display_name(message.senderID),
         'sender_id': message.senderID_id,
-        'is_own': message.senderID_id == user.id,
+        'is_own': is_own,
         'created_at': local_dt.strftime('%d %b %Y, %I:%M %p') if local_dt else '',
         'time_label': local_dt.strftime('%I:%M %p') if local_dt else '',
         'date_key': local_dt.date().isoformat() if local_dt else '',
@@ -475,8 +488,10 @@ def _message_payload(message, user):
         'has_attachment': bool(attachment),
         'is_edited': message.isEdited,
         'is_deleted': message.isDeleted,
-        'can_edit': message.senderID_id == user.id and not message.isDeleted,
-        'can_delete': message.senderID_id == user.id and not message.isDeleted,
+        'can_edit': is_own and not message.isDeleted and communication_permissions['edit'],
+        'can_delete': is_own and not message.isDeleted and communication_permissions['delete'],
+        'can_report': (not is_own) and not message.isDeleted and communication_permissions['report'],
+        'can_add_action': communication_permissions['add'],
         'read_summary': _read_summary_for_message(message, user),
         'reactions': _reaction_summary_for_message(message, user),
         'is_pinned': message.pins.exists(),
@@ -1025,6 +1040,7 @@ def inbox(request, room_id=None):
         ]
 
     context = {
+        'communication_permissions': _communication_permissions(request.user),
         'base_template': _base_template_for_role(role),
         'role': role,
         'room_cards': _room_cards(request),
@@ -1035,7 +1051,7 @@ def inbox(request, room_id=None):
         'conversation_targets': _conversation_targets(request, role, session_id, school_id),
         'standards': _available_standards(request, role, session_id, school_id),
         'subject_assignments': _available_subject_assignments(request, role, session_id, school_id),
-        'can_manage_room': bool(active_room and _is_room_manager(request, active_room)),
+        'can_manage_room': bool(active_room and _is_room_manager(request, active_room) and _communication_permissions(request.user)['approve']),
         'room_participants': room_participants,
         'max_attachment_mb': MAX_ATTACHMENT_SIZE // (1024 * 1024),
         'notification_status': _notification_status_payload(participant) if participant else {},

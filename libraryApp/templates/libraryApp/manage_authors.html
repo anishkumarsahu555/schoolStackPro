@@ -2,7 +2,7 @@
 {% block title %}<title>Authors</title>{% endblock %}
 {% block page_title %}Authors{% endblock %}
 {% block page_subtitle %}Maintain author records used by books{% endblock %}
-{% block page_actions %}<button class="ui green button class-page-action" onclick="showAuthorModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Author</span><span class="mobile-label">Add</span></span></button>{% endblock %}
+{% block page_actions %}{% if management_permissions.library.add %}<button class="ui green button class-page-action" onclick="showAuthorModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Author</span><span class="mobile-label">Add</span></span></button>{% endif %}{% endblock %}
 {% block body %}
 {% include 'libraryApp/_library_styles.html' %}
 {% include 'libraryApp/_library_validation.html' %}

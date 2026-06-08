@@ -2,7 +2,7 @@
 {% block title %}<title>Publishers</title>{% endblock %}
 {% block page_title %}Publishers{% endblock %}
 {% block page_subtitle %}Maintain publisher contact and catalogue records{% endblock %}
-{% block page_actions %}<button class="ui green button class-page-action" onclick="showPublisherModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Publisher</span><span class="mobile-label">Add</span></span></button>{% endblock %}
+{% block page_actions %}{% if management_permissions.library.add %}<button class="ui green button class-page-action" onclick="showPublisherModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Publisher</span><span class="mobile-label">Add</span></span></button>{% endif %}{% endblock %}
 {% block body %}
 {% include 'libraryApp/_library_styles.html' %}
 {% include 'libraryApp/_library_validation.html' %}

@@ -3,6 +3,7 @@
 {% block page_title %}Transport Reports{% endblock %}
 {% block page_subtitle %}Route capacity, vehicle utilization, and passenger manifest{% endblock %}
 {% block page_actions %}
+    {% if management_permissions.transport.report %}
     <button class="ui blue button class-page-action" type="button" onclick="printManifest()">
         <i class="print icon"></i>
         <span class="class-page-action-label"><span class="desktop-label">Print Manifest</span><span class="mobile-label">Print</span></span>
@@ -11,6 +12,7 @@
         <i class="download icon"></i>
         <span class="class-page-action-label"><span class="desktop-label">Export CSV</span><span class="mobile-label">Export</span></span>
     </button>
+    {% endif %}
 {% endblock %}
 {% block body %}
 {% include 'transportApp/_management_table_styles.html' %}

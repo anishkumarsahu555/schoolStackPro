@@ -31,7 +31,7 @@
 
         .marks-detail-filter-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
             gap: 0.9rem 1rem;
             align-items: end;
         }
@@ -79,7 +79,7 @@
                         <div class="marks-detail-filter-grid">
                             <div class="field required">
                                 <label>Class-Section</label>
-                                <select class="ui search dropdown" id="standard" onchange="getExamList()">
+                                <select class="ui search dropdown" id="standard">
                                     <option value="">Search By Class Name</option>
                                 </select>
                             </div>
@@ -129,8 +129,14 @@
                         <div class="marks-detail-filter-grid">
                             <div class="field required">
                                 <label>Class-Section</label>
-                                <select class="ui search dropdown" id="standardByStudent" onchange="getStudentList()">
+                                <select class="ui search dropdown" id="standardByStudent">
                                     <option value="">Search By Class Name</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Exam</label>
+                                <select class="ui search dropdown" id="examByStudent">
+                                    <option value="">All Exams</option>
                                 </select>
                             </div>
                             <div class="field required">
@@ -188,17 +194,57 @@
     <script>
         let marksTable = null;
         let marksByStudentTable = null;
+        const marksDetailApiUrls = {
+            standardList: "{% if is_teacher_context %}{% url 'teacherAppAPI:get_assigned_class_list_api' %}{% else %}{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}{% endif %}",
+            examList: "{% if is_teacher_context %}{% url 'teacherAppAPI:teacher_get_exam_list_by_class_api' %}{% else %}{% url 'managementAppAPI:get_exam_list_by_class_api' %}{% endif %}",
+            subjectList: "{% if is_teacher_context %}{% url 'teacherAppAPI:teacher_get_subjects_to_class_assign_list_with_given_class_api' %}{% else %}{% url 'managementAppAPI:get_subjects_to_class_assign_list_with_given_class_api' %}{% endif %}",
+            studentList: "{% if is_teacher_context %}{% url 'teacherAppAPI:get_assigned_student_list_by_class_api' %}{% else %}{% url 'managementAppAPI:get_student_list_by_class_api' %}{% endif %}",
+            classMarksTable: "{% if is_teacher_context %}{% url 'teacherAppAPI:TeacherStudentMarksDetailsByClassAndExamJson' %}{% else %}{% url 'managementAppAPI:StudentMarksDetailsByClassAndExamJson' %}{% endif %}",
+            studentMarksTable: "{% if is_teacher_context %}{% url 'teacherAppAPI:TeacherStudentMarksDetailsByStudentJson' %}{% else %}{% url 'managementAppAPI:StudentMarksDetailsByStudentJson' %}{% endif %}"
+        };
 
         $(document).ready(function () {
             $('.menu .item').tab();
             getStandardList();
             initByStudentTable();
+            $(document).on('change', '#standard', function () {
+                getExamList();
+                $('#MarksTableDiv').hide();
+            });
+            $(document).on('change', '#exam', function () {
+                $('#MarksTableDiv').hide();
+            });
+            $(document).on('change', '#standardByStudent', function () {
+                getExamListByStudent();
+                getStudentList();
+                $('#MarksByStudentDiv').hide();
+            });
+            $(document).on('change', '#examByStudent', function () {
+                $('#MarksByStudentDiv').hide();
+            });
         });
+
+        function refreshDropdown($dropdown, selectedValue) {
+            const hasSelection = selectedValue !== undefined && selectedValue !== null && selectedValue !== '';
+            $dropdown.dropdown();
+            $dropdown.val(hasSelection ? String(selectedValue) : '');
+            $dropdown.dropdown('refresh');
+            if (hasSelection) {
+                $dropdown.dropdown('set selected', String(selectedValue));
+            } else {
+                $dropdown.dropdown('clear');
+                const placeholderText = $dropdown.find('option[value=""]').first().text();
+                const $dropdownText = $dropdown.closest('.ui.dropdown').children('.text');
+                if (placeholderText && $dropdownText.length) {
+                    $dropdownText.addClass('default').removeClass('filtered').text(placeholderText);
+                }
+            }
+        }
 
         function getStandardList() {
             $.ajax({
                 type: 'get',
-                url: "{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}",
+                url: marksDetailApiUrls.standardList,
                 success: function (response) {
                     if (!response.success || !Array.isArray(response.data)) {
                         addErrorNotification(response.message || 'Unable to load classes');
@@ -213,8 +259,8 @@
                         $('#standard').append(option);
                         $('#standardByStudent').append(option);
                     }
-                    $('#standard').dropdown('refresh');
-                    $('#standardByStudent').dropdown('refresh');
+                    refreshDropdown($('#standard'));
+                    refreshDropdown($('#standardByStudent'));
                 },
                 error: function () {
                     addErrorNotification();
@@ -225,14 +271,14 @@
         function getExamList() {
             const standard = $('#standard').val();
             $('#exam').html('<option value="">Search By Exam</option>');
+            refreshDropdown($('#exam'));
             if (!standard) {
-                $('#exam').dropdown('refresh');
                 return;
             }
 
             $.ajax({
                 type: 'get',
-                url: "{% url 'managementAppAPI:get_exam_list_by_class_api' %}",
+                url: marksDetailApiUrls.examList,
                 data: {standard: standard},
                 success: function (response) {
                     if (!response.success || !Array.isArray(response.data)) {
@@ -242,7 +288,7 @@
                     for (let j = 0; j < response.data.length; j++) {
                         $('#exam').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
                     }
-                    $('#exam').dropdown('refresh');
+                    refreshDropdown($('#exam'));
                 },
                 error: function () {
                     addErrorNotification();
@@ -253,14 +299,14 @@
         function getStudentList() {
             const standard = $('#standardByStudent').val();
             $('#student').html('<option value="">Search By Student</option>');
+            refreshDropdown($('#student'));
             if (!standard) {
-                $('#student').dropdown('refresh');
                 return;
             }
 
             $.ajax({
                 type: 'get',
-                url: "{% url 'managementAppAPI:get_student_list_by_class_api' %}",
+                url: marksDetailApiUrls.studentList,
                 data: {standard: standard},
                 success: function (response) {
                     if (!response.success || !Array.isArray(response.data)) {
@@ -270,7 +316,35 @@
                     for (let j = 0; j < response.data.length; j++) {
                         $('#student').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
                     }
-                    $('#student').dropdown('refresh');
+                    refreshDropdown($('#student'));
+                },
+                error: function () {
+                    addErrorNotification();
+                }
+            });
+        }
+
+        function getExamListByStudent() {
+            const standard = $('#standardByStudent').val();
+            $('#examByStudent').html('<option value="">All Exams</option>');
+            refreshDropdown($('#examByStudent'));
+            if (!standard) {
+                return;
+            }
+
+            $.ajax({
+                type: 'get',
+                url: marksDetailApiUrls.examList,
+                data: {standard: standard},
+                success: function (response) {
+                    if (!response.success || !Array.isArray(response.data)) {
+                        addErrorNotification(response.message || 'Unable to load exams');
+                        return;
+                    }
+                    for (let j = 0; j < response.data.length; j++) {
+                        $('#examByStudent').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
+                    }
+                    refreshDropdown($('#examByStudent'));
                 },
                 error: function () {
                     addErrorNotification();
@@ -310,35 +384,38 @@
 
             $.ajax({
                 type: 'get',
-                url: "{% url 'managementAppAPI:get_subjects_to_class_assign_list_with_given_class_api' %}",
-                data: {standard: standard},
+                url: marksDetailApiUrls.subjectList,
+                cache: false,
+                data: {standard: standard, exam: exam, exam_assignment: 1, _: Date.now()},
                 success: function (response) {
                     if (!response.success || !Array.isArray(response.data)) {
                         addErrorNotification(response.message || 'Unable to load subjects');
                         return;
                     }
 
+                    if (marksTable) {
+                        marksTable.destroy();
+                        marksTable = null;
+                    }
+                    $('#MarksDetailTable thead').empty();
+                    $('#MarksDetailTable tbody').empty();
+
                     const columns = buildColumns(response.data);
                     buildHead(columns);
                     $('#MarksTableDiv').show();
-
-                    if (marksTable) {
-                        marksTable.destroy();
-                        $('#MarksDetailTable tbody').empty();
-                    }
 
                     marksTable = $('#MarksDetailTable').DataTable({
                         dom: 'Blfrtip',
                         scrollY: '350px',
                         scrollX: true,
-                        stateSave: true,
+                        stateSave: false,
                         buttons: [{extend: 'excel'}],
                         aaSorting: [[2, 'asc']],
                         lengthMenu: [[50, 100, 200, -1], [50, 100, 200, 'All']],
                         pageLength: 50,
                         processing: true,
                         serverSide: true,
-                        ajax: "{% url 'managementAppAPI:StudentMarksDetailsByClassAndExamJson' %}?standard=" + standard + "&exam=" + exam,
+                        ajax: marksDetailApiUrls.classMarksTable + "?standard=" + standard + "&exam=" + exam,
                         columns: columns
                     });
                 },
@@ -352,6 +429,8 @@
             $('#standard').dropdown('clear');
             $('#exam').dropdown('clear');
             $('#exam').html('<option value="">Search By Exam</option>');
+            refreshDropdown($('#standard'));
+            refreshDropdown($('#exam'));
             $('.ui.form .field').removeClass('error');
             $('#MarksTableDiv').hide();
             if (marksTable) {
@@ -382,12 +461,13 @@
                 pageLength: 25,
                 processing: true,
                 serverSide: true,
-                ajax: "{% url 'managementAppAPI:StudentMarksDetailsByStudentJson' %}"
+                ajax: marksDetailApiUrls.studentMarksTable
             });
         }
 
         function searchByStudent() {
             const standardByStudent = $('#standardByStudent').val();
+            const examByStudent = $('#examByStudent').val();
             const student = $('#student').val();
             if (!standardByStudent || !student) {
                 requiredFieldError();
@@ -397,14 +477,19 @@
 
             $('#MarksByStudentDiv').show();
             marksByStudentTable.ajax.url(
-                "{% url 'managementAppAPI:StudentMarksDetailsByStudentJson' %}?standardByStudent=" + standardByStudent + "&student=" + student
+                marksDetailApiUrls.studentMarksTable + "?standardByStudent=" + standardByStudent + "&student=" + student + "&examByStudent=" + examByStudent
             ).load();
         }
 
         function clearByStudent() {
             $('#standardByStudent').dropdown('clear');
+            $('#examByStudent').dropdown('clear');
             $('#student').dropdown('clear');
+            $('#examByStudent').html('<option value="">All Exams</option>');
             $('#student').html('<option value="">Search By Student</option>');
+            refreshDropdown($('#standardByStudent'));
+            refreshDropdown($('#examByStudent'));
+            refreshDropdown($('#student'));
             $('.ui.form .field').removeClass('error');
             $('#MarksByStudentDiv').hide();
             marksByStudentTable.clear().draw();

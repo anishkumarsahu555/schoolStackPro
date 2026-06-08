@@ -121,26 +121,26 @@
                         <div class="field required">
                             <label for="name">Name</label>
                             <div class="ui input">
-                                <input type="text" name="name" id="name" placeholder="Name" value="{{ instance.name }}">
+                                <input type="text" name="name" id="name" placeholder="Name" value="{{ instance.name|default_if_none:'' }}">
                             </div>
                         </div>
                         <div class="field">
                             <label for="email">Email</label>
                             <div class="ui input">
-                                <input type="text" name="email" id="email" placeholder="Email" value="{{ instance.email }}">
+                                <input type="text" name="email" id="email" placeholder="Email" value="{{ instance.email|default_if_none:'' }}">
                             </div>
                         </div>
                         <div class="field required">
                             <label for="phone">Phone Number</label>
                             <div class="ui input">
-                                <input type="number" name="phone" id="phone" placeholder="Phone Number" value="{{ instance.phoneNumber }}">
+                                <input type="number" name="phone" id="phone" placeholder="Phone Number" value="{{ instance.phoneNumber|default_if_none:'' }}">
                             </div>
                         </div>
                     </div>
                     <div class="three fields">
                         <div class="field required">
                             <label for="bloodGroup">Blood Group</label>
-                            <select class="ui dropdown" id="bloodGroup" value="{{ instance.bloodGroup }}">
+                            <select class="ui dropdown" id="bloodGroup" value="{{ instance.bloodGroup|default_if_none:'' }}">
                                 <option value="">Select Blood Group</option>
                                 <option value="A+">A+</option>
                                 <option value="A-">A-</option>
@@ -155,7 +155,7 @@
                         </div>
                         <div class="field required">
                             <label for="gender">Gender</label>
-                            <select class="ui dropdown" id="gender" value="{{ instance.gender }}">
+                            <select class="ui dropdown" id="gender" value="{{ instance.gender|default_if_none:'' }}">
                                 <option value="">Select Gender</option>
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
@@ -168,7 +168,7 @@
                             <div class="ui calendar" id="dobCal" >
                                 <div class="ui input left icon">
                                     <i class="calendar icon"></i>
-                                    <input type="text" placeholder="Date of birth" id="dob" value="{{ instance.dob }}">
+                                    <input type="text" placeholder="Date of birth" id="dob" value="{{ instance.dob|date:'d/m/Y' }}">
                                 </div>
                             </div>
                         </div>
@@ -177,13 +177,13 @@
                         <div class="field required">
                             <label for="aadhar">Aadhar Number</label>
                             <div class="ui input">
-                                <input type="number" name="aadhar" id="aadhar" placeholder="Aadhar Number" value="{{ instance.aadhar }}">
+                                <input type="number" name="aadhar" id="aadhar" placeholder="Aadhar Number" value="{{ instance.aadhar|default_if_none:'' }}">
                             </div>
                         </div>
                         <div class="field required">
                             <label for="qualification">Qualification</label>
                             <div class="ui input">
-                                <input type="text" name="qualification" id="qualification" placeholder="Qualification" value="{{ instance.qualification }}">
+                                <input type="text" name="qualification" id="qualification" placeholder="Qualification" value="{{ instance.qualification|default_if_none:'' }}">
                             </div>
                         </div>
                     </div>
@@ -191,13 +191,13 @@
                     <h4 class="ui dividing header">Present Address</h4>
                     <div class="field required">
                         <label for="address">Address</label>
-                        <textarea name="address" id="address" rows="2" placeholder="Address">{{ instance.presentAddress }}</textarea>
+                        <textarea name="address" id="address" rows="2" placeholder="Address">{{ instance.presentAddress|default_if_none:'' }}</textarea>
                     </div>
 
                     <div class="two fields">
                         <div class="field required">
                             <label for="city">City</label>
-                            <input type="text" name="city" id="city" placeholder="City" value="{{ instance.presentCity }}">
+                            <input type="text" name="city" id="city" placeholder="City" value="{{ instance.presentCity|default_if_none:'' }}">
                         </div>
                         <div class="field required">
                             <label for="state">State</label>
@@ -221,7 +221,7 @@
                         </div>
                         <div class="field required">
                             <label for="pincode">Pincode</label>
-                            <input type="number" name="pincode" id="pincode" maxlength="6" placeholder="Pincode" value="{{ instance.presentPinCode }}">
+                            <input type="number" name="pincode" id="pincode" maxlength="6" placeholder="Pincode" value="{{ instance.presentPinCode|default_if_none:'' }}">
                         </div>
 
                     </div>
@@ -237,13 +237,13 @@
                     </div>
                     <div class="field required">
                         <label for="addressP">Address</label>
-                        <textarea name="addressP" id="addressP" rows="2" placeholder="Address">{{ instance.permanentAddress }}</textarea>
+                        <textarea name="addressP" id="addressP" rows="2" placeholder="Address">{{ instance.permanentAddress|default_if_none:'' }}</textarea>
                     </div>
 
                     <div class="two fields">
                         <div class="field required">
                             <label for="cityP">City</label>
-                            <input type="text" name="cityP" id="cityP" placeholder="City" value="{{ instance.permanentCity }}">
+                            <input type="text" name="cityP" id="cityP" placeholder="City" value="{{ instance.permanentCity|default_if_none:'' }}">
                         </div>
                         <div class="field required">
                             <label for="stateP">State</label>
@@ -267,7 +267,7 @@
                         </div>
                         <div class="field required">
                             <label for="pincodeP">Pincode</label>
-                            <input type="number" name="pincodeP" id="pincodeP" maxlength="6" placeholder="Pincode" value="{{ instance.permanentPinCode }}">
+                            <input type="number" name="pincodeP" id="pincodeP" maxlength="6" placeholder="Pincode" value="{{ instance.permanentPinCode|default_if_none:'' }}">
                         </div>
 
                     </div>
@@ -275,7 +275,7 @@
                     <div class="three fields">
                         <div class="field required">
                             <label for="empCode">Employee Code</label>
-                            <input type="text" name="empCode" id="empCode" placeholder="Employee Code" value="{{ instance.employeeCode }}">
+                            <input type="text" name="empCode" id="empCode" placeholder="Employee Code" value="{{ instance.employeeCode|default_if_none:'' }}">
                         </div>
                         <div class="field required">
                             <label for="staffType">Staff Type</label>
@@ -293,7 +293,7 @@
                             <div class="ui calendar" id="dojCal">
                                 <div class="ui input left icon">
                                     <i class="calendar icon"></i>
-                                    <input type="text" placeholder="Date of joining" id="doj" value="{{ instance.dateOfJoining }}">
+                                    <input type="text" placeholder="Date of joining" id="doj" value="{{ instance.dateOfJoining|date:'d/m/Y' }}">
                                 </div>
                             </div>
                         </div>
@@ -301,11 +301,11 @@
                     <div class="two fields">
                         <div class="field required">
                             <label for="salary">Salary</label>
-                            <input type="number" name="salary" id="salary" placeholder="Salary" value="{{ instance.salary }}">
+                            <input type="number" name="salary" id="salary" placeholder="Salary" value="{{ instance.salary|default_if_none:'' }}">
                         </div>
                         <div class="field required">
                             <label for="additionalDetails">Additional Details</label>
-                            <input type="text" name="additionalDetails" id="additionalDetails" placeholder="Additional Details" value="{{ instance.additionalDetails }}">
+                            <input type="text" name="additionalDetails" id="additionalDetails" placeholder="Additional Details" value="{{ instance.additionalDetails|default_if_none:'' }}">
                         </div>
                     </div>
                     <input type="hidden" name="id" id="id" value="{{ instance.id }}">
@@ -343,13 +343,13 @@
 
         // jquery to select option
         $(document).ready(function() {
-            $('#gender').val('{{ instance.gender }}').change();
-            $('#bloodGroup').val('{{ instance.bloodGroup }}').change();
-            $('#state').val('{{ instance.presentState }}').change();
-            $('#country').val('{{ instance.presentCountry }}').change();
-            $('#stateP').val('{{ instance.permanentState }}').change();
-            $('#countryP').val('{{ instance.permanentCountry }}').change();
-            $('#staffType').val('{{ instance.staffType }}').change();
+            $('#gender').val('{{ instance.gender|default_if_none:''|escapejs }}').change();
+            $('#bloodGroup').val('{{ instance.bloodGroup|default_if_none:''|escapejs }}').change();
+            $('#state').val('{{ instance.presentState|default_if_none:''|escapejs }}').change();
+            $('#country').val('{{ instance.presentCountry|default_if_none:''|escapejs }}').change();
+            $('#stateP').val('{{ instance.permanentState|default_if_none:''|escapejs }}').change();
+            $('#countryP').val('{{ instance.permanentCountry|default_if_none:''|escapejs }}').change();
+            $('#staffType').val('{{ instance.staffType|default_if_none:''|escapejs }}').change();
         });
 
 

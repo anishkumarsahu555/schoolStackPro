@@ -1,0 +1,75 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Hostel Buildings</title>{% endblock %}
+{% block page_title %}Hostel Buildings{% endblock %}
+{% block page_subtitle %}Create hostel buildings and warden contact details{% endblock %}
+{% block page_actions %}
+    {% if management_permissions.hostel.add %}
+    <button class="ui teal button class-page-action" type="button" onclick="showFloorModal()"><i class="layer group icon"></i><span class="class-page-action-label">Add Floor</span></button>
+    <button class="ui green button class-page-action" type="button" onclick="showBuildingModal()"><i class="plus icon"></i><span class="class-page-action-label">Add Building</span></button>
+    {% endif %}
+{% endblock %}
+{% block body %}
+{% include 'hostelApp/_management_table_styles.html' %}
+<form>{% csrf_token %}</form>
+<div class="ui segment hostel-data-table-card">
+    <h4 class="ui horizontal left aligned divider header"><i class="building icon"></i>Building list</h4>
+    <div class="wide">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="BuildingTable" style="margin-top: 5px;width:100%">
+            <thead><tr><th>Code</th><th>Name</th><th>Warden</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
+        </table>
+    </div>
+</div>
+<div class="ui segment hostel-data-table-card">
+    <h4 class="ui horizontal left aligned divider header"><i class="layer group icon"></i>Floor list</h4>
+    <div class="wide">
+        <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="FloorTable" style="margin-top: 5px;width:100%">
+            <thead><tr><th>Building</th><th>Floor</th><th>Display Order</th><th>Status</th><th>Actions</th></tr></thead>
+        </table>
+    </div>
+</div>
+<div class="ui modal" id="buildingModal">
+    <i class="close icon"></i><div class="header">Hostel Building</div>
+    <div class="content"><form class="ui tiny form" id="buildingForm">
+        <input type="hidden" id="buildingID">
+        <div class="two fields"><div class="field required"><label>Code</label><input id="buildingCode"></div><div class="field required"><label>Name</label><input id="buildingName"></div></div>
+        <div class="two fields"><div class="field"><label>Warden</label><input id="wardenName"></div><div class="field"><label>Phone</label><input id="wardenPhone"></div></div>
+        <div class="field"><label>Address</label><textarea id="address" rows="2"></textarea></div>
+        <div class="ui checkbox"><input type="checkbox" id="buildingIsActive" checked><label>Active</label></div>
+    </form></div>
+    <div class="actions"><div class="ui cancel button">Cancel</div><button class="ui green button" onclick="saveBuilding()">Submit<i class="checkmark icon"></i></button></div>
+</div>
+<div class="ui modal" id="floorModal">
+    <i class="close icon"></i><div class="header">Hostel Floor</div>
+    <div class="content"><form class="ui tiny form" id="floorForm">
+        <input type="hidden" id="floorID">
+        <div class="three fields">
+            <div class="field required"><label>Building</label><select class="ui fluid search dropdown" id="floorBuildingID"></select></div>
+            <div class="field required"><label>Floor Name</label><input id="floorName" placeholder="Ground Floor"></div>
+            <div class="field"><label>Display Order</label><input type="number" id="displayOrder" value="0"></div>
+        </div>
+        <div class="ui checkbox"><input type="checkbox" id="floorIsActive" checked><label>Active</label></div>
+    </form></div>
+    <div class="actions"><div class="ui cancel button">Cancel</div><button class="ui green button" onclick="saveFloor()">Submit<i class="checkmark icon"></i></button></div>
+</div>
+{% endblock %}
+{% block js %}
+<script>
+let buildingTable, floorTable;
+$(function(){ $('.ui.checkbox').checkbox(); loadBuildingOptions(); buildingTable = $('#BuildingTable').DataTable({dom:'Blfrtip',scrollY:'350px',scrollX:true,stateSave:true,fixedColumns:{left:1,right:1},lengthMenu:[[10,25,50,100,-1],[10,25,50,100,'All']],pageLength:10,processing:true,serverSide:true,ajax:"{% url 'hostelAppAPI:BuildingListJson' %}",columnDefs:[{targets:5,orderable:false}]}); floorTable = $('#FloorTable').DataTable({dom:'Blfrtip',scrollY:'350px',scrollX:true,stateSave:true,fixedColumns:{left:1,right:1},lengthMenu:[[10,25,50,100,-1],[10,25,50,100,'All']],pageLength:10,processing:true,serverSide:true,ajax:"{% url 'hostelAppAPI:FloorListJson' %}",columnDefs:[{targets:4,orderable:false}]}); });
+function reloadBuildings(){ buildingTable.ajax.reload(null,false); }
+function reloadFloors(){ floorTable.ajax.reload(null,false); }
+function closeBuildingDropdown(sel){ const s=$(sel); const dd=s.closest('.ui.dropdown'); s.dropdown('hide'); dd.dropdown('hide').removeClass('active visible').find('.menu').removeClass('visible').hide(); }
+function resetBuildingDropdown(sel, placeholder, items){ const s=$(sel); s.dropdown('destroy'); s.html('<option value="">'+placeholder+'</option>'); (items||[]).forEach(i=>s.append('<option value="'+i.id+'">'+i.text+'</option>')); s.dropdown({fullTextSearch:true, forceSelection:false, clearable:true, onChange:function(){ setTimeout(function(){ closeBuildingDropdown(sel); }, 80); }}).dropdown('refresh'); }
+function loadBuildingOptions(){ $.get("{% url 'hostelAppAPI:hostel_options_api' %}", function(r){ resetBuildingDropdown('#floorBuildingID', 'Select Building', (r.data||{}).buildings); }).fail(function(){ addErrorNotification('Unable to load hostel buildings.'); }); }
+function showBuildingModal(){ $('#buildingForm')[0].reset(); $('#buildingID').val(''); $('#buildingIsActive').prop('checked', true); $('.ui.checkbox').checkbox('refresh'); $('#buildingModal').modal('show'); }
+function editBuilding(id){ $.get("{% url 'hostelAppAPI:building_detail_api' %}", {id:id}, function(r){ const d=r.data||{}; $('#buildingID').val(d.id); $('#buildingCode').val(d.buildingCode); $('#buildingName').val(d.buildingName); $('#wardenName').val(d.wardenName); $('#wardenPhone').val(d.wardenPhone); $('#address').val(d.address); $('#buildingIsActive').prop('checked', !!d.isActive); $('.ui.checkbox').checkbox('refresh'); $('#buildingModal').modal('show'); }); }
+function saveBuilding(){ const data = new FormData(); [['id','buildingID'],['buildingCode','buildingCode'],['buildingName','buildingName'],['wardenName','wardenName'],['wardenPhone','wardenPhone'],['address','address']].forEach(i=>data.append(i[0], $('#'+i[1]).val())); data.append('isActive', $('#buildingIsActive').is(':checked')); data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val()); $.ajax({url:"{% url 'hostelAppAPI:buildings_api' %}",type:'POST',data:data,contentType:false,processData:false,success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); $('#buildingModal').modal('hide'); reloadBuildings(); loadBuildingOptions(); } else addErrorNotification(r.message); },error:function(x){ addErrorNotification((x.responseJSON||{}).message || 'Unable to save building.'); }}); }
+function confirmDeleteBuilding(id){ showHostelDeleteModal(id, 'Building Details will be Deleted', 'The Hostel Building will be deleted, are you sure to delete this Building?', deleteBuilding); }
+function deleteBuilding(id){ const data=new FormData(); data.append('id',id); data.append('csrfmiddlewaretoken',$("input[name='csrfmiddlewaretoken']").val()); $.ajax({url:"{% url 'hostelAppAPI:delete_building_api' %}",type:'POST',data:data,contentType:false,processData:false,success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); reloadBuildings(); loadBuildingOptions(); } else addErrorNotification(r.message); }}); }
+function showFloorModal(){ $('#floorForm')[0].reset(); $('#floorID').val(''); $('#floorBuildingID').dropdown('clear'); $('#floorIsActive').prop('checked', true); $('.ui.checkbox').checkbox('refresh'); $('#floorModal').modal('show'); }
+function editFloor(id){ $.get("{% url 'hostelAppAPI:floor_detail_api' %}", {id:id}, function(r){ const d=r.data||{}; $('#floorID').val(d.id); $('#floorBuildingID').dropdown('set selected', d.buildingID_id || ''); $('#floorName').val(d.floorName); $('#displayOrder').val(d.displayOrder); $('#floorIsActive').prop('checked', !!d.isActive); $('.ui.checkbox').checkbox('refresh'); $('#floorModal').modal('show'); }); }
+function saveFloor(){ const data = new FormData(); [['id','floorID'],['buildingID','floorBuildingID'],['floorName','floorName'],['displayOrder','displayOrder']].forEach(i=>data.append(i[0], $('#'+i[1]).val())); data.append('isActive', $('#floorIsActive').is(':checked')); data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val()); $.ajax({url:"{% url 'hostelAppAPI:floors_api' %}",type:'POST',data:data,contentType:false,processData:false,success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); $('#floorModal').modal('hide'); reloadFloors(); } else addErrorNotification(r.message); },error:function(x){ addErrorNotification((x.responseJSON||{}).message || 'Unable to save floor.'); }}); }
+function confirmDeleteFloor(id){ showHostelDeleteModal(id, 'Floor Details will be Deleted', 'The Hostel Floor will be deleted, are you sure to delete this Floor?', deleteFloor); }
+function deleteFloor(id){ const data=new FormData(); data.append('id',id); data.append('csrfmiddlewaretoken',$("input[name='csrfmiddlewaretoken']").val()); $.ajax({url:"{% url 'hostelAppAPI:delete_floor_api' %}",type:'POST',data:data,contentType:false,processData:false,success:function(r){ if(r.success){ addSuccessNotification(r.message,'green'); reloadFloors(); } else addErrorNotification(r.message); }}); }
+</script>
+{% endblock %}

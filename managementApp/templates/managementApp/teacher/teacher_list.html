@@ -1,15 +1,19 @@
 {% extends 'managementApp/index.html' %}
 {% load static %}
+{% load management_access %}
 {% block title %}
     <title>Teacher List</title>
 {% endblock %}
 {% block page_title %}Teacher List{% endblock %}
 {% block page_subtitle %}Manage teacher and staff profiles, contact details, and status{% endblock %}
 {% block page_actions %}
-    <a class="ui green button" href="{% url 'managementApp:add_teacher' %}">
-        <i class="plus icon"></i>
-        <span><span class="desktop-label">Add Teacher/Staff</span><span class="mobile-label">Add</span></span>
-    </a>
+    {% can_manage 'staff' 'add' as can_add_staff %}
+    {% if can_add_staff %}
+        <a class="ui green button" href="{% url 'managementApp:add_teacher' %}">
+            <i class="plus icon"></i>
+            <span><span class="desktop-label">Add Teacher/Staff</span><span class="mobile-label">Add</span></span>
+        </a>
+    {% endif %}
 {% endblock %}
 {% block css %}
 {% endblock %}

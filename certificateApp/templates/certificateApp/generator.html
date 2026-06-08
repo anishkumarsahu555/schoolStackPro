@@ -16,10 +16,10 @@
             <span><span class="desktop-label">Design Detail</span><span class="mobile-label">Detail</span></span>
         </a>
     {% else %}
-        <a class="ui green button" href="{% url 'certificateApp:create_design' %}">
+        {% if management_permissions.certificates.add %}<a class="ui green button" href="{% url 'certificateApp:create_design' %}">
             <i class="paint brush icon"></i>
             <span><span class="desktop-label">New Design</span><span class="mobile-label">New</span></span>
-        </a>
+        </a>{% endif %}
     {% endif %}
 {% endblock %}
 
@@ -2065,10 +2065,10 @@
                                 </div>
                             </div>
                             <div class="generator-actions-buttons">
-                                <button type="button" id="saveBtn" class="ui mini green button saveBtn" onclick="generateCertificate()">
+                                {% if management_permissions.certificates.add %}<button type="button" id="saveBtn" class="ui mini green button saveBtn" onclick="generateCertificate()">
                                     <i class="icon plus square"></i>
                                     <span class="save-label">Generate</span>
-                                </button>
+                                </button>{% endif %}
                                 <button type="button" class="ui mini red button" onclick="clearCertificateForm()">
                                     <i class="icon times circle"></i>
                                     Clear

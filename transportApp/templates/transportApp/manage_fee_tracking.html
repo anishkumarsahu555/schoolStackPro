@@ -3,10 +3,12 @@
 {% block page_title %}Transport Fee Tracking{% endblock %}
 {% block page_subtitle %}Generate monthly transport dues and track pending, paid, waived, or cancelled fees{% endblock %}
 {% block page_actions %}
+    {% if management_permissions.transport.add %}
     <button class="ui green button class-page-action" type="button" onclick="generateFeeRecords()">
         <i class="sync icon"></i>
         <span class="class-page-action-label"><span class="desktop-label">Generate Monthly Fees</span><span class="mobile-label">Generate</span></span>
     </button>
+    {% endif %}
 {% endblock %}
 {% block body %}
 {% include 'transportApp/_management_table_styles.html' %}

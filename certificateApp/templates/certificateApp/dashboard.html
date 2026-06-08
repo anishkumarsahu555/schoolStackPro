@@ -6,14 +6,14 @@
 {% block page_title %}Certificates{% endblock %}
 {% block page_subtitle %}Generate certificates, manage designs, and review issued records{% endblock %}
 {% block page_actions %}
-    <a class="ui primary button" href="{% url 'certificateApp:create_design' %}">
+    {% if management_permissions.certificates.add %}<a class="ui primary button" href="{% url 'certificateApp:create_design' %}">
         <i class="paint brush icon"></i>
         <span><span class="desktop-label">Design</span><span class="mobile-label">Design</span></span>
-    </a>
-    <a class="ui green button" href="{% url 'certificateApp:generator' %}">
+    </a>{% endif %}
+    {% if management_permissions.certificates.add %}<a class="ui green button" href="{% url 'certificateApp:generator' %}">
         <i class="plus icon"></i>
         <span><span class="desktop-label">Generate</span><span class="mobile-label">New</span></span>
-    </a>
+    </a>{% endif %}
 {% endblock %}
 
 {% block css %}

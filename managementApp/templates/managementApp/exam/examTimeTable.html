@@ -618,11 +618,37 @@
         formatter: { time: timeFormatter }
     });
 
-    $(getStandardList());
-    $(getExamList());
-    $(getSubjectList());
+    let suppressSubjectReload = false;
 
-    function getStandardList() {
+    function refreshDropdown($dropdown, selectedValue) {
+        const hasSelection = selectedValue !== undefined && selectedValue !== null && selectedValue !== '';
+        $dropdown.dropdown();
+        $dropdown.val(hasSelection ? String(selectedValue) : '');
+        $dropdown.dropdown('refresh');
+        if (hasSelection) {
+            $dropdown.dropdown('set selected', String(selectedValue));
+        } else {
+            $dropdown.dropdown('clear');
+        }
+    }
+
+    $(function () {
+        getStandardList();
+        getExamList();
+        getSubjectList();
+    });
+
+    $(document).on('change', '#standard', function () {
+        if (suppressSubjectReload) return;
+        getExamList();
+    });
+
+    $(document).on('change', '#exam', function () {
+        if (suppressSubjectReload) return;
+        getSubjectList();
+    });
+
+    function getStandardList(selectedStandardId, done) {
         $.ajax({
             type: 'get',
             url: "{% url 'managementAppCachedAPI:get_cached_standard_list_api' %}",
@@ -635,48 +661,85 @@
                     $('#standard').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
                     $('#listStandardFilter').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
                 }
-                $('#listStandardFilter').dropdown();
+                refreshDropdown($('#standard'), selectedStandardId);
+                refreshDropdown($('#listStandardFilter'));
+                if (typeof done === 'function') done();
             },
             error: function () {
                 addErrorNotification();
+                if (typeof done === 'function') done(false);
             }
         });
     }
 
-    function getExamList() {
+    function getExamList(selectedExamId, done) {
+        const standard = $('#standard').val();
+        const useClassExamFilter = !!standard;
         $.ajax({
             type: 'get',
-            url: "{% url 'managementAppAPI:get_exams_list_api' %}",
+            url: useClassExamFilter
+                ? "{% url 'managementAppAPI:get_exam_list_by_class_api' %}"
+                : "{% url 'managementAppAPI:get_exams_list_api' %}",
+            data: useClassExamFilter ? {standard: standard} : {},
             success: function (response) {
                 $('#exam').html('');
                 $('#exam').append('<option value="">Search By Exam Name</option>');
-                $('#listExamFilter').html('');
-                $('#listExamFilter').append('<option value="">All Exams</option>');
-                for (let j = 0; j < response.data.length; j++) {
-                    $('#exam').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
-                    $('#listExamFilter').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
+                if (!useClassExamFilter) {
+                    $('#listExamFilter').html('');
+                    $('#listExamFilter').append('<option value="">All Exams</option>');
                 }
-                $('#listExamFilter').dropdown();
+                for (let j = 0; j < response.data.length; j++) {
+                    const value = useClassExamFilter ? (response.data[j]['ExamID'] || response.data[j]['ID']) : response.data[j]['ID'];
+                    $('#exam').append('<option value="' + value + '">' + response.data[j]['Name'] + '</option>');
+                    if (!useClassExamFilter) {
+                        $('#listExamFilter').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
+                    }
+                }
+                refreshDropdown($('#exam'), selectedExamId);
+                if (!useClassExamFilter) {
+                    refreshDropdown($('#listExamFilter'));
+                }
+                if (typeof done === 'function') {
+                    done();
+                } else {
+                    getSubjectList();
+                }
             },
             error: function () {
                 addErrorNotification();
+                if (typeof done === 'function') done(false);
             }
         });
     }
 
-    function getSubjectList() {
+    function getSubjectList(selectedSubjectId, done) {
+        const standard = $('#standard').val();
+        const exam = $('#exam').val();
+        const useExamSubjectFilter = standard && exam;
+        if (!useExamSubjectFilter) {
+            $('#subject').html('<option value="">Select class and exam first</option>');
+            refreshDropdown($('#subject'));
+            if (typeof done === 'function') done();
+            return;
+        }
         $.ajax({
             type: 'get',
-            url: "{% url 'managementAppCachedAPI:get_cached_subjects_list_api' %}",
+            url: "{% url 'managementAppAPI:get_subjects_to_class_assign_list_with_given_class_api' %}",
+            data: {standard: standard, exam: exam, exam_assignment: 0},
             success: function (response) {
+                const rows = response.data || [];
                 $('#subject').html('');
                 $('#subject').append('<option value="">Search By Subject Name</option>');
-                for (let j = 0; j < response.data.length; j++) {
-                    $('#subject').append('<option value="' + response.data[j]['ID'] + '">' + response.data[j]['Name'] + '</option>');
+                for (let j = 0; j < rows.length; j++) {
+                    const value = rows[j]['RawSubjectID'] || rows[j]['ID'];
+                    $('#subject').append('<option value="' + value + '">' + rows[j]['Name'] + '</option>');
                 }
+                refreshDropdown($('#subject'), selectedSubjectId);
+                if (typeof done === 'function') done();
             },
             error: function () {
                 addErrorNotification();
+                if (typeof done === 'function') done(false);
             }
         });
     }
@@ -884,21 +947,27 @@
             url: "{% url 'managementAppAPI:get_exam_timetable_detail' %}",
             success: function (response) {
                 if (response.success) {
-                    $('#standard').dropdown('set selected', String(response.data['StandardID']));
-                    $('#exam').dropdown('set selected', String(response.data['ExamID']));
-                    $('#subject').dropdown('set selected', String(response.data['SubjectID']));
-                    $('#examDate').val(response.data['ExamDate']);
-                    $('#startTime').val(response.data['StartTime']);
-                    $('#endTime').val(response.data['EndTime']);
-                    $('#roomNo').val(response.data['RoomNo']);
-                    $('#note').val(response.data['Note']);
-                    $('#editID').val(response.data['ID']);
-                    clearValidationErrors();
+                    suppressSubjectReload = true;
+                    getStandardList(response.data['StandardID'], function () {
+                        getExamList(response.data['ExamID'], function () {
+                            getSubjectList(response.data['SubjectID'], function () {
+                                suppressSubjectReload = false;
+                                $('#examDate').val(response.data['ExamDate']);
+                                $('#startTime').val(response.data['StartTime']);
+                                $('#endTime').val(response.data['EndTime']);
+                                $('#roomNo').val(response.data['RoomNo']);
+                                $('#note').val(response.data['Note']);
+                                $('#editID').val(response.data['ID']);
+                                clearValidationErrors();
+                            });
+                        });
+                    });
                 } else {
                     showResponseNotification(response, 'Error occurred');
                 }
             },
             error: function (xhr) {
+                suppressSubjectReload = false;
                 showResponseNotification(xhr.responseJSON, 'Unable to load timetable details.');
             }
         });
@@ -946,6 +1015,8 @@
         $('#standard').dropdown('clear');
         $('#exam').dropdown('clear');
         $('#subject').dropdown('clear');
+        getExamList();
+        getSubjectList();
         clearValidationErrors();
         if (typeof currentLoadingMode !== 'undefined') {
             currentLoadingMode = 'save';

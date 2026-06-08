@@ -177,7 +177,7 @@
 
             $.ajax({
                 type: 'get',
-                url: "{% url 'managementAppAPI:get_student_list_by_class_api' %}",
+                url: "{% url 'managementAppCachedAPI:get_cached_student_list_api' %}",
                 data :{
                     'standard' :$('#standard').val()
                 },

@@ -2,7 +2,7 @@
 {% block title %}<title>Book Categories</title>{% endblock %}
 {% block page_title %}Book Categories{% endblock %}
 {% block page_subtitle %}Organize books by category and subcategory{% endblock %}
-{% block page_actions %}<button class="ui green button class-page-action" onclick="showCategoryModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Category</span><span class="mobile-label">Add</span></span></button>{% endblock %}
+{% block page_actions %}{% if management_permissions.library.add %}<button class="ui green button class-page-action" onclick="showCategoryModal()"><i class="plus icon"></i><span><span class="desktop-label">Add Category</span><span class="mobile-label">Add</span></span></button>{% endif %}{% endblock %}
 {% block body %}
 {% include 'libraryApp/_library_styles.html' %}
 {% include 'libraryApp/_library_validation.html' %}

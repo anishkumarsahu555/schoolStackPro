@@ -2761,7 +2761,7 @@
             </div>
 
             <div class="chat-create">
-                {% if conversation_targets %}
+                {% if communication_permissions.add and conversation_targets %}
                     <div class="chat-create-section">
                         <div class="chat-create-heading">
                             <strong>Start direct chat</strong>
@@ -2805,7 +2805,7 @@
                     </div>
                 {% endif %}
 
-                {% if role == 'admin' or role == 'teacher' %}
+                {% if communication_permissions.add and role == 'admin' or communication_permissions.add and role == 'teacher' %}
                     <div class="chat-create-section">
                         <div class="chat-create-heading">
                             <strong>Create room</strong>
@@ -2924,11 +2924,11 @@
                         {% if active_room.isReadOnly %}
                             <span class="type-pill">Read only</span>
                         {% endif %}
-                        <button class="ui tiny basic button" type="button" id="roomNotificationToggle"
+                        {% if communication_permissions.edit %}<button class="ui tiny basic button" type="button" id="roomNotificationToggle"
                                 data-notification-url="{% url 'chatApp:notification_preference_api' active_room.id %}">
                             <i class="{% if notification_status.notification_muted %}bell slash outline{% else %}bell outline{% endif %} icon"></i>
                             <span>{{ notification_status.label|default:'All messages' }}</span>
-                        </button>
+                        </button>{% endif %}
                         <button class="ui tiny basic button" type="button" id="roomFilesToggle">
                             <i class="folder open outline icon"></i>
                             <span>Files</span>
@@ -2937,7 +2937,7 @@
                             <i class="bookmark outline icon"></i>
                             <span>Saved</span>
                         </button>
-                        {% if role == 'admin' %}
+                        {% if communication_permissions.report %}
                             <a class="ui tiny basic button" href="{% url 'chatApp:room_messages_export' active_room.id %}">
                                 <i class="download icon"></i>
                                 <span>Export</span>
@@ -2982,7 +2982,7 @@
                             <strong>Saved</strong>
                             <span>Your bookmarked messages</span>
                         </button>
-                        {% if role == 'admin' %}
+                        {% if communication_permissions.report %}
                             <a class="room-action-item" href="{% url 'chatApp:room_messages_export' active_room.id %}">
                                 <i class="download icon"></i>
                                 <strong>Export</strong>
@@ -3137,6 +3137,10 @@
                 <div class="message-list" id="chatMessageList"
                      data-room-id="{{ active_room.id }}"
                      data-can-manage-room="{% if can_manage_room %}1{% else %}0{% endif %}"
+                     data-can-add="{% if communication_permissions.add %}1{% else %}0{% endif %}"
+                     data-can-edit="{% if communication_permissions.edit %}1{% else %}0{% endif %}"
+                     data-can-delete="{% if communication_permissions.delete %}1{% else %}0{% endif %}"
+                     data-can-report="{% if communication_permissions.report %}1{% else %}0{% endif %}"
                      data-fetch-url="{% url 'chatApp:room_messages_api' active_room.id %}"
                      data-search-url="{% url 'chatApp:room_search_api' active_room.id %}"
                      data-send-url="{% url 'chatApp:send_message_api' active_room.id %}"
@@ -3203,7 +3207,7 @@
                                     </a>
                                 {% endif %}
                                 <div class="message-reactions">
-                                    {% for reaction in row.reactions %}
+                                    {% if communication_permissions.add %}{% for reaction in row.reactions %}
                                         <span class="reaction-item" data-reaction-item="{{ reaction.key }}">
                                             <button type="button" class="reaction-toggle {% if reaction.active %}active{% endif %}"
                                                     data-reaction-type="{{ reaction.key }}"
@@ -3219,14 +3223,14 @@
                                                 </button>
                                             {% endif %}
                                         </span>
-                                    {% endfor %}
+                                    {% endfor %}{% endif %}
                                 </div>
                                 <div class="message-foot">
                                     <span>{{ row.time_label }}</span>
                                     {% if row.message.isEdited %}<span>Edited</span>{% endif %}
                                     {% if row.read_summary %}<span class="message-read-summary">{{ row.read_summary }}</span>{% endif %}
                                     <span class="message-actions">
-                                        <button type="button" class="message-icon-action" data-message-reply data-tooltip="Reply" data-position="top center" aria-label="Reply to message">
+                                        {% if communication_permissions.add %}<button type="button" class="message-icon-action" data-message-reply data-tooltip="Reply" data-position="top center" aria-label="Reply to message">
                                             <i class="reply icon"></i>
                                         </button>
                                         <button type="button" class="message-icon-action {% if row.is_saved %}saved{% endif %}" data-message-save data-tooltip="{% if row.is_saved %}Unsave{% else %}Save{% endif %}" data-position="top center" aria-label="{% if row.is_saved %}Unsave message{% else %}Save message{% endif %}">
@@ -3234,20 +3238,24 @@
                                         </button>
                                         <button type="button" class="message-icon-action" data-message-forward data-tooltip="Forward" data-position="top center" aria-label="Forward message">
                                             <i class="share icon"></i>
-                                        </button>
+                                        </button>{% endif %}
                                         {% if can_manage_room %}
                                             <button type="button" class="message-icon-action {% if row.is_pinned %}active{% endif %}" data-message-pin data-tooltip="{% if row.is_pinned %}Unpin{% else %}Pin{% endif %}" data-position="top center" aria-label="{% if row.is_pinned %}Unpin message{% else %}Pin message{% endif %}">
                                                 <i class="thumbtack icon"></i>
                                             </button>
                                         {% endif %}
                                         {% if row.is_own %}
+                                            {% if communication_permissions.edit %}
                                             <button type="button" class="message-icon-action" data-message-edit data-tooltip="Edit" data-position="top center" aria-label="Edit message">
                                                 <i class="edit outline icon"></i>
                                             </button>
+                                            {% endif %}
+                                            {% if communication_permissions.delete %}
                                             <button type="button" class="message-icon-action danger" data-message-delete data-tooltip="Delete" data-position="top center" aria-label="Delete message">
                                                 <i class="trash alternate outline icon"></i>
                                             </button>
-                                        {% else %}
+                                            {% endif %}
+                                        {% elif communication_permissions.report %}
                                             <form method="post" class="report-form">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="action" value="report_message">
@@ -3273,7 +3281,7 @@
                 <div class="typing-indicator" id="typingIndicator" aria-live="polite"></div>
 
                 <div class="composer">
-                    {% if active_participant and active_participant.canPost %}
+                    {% if communication_permissions.add and active_participant and active_participant.canPost %}
                         <div class="reply-preview" id="replyPreview">
                             <div>
                                 <strong id="replyPreviewTitle">Replying</strong>
@@ -3784,6 +3792,7 @@
             }
 
             function renderReactionBar(reactions) {
+                if (!canAddMessages()) return '';
                 return '<div class="message-reactions">' + (reactions || []).map(function (reaction) {
                     var active = reaction.active ? ' active' : '';
                     var users = (reaction.users || []).join(', ');
@@ -3807,6 +3816,22 @@
                 return list && list.dataset.canManageRoom === '1';
             }
 
+            function canAddMessages() {
+                return list && list.dataset.canAdd === '1';
+            }
+
+            function canEditMessages() {
+                return list && list.dataset.canEdit === '1';
+            }
+
+            function canDeleteMessages() {
+                return list && list.dataset.canDelete === '1';
+            }
+
+            function canReportMessages() {
+                return list && list.dataset.canReport === '1';
+            }
+
             function renderPinAction(message) {
                 if (!canManageRoom()) return '';
                 var active = message.is_pinned ? ' active' : '';
@@ -3819,6 +3844,7 @@
             }
 
             function renderSaveAction(message) {
+                if (!canAddMessages()) return '';
                 var saved = message.is_saved ? ' saved' : '';
                 var label = message.is_saved ? 'Unsave' : 'Save';
                 var icon = message.is_saved ? 'bookmark' : 'bookmark outline';
@@ -3830,6 +3856,7 @@
             }
 
             function renderForwardAction() {
+                if (!canAddMessages()) return '';
                 return '<button type="button" class="message-icon-action" data-message-forward data-tooltip="Forward" data-position="top center" aria-label="Forward message"><i class="share icon"></i></button>';
             }
 
@@ -3975,22 +4002,27 @@
 
                 var body = message.body ? '<div class="message-body">' + escapeHtml(message.body) + '</div>' : '';
                 var attachment = renderAttachment(message);
-                var actions = message.is_own ? (
-                    '<button type="button" class="message-icon-action" data-message-edit data-tooltip="Edit" data-position="top center" aria-label="Edit message">' +
-                    '<i class="edit outline icon"></i>' +
-                    '</button>' +
-                    '<button type="button" class="message-icon-action danger" data-message-delete data-tooltip="Delete" data-position="top center" aria-label="Delete message">' +
-                    '<i class="trash alternate outline icon"></i>' +
-                    '</button>'
-                ) : (
-                    '<form method="post" class="report-form">' +
-                    '<input type="hidden" name="csrfmiddlewaretoken" value="' + escapeHtml(csrfToken()) + '">' +
-                    '<input type="hidden" name="action" value="report_message">' +
-                    '<input type="hidden" name="message_id" value="' + escapeHtml(message.id) + '">' +
-                    '<input type="hidden" name="reason" value="Reported from chat">' +
-                    '<button type="submit">Report</button>' +
-                    '</form>'
-                );
+                var actions = '';
+                if (message.is_own) {
+                    if (message.can_edit && canEditMessages()) {
+                        actions += '<button type="button" class="message-icon-action" data-message-edit data-tooltip="Edit" data-position="top center" aria-label="Edit message">' +
+                            '<i class="edit outline icon"></i>' +
+                            '</button>';
+                    }
+                    if (message.can_delete && canDeleteMessages()) {
+                        actions += '<button type="button" class="message-icon-action danger" data-message-delete data-tooltip="Delete" data-position="top center" aria-label="Delete message">' +
+                            '<i class="trash alternate outline icon"></i>' +
+                            '</button>';
+                    }
+                } else if (message.can_report && canReportMessages()) {
+                    actions = '<form method="post" class="report-form">' +
+                        '<input type="hidden" name="csrfmiddlewaretoken" value="' + escapeHtml(csrfToken()) + '">' +
+                        '<input type="hidden" name="action" value="report_message">' +
+                        '<input type="hidden" name="message_id" value="' + escapeHtml(message.id) + '">' +
+                        '<input type="hidden" name="reason" value="Reported from chat">' +
+                        '<button type="submit">Report</button>' +
+                        '</form>';
+                }
                 var edited = message.is_edited ? '<span>Edited</span>' : '';
                 var readSummary = message.read_summary ? '<span class="message-read-summary">' + escapeHtml(message.read_summary) + '</span>' : '';
 
@@ -4006,7 +4038,7 @@
                     edited +
                     readSummary +
                     '<span class="message-actions">' +
-                    '<button type="button" class="message-icon-action" data-message-reply data-tooltip="Reply" data-position="top center" aria-label="Reply to message"><i class="reply icon"></i></button>' +
+                    (canAddMessages() ? '<button type="button" class="message-icon-action" data-message-reply data-tooltip="Reply" data-position="top center" aria-label="Reply to message"><i class="reply icon"></i></button>' : '') +
                     renderSaveAction(message) +
                     renderForwardAction() +
                     renderPinAction(message) +

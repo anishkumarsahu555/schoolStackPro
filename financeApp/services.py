@@ -573,6 +573,8 @@ def bootstrap_school_finance(*, school_id, session_id, user_obj=None):
         'ADMISSION_FEE': ('Admission Fee', 'admission', accounts['ADMISSION_FEE_INCOME']),
         'MONTHLY_STUDENT_FEE': ('Monthly Student Fee', 'tuition', accounts['TUITION_FEE_INCOME']),
         'TRANSPORT_FEE': ('Transport Fee', 'transport', accounts['MISC_FEE_INCOME']),
+        'HOSTEL_FEE': ('Hostel Fee', 'hostel', accounts['MISC_FEE_INCOME']),
+        'HOSTEL_ADMISSION_FEE': ('Hostel Admission Fee', 'hostel', accounts['MISC_FEE_INCOME']),
         'LIBRARY_FINE': ('Library Fine', 'library', accounts['LIBRARY_FINE_INCOME']),
         'MISC_FEE': ('Misc Fee', 'misc', accounts['MISC_FEE_INCOME']),
     }
