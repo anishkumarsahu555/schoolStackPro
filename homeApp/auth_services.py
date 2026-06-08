@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
 
-from homeApp.models import AccessLink, SchoolOwner
+from homeApp.models import AccessLink, EmailVerification, SchoolOwner
 from managementApp.models import Student, TeacherDetail
 
 
@@ -33,6 +33,25 @@ def get_password_reset_email(user):
     return profile_email or (user.email or '').strip(), role, profile
 
 
+def email_is_verified_for_user(user, email):
+    email = (email or '').strip().lower()
+    if not email:
+        return False
+    return EmailVerification.objects.filter(
+        userID=user,
+        email__iexact=email,
+        verifiedAt__isnull=False,
+        isRevoked=False,
+    ).exists()
+
+
+def get_verified_password_reset_email(user):
+    email, role, profile = get_password_reset_email(user)
+    if email and email_is_verified_for_user(user, email):
+        return email, role, profile
+    return '', role, profile
+
+
 def user_missing_email(user):
     email, role, profile = get_password_reset_email(user)
     return not bool(email)
@@ -47,6 +66,26 @@ def update_user_profile_email(user, email):
     user.email = email
     user.save(update_fields=['email'])
     return role, profile
+
+
+def create_email_verification(*, user, email, request, expires_hours=48):
+    email = (email or '').strip()
+    EmailVerification.objects.filter(
+        userID=user,
+        email__iexact=email,
+        verifiedAt__isnull=True,
+        isRevoked=False,
+    ).update(isRevoked=True)
+
+    token = secrets.token_urlsafe(32)
+    verification = EmailVerification.objects.create(
+        userID=user,
+        email=email,
+        tokenHash=token_hash(token),
+        expiresAt=timezone.now() + timedelta(hours=expires_hours),
+    )
+    verify_url = request.build_absolute_uri(reverse('homeApp:verify_email', kwargs={'token': token}))
+    return verification, verify_url
 
 
 def sync_profile_password(user, raw_password):

@@ -216,6 +216,37 @@ class AccessLink(models.Model):
         ]
 
 
+class EmailVerification(models.Model):
+    userID = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_verifications')
+    email = models.CharField(max_length=500)
+    tokenHash = models.CharField(max_length=64, unique=True)
+    expiresAt = models.DateTimeField()
+    verifiedAt = models.DateTimeField(blank=True, null=True)
+    isRevoked = models.BooleanField(default=False)
+    sentAt = models.DateTimeField(auto_now_add=True)
+    lastUpdatedOn = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.userID} - {self.email}'
+
+    @property
+    def is_usable(self):
+        from django.utils import timezone
+
+        return (
+            not self.isRevoked
+            and self.verifiedAt is None
+            and self.expiresAt >= timezone.now()
+        )
+
+    class Meta:
+        verbose_name_plural = 'h) Email Verifications.'
+        indexes = [
+            models.Index(fields=['userID', 'email', 'verifiedAt'], name='emailver_user_email_idx'),
+            models.Index(fields=['expiresAt', 'isRevoked'], name='emailver_exp_rev_idx'),
+        ]
+
+
 class AuditLog(models.Model):
     ACTION_CHOICES = (
         ('create', 'Create'),

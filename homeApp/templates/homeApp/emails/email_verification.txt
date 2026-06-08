@@ -1,0 +1,12 @@
+Hello {{ profile.name|default:user.username }},
+
+Please verify this email address for your SchoolsStack account.
+
+Verify your email using this secure link:
+{{ verify_url }}
+
+This link is time limited. If it expires, update your email again from your profile page to receive a new verification link.
+
+If you did not add or update this email address, please ignore this message.
+
+Tip: If you expected this message but cannot find it later, please check your Spam or Junk folder.

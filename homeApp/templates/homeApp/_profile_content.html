@@ -212,6 +212,13 @@
         margin-top: 0.75rem;
     }
 
+    .email-status-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+    }
+
     @media (max-width: 900px) {
         .profile-layout { grid-template-columns: 1fr; }
         .profile-head-row { align-items:center; justify-content:space-between; flex-direction:row; }
@@ -270,7 +277,23 @@
                 <div style="margin-top:12px;">
                     <div class="kv"><div class="k">Name</div><div class="v">{{ profile_name }}</div></div>
                     <div class="kv"><div class="k">Username</div><div class="v">{{ profile_username }}</div></div>
-                    <div class="kv"><div class="k">Email</div><div class="v" id="profileEmailText">{{ profile_email_display }}</div></div>
+                    <div class="kv">
+                        <div class="k">Email</div>
+                        <div class="v">
+                            <span class="email-status-wrap">
+                                <span id="profileEmailText">{{ profile_email_display }}</span>
+                                <span id="profileEmailBadge">
+                                    {% if profile_email %}
+                                        {% if profile_email_verified %}
+                                            <span class="ui tiny green label"><i class="check circle icon"></i>Verified</span>
+                                        {% else %}
+                                            <span class="ui tiny yellow label"><i class="exclamation circle icon"></i>Unverified</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </span>
+                            </span>
+                        </div>
+                    </div>
                     <div class="kv"><div class="k">Phone</div><div class="v">{{ profile_phone }}</div></div>
                 </div>
 
@@ -478,6 +501,7 @@
                     success: function (response) {
                         if (response.success) {
                             document.getElementById('profileEmailText').textContent = response.email || 'N/A';
+                            document.getElementById('profileEmailBadge').innerHTML = response.email ? '<span class="ui tiny yellow label"><i class="exclamation circle icon"></i>Unverified</span>' : '';
                             addSuccessNotification(response.message || 'Email address updated successfully.');
                         } else {
                             $field.addClass('error');

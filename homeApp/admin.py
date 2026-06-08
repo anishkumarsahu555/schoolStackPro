@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 from .license import build_license_context
-from .models import AccessLink, AuditLog, SchoolDetail, SchoolOwner, SchoolSession, SchoolSocialLink, WebPushSubscription
+from .models import AccessLink, AuditLog, EmailVerification, SchoolDetail, SchoolOwner, SchoolSession, SchoolSocialLink, WebPushSubscription
 
 
 def _all_concrete_fields(model):
@@ -237,3 +237,11 @@ class AccessLinkAdmin(admin.ModelAdmin):
     list_filter = ('purpose', 'isRevoked', 'schoolID')
     search_fields = ('=id', 'userID__username', 'createdByUserID__username', 'tokenHash')
     readonly_fields = ('tokenHash', 'datetime', 'lastUpdatedOn', 'usedAt', 'usedCount', 'lastUsedIpAddress')
+
+
+@admin.register(EmailVerification)
+class EmailVerificationAdmin(admin.ModelAdmin):
+    list_display = ('sentAt', 'userID', 'email', 'expiresAt', 'verifiedAt', 'isRevoked')
+    list_filter = ('isRevoked', 'verifiedAt')
+    search_fields = ('=id', 'userID__username', 'email', 'tokenHash')
+    readonly_fields = ('tokenHash', 'sentAt', 'lastUpdatedOn', 'verifiedAt')

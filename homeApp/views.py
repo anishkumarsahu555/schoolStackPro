@@ -24,7 +24,10 @@ from io import BytesIO
 
 from homeApp.auth_services import (
     create_access_link,
+    create_email_verification,
     email_is_configured,
+    email_is_verified_for_user,
+    get_verified_password_reset_email,
     get_password_reset_email,
     get_user_by_username,
     sync_profile_password,
@@ -32,7 +35,7 @@ from homeApp.auth_services import (
     update_user_profile_email,
 )
 from homeApp.branding import get_school_branding
-from homeApp.models import AccessLink, SchoolOwner, SchoolDetail
+from homeApp.models import AccessLink, EmailVerification, SchoolOwner, SchoolDetail
 from homeApp.owner_access import school_owner_q
 from homeApp.utils import init_session, get_all_session_list, custom_login_required, login_required
 from managementApp.access_control import has_management_permission, init_staff_management_session, user_has_management_access
@@ -110,11 +113,34 @@ def _send_password_reset_email_async(subject, text_message, html_message, recipi
     threading.Thread(target=worker, daemon=True).start()
 
 
+def _send_account_email_async(subject, text_message, html_message, recipient_email):
+    _send_password_reset_email_async(subject, text_message, html_message, recipient_email)
+
+
+def _send_email_verification_link(request, user, email):
+    if not email or not email_is_configured():
+        return False
+    verification, verify_url = create_email_verification(user=user, email=email, request=request)
+    role, profile = get_password_reset_email(user)[1:]
+    context = {
+        'user': user,
+        'profile': profile,
+        'role': role,
+        'verify_url': verify_url,
+        'verification': verification,
+    }
+    subject = 'Verify your SchoolsStack email address'
+    text_message = render_to_string('homeApp/emails/email_verification.txt', context)
+    html_message = render_to_string('homeApp/emails/email_verification.html', context)
+    _send_account_email_async(subject, text_message, html_message, email)
+    return True
+
+
 @require_POST
 def send_password_reset_link(request):
     user = get_user_by_username(request.POST.get('userName'))
     if user:
-        email, role, profile = get_password_reset_email(user)
+        email, role, profile = get_verified_password_reset_email(user)
         if email and email_is_configured():
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
@@ -132,6 +158,18 @@ def send_password_reset_link(request):
             html_message = render_to_string('homeApp/emails/password_reset.html', context)
             _send_password_reset_email_async(subject, text_message, html_message, email)
     return redirect('homeApp:forgot_password_sent')
+
+
+def verify_email(request, token):
+    hashed_token = token_hash(token or '')
+    with transaction.atomic():
+        verification = EmailVerification.objects.select_for_update().select_related('userID').filter(tokenHash=hashed_token).first()
+        if not verification or not verification.is_usable or not verification.userID.is_active:
+            return render(request, 'homeApp/email_verification_result.html', {'invalid_link': True}, status=400)
+        verification.verifiedAt = timezone.now()
+        verification.save(update_fields=['verifiedAt', 'lastUpdatedOn'])
+
+    return render(request, 'homeApp/email_verification_result.html', {'verified': True})
 
 
 def reset_password(request, uidb64, token):
@@ -421,6 +459,7 @@ def profile_page(request):
         'profile_email': profile_email,
         'profile_email_display': profile_email or 'N/A',
         'profile_missing_email': not bool(profile_email),
+        'profile_email_verified': email_is_verified_for_user(user, profile_email),
         'profile_phone': profile_phone,
         'profile_photo_url': profile_photo_url,
         'profile_photo_small_url': profile_photo_small_url or profile_photo_url,
@@ -449,7 +488,17 @@ def update_email(request):
         return JsonResponse({'success': False, 'message': 'Enter a valid email address.'}, safe=False, status=400)
 
     update_user_profile_email(request.user, email)
-    return JsonResponse({'success': True, 'message': 'Email address updated successfully.', 'email': email}, safe=False)
+    sent = _send_email_verification_link(request, request.user, email)
+    message = 'Email address updated. Please verify it from the link we sent.'
+    if not sent:
+        message = 'Email address updated, but verification email could not be sent because email is not configured.'
+    return JsonResponse({
+        'success': True,
+        'message': message,
+        'email': email,
+        'emailVerified': False,
+        'verificationSent': sent,
+    }, safe=False)
 
 
 @login_required

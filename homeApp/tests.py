@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 import time
 from homeApp.auth_services import get_password_reset_email, sync_profile_password, token_hash
-from homeApp.models import AccessLink, SchoolDetail, SchoolOwner, SchoolSession
+from homeApp.models import AccessLink, EmailVerification, SchoolDetail, SchoolOwner, SchoolSession
 from managementApp.models import Student
 
 
@@ -133,6 +133,27 @@ class AuthRecoveryServiceTests(TestCase):
         self.assertEqual(user.email, "student@example.com")
         self.assertEqual(student.email, "student@example.com")
 
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        DEFAULT_FROM_EMAIL="no-reply@example.com",
+    )
+    def test_update_email_sends_verification_email(self):
+        user = User.objects.create_user(username="verify_email_user", email="", password="pass12345")
+        Student.objects.create(userID=user, name="Verify Email", email="")
+        self.client.force_login(user)
+
+        response = self.client.post(reverse("homeApp:update_email"), {"email": "verify@example.com"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["verificationSent"], True)
+        for _ in range(20):
+            if mail.outbox:
+                break
+            time.sleep(0.05)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Verify your SchoolsStack email address", mail.outbox[0].subject)
+        self.assertIn("Verify Email Address", mail.outbox[0].alternatives[0][0])
+
     def test_update_email_rejects_invalid_email(self):
         user = User.objects.create_user(username="student_bad_email", email="", password="pass12345")
         self.client.force_login(user)
@@ -146,11 +167,32 @@ class AuthRecoveryServiceTests(TestCase):
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
         DEFAULT_FROM_EMAIL="no-reply@example.com",
     )
-    def test_forgot_password_sends_html_email_in_background(self):
+    def test_forgot_password_does_not_send_to_unverified_email(self):
         user = User.objects.create_user(username="student_reset", email="", password="pass12345")
         Student.objects.create(userID=user, name="Student Reset", email="student-reset@example.com")
 
         response = self.client.post(reverse("homeApp:send_password_reset_link"), {"userName": "student_reset"})
+
+        self.assertEqual(response.status_code, 302)
+        time.sleep(0.1)
+        self.assertEqual(len(mail.outbox), 0)
+
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        DEFAULT_FROM_EMAIL="no-reply@example.com",
+    )
+    def test_forgot_password_sends_html_email_to_verified_email_in_background(self):
+        user = User.objects.create_user(username="student_reset_verified", email="", password="pass12345")
+        Student.objects.create(userID=user, name="Student Reset", email="student-reset-verified@example.com")
+        EmailVerification.objects.create(
+            userID=user,
+            email="student-reset-verified@example.com",
+            tokenHash=token_hash("verified"),
+            expiresAt=timezone.now() + timedelta(hours=1),
+            verifiedAt=timezone.now(),
+        )
+
+        response = self.client.post(reverse("homeApp:send_password_reset_link"), {"userName": "student_reset_verified"})
 
         self.assertEqual(response.status_code, 302)
         for _ in range(20):
@@ -159,13 +201,50 @@ class AuthRecoveryServiceTests(TestCase):
             time.sleep(0.05)
         self.assertEqual(len(mail.outbox), 1)
         message = mail.outbox[0]
-        self.assertEqual(message.to, ["student-reset@example.com"])
+        self.assertEqual(message.to, ["student-reset-verified@example.com"])
         self.assertIn("Reset your SchoolsStack password", message.subject)
         self.assertIn("Spam or Junk", message.body)
         self.assertTrue(message.alternatives)
         html_body, mime_type = message.alternatives[0]
         self.assertEqual(mime_type, "text/html")
         self.assertIn("Set New Password", html_body)
+
+    def test_verify_email_marks_verification_as_verified(self):
+        user = User.objects.create_user(username="verify_link_user", email="verify-link@example.com", password="pass12345")
+        token = "email-verify-token"
+        verification = EmailVerification.objects.create(
+            userID=user,
+            email="verify-link@example.com",
+            tokenHash=token_hash(token),
+            expiresAt=timezone.now() + timedelta(hours=1),
+        )
+
+        response = self.client.get(reverse("homeApp:verify_email", kwargs={"token": token}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Email verified")
+        verification.refresh_from_db()
+        self.assertIsNotNone(verification.verifiedAt)
+
+    def test_profile_shows_verified_email_badge(self):
+        user = User.objects.create_user(username="profile_verified", email="", password="pass12345")
+        student_group, created = Group.objects.get_or_create(name="Student")
+        user.groups.add(student_group)
+        Student.objects.create(userID=user, name="Profile Verified", email="profile-verified@example.com")
+        EmailVerification.objects.create(
+            userID=user,
+            email="profile-verified@example.com",
+            tokenHash=token_hash("profile-verified"),
+            expiresAt=timezone.now() + timedelta(hours=1),
+            verifiedAt=timezone.now(),
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("homeApp:profile_page"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "profile-verified@example.com")
+        self.assertContains(response, "Verified")
 
     def test_access_link_get_shows_password_setup_without_login(self):
         user = User.objects.create_user(username="student4", email="user@example.com", password="oldpass123")

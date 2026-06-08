@@ -13,6 +13,7 @@ urlpatterns = [
     path('forgot-password/sent/', forgot_password_sent, name='forgot_password_sent'),
     path('forgot-password/send/', send_password_reset_link, name='send_password_reset_link'),
     path('reset-password/<uidb64>/<token>/', reset_password, name='reset_password'),
+    path('verify-email/<str:token>/', verify_email, name='verify_email'),
     path('quick-access/<str:target_type>/<int:target_id>/generate/', generate_access_link, name='generate_access_link'),
     path('access/<str:token>/', access_link_login, name='access_link_login'),
     path('home/', homepage, name='homepage'),

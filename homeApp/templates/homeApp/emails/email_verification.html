@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify your SchoolsStack email</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;margin:0;padding:32px 12px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5eaf2;box-shadow:0 12px 32px rgba(15,23,42,0.08);">
+                    <tr>
+                        <td style="background:#1a73e8;padding:24px 28px;color:#ffffff;">
+                            <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.9;">SchoolsStack</div>
+                            <h1 style="margin:10px 0 0;font-size:24px;line-height:1.25;font-weight:800;">Verify your email</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:28px;">
+                            <p style="margin:0 0 14px;font-size:16px;line-height:1.6;">Hello {{ profile.name|default:user.username }},</p>
+                            <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#4b5563;">Please confirm this email address for your SchoolsStack account. Verified email addresses can receive secure password reset links.</p>
+                            <p style="margin:26px 0;text-align:center;">
+                                <a href="{{ verify_url }}" style="display:inline-block;background:#1a73e8;color:#ffffff;text-decoration:none;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:800;">Verify Email Address</a>
+                            </p>
+                            <div style="background:#f8fafc;border:1px solid #e5eaf2;border-radius:12px;padding:14px 16px;margin:0 0 20px;">
+                                <p style="margin:0;font-size:13px;line-height:1.55;color:#64748b;">This link is time limited. If it expires, update your email again from your profile page to receive a new verification link.</p>
+                            </div>
+                            <p style="margin:0 0 12px;font-size:13px;line-height:1.6;color:#64748b;">If the button does not work, copy and paste this link into your browser:</p>
+                            <p style="margin:0 0 20px;font-size:12px;line-height:1.6;word-break:break-all;color:#2563eb;">{{ verify_url }}</p>
+                            <p style="margin:0;font-size:13px;line-height:1.6;color:#64748b;">If you did not add or update this email address, you can safely ignore this message.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:18px 28px;background:#f8fafc;border-top:1px solid #e5eaf2;">
+                            <p style="margin:0;font-size:12px;line-height:1.5;color:#64748b;">Tip: If you expected this message but cannot find it later, please check your Spam or Junk folder.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
