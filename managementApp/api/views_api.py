@@ -8370,10 +8370,45 @@ def global_search_api(request):
         school_id = _current_school_id(request)
         session_id = _current_session_id(request)
 
+        scope = request.GET.get('scope', '').strip().lower()
+
         from managementApp.access_control import get_user_permission_flags, is_owner_or_admin, MODULE_LABELS
         perms = get_user_permission_flags(request.user)
 
+        is_teaching = request.user.groups.filter(name='Teaching').exists()
+        is_student = request.user.groups.filter(name='Student').exists()
+        is_staff = request.user.is_superuser or is_owner_or_admin(request.user) or request.user.groups.filter(name='Staff').exists()
+
+        if not scope:
+            if is_student:
+                scope = 'student'
+            elif is_teaching:
+                scope = 'teacher'
+            else:
+                scope = 'management'
+
+        # Enforce security constraints on requested scope
+        if scope == 'management' and not is_staff:
+            if is_teaching:
+                scope = 'teacher'
+            else:
+                scope = 'student'
+        elif scope == 'teacher' and not (is_teaching or is_staff):
+            scope = 'student'
+
         def has_perm(module_key):
+            if scope in ('student', 'teacher'):
+                return True
+            if is_owner_or_admin(request.user):
+                return True
+            return perms.get(module_key, {}).get('view', False)
+
+        def has_db_perm(module_key):
+            if scope == 'student':
+                return module_key in ('library', 'events')
+            if scope == 'teacher':
+                return module_key in ('students', 'library', 'events')
+            # management scope
             if is_owner_or_admin(request.user):
                 return True
             return perms.get(module_key, {}).get('view', False)
@@ -8388,74 +8423,117 @@ def global_search_api(request):
         }
 
         # --- A. SEARCH NAVIGATION PAGES ---
-        nav_pages = [
-            ("Dashboard", "/management/home/", "dashboard", "tachometer alternate", "home general dashboard"),
-            ("School Details", "/management/school-detail/", "school_settings", "school", "school settings configuration name address"),
-            ("Session Import", "/management/manage-session-import/", "school_settings", "copy outline", "session rollover import migrate"),
-            ("Manage Classes", "/management/manage-class/", "classes", "chalkboard", "class standard section standard"),
-            ("School Timetable", "/management/school-timetable/", "timetable", "calendar alternate outline", "timetable schedule period time entry"),
-            ("Add Teacher", "/management/add_teacher/", "staff", "chalkboard teacher", "add teacher staff create"),
-            ("Teacher List", "/management/teacher_list/", "staff", "list alternate outline", "teacher list staff detail view edit"),
-            ("Staff Access Control", "/management/staff-access/", "access_control", "user shield", "role permission staff access user role"),
-            ("Add Subjects", "/management/manage_subjects/", "subjects", "book", "add subject course syllabus"),
-            ("Assign Subjects to Class", "/management/assign_subjects_to_class/", "subjects", "linkify", "assign subject class standard"),
-            ("Assign Subjects to Teacher", "/management/assign_subjects_to_teacher/", "subjects", "linkify", "assign subject teacher"),
-            ("Subject Notes", "/management/subject-notes/", "subjects", "sticky note outline", "subject note attachment files chapter"),
-            ("Add Student", "/management/add_student/", "students", "users", "add student admission register"),
-            ("Student List", "/management/student_list/", "students", "list alternate outline", "student list search view detail edit"),
-            ("Student ID Cards", "/management/student_id_cards/", "students", "id card outline", "id card print design student"),
-            ("Parents List", "/management/manage_parents/", "parents", "users", "parent list guardian father mother list"),
-            ("Add Student Attendance", "/management/student_attendance/", "attendance", "tasks", "student attendance register rollcall present absent"),
-            ("Student Attendance History", "/management/student_attendance_history/", "attendance", "list alternate outline", "student attendance history report calendar"),
-            ("Add Staff Attendance", "/management/staff_attendance/", "attendance", "tasks", "staff teacher attendance present absent"),
-            ("Staff Attendance History", "/management/staff_attendance_history/", "attendance", "list alternate outline", "staff teacher attendance history calendar"),
-            ("Add Fees", "/management/student_fee/", "fees", "hand holding usd", "add fee collect pay monthly fee"),
-            ("Fee Details", "/management/student_fee_details/", "fees", "list alternate outline", "fee detail transaction list status"),
-            ("Add Exam", "/management/manage_exams/", "exams", "clipboard outline", "add exam test schedule name"),
-            ("Assign Exam to Class", "/management/assign_exams_to_class/", "exams", "linkify", "assign exam class standard"),
-            ("Exam Time Table", "/management/manage_exam_timetable/", "exams", "calendar alternate outline", "exam timetable schedule date"),
-            ("Add Marks", "/management/student_marks/", "marks", "edit outline", "add mark score entry result grading"),
-            ("Marks Details", "/management/exam_marks_details/", "marks", "list alternate outline", "mark score detail list student"),
-            ("Progress Report Cards", "/management/progress_report_cards/", "marks", "chart bar outline", "progress report card marksheet result transcript snapshot"),
-            ("Manage Event Type", "/management/manage_event_type/", "events", "tags", "event type category tag"),
-            ("Manage Event", "/management/manage_event/", "events", "calendar plus outline", "event add list manage create"),
-            ("Holiday List", "/management/manage_holidays/", "holidays", "calendar alternate outline", "holiday vacation list festival"),
-            ("Manage Leave Types", "/management/manage_leave_types/", "leave", "tags", "leave type category limit days"),
-            ("Leave Applications", "/management/manage_leave_applications/", "leave", "calendar check outline", "leave application approve request sick"),
-            ("Finance Dashboard", "/management/finance/", "finance", "chart bar", "finance dashboard profit loss balance"),
-            ("Money Ledger", "/management/finance/money-ledger/", "finance", "exchange alternate", "ledger transaction journal entry"),
-            ("Collect Fees (Finance)", "/management/finance/receipts/", "finance", "receipt", "collect fee finance receipt invoice"),
-            ("Expenses & Vouchers", "/management/finance/expense-vouchers/", "finance", "file alternate outline", "expense voucher spend bill invoice"),
-            ("Payroll Manager", "/management/finance/payroll/", "finance", "money check alternate", "payroll salary run slip employee pay"),
-            ("Finance Reports", "/management/finance/reports/", "finance", "chart pie", "finance report ledger profit loss reconciliation"),
-            ("Finance Settings", "/management/finance/settings/", "finance", "cogs", "finance settings bank account category mode"),
-            ("Library Dashboard", "/management/library/", "library", "chart pie", "library dashboard books summary stats"),
-            ("Manage Books", "/management/library/books/", "library", "book", "library book catalog title isbn"),
-            ("Manage Categories", "/management/library/categories/", "library", "tags", "library book category tag genre"),
-            ("Manage Authors", "/management/library/authors/", "library", "user edit", "library book author writer name"),
-            ("Manage Publishers", "/management/library/publishers/", "library", "building", "library book publisher printing press company"),
-            ("Manage Book Copies", "/management/library/copies/", "library", "copy", "library book copy barcode accession number"),
-            ("Library Members", "/management/library/members/", "library", "users", "library member register student staff code"),
-            ("Issue / Return Books", "/management/library/issue/", "library", "exchange alternate", "issue return book borrow renew library"),
-            ("Library Issue History", "/management/library/issue-history/", "library", "history", "issue history return borrow library record"),
-            ("Library Reservations", "/management/library/reservations/", "library", "bookmark", "library book reservation reserve request hold"),
-            ("Library Fines", "/management/library/fines/", "library", "rupee sign", "library fine overdue paid waive pending"),
-            ("Library Reports", "/management/library/reports/", "library", "file alternate", "library report csv sheet statistics"),
-            ("Transport Dashboard", "/transport/", "transport", "bus", "transport dashboard route stop status"),
-            ("Routes & Stops", "/transport/routes/", "transport", "route", "transport route stop location mapping path"),
-            ("Transport Vehicles", "/transport/vehicles/", "transport", "shuttle van", "transport vehicle bus car van number"),
-            ("Transport Drivers", "/transport/drivers/", "transport", "id card", "transport driver contact license name"),
-            ("Transport Assignments", "/transport/assignments/", "transport", "users", "transport assignment route student vehicle"),
-            ("Transport Fee Mapping", "/transport/fee-mapping/", "transport", "rupee sign", "transport fee mapping rate standard stop"),
-            ("Hostel Dashboard", "/hostel/", "hostel", "home", "hostel dashboard admission room block"),
-            ("Hostel Admissions", "/hostel/admissions/", "hostel", "clipboard check", "hostel admission student registration register"),
-            ("Hostel Buildings", "/hostel/buildings/", "hostel", "building", "hostel building block wing name location"),
-            ("Hostel Rooms", "/hostel/rooms/", "hostel", "door open", "hostel room number floor capacity building"),
-            ("Hostel Beds", "/hostel/beds/", "hostel", "bed", "hostel bed name number room occupied status"),
-            ("Hostel Assignments", "/hostel/assignments/", "hostel", "users", "hostel assignment bed student allocate checkin"),
-            ("Hostel Fee Mapping", "/hostel/fee-mapping/", "hostel", "rupee sign", "hostel fee mapping standard room type building rate"),
-            ("Audit Logs", "/management/audit-manager/", "audit", "history", "audit log history track trace change user path activity"),
-        ]
+        if scope == 'student':
+            nav_pages = [
+                ("Dashboard", "/student/home/", "student_dashboard", "tachometer alternate", "home general dashboard"),
+                ("School Details", "/student/school-detail/", "student_school", "school", "school settings configuration name address"),
+                ("My Details", "/student/my-details/", "student_profile", "id card outline", "profile details personal profile information father mother"),
+                ("My ID Card", "/student/id-card/", "student_id_card", "address card outline", "student id card barcode print"),
+                ("Chat", "/student/chat/", "student_chat", "comments outline", "chat messages inbox rooms teacher"),
+                ("Attendance History", "/student/attendance_history/", "student_attendance", "calendar check outline", "attendance history present absent calendar"),
+                ("Fee Details", "/student/fee_detail/", "student_fees", "money bill alternate outline", "fee details transactions payment paid ledger"),
+                ("My Transport", "/student/my-transport/", "student_transport", "bus", "transport route vehicle driver bus stop"),
+                ("My Hostel", "/student/my-hostel/", "student_hostel", "bed", "hostel room bed building block wing"),
+                ("My Library", "/student/library/", "student_library", "book reader", "library books issue return reserve member card"),
+                ("Holiday List", "/student/holidays/", "student_holidays", "calendar alternate outline", "holidays list vacation festival"),
+                ("Exam Time Table", "/student/exams/", "student_exams", "clipboard outline", "exams timetable date sheet test"),
+                ("Progress Report Cards", "/student/progress-report-cards/", "student_marks", "chart bar outline", "progress report card marksheet result transcript"),
+                ("Subject Notes", "/student/subject-notes/", "student_notes", "sticky note outline", "subject notes files study material attachment"),
+                ("Timetable", "/student/school-timetable/", "student_timetable", "calendar alternate outline", "school timetable period schedule class"),
+                ("Events", "/student/events/", "student_events", "calendar alternate outline", "events program schedule announcement"),
+                ("My Leave Applications", "/student/leave-applications/", "student_leave", "calendar check outline", "leave applications apply sick medical request"),
+            ]
+        elif scope == 'teacher':
+            nav_pages = [
+                ("Dashboard", "/teacher/home/", "teacher_dashboard", "tachometer alternate", "home general dashboard"),
+                ("School Details", "/teacher/school-detail/", "teacher_school", "school", "school settings configuration name address"),
+                ("Students List", "/teacher/students/", "teacher_students", "users", "student list search profile view"),
+                ("Assigned Class", "/teacher/assigned-class/", "teacher_class", "users", "assigned class teacher class standard section"),
+                ("Chat", "/teacher/chat/", "teacher_chat", "comments outline", "chat messages inbox rooms student parent"),
+                ("Assigned Subjects", "/teacher/assigned-subjects/", "teacher_subjects", "book", "assigned subjects syllabus teacher"),
+                ("Subject Notes", "/teacher/subject-notes/", "teacher_notes", "sticky note outline", "subject notes upload document attachment"),
+                ("Timetable", "/teacher/school-timetable/", "teacher_timetable", "calendar alternate outline", "teacher timetable schedule period class"),
+                ("Student Attendance", "/teacher/student-attendance/", "teacher_attendance", "tasks", "student attendance present absent class register rollcall"),
+                ("My Attendance", "/teacher/attendance-history/", "teacher_my_attendance", "calendar check outline", "teacher attendance history calendar present absent"),
+                ("My Transport", "/teacher/my-transport/", "teacher_transport", "bus", "transport vehicle route driver bus"),
+                ("My Library", "/teacher/library/", "teacher_library", "book reader", "library books issue return member card"),
+                ("Holiday List", "/teacher/holidays/", "teacher_holiday", "calendar alternate outline", "holidays list vacation festival"),
+                ("Exam Time Table", "/teacher/exam-timetable/", "teacher_exams", "calendar alternate outline", "exams timetable date sheet test schedule"),
+                ("Add Marks", "/teacher/add-marks/", "teacher_marks_entry", "edit outline", "add marks student score grading entry"),
+                ("Marks Details", "/teacher/marks-details/", "teacher_marks_detail", "list alternate outline", "marks details student list exam result"),
+                ("Progress Report Cards", "/teacher/progress-report-cards/", "teacher_report_cards", "chart bar outline", "progress report cards marksheet results class"),
+                ("Events List", "/teacher/manage-event/", "teacher_events", "calendar plus outline", "events list calendar program schedule"),
+                ("My Leave Applications", "/teacher/leave-applications/", "teacher_leave", "calendar check outline", "leave applications apply sick medical request"),
+            ]
+        else: # management scope
+            nav_pages = [
+                ("Dashboard", "/management/home/", "dashboard", "tachometer alternate", "home general dashboard"),
+                ("School Details", "/management/school-detail/", "school_settings", "school", "school settings configuration name address"),
+                ("Session Import", "/management/manage-session-import/", "school_settings", "copy outline", "session rollover import migrate"),
+                ("Manage Classes", "/management/manage-class/", "classes", "chalkboard", "class standard section standard"),
+                ("School Timetable", "/management/school-timetable/", "timetable", "calendar alternate outline", "timetable schedule period time entry"),
+                ("Add Teacher", "/management/add_teacher/", "staff", "chalkboard teacher", "add teacher staff create"),
+                ("Teacher List", "/management/teacher_list/", "staff", "list alternate outline", "teacher list staff detail view edit"),
+                ("Staff Access Control", "/management/staff-access/", "access_control", "user shield", "role permission staff access user role"),
+                ("Add Subjects", "/management/manage_subjects/", "subjects", "book", "add subject course syllabus"),
+                ("Assign Subjects to Class", "/management/assign_subjects_to_class/", "subjects", "linkify", "assign subject class standard"),
+                ("Assign Subjects to Teacher", "/management/assign_subjects_to_teacher/", "subjects", "linkify", "assign subject teacher"),
+                ("Subject Notes", "/management/subject-notes/", "subjects", "sticky note outline", "subject note attachment files chapter"),
+                ("Add Student", "/management/add_student/", "students", "users", "add student admission register"),
+                ("Student List", "/management/student_list/", "students", "list alternate outline", "student list search view detail edit"),
+                ("Student ID Cards", "/management/student_id_cards/", "students", "id card outline", "id card print design student"),
+                ("Parents List", "/management/manage_parents/", "parents", "users", "parent list guardian father mother list"),
+                ("Add Student Attendance", "/management/student_attendance/", "attendance", "tasks", "student attendance register rollcall present absent"),
+                ("Student Attendance History", "/management/student_attendance_history/", "attendance", "list alternate outline", "student attendance history report calendar"),
+                ("Add Staff Attendance", "/management/staff_attendance/", "attendance", "tasks", "staff teacher attendance present absent"),
+                ("Staff Attendance History", "/management/staff_attendance_history/", "attendance", "list alternate outline", "staff teacher attendance history calendar"),
+                ("Add Fees", "/management/student_fee/", "fees", "hand holding usd", "add fee collect pay monthly fee"),
+                ("Fee Details", "/management/student_fee_details/", "fees", "list alternate outline", "fee detail transaction list status"),
+                ("Add Exam", "/management/manage_exams/", "exams", "clipboard outline", "add exam test schedule name"),
+                ("Assign Exam to Class", "/management/assign_exams_to_class/", "exams", "linkify", "assign exam class standard"),
+                ("Exam Time Table", "/management/manage_exam_timetable/", "exams", "calendar alternate outline", "exam timetable schedule date"),
+                ("Add Marks", "/management/student_marks/", "marks", "edit outline", "add mark score entry result grading"),
+                ("Marks Details", "/management/exam_marks_details/", "marks", "list alternate outline", "mark score detail list student"),
+                ("Progress Report Cards", "/management/progress_report_cards/", "marks", "chart bar outline", "progress report card marksheet result transcript snapshot"),
+                ("Manage Event Type", "/management/manage_event_type/", "events", "tags", "event type category tag"),
+                ("Manage Event", "/management/manage_event/", "events", "calendar plus outline", "event add list manage create"),
+                ("Holiday List", "/management/manage_holidays/", "holidays", "calendar alternate outline", "holiday vacation list festival"),
+                ("Manage Leave Types", "/management/manage_leave_types/", "leave", "tags", "leave type category limit days"),
+                ("Leave Applications", "/management/manage_leave_applications/", "leave", "calendar check outline", "leave application approve request sick"),
+                ("Finance Dashboard", "/management/finance/", "finance", "chart bar", "finance dashboard profit loss balance"),
+                ("Money Ledger", "/management/finance/money-ledger/", "finance", "exchange alternate", "ledger transaction journal entry"),
+                ("Collect Fees (Finance)", "/management/finance/receipts/", "finance", "receipt", "collect fee finance receipt invoice"),
+                ("Expenses & Vouchers", "/management/finance/expense-vouchers/", "finance", "file alternate outline", "expense voucher spend bill invoice"),
+                ("Payroll Manager", "/management/finance/payroll/", "finance", "money check alternate", "payroll salary run slip employee pay"),
+                ("Finance Reports", "/management/finance/reports/", "finance", "chart pie", "finance report ledger profit loss reconciliation"),
+                ("Finance Settings", "/management/finance/settings/", "finance", "cogs", "finance settings bank account category mode"),
+                ("Library Dashboard", "/management/library/", "library", "chart pie", "library dashboard books summary stats"),
+                ("Manage Books", "/management/library/books/", "library", "book", "library book catalog title isbn"),
+                ("Manage Categories", "/management/library/categories/", "library", "tags", "library book category tag genre"),
+                ("Manage Authors", "/management/library/authors/", "library", "user edit", "library book author writer name"),
+                ("Manage Publishers", "/management/library/publishers/", "library", "building", "library book publisher printing press company"),
+                ("Manage Book Copies", "/management/library/copies/", "library", "copy", "library book copy barcode accession number"),
+                ("Library Members", "/management/library/members/", "library", "users", "library member register student staff code"),
+                ("Issue / Return Books", "/management/library/issue/", "library", "exchange alternate", "issue return book borrow renew library"),
+                ("Library Issue History", "/management/library/issue-history/", "library", "history", "issue history return borrow library record"),
+                ("Library Reservations", "/management/library/reservations/", "library", "bookmark", "library book reservation reserve request hold"),
+                ("Library Fines", "/management/library/fines/", "library", "rupee sign", "library fine overdue paid waive pending"),
+                ("Library Reports", "/management/library/reports/", "library", "file alternate", "library report csv sheet statistics"),
+                ("Transport Dashboard", "/transport/", "transport", "bus", "transport dashboard route stop status"),
+                ("Routes & Stops", "/transport/routes/", "transport", "route", "transport route stop location mapping path"),
+                ("Transport Vehicles", "/transport/vehicles/", "transport", "shuttle van", "transport vehicle bus car van number"),
+                ("Transport Drivers", "/transport/drivers/", "transport", "id card", "transport driver contact license name"),
+                ("Transport Assignments", "/transport/assignments/", "transport", "users", "transport assignment route student vehicle"),
+                ("Transport Fee Mapping", "/transport/fee-mapping/", "transport", "rupee sign", "transport fee mapping rate standard stop"),
+                ("Hostel Dashboard", "/hostel/", "hostel", "home", "hostel dashboard admission room block"),
+                ("Hostel Admissions", "/hostel/admissions/", "hostel", "clipboard check", "hostel admission student registration register"),
+                ("Hostel Buildings", "/hostel/buildings/", "hostel", "building", "hostel building block wing name location"),
+                ("Hostel Rooms", "/hostel/rooms/", "hostel", "door open", "hostel room number floor capacity building"),
+                ("Hostel Beds", "/hostel/beds/", "hostel", "bed", "hostel bed name number room occupied status"),
+                ("Hostel Assignments", "/hostel/assignments/", "hostel", "users", "hostel assignment bed student allocate checkin"),
+                ("Hostel Fee Mapping", "/hostel/fee-mapping/", "hostel", "rupee sign", "hostel fee mapping standard room type building rate"),
+                ("Audit Logs", "/management/audit-manager/", "audit", "history", "audit log history track trace change user path activity"),
+            ]
 
         q_lower = q.lower()
         for title, url, module, icon, keywords in nav_pages:
@@ -8465,11 +8543,11 @@ def global_search_api(request):
                         'title': title,
                         'url': url,
                         'icon': icon,
-                        'category': MODULE_LABELS.get(module, module.title())
+                        'category': MODULE_LABELS.get(module, module.title()) if scope == 'management' else ('Student Portal' if scope == 'student' else 'Teacher Portal')
                     })
 
         # --- B. SEARCH STUDENTS ---
-        if has_perm('students'):
+        if has_db_perm('students'):
             try:
                 students = Student.objects.filter(isDeleted=False)
                 if school_id:
@@ -8496,13 +8574,13 @@ def global_search_api(request):
                         'reg_code': s.registrationCode or 'N/A',
                         'class': std_lbl or 'N/A',
                         'photo': _safe_image_url(s.photo),
-                        'url': f'/management/student_detail/{s.id}/'
+                        'url': f'/teacher/students/detail/{s.id}/' if scope == 'teacher' else f'/management/student_detail/{s.id}/'
                     })
             except Exception as exc:
                 logger.error(f'Error searching students: {exc}')
 
         # --- C. SEARCH STAFF / TEACHERS ---
-        if has_perm('staff'):
+        if has_db_perm('staff'):
             try:
                 staff_list = TeacherDetail.objects.filter(isDeleted=False)
                 if school_id:
@@ -8531,7 +8609,7 @@ def global_search_api(request):
                 logger.error(f'Error searching staff: {exc}')
 
         # --- D. SEARCH PARENTS ---
-        if has_perm('parents'):
+        if has_db_perm('parents'):
             try:
                 parents = Parent.objects.filter(isDeleted=False)
                 if school_id:
@@ -8561,7 +8639,7 @@ def global_search_api(request):
                 logger.error(f'Error searching parents: {exc}')
 
         # --- E. SEARCH LIBRARY BOOKS ---
-        if has_perm('library'):
+        if has_db_perm('library'):
             try:
                 from libraryApp.models import LibraryBook
                 books = LibraryBook.objects.filter(isDeleted=False)
@@ -8582,13 +8660,13 @@ def global_search_api(request):
                         'authors': author_list or 'Unknown',
                         'isbn': b.isbn or 'N/A',
                         'cover': _safe_image_url(b.coverImage) if hasattr(b, 'coverImage') else '',
-                        'url': f'/management/library/books/'
+                        'url': '/student/library/' if scope == 'student' else ('/teacher/library/' if scope == 'teacher' else '/management/library/books/')
                     })
             except (ImportError, Exception) as exc:
                 logger.error(f'Error searching library: {exc}')
 
         # --- F. SEARCH EVENTS ---
-        if has_perm('events'):
+        if has_db_perm('events'):
             try:
                 events = Event.objects.filter(isDeleted=False)
                 if school_id:
@@ -8607,7 +8685,7 @@ def global_search_api(request):
                         'title': ev.title,
                         'date': ev.startDate.strftime('%d-%m-%Y') if ev.startDate else (ev.datetime.strftime('%d-%m-%Y') if ev.datetime else 'N/A'),
                         'type': ev.eventID.name if ev.eventID else 'General',
-                        'url': f'/management/manage_event/'
+                        'url': '/student/events/' if scope == 'student' else ('/teacher/manage-event/' if scope == 'teacher' else '/management/manage_event/')
                     })
             except Exception as exc:
                 logger.error(f'Error searching events: {exc}')

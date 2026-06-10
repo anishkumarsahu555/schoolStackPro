@@ -3931,7 +3931,7 @@
     </div>
 
     <div class="right menu">
-        {% if request.path|slice:":9" != "/teacher/" and request.path|slice:":9" != "/student/" and request.user.is_authenticated %}
+        {% if request.user.is_authenticated %}
             <a href="#" class="item" id="globalSearchBtn" data-tooltip="Global Search (Cmd+K / Ctrl+K)" data-position="bottom center" data-variation="tiny">
                 <i class="search icon"></i>
             </a>
@@ -6157,7 +6157,7 @@
         })();
     {% endif %}
 
-    {% if request.path|slice:":9" != "/teacher/" and request.path|slice:":9" != "/student/" and request.user.is_authenticated %}
+    {% if request.user.is_authenticated %}
     (function initGlobalSearchPalette() {
         const searchBtn = document.getElementById('globalSearchBtn');
         const overlay = document.createElement('div');
@@ -6200,6 +6200,15 @@
         function openSearch() {
             overlay.classList.add('active');
             input.value = '';
+            
+            if (window.location.pathname.startsWith('/student/')) {
+                input.placeholder = "Search pages, library books, events...";
+            } else if (window.location.pathname.startsWith('/teacher/')) {
+                input.placeholder = "Search pages, students, library books, events...";
+            } else {
+                input.placeholder = "Search pages, students, staff, library...";
+            }
+
             showDefaultMessage();
             setTimeout(() => input.focus(), 50);
             document.body.style.overflow = 'hidden';
@@ -6341,7 +6350,14 @@
 
             showLoading();
 
-            fetch(`/management/api/global_search_api?q=${encodeURIComponent(query)}`, {
+            let scope = 'management';
+            if (window.location.pathname.startsWith('/student/')) {
+                scope = 'student';
+            } else if (window.location.pathname.startsWith('/teacher/')) {
+                scope = 'teacher';
+            }
+
+            fetch(`/management/api/global_search_api?q=${encodeURIComponent(query)}&scope=${scope}`, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(res => res.ok ? res.json() : null)

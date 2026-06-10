@@ -217,6 +217,8 @@ class ManagementAccessPermissionMiddleware:
     def _should_check(self, request):
         if not request.user.is_authenticated:
             return False
+        if request.path.rstrip('/') == '/management/api/global_search_api' or request.path_info.rstrip('/') == '/management/api/global_search_api':
+            return False
         if request.path.startswith(self.protected_prefixes):
             return True
         if request.path.startswith(self.staff_protected_prefixes):
