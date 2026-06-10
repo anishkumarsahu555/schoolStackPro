@@ -1,0 +1,31 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification</title>
+    <link rel="icon" href="{% static 'sw/images/favicon.ico' %}">
+    <style>
+        body { min-height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #e3eafd, #e8f5e9); font-family: Arial, sans-serif; }
+        .card { width: min(92vw, 430px); background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 12px 34px rgba(20, 48, 90, .16); }
+        h1 { font-size: 24px; color: #1a73e8; margin: 0 0 10px; }
+        h1.error { color: #b42318; }
+        p { color: #5f6368; line-height: 1.45; }
+        a { display: inline-block; margin-top: 12px; color: #1a73e8; text-decoration: none; font-weight: 700; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        {% if verified %}
+            <h1>Email verified</h1>
+            <p>Your email address has been verified. Password reset links can now be sent to this address.</p>
+            <a href="{% url 'homeApp:login_page' %}">Go to login</a>
+        {% else %}
+            <h1 class="error">Invalid verification link</h1>
+            <p>This email verification link is invalid, expired, revoked, or already used.</p>
+            <a href="{% url 'homeApp:login_page' %}">Go to login</a>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -19,6 +19,10 @@
         </label>
     </div>
 
+    {% can_manage 'dashboard' 'view' as can_view_dashboard_nav %}
+    {% can_manage 'school_settings' 'view' as can_view_school_settings_nav %}
+    {% can_manage 'school_settings' 'edit' as can_edit_school_settings_nav %}
+    {% if can_view_dashboard_nav or can_view_school_settings_nav %}
     <div class="nav-group" data-management-module="dashboard school_settings">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -27,9 +31,6 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
-            {% can_manage 'dashboard' 'view' as can_view_dashboard_nav %}
-            {% can_manage 'school_settings' 'view' as can_view_school_settings_nav %}
-            {% can_manage 'school_settings' 'edit' as can_edit_school_settings_nav %}
             {% if can_view_dashboard_nav %}
             <a class="nav-item {% if request.resolver_match.url_name == 'admin_home' %}active{% endif %}"
                href="{% url 'managementApp:admin_home' %}">
@@ -53,7 +54,10 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'classes' 'view' as can_view_classes %}
+    {% if can_view_classes %}
     <div class="nav-group" data-management-module="classes">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -62,16 +66,16 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
-            {% can_manage 'classes' 'view' as can_view_classes %}
-            {% if can_view_classes %}
             <a class="nav-item" href="{% url 'managementApp:manage_class' %}">
                 <i class="chalkboard icon"></i>
                 <span>Manage Classes</span>
             </a>
-            {% endif %}
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'timetable' 'view' as can_view_timetable_nav %}
+    {% if can_view_timetable_nav %}
     <div class="nav-group" data-management-module="timetable">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -80,16 +84,17 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
-            {% can_manage 'timetable' 'view' as can_view_timetable_nav %}
-            {% if can_view_timetable_nav %}
             <a class="nav-item {% if request.resolver_match.url_name == 'manage_school_timetable' %}active{% endif %}" href="{% url 'managementApp:manage_school_timetable' %}">
                 <i class="calendar alternate outline icon"></i>
                 <span>School Timetable</span>
             </a>
-            {% endif %}
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'staff' 'add' as can_add_staff_nav %}
+    {% can_manage 'staff' 'view' as can_view_staff_nav %}
+    {% if can_add_staff_nav or can_view_staff_nav or management_can.access_control %}
     <div class="nav-group" data-management-module="staff">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -98,8 +103,6 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
-            {% can_manage 'staff' 'add' as can_add_staff_nav %}
-            {% can_manage 'staff' 'view' as can_view_staff_nav %}
             {% if can_add_staff_nav %}
             <a class="nav-item" href="{% url 'managementApp:add_teacher' %}">
                 <i class="chalkboard teacher icon"></i>
@@ -120,7 +123,11 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'subjects' 'view' as can_view_subjects_nav %}
+    {% can_manage 'subjects' 'edit' as can_edit_subjects_nav %}
+    {% if can_view_subjects_nav or can_edit_subjects_nav %}
     <div class="nav-group" data-management-module="subjects">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -129,8 +136,6 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
-            {% can_manage 'subjects' 'view' as can_view_subjects_nav %}
-            {% can_manage 'subjects' 'edit' as can_edit_subjects_nav %}
             {% if can_view_subjects_nav %}
             <a class="nav-item" href="{% url 'managementApp:manage_subjects' %}">
                 <i class="book icon"></i>
@@ -155,7 +160,12 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'students' 'add' as can_add_students_nav %}
+    {% can_manage 'students' 'view' as can_view_students_nav %}
+    {% can_manage 'students' 'report' as can_report_students_nav %}
+    {% if can_add_students_nav or can_view_students_nav or can_report_students_nav %}
     <div class="nav-group" data-management-module="students">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -164,9 +174,6 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
-            {% can_manage 'students' 'add' as can_add_students_nav %}
-            {% can_manage 'students' 'view' as can_view_students_nav %}
-            {% can_manage 'students' 'report' as can_report_students_nav %}
             {% if can_add_students_nav %}
             <a class="nav-item" href="{% url 'managementApp:add_student' %}">
                 <i class="users icon"></i>
@@ -187,7 +194,10 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'certificates' 'view' as can_view_certificates_nav %}
+    {% if can_view_certificates_nav %}
     <div class="nav-group" data-management-module="certificates">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -208,7 +218,10 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'parents' 'view' as can_view_parents_nav %}
+    {% if can_view_parents_nav %}
     <div class="nav-group" data-management-module="parents">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -223,7 +236,11 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'attendance' 'add' as can_add_attendance_nav %}
+    {% can_manage 'attendance' 'view' as can_view_attendance_nav %}
+    {% if can_add_attendance_nav or can_view_attendance_nav %}
     <div class="nav-group" data-management-module="attendance">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -232,8 +249,6 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
-            {% can_manage 'attendance' 'add' as can_add_attendance_nav %}
-            {% can_manage 'attendance' 'view' as can_view_attendance_nav %}
             {% if can_add_attendance_nav %}
             <a class="nav-item" href="{% url 'managementApp:student_attendance' %}">
                 <i class="tasks icon"></i>
@@ -260,7 +275,11 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'fees' 'add' as can_add_fees_nav %}
+    {% can_manage 'fees' 'view' as can_view_fees_nav %}
+    {% if can_add_fees_nav or can_view_fees_nav %}
     <div class="nav-group" data-management-module="fees">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -269,8 +288,6 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
-            {% can_manage 'fees' 'add' as can_add_fees_nav %}
-            {% can_manage 'fees' 'view' as can_view_fees_nav %}
             {% if can_add_fees_nav %}
             <a class="nav-item" href="{% url 'managementApp:student_fee' %}">
                 <i class="hand holding usd icon"></i>
@@ -285,7 +302,11 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'exams' 'view' as can_view_exams_nav %}
+    {% can_manage 'exams' 'edit' as can_edit_exams_nav %}
+    {% if can_view_exams_nav or can_edit_exams_nav %}
     <div class="nav-group" data-management-module="exams">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -294,8 +315,6 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
-            {% can_manage 'exams' 'view' as can_view_exams_nav %}
-            {% can_manage 'exams' 'edit' as can_edit_exams_nav %}
             {% if can_view_exams_nav %}
             <a class="nav-item" href="{% url 'managementApp:manage_exams' %}">
                 <i class="clipboard outline icon"></i>
@@ -314,7 +333,12 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'marks' 'add' as can_add_marks_nav %}
+    {% can_manage 'marks' 'view' as can_view_marks_nav %}
+    {% can_manage 'marks' 'report' as can_report_marks_nav %}
+    {% if can_add_marks_nav or can_view_marks_nav or can_report_marks_nav %}
     <div class="nav-group" data-management-module="marks">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -323,9 +347,6 @@
             <i class="chevron down icon nav-section-chevron"></i>
         </button>
         <div class="nav-group-links">
-            {% can_manage 'marks' 'add' as can_add_marks_nav %}
-            {% can_manage 'marks' 'view' as can_view_marks_nav %}
-            {% can_manage 'marks' 'report' as can_report_marks_nav %}
             {% if can_add_marks_nav %}
             <a class="nav-item" href="{% url 'managementApp:student_marks' %}">
                 <i class="edit outline icon"></i>
@@ -346,7 +367,10 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'events' 'view' as can_view_events_nav %}
+    {% if can_view_events_nav %}
     <div class="nav-group" data-management-module="events">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -365,7 +389,10 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'holidays' 'view' as can_view_holidays_nav %}
+    {% if can_view_holidays_nav %}
     <div class="nav-group" data-management-module="holidays">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -380,7 +407,10 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'leave' 'view' as can_view_leave_nav %}
+    {% if can_view_leave_nav %}
     <div class="nav-group" data-management-module="leave">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -399,7 +429,10 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'finance' 'view' as can_view_finance_nav %}
+    {% if can_view_finance_nav %}
     <div class="nav-group" data-management-module="finance">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -438,7 +471,10 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'communication' 'view' as can_view_communication_nav %}
+    {% if can_view_communication_nav %}
     <div class="nav-group" data-management-module="communication">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -461,7 +497,10 @@
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'library' 'view' as can_view_library_nav %}
+    {% if can_view_library_nav %}
     <div class="nav-group" data-management-module="library">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -537,7 +576,10 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'transport' 'view' as can_view_transport_nav %}
+    {% if can_view_transport_nav %}
     <div class="nav-group" data-management-module="transport">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -588,7 +630,10 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'hostel' 'view' as can_view_hostel_nav %}
+    {% if can_view_hostel_nav %}
     <div class="nav-group" data-management-module="hostel">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -644,7 +689,10 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
+    {% can_manage 'audit' 'view' as can_view_audit_nav %}
+    {% if can_view_audit_nav %}
     <div class="nav-group" data-management-module="audit">
         <button class="nav-section" type="button" aria-expanded="false">
             <span class="nav-section-main">
@@ -660,6 +708,7 @@
             </a>
         </div>
     </div>
+    {% endif %}
 
     <script>
         (function () {

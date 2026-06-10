@@ -22,6 +22,23 @@ def school_license(request):
     }
 
 
+def account_email_status(request):
+    if not getattr(request, "user", None) or not request.user.is_authenticated:
+        return {
+            "account_missing_email": False,
+            "account_email": "",
+        }
+
+    from homeApp.auth_services import email_is_verified_for_user, get_password_reset_email
+
+    email, role, profile = get_password_reset_email(request.user)
+    return {
+        "account_missing_email": not bool(email),
+        "account_email": email,
+        "account_email_verified": email_is_verified_for_user(request.user, email),
+    }
+
+
 def management_access(request):
     if not getattr(request, "user", None) or not request.user.is_authenticated:
         return {

@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 from .license import build_license_context
-from .models import AuditLog, SchoolDetail, SchoolOwner, SchoolSession, SchoolSocialLink, WebPushSubscription
+from .models import AccessLink, AuditLog, EmailVerification, SchoolDetail, SchoolOwner, SchoolSession, SchoolSocialLink, WebPushSubscription
 
 
 def _all_concrete_fields(model):
@@ -229,3 +229,19 @@ class SchoolSessionAdmin(AllFieldsAdmin):
 class WebPushSubscriptionAdmin(AllFieldsAdmin):
     search_fields = ('=id', 'endpointHash', 'endpoint', 'userID__username', 'schoolID__schoolName')
     list_filter = ('appName', 'isActive')
+
+
+@admin.register(AccessLink)
+class AccessLinkAdmin(admin.ModelAdmin):
+    list_display = ('datetime', 'userID', 'purpose', 'schoolID', 'expiresAt', 'usedCount', 'maxUses', 'isRevoked')
+    list_filter = ('purpose', 'isRevoked', 'schoolID')
+    search_fields = ('=id', 'userID__username', 'createdByUserID__username', 'tokenHash')
+    readonly_fields = ('tokenHash', 'datetime', 'lastUpdatedOn', 'usedAt', 'usedCount', 'lastUsedIpAddress')
+
+
+@admin.register(EmailVerification)
+class EmailVerificationAdmin(admin.ModelAdmin):
+    list_display = ('sentAt', 'userID', 'email', 'expiresAt', 'verifiedAt', 'isRevoked')
+    list_filter = ('isRevoked', 'verifiedAt')
+    search_fields = ('=id', 'userID__username', 'email', 'tokenHash')
+    readonly_fields = ('tokenHash', 'sentAt', 'lastUpdatedOn', 'verifiedAt')

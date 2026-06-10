@@ -146,6 +146,16 @@
             background: #155fc2;
         }
 
+        .forgot-link {
+            display: inline-block;
+            margin-top: 14px;
+            color: #1a73e8;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            text-align: center;
+        }
+
         /* Credit */
         .credit {
             text-align: center;
@@ -205,6 +215,7 @@
             </div>
 
             <button class="login-btn" type="button" onclick="UserLogin()">CONTINUE</button>
+            <a class="forgot-link" href="{% url 'homeApp:forgot_password' %}">Forgot password?</a>
         </form>
     </div>
 
@@ -216,6 +227,15 @@
 
 <!-- JS Login Logic (unchanged) -->
 <script>
+    {% if access_link_error %}
+    $(function () {
+        $('body').toast({
+            class: 'error',
+            message: '{{ access_link_error|escapejs }}'
+        });
+    });
+    {% endif %}
+
     function UserLogin() {
         var username = $('#userName').val();
         var password = $('#password').val();
