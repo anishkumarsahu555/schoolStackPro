@@ -1858,6 +1858,7 @@
             border: 0 !important;
         }
 
+        #globalSearchBtn:before,
         #themeToggleBtn:before,
         #notificationToggleBtn:before {
             display: none !important;
@@ -3637,6 +3638,241 @@
                 background: var(--app-bg) !important;
             }
         }
+
+        /* --- Global Search Modal / Command Palette --- */
+        .global-search-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 10000;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 12vh;
+        }
+        .global-search-overlay.active {
+            display: flex;
+        }
+        .global-search-container {
+            width: 100%;
+            max-width: 640px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 70vh;
+            margin: 0 1.5rem;
+            animation: globalSearchSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        html[data-theme="dark"] .global-search-container {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+        }
+        @keyframes globalSearchSlideDown {
+            from { transform: translateY(-15px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .global-search-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        html[data-theme="dark"] .global-search-input-wrap {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .global-search-input-wrap i.search.icon {
+            font-size: 1.25rem;
+            color: #64748b;
+            margin-right: 0.75rem;
+        }
+        .global-search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 1.15rem;
+            color: #0f172a;
+            font-weight: 500;
+        }
+        html[data-theme="dark"] .global-search-input {
+            color: #f8fafc;
+        }
+        .global-search-input::placeholder {
+            color: #94a3b8;
+        }
+        .global-search-input:not(:placeholder-shown) ~ .global-search-close-btn {
+            display: none;
+        }
+        .global-search-close-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #94a3b8;
+            padding: 0.25rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, color 0.15s;
+        }
+        .global-search-close-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: #475569;
+        }
+        html[data-theme="dark"] .global-search-close-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #cbd5e1;
+        }
+        .global-search-results {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 0;
+        }
+        .global-search-group-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            padding: 0.5rem 1.5rem 0.25rem;
+            font-weight: 700;
+        }
+        html[data-theme="dark"] .global-search-group-title {
+            color: #94a3b8;
+        }
+        .global-search-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: #334155;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.15s;
+            gap: 0.75rem;
+        }
+        html[data-theme="dark"] .global-search-item {
+            color: #cbd5e1;
+        }
+        .global-search-item:hover, .global-search-item.selected {
+            background: rgba(26, 115, 232, 0.08);
+            color: #1a73e8;
+            outline: none;
+        }
+        html[data-theme="dark"] .global-search-item:hover, html[data-theme="dark"] .global-search-item.selected {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+        }
+        .global-search-item-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 8px;
+            color: #475569;
+            font-size: 1rem;
+        }
+        html[data-theme="dark"] .global-search-item-icon {
+            background: rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+        }
+        .global-search-item:hover .global-search-item-icon, .global-search-item.selected .global-search-item-icon {
+            background: rgba(26, 115, 232, 0.15);
+            color: #1a73e8;
+        }
+        html[data-theme="dark"] .global-search-item:hover .global-search-item-icon, html[data-theme="dark"] .global-search-item.selected .global-search-item-icon {
+            background: rgba(59, 130, 246, 0.25);
+            color: #60a5fa;
+        }
+        .global-search-item-img {
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .global-search-item-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .global-search-item-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .global-search-item-meta {
+            font-size: 0.75rem;
+            color: #64748b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 0.1rem;
+        }
+        html[data-theme="dark"] .global-search-item-meta {
+            color: #94a3b8;
+        }
+        .global-search-item:hover .global-search-item-meta, .global-search-item.selected .global-search-item-meta {
+            color: inherit;
+            opacity: 0.85;
+        }
+        .global-search-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.5rem;
+            background: rgba(0, 0, 0, 0.02);
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        html[data-theme="dark"] .global-search-footer {
+            background: rgba(255, 255, 255, 0.01);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+        }
+        .global-search-shortcuts {
+            display: flex;
+            gap: 1rem;
+        }
+        .global-search-key {
+            background: #e2e8f0;
+            color: #475569;
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.7rem;
+        }
+        html[data-theme="dark"] .global-search-key {
+            background: #334155;
+            color: #cbd5e1;
+        }
+        .global-search-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1.5rem;
+            color: #64748b;
+            text-align: center;
+        }
+        .global-search-empty i.icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.5;
+        }
     </style>
 </head>
 
@@ -3695,6 +3931,11 @@
     </div>
 
     <div class="right menu">
+        {% if request.path|slice:":9" != "/teacher/" and request.path|slice:":9" != "/student/" and request.user.is_authenticated %}
+            <a href="#" class="item" id="globalSearchBtn" data-tooltip="Global Search (Cmd+K / Ctrl+K)" data-position="bottom center" data-variation="tiny">
+                <i class="search icon"></i>
+            </a>
+        {% endif %}
         <a href="#" class="item" id="themeToggleBtn" data-tooltip="Toggle theme" data-position="bottom center" data-variation="tiny">
             <i class="theme-toggle-icon moon icon" id="themeToggleIcon"></i>
         </a>
@@ -5914,6 +6155,291 @@
 
             setInterval(refreshChatUnreadBadge, 30000);
         })();
+    {% endif %}
+
+    {% if request.path|slice:":9" != "/teacher/" and request.path|slice:":9" != "/student/" and request.user.is_authenticated %}
+    (function initGlobalSearchPalette() {
+        const searchBtn = document.getElementById('globalSearchBtn');
+        const overlay = document.createElement('div');
+        overlay.className = 'global-search-overlay';
+        overlay.id = 'globalSearchOverlay';
+        overlay.innerHTML = `
+            <div class="global-search-container">
+                <div class="global-search-input-wrap">
+                    <i class="search icon"></i>
+                    <input type="search" id="globalSearchInput" class="global-search-input" placeholder="Search pages, students, staff, library..." autocomplete="off" spellcheck="false">
+                    <button class="global-search-close-btn" id="globalSearchCloseBtn" title="Close search (Esc)">
+                        <i class="times icon"></i>
+                    </button>
+                </div>
+                <div class="global-search-results" id="globalSearchResults">
+                    <div class="global-search-empty">
+                        <i class="search icon"></i>
+                        <div>Type at least 2 characters to search...</div>
+                    </div>
+                </div>
+                <div class="global-search-footer">
+                    <div class="global-search-shortcuts">
+                        <span><span class="global-search-key">↑↓</span> Navigate</span>
+                        <span><span class="global-search-key">Enter</span> Select</span>
+                        <span><span class="global-search-key">Esc</span> Close</span>
+                    </div>
+                    <div>SchoolsStack Search</div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        const input = overlay.querySelector('#globalSearchInput');
+        const resultsContainer = overlay.querySelector('#globalSearchResults');
+        const closeBtn = overlay.querySelector('#globalSearchCloseBtn');
+
+        let debounceTimer;
+        let selectedIndex = -1;
+
+        function openSearch() {
+            overlay.classList.add('active');
+            input.value = '';
+            showDefaultMessage();
+            setTimeout(() => input.focus(), 50);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSearch() {
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+            input.blur();
+        }
+
+        function showDefaultMessage() {
+            resultsContainer.innerHTML = `
+                <div class="global-search-empty">
+                    <i class="search icon"></i>
+                    <div>Type at least 2 characters to search...</div>
+                </div>
+            `;
+            selectedIndex = -1;
+        }
+
+        function showLoading() {
+            resultsContainer.innerHTML = `
+                <div class="global-search-empty">
+                    <div class="ui active centered inline loader"></div>
+                    <div style="margin-top: 1rem;">Searching...</div>
+                </div>
+            `;
+        }
+
+        function showNoResults() {
+            resultsContainer.innerHTML = `
+                <div class="global-search-empty">
+                    <i class="frown outline icon"></i>
+                    <div>No results found for "${escapeHtml(input.value)}"</div>
+                </div>
+            `;
+        }
+
+        function escapeHtml(str) {
+            return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function renderResults(data) {
+            resultsContainer.innerHTML = '';
+            let html = '';
+            let hasAny = false;
+
+            const categories = [
+                { key: 'pages', label: 'Navigation & Pages', icon: 'linkify' },
+                { key: 'students', label: 'Students', icon: 'user' },
+                { key: 'teachers', label: 'Teachers & Staff', icon: 'chalkboard teacher' },
+                { key: 'parents', label: 'Parents & Guardians', icon: 'users' },
+                { key: 'books', label: 'Library Books', icon: 'book' },
+                { key: 'events', label: 'Events', icon: 'calendar alternate' }
+            ];
+
+            categories.forEach(cat => {
+                const items = data[cat.key] || [];
+                if (items.length > 0) {
+                    hasAny = true;
+                    html += `<div class="global-search-group-title">${cat.label}</div>`;
+                    items.forEach(item => {
+                        let innerHtml = '';
+                        if (cat.key === 'students') {
+                            innerHtml = `
+                                <img class="global-search-item-img" src="${item.photo}" alt="${escapeHtml(item.name)}">
+                                <div class="global-search-item-info">
+                                    <div class="global-search-item-title">${escapeHtml(item.name)}</div>
+                                    <div class="global-search-item-meta">Class: ${escapeHtml(item.class)} | Roll: ${escapeHtml(item.roll)} | Reg: ${escapeHtml(item.reg_code)}</div>
+                                </div>
+                            `;
+                        } else if (cat.key === 'teachers') {
+                            innerHtml = `
+                                <img class="global-search-item-img" src="${item.photo}" alt="${escapeHtml(item.name)}">
+                                <div class="global-search-item-info">
+                                    <div class="global-search-item-title">${escapeHtml(item.name)}</div>
+                                    <div class="global-search-item-meta">${escapeHtml(item.position)} | Code: ${escapeHtml(item.code)}</div>
+                                </div>
+                            `;
+                        } else if (cat.key === 'parents') {
+                            innerHtml = `
+                                <div class="global-search-item-icon"><i class="users icon"></i></div>
+                                <div class="global-search-item-info">
+                                    <div class="global-search-item-title">Father: ${escapeHtml(item.father)} | Mother: ${escapeHtml(item.mother)}</div>
+                                    <div class="global-search-item-meta">Phone: ${escapeHtml(item.phone)} | Email: ${escapeHtml(item.email)}</div>
+                                </div>
+                            `;
+                        } else if (cat.key === 'books') {
+                            innerHtml = `
+                                ${item.cover ? `<img class="global-search-item-img" style="border-radius: 4px; width: 1.75rem; height: 2.5rem;" src="${item.cover}" alt="${escapeHtml(item.title)}">` : `<div class="global-search-item-icon"><i class="book icon"></i></div>`}
+                                <div class="global-search-item-info">
+                                    <div class="global-search-item-title">${escapeHtml(item.title)}</div>
+                                    <div class="global-search-item-meta">Authors: ${escapeHtml(item.authors)} | ISBN: ${escapeHtml(item.isbn)}</div>
+                                </div>
+                            `;
+                        } else if (cat.key === 'events') {
+                            innerHtml = `
+                                <div class="global-search-item-icon"><i class="calendar alternate icon"></i></div>
+                                <div class="global-search-item-info">
+                                    <div class="global-search-item-title">${escapeHtml(item.title)}</div>
+                                    <div class="global-search-item-meta">Date: ${escapeHtml(item.date)} | Type: ${escapeHtml(item.type)}</div>
+                                </div>
+                            `;
+                        } else {
+                            // Pages
+                            innerHtml = `
+                                <div class="global-search-item-icon"><i class="${item.icon || 'linkify'} icon"></i></div>
+                                <div class="global-search-item-info">
+                                    <div class="global-search-item-title">${escapeHtml(item.title)}</div>
+                                    <div class="global-search-item-meta">${escapeHtml(item.category)}</div>
+                                </div>
+                            `;
+                        }
+
+                        html += `
+                            <a href="${item.url}" class="global-search-item">
+                                ${innerHtml}
+                            </a>
+                        `;
+                    });
+                }
+            });
+
+            if (!hasAny) {
+                showNoResults();
+            } else {
+                resultsContainer.innerHTML = html;
+                selectedIndex = -1;
+            }
+        }
+
+        function performSearch() {
+            const query = input.value.trim();
+            if (query.length < 2) {
+                showDefaultMessage();
+                return;
+            }
+
+            showLoading();
+
+            fetch(`/management/api/global_search_api?q=${encodeURIComponent(query)}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.ok ? res.json() : null)
+            .then(res => {
+                if (res && res.success) {
+                    renderResults(res.data);
+                } else {
+                    showNoResults();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                resultsContainer.innerHTML = `
+                    <div class="global-search-empty">
+                        <i class="exclamation triangle icon" style="color: #ef4444;"></i>
+                        <div>Failed to retrieve search results.</div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- Event Listeners ---
+        if (searchBtn) {
+            searchBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                openSearch();
+            });
+        }
+
+        closeBtn.addEventListener('click', closeSearch);
+
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closeSearch();
+        });
+
+        // Shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Cmd+K or Ctrl+K
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                if (overlay.classList.contains('active')) {
+                    closeSearch();
+                } else {
+                    openSearch();
+                }
+            }
+            // Slash key (if not in an input/textarea)
+            else if (e.key === '/' && !overlay.classList.contains('active')) {
+                const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+                if (tag !== 'input' && tag !== 'textarea' && !document.activeElement.isContentEditable) {
+                    e.preventDefault();
+                    openSearch();
+                }
+            }
+            // Escape key
+            else if (e.key === 'Escape' && overlay.classList.contains('active')) {
+                e.preventDefault();
+                closeSearch();
+            }
+        });
+
+        // Input typing debouncer
+        input.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(performSearch, 200);
+        });
+
+        // Keyboard navigation within results
+        input.addEventListener('keydown', function(e) {
+            const items = resultsContainer.querySelectorAll('.global-search-item');
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (selectedIndex < items.length - 1) {
+                    if (selectedIndex >= 0) items[selectedIndex].classList.remove('selected');
+                    selectedIndex++;
+                    items[selectedIndex].classList.add('selected');
+                    items[selectedIndex].scrollIntoView({ block: 'nearest' });
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (selectedIndex > 0) {
+                    items[selectedIndex].classList.remove('selected');
+                    selectedIndex--;
+                    items[selectedIndex].classList.add('selected');
+                    items[selectedIndex].scrollIntoView({ block: 'nearest' });
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && selectedIndex < items.length) {
+                    items[selectedIndex].click();
+                } else if (items.length > 0) {
+                    items[0].click(); // Default to first item if none selected
+                }
+            }
+        });
+    })();
     {% endif %}
 
 </script>

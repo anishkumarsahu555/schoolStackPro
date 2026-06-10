@@ -204,6 +204,7 @@ URL_PERMISSION_MAP = {
 }
 
 API_PERMISSION_MAP = {
+    'global_search_api': ('dashboard', 'view'),
     'get_school_detail_api': ('school_settings', 'view'),
     'update_school_detail_api': ('school_settings', 'edit'),
     'get_session_import_meta_api': ('school_settings', 'view'),

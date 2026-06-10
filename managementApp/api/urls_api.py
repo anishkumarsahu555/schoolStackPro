@@ -24,6 +24,7 @@ from financeApp.api import vendors as finance_vendors_api
 
 urlpatterns = [
     # api
+    path('global_search_api', global_search_api, name='global_search_api'),
     path('get_school_detail_api', get_school_detail_api, name='get_school_detail_api'),
     path('update_school_detail_api', update_school_detail_api, name='update_school_detail_api'),
     path('get_session_import_meta_api', get_session_import_meta_api, name='get_session_import_meta_api'),
