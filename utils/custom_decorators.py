@@ -11,7 +11,7 @@ def check_groups(*groups):
             from managementApp.access_control import can_pass_group_gate, init_staff_management_session, user_has_management_access
 
             if not can_pass_group_gate(request, groups):
-                if set(groups).issubset({'Admin', 'Owner'}):
+                if request.user.is_authenticated:
                     raise PermissionDenied
                 return redirect('/')
             if user_has_management_access(request.user) and not request.session.get('current_session'):
