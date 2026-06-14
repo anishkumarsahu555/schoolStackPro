@@ -91,6 +91,13 @@
             --app-shadow-md: 0 12px 28px rgba(15, 23, 42, 0.09);
             --sidebar-expanded-width: 15rem;
             --sidebar-collapsed-width: 4.75rem;
+            --motion-duration-fast: 140ms;
+            --motion-duration-base: 220ms;
+            --motion-duration-slow: 360ms;
+            --motion-ease-standard: cubic-bezier(.2, .8, .2, 1);
+            --motion-ease-emphasized: cubic-bezier(.16, 1, .3, 1);
+            --motion-lift-xs: translate3d(0, -1px, 0);
+            --motion-lift-sm: translate3d(0, -2px, 0);
         }
 
         html[data-theme="dark"] {
@@ -2825,12 +2832,197 @@
             position: inherit !important;
         }
 
+        .main-content {
+            animation: appContentEnter var(--motion-duration-slow) var(--motion-ease-emphasized) both;
+        }
+
+        .universal-back-bar,
+        .main-content > .ui.grid,
+        .main-content > .ui.container,
+        .main-content > .ui.segment,
+        .main-content > .ui.basic.grid,
+        .main-content > .ui.message {
+            animation: appSurfaceEnter var(--motion-duration-slow) var(--motion-ease-emphasized) both;
+        }
+
+        .ui.segment,
+        .ui.card,
+        .ui.cards > .card,
+        .ui.message,
+        .ui.table,
+        .ui.menu,
+        .ui.modal,
+        .ui.dropdown .menu,
+        .school-license-banner {
+            transition:
+                background-color var(--motion-duration-base) ease,
+                border-color var(--motion-duration-base) ease,
+                box-shadow var(--motion-duration-base) var(--motion-ease-standard),
+                transform var(--motion-duration-base) var(--motion-ease-standard),
+                opacity var(--motion-duration-base) ease !important;
+        }
+
+        .ui.button,
+        .ui.buttons .button,
+        .ui.input > input,
+        .ui.form input,
+        .ui.form textarea,
+        .ui.form select,
+        .ui.selection.dropdown,
+        .ui.checkbox label:before,
+        .ui.radio.checkbox label:before,
+        .ui.label,
+        .ui.menu .item {
+            transition:
+                background-color var(--motion-duration-base) ease,
+                border-color var(--motion-duration-base) ease,
+                color var(--motion-duration-base) ease,
+                box-shadow var(--motion-duration-base) var(--motion-ease-standard),
+                transform var(--motion-duration-base) var(--motion-ease-standard),
+                opacity var(--motion-duration-base) ease !important;
+        }
+
+        .ui.button:hover,
+        .ui.buttons .button:hover,
+        .ui.icon.button:hover,
+        .app-title-actions .ui.button:hover {
+            transform: var(--motion-lift-xs);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.10) !important;
+        }
+
+        .ui.button:active,
+        .ui.buttons .button:active,
+        .ui.icon.button:active {
+            transform: translate3d(0, 0, 0) scale(0.985);
+        }
+
+        .ui.form input:focus,
+        .ui.form textarea:focus,
+        .ui.form select:focus,
+        .ui.selection.dropdown:focus,
+        .ui.selection.dropdown.active {
+            transform: translate3d(0, -1px, 0);
+        }
+
+        .ui.card:hover,
+        .ui.cards > .card:hover,
+        .ui.segment:hover,
+        .school-license-banner:hover {
+            transform: var(--motion-lift-xs);
+        }
+
+        .ui.dropdown.visible .menu,
+        .ui.dropdown.active .menu,
+        .ui.selection.dropdown.visible .menu {
+            animation: appMenuReveal var(--motion-duration-base) var(--motion-ease-emphasized) both;
+            transform-origin: top center;
+        }
+
+        .ui.modal.visible,
+        .ui.modal.active {
+            animation: appModalReveal var(--motion-duration-slow) var(--motion-ease-emphasized) both;
+            transform-origin: center;
+        }
+
+        .ui.dimmer.visible,
+        .ui.dimmer.active {
+            animation: appDimmerFade var(--motion-duration-base) ease both;
+        }
+
+        .ui.table tbody tr,
+        table.dataTable tbody tr {
+            transition:
+                background-color var(--motion-duration-base) ease,
+                box-shadow var(--motion-duration-base) var(--motion-ease-standard),
+                transform var(--motion-duration-base) var(--motion-ease-standard) !important;
+        }
+
+        .ui.table tbody tr:hover,
+        table.dataTable tbody tr:hover {
+            transform: translate3d(1px, 0, 0);
+        }
+
+        .app-notice {
+            animation: noticeIn var(--motion-duration-slow) var(--motion-ease-emphasized);
+        }
+
+        .preloader .splash-logo {
+            animation: appSplashFloat 1.8s var(--motion-ease-standard) infinite alternate;
+        }
+
+        @keyframes appContentEnter {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes appSurfaceEnter {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 8px, 0);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
+
+        @keyframes appMenuReveal {
+            from {
+                opacity: 0;
+                transform: translate3d(0, -6px, 0) scale(0.985);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+        }
+
+        @keyframes appModalReveal {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 10px, 0) scale(0.985);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+        }
+
+        @keyframes appDimmerFade {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes appSplashFloat {
+            from {
+                transform: translate3d(0, 0, 0);
+            }
+            to {
+                transform: translate3d(0, -5px, 0);
+            }
+        }
+
         @media (prefers-reduced-motion: reduce) {
+            html,
+            body,
+            body *,
+            body *::before,
+            body *::after,
             .material-sidenav *,
             .ui.sidebar.material-sidenav.sidebar-menu,
             #mobileSidebarBackdrop {
                 transition-duration: 0.01ms !important;
+                transition-delay: 0.01ms !important;
                 animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
                 scroll-behavior: auto !important;
             }
 
@@ -2838,6 +3030,14 @@
             .nav-item:hover,
             #sidebar .menu > .item:hover,
             .sidebar-search-field:focus-within,
+            .ui.button:hover,
+            .ui.card:hover,
+            .ui.cards > .card:hover,
+            .ui.segment:hover,
+            .school-license-banner:hover,
+            .ui.form input:focus,
+            .ui.form textarea:focus,
+            .ui.form select:focus,
             .universal-back-button:hover,
             .universal-back-button:focus {
                 transform: none !important;
