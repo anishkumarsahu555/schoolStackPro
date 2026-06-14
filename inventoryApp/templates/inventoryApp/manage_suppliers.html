@@ -1,0 +1,260 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Suppliers List</title>{% endblock %}
+{% block page_title %}Suppliers & Vendors{% endblock %}
+{% block page_subtitle %}Manage suppliers database and business contact details for purchases{% endblock %}
+{% block page_actions %}
+    {% if management_permissions.inventory.add %}
+    <button class="ui green button inventory-page-action" type="button" onclick="showSupplierModal()">
+        <i class="plus icon"></i>Add Supplier
+    </button>
+    {% endif %}
+{% endblock %}
+{% block body %}
+{% include 'inventoryApp/_inventory_styles.html' %}
+<form>{% csrf_token %}</form>
+
+<div class="ui right aligned basic grid inventory-list-shell">
+    <div class="sixteen wide column">
+        <div class="ui tab active" data-tab="inventory-suppliers">
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="list alternate outline icon"></i>
+                    Supplier list
+                </h4>
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="SupplierTable" style="margin-top: 5px; width: 100%">
+                        <thead>
+                            <tr>
+                                <th>Company Name</th>
+                                <th>Contact Person</th>
+                                <th>Phone</th>
+                                <th>Email Address</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Form -->
+<div class="ui modal" id="supplierModal">
+    <i class="close icon"></i>
+    <div class="header">Supplier / Vendor Detail</div>
+    <div class="content">
+        <form class="ui tiny form" id="supplierForm">
+            <input type="hidden" id="supplierID">
+            <div class="two fields">
+                <div class="field required">
+                    <label>Company Name</label>
+                    <input type="text" id="companyName" placeholder="e.g. Acme Stationery Ltd">
+                </div>
+                <div class="field">
+                    <label>Contact Person Name</label>
+                    <input type="text" id="contactName" placeholder="e.g. John Doe">
+                </div>
+            </div>
+            <div class="three fields">
+                <div class="field">
+                    <label>Phone Number</label>
+                    <input type="text" id="phone" placeholder="e.g. +91 99999 99999">
+                </div>
+                <div class="field">
+                    <label>Email Address</label>
+                    <input type="email" id="email" placeholder="e.g. vendor@example.com">
+                </div>
+                <div class="field">
+                    <label>GSTIN / Tax ID</label>
+                    <input type="text" id="taxId" placeholder="e.g. 07AAAAA1111A1Z1">
+                </div>
+            </div>
+            <div class="field">
+                <label>Address</label>
+                <textarea id="address" rows="2" placeholder="Enter full office/warehouse address..."></textarea>
+            </div>
+        </form>
+    </div>
+    <div class="actions inventory-modal-actions">
+        <button type="button" class="ui cancel button">
+            Cancel
+        </button>
+        <button type="button" id="saveBtn" class="ui green button saveBtn" onclick="saveSupplier()">
+            Add
+            <i class="checkmark icon"></i>
+        </button>
+        <button type="button" id="saveBtnUpdate" class="ui orange button saveBtnUpdate" style="display:none;" onclick="saveSupplier()">
+            Update
+            <i class="redo icon"></i>
+        </button>
+        <button type="button" id="saveBtnLoad" class="ui green button saveBtnLoad" style="display:none;">
+            Saving ...
+            <i class="checkmark icon"></i>
+        </button>
+    </div>
+</div>
+
+{% endblock %}
+{% block js %}
+<script>
+let supplierTable;
+$(function(){
+    supplierTable = $('#SupplierTable').DataTable({
+        dom: 'Blfrtip',
+        "scrollY": "350px",
+        "scrollX": true,
+        stateSave: true,
+        fixedColumns: {
+            left: 1,
+            right: 1
+        },
+        buttons: [{
+            extend: 'excel',
+            exportOptions: {
+                columns: [0, 1, 2, 3]
+            }
+        }],
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+        pageLength: 10,
+        processing: true,
+        serverSide: true,
+        ajax: "{% url 'inventoryAppAPI:SupplierListJson' %}",
+        "columnDefs": [
+            {"name": "companyName", "targets": 0, "orderable": true},
+            {"name": "contactName", "targets": 1, "orderable": true},
+            {"name": "phone", "targets": 2, "orderable": true},
+            {"name": "email", "targets": 3, "orderable": true},
+            {"name": "action", "targets": 4, "orderable": false}
+        ]
+    });
+
+    $('#companyName').on('input change', function(){
+        $(this).closest('.field').removeClass('error');
+    });
+});
+
+function reloadSuppliers(){
+    supplierTable.ajax.reload(null, false);
+}
+
+function clearAndReset(){
+    $('#supplierForm')[0].reset();
+    $('#supplierID').val('');
+    $('#supplierForm .field').removeClass('error');
+    $('.saveBtn').show();
+    $('.saveBtnUpdate').hide();
+    $('.saveBtnLoad').hide();
+}
+
+function showSupplierModal(){
+    clearAndReset();
+    $('#supplierModal').modal('show');
+}
+
+function editSupplier(id){
+    clearAndReset();
+    $.get("{% url 'inventoryAppAPI:supplier_detail_api' %}", {id: id}, function(r){
+        if(r.success && r.data){
+            const d = r.data;
+            $('#supplierID').val(d.id);
+            $('#companyName').val(d.companyName);
+            $('#contactName').val(d.contactName);
+            $('#phone').val(d.phone);
+            $('#email').val(d.email);
+            $('#taxId').val(d.taxId);
+            $('#address').val(d.address);
+            
+            $('.saveBtn').hide();
+            $('.saveBtnUpdate').show();
+            $('#supplierModal').modal('show');
+        } else {
+            addErrorNotification(r.message);
+        }
+    });
+}
+
+function saveSupplier(){
+    const company = $('#companyName');
+    if (!company.val().trim()) {
+        company.closest('.field').addClass('error');
+        requiredFieldError();
+        return;
+    }
+
+    $('.saveBtn').hide();
+    $('.saveBtnUpdate').hide();
+    $('.saveBtnLoad').show();
+
+    const data = new FormData();
+    data.append('id', $('#supplierID').val());
+    data.append('companyName', company.val().trim());
+    data.append('contactName', $('#contactName').val().trim());
+    data.append('phone', $('#phone').val().trim());
+    data.append('email', $('#email').val().trim());
+    data.append('taxId', $('#taxId').val().trim());
+    data.append('address', $('#address').val().trim());
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+    $.ajax({
+        url: "{% url 'inventoryAppAPI:suppliers_api' %}",
+        type: 'POST',
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function(r){
+            $('.saveBtnLoad').hide();
+            if(r.success){
+                addSuccessNotification(r.message, 'green');
+                $('#supplierModal').modal('hide');
+                reloadSuppliers();
+            } else {
+                if ($('#supplierID').val()) { $('.saveBtnUpdate').show(); } else { $('.saveBtn').show(); }
+                addErrorNotification(r.message);
+            }
+        },
+        error: function(x){
+            $('.saveBtnLoad').hide();
+            if ($('#supplierID').val()) { $('.saveBtnUpdate').show(); } else { $('.saveBtn').show(); }
+            addErrorNotification((x.responseJSON||{}).message || 'Unable to save supplier.');
+        }
+    });
+}
+
+function confirmDeleteSupplier(id){
+    showInventoryDeleteModal(
+        id, 
+        'Delete Supplier?', 
+        'This supplier will be deleted. Are you sure you want to proceed?', 
+        deleteSupplier
+    );
+}
+
+function deleteSupplier(id){
+    const data = new FormData();
+    data.append('id', id);
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+    $.ajax({
+        url: "{% url 'inventoryAppAPI:delete_supplier_api' %}",
+        type: 'POST',
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function(r){
+            $('#inventoryDeleteModal').modal('hide');
+            if(r.success){
+                addSuccessNotification(r.message, 'green');
+                reloadSuppliers();
+            } else {
+                addErrorNotification(r.message);
+            }
+        },
+        error: function(x){
+            $('#inventoryDeleteModal').modal('hide');
+            addErrorNotification((x.responseJSON||{}).message || 'Unable to delete supplier.');
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -52,6 +52,7 @@ MANAGEMENT_MODULES = (
     ('library', 'Library', 'book'),
     ('transport', 'Transport', 'bus'),
     ('hostel', 'Hostel', 'home'),
+    ('inventory', 'Inventory & Assets', 'boxes'),
     ('audit', 'Audit Logs', 'history'),
     ('access_control', 'Access Control', 'user shield'),
 )
@@ -82,6 +83,7 @@ SYSTEM_ROLE_PRESETS = {
         'library': ['view'],
         'transport': ['view'],
         'hostel': ['view'],
+        'inventory': ['view', 'add', 'edit', 'report'],
         'audit': ['view'],
     },
     'Accountant': {
@@ -470,6 +472,15 @@ APP_URL_PERMISSION_MAP = {
         'manage_fee_tracking': ('hostel', 'view'),
         'manage_reports': ('hostel', 'report'),
     },
+    'inventoryApp': {
+        'dashboard': ('inventory', 'view'),
+        'manage_categories': ('inventory', 'view'),
+        'manage_items': ('inventory', 'view'),
+        'manage_suppliers': ('inventory', 'view'),
+        'manage_stock': ('inventory', 'view'),
+        'manage_assets': ('inventory', 'view'),
+        'manage_allocations': ('inventory', 'view'),
+    },
 }
 
 APP_API_PERMISSION_MAP = {
@@ -619,6 +630,28 @@ APP_API_PERMISSION_MAP = {
         'participant_update_api': ('communication', 'approve'),
         'room_messages_export': ('communication', 'report'),
     },
+    'inventoryAppAPI': {
+        'dashboard_summary': ('inventory', 'view'),
+        'categories_api': {'GET': ('inventory', 'view'), 'POST': ('inventory', 'edit')},
+        'category_detail_api': ('inventory', 'view'),
+        'delete_category_api': ('inventory', 'delete'),
+        'items_api': {'GET': ('inventory', 'view'), 'POST': ('inventory', 'edit')},
+        'item_detail_api': ('inventory', 'view'),
+        'delete_item_api': ('inventory', 'delete'),
+        'suppliers_api': {'GET': ('inventory', 'view'), 'POST': ('inventory', 'edit')},
+        'supplier_detail_api': ('inventory', 'view'),
+        'delete_supplier_api': ('inventory', 'delete'),
+        'stock_ledger_api': {'GET': ('inventory', 'view'), 'POST': ('inventory', 'edit')},
+        'allocations_api': {'GET': ('inventory', 'view'), 'POST': ('inventory', 'edit')},
+        'allocation_detail_api': ('inventory', 'view'),
+        'delete_allocation_api': ('inventory', 'delete'),
+        'low_stock_api': ('inventory', 'view'),
+        'CategoryListJson': ('inventory', 'view'),
+        'ItemListJson': ('inventory', 'view'),
+        'SupplierListJson': ('inventory', 'view'),
+        'StockLedgerListJson': ('inventory', 'view'),
+        'AllocationListJson': ('inventory', 'view'),
+    },
 }
 
 CHAT_POST_ACTION_PERMISSION_MAP = {
@@ -642,6 +675,8 @@ NAMESPACE_PERMISSION_MAP = {
     'transportAppAPI': ('transport', 'edit'),
     'hostelApp': ('hostel', 'view'),
     'hostelAppAPI': ('hostel', 'edit'),
+    'inventoryApp': ('inventory', 'view'),
+    'inventoryAppAPI': ('inventory', 'edit'),
     'chatApp': ('communication', 'view'),
 }
 

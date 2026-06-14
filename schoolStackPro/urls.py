@@ -42,6 +42,8 @@ urlpatterns = [
     path('transport/api/', include(('transportApp.api.urls_api', 'transportApp'), namespace='transportAppAPI')),
     path('hostel/', include(('hostelApp.urls', 'hostelApp'), namespace='hostelApp')),
     path('hostel/api/', include(('hostelApp.api.urls_api', 'hostelApp'), namespace='hostelAppAPI')),
+    path('inventory/', include(('inventoryApp.urls', 'inventoryApp'), namespace='inventoryApp')),
+    path('inventory/api/', include(('inventoryApp.api.urls_api', 'inventoryApp'), namespace='inventoryAppAPI')),
     path('', include('pwa.urls')),  # You MUST use an empty string as the URL prefix
     path('management/api/cached/', include(('managementApp.cached_api.cached_urls', 'managementApp'), namespace='managementAppCachedAPI')),
 

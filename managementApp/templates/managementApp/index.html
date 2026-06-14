@@ -578,6 +578,55 @@
     </div>
     {% endif %}
 
+    {% can_manage 'inventory' 'view' as can_view_inventory_nav %}
+    {% if can_view_inventory_nav %}
+    <div class="nav-group" data-management-module="inventory">
+        <button class="nav-section" type="button" aria-expanded="false">
+            <span class="nav-section-main">
+                <span>Inventory & Assets</span>
+            </span>
+            <i class="chevron down icon nav-section-chevron"></i>
+        </button>
+        <div class="nav-group-links">
+            <a class="nav-item {% if request.resolver_match.namespace == 'inventoryApp' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+               href="{% url 'inventoryApp:dashboard' %}">
+                <i class="chart area icon"></i>
+                <span>Dashboard</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'inventoryApp' and request.resolver_match.url_name == 'manage_categories' %}active{% endif %}"
+               href="{% url 'inventoryApp:manage_categories' %}">
+                <i class="tags icon"></i>
+                <span>Categories</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'inventoryApp' and request.resolver_match.url_name == 'manage_items' %}active{% endif %}"
+               href="{% url 'inventoryApp:manage_items' %}">
+                <i class="box icon"></i>
+                <span>Item Registry</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'inventoryApp' and request.resolver_match.url_name == 'manage_suppliers' %}active{% endif %}"
+               href="{% url 'inventoryApp:manage_suppliers' %}">
+                <i class="truck icon"></i>
+                <span>Suppliers</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'inventoryApp' and request.resolver_match.url_name == 'manage_stock' %}active{% endif %}"
+               href="{% url 'inventoryApp:manage_stock' %}">
+                <i class="dolly icon"></i>
+                <span>Stock Ledger</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'inventoryApp' and request.resolver_match.url_name == 'manage_assets' %}active{% endif %}"
+               href="{% url 'inventoryApp:manage_assets' %}">
+                <i class="barcode icon"></i>
+                <span>Asset Registry</span>
+            </a>
+            <a class="nav-item {% if request.resolver_match.namespace == 'inventoryApp' and request.resolver_match.url_name == 'manage_allocations' %}active{% endif %}"
+               href="{% url 'inventoryApp:manage_allocations' %}">
+                <i class="handshake icon"></i>
+                <span>Allocations</span>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
     {% can_manage 'transport' 'view' as can_view_transport_nav %}
     {% if can_view_transport_nav %}
     <div class="nav-group" data-management-module="transport">

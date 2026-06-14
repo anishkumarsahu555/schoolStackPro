@@ -1,0 +1,337 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Asset Registry</title>{% endblock %}
+{% block page_title %}Asset Registry{% endblock %}
+{% block page_subtitle %}Manage serialized tags, model serial numbers, and maintenance statuses of fixed school assets{% endblock %}
+{% block page_actions %}
+    {% if management_permissions.inventory.add %}
+    <button class="ui green button inventory-page-action" type="button" onclick="showAssetModal()">
+        <i class="plus icon"></i>Register Asset
+    </button>
+    {% endif %}
+{% endblock %}
+{% block body %}
+{% include 'inventoryApp/_inventory_styles.html' %}
+<form>{% csrf_token %}</form>
+
+<div class="ui right aligned basic grid inventory-list-shell">
+    <div class="sixteen wide column">
+        <div class="ui tab active" data-tab="inventory-assets">
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="list alternate outline icon"></i>
+                    Asset list
+                </h4>
+                <div class="ui segment inventory-filter-segment">
+                    <div class="ui tiny form">
+                        <div class="three fields">
+                            <div class="field">
+                                <label>Filter by Asset Type</label>
+                                <select class="ui fluid search dropdown" id="filterAssetItem" onchange="reloadAssets()"></select>
+                            </div>
+                            <div class="field">
+                                <label>Filter by Status</label>
+                                <select class="ui fluid dropdown" id="filterStatus" onchange="reloadAssets()">
+                                    <option value="">All Statuses</option>
+                                    <option value="available">Available (In Store)</option>
+                                    <option value="allocated">Allocated (In Use)</option>
+                                    <option value="maintenance">Under Maintenance</option>
+                                    <option value="retired">Retired / Written-off</option>
+                                </select>
+                            </div>
+                            <div class="field" style="display: flex; align-items: flex-end;">
+                                <button type="button" class="ui mini red button" onclick="clearFilters()">
+                                    <i class="times circle icon"></i>Clear Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="AssetTable" style="margin-top: 5px; width: 100%">
+                        <thead>
+                            <tr>
+                                <th>Asset Tag / Barcode</th>
+                                <th>Item Name</th>
+                                <th>Serial Number</th>
+                                <th>Current Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Form -->
+<div class="ui modal" id="assetModal">
+    <i class="close icon"></i>
+    <div class="header">Register Serialized Asset</div>
+    <div class="content">
+        <form class="ui tiny form" id="assetForm">
+            <input type="hidden" id="assetID">
+            <div class="two fields">
+                <div class="field required">
+                    <label>Base Item</label>
+                    <select class="ui fluid search dropdown" id="assetItemID"></select>
+                </div>
+                <div class="field required">
+                    <label>Asset Tag / Barcode</label>
+                    <input type="text" id="assetTag" placeholder="e.g. SL-MIC-001">
+                </div>
+            </div>
+            <div class="three fields">
+                <div class="field">
+                    <label>Manufacturer Serial Number</label>
+                    <input type="text" id="assetSerial" placeholder="e.g. SN-88334-XY">
+                </div>
+                <div class="field required">
+                    <label>Current Status</label>
+                    <select class="ui fluid dropdown" id="assetStatus">
+                        <option value="available">Available (In Store)</option>
+                        <option value="allocated">Allocated (In Use)</option>
+                        <option value="maintenance">Under Maintenance</option>
+                        <option value="retired">Retired / Written-off</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Notes / Asset Specs</label>
+                    <input type="text" id="assetNotes" placeholder="e.g. Core i5, 16GB RAM">
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="actions inventory-modal-actions">
+        <button type="button" class="ui cancel button">
+            Cancel
+        </button>
+        <button type="button" id="saveBtn" class="ui green button saveBtn" onclick="saveAsset()">
+            Register
+            <i class="checkmark icon"></i>
+        </button>
+        <button type="button" id="saveBtnUpdate" class="ui orange button saveBtnUpdate" style="display:none;" onclick="saveAsset()">
+            Update
+            <i class="redo icon"></i>
+        </button>
+        <button type="button" id="saveBtnLoad" class="ui green button saveBtnLoad" style="display:none;">
+            Registering ...
+            <i class="checkmark icon"></i>
+        </button>
+    </div>
+</div>
+
+{% endblock %}
+{% block js %}
+<script>
+let assetTable;
+$(function(){
+    $('.ui.dropdown').dropdown();
+    loadAssetItemOptions();
+
+    assetTable = $('#AssetTable').DataTable({
+        dom: 'Blfrtip',
+        "scrollY": "350px",
+        "scrollX": true,
+        stateSave: true,
+        fixedColumns: {
+            left: 1,
+            right: 1
+        },
+        buttons: [{
+            extend: 'excel',
+            exportOptions: {
+                columns: [0, 1, 2, 3]
+            }
+        }],
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+        pageLength: 10,
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{% url 'inventoryAppAPI:AssetListJson' %}",
+            data: function(d) {
+                d.itemID = $('#filterAssetItem').val();
+                d.status = $('#filterStatus').val();
+            }
+        },
+        "columnDefs": [
+            {"name": "assetTag", "targets": 0, "orderable": true},
+            {"name": "itemID__name", "targets": 1, "orderable": true},
+            {"name": "serialNumber", "targets": 2, "orderable": true},
+            {"name": "status", "targets": 3, "orderable": true},
+            {"name": "action", "targets": 4, "orderable": false}
+        ]
+    });
+
+    $('#assetItemID, #assetTag, #assetStatus').on('input change', function(){
+        $(this).closest('.field').removeClass('error');
+    });
+});
+
+function reloadAssets(){
+    assetTable.ajax.reload(null, false);
+}
+
+function clearFilters(){
+    $('#filterAssetItem').dropdown('clear');
+    $('#filterStatus').dropdown('clear');
+    reloadAssets();
+}
+
+function clearAndReset(){
+    $('#assetForm')[0].reset();
+    $('#assetID').val('');
+    $('#assetItemID').dropdown('clear');
+    $('#assetStatus').dropdown('set selected', 'available');
+    $('#assetForm .field').removeClass('error');
+    
+    $('.saveBtn').show();
+    $('.saveBtnUpdate').hide();
+    $('.saveBtnLoad').hide();
+}
+
+function loadAssetItemOptions(){
+    $.get("{% url 'inventoryAppAPI:items_api' %}", function(r){
+        const items = r.data || [];
+        
+        // Filter to only Fixed Asset items
+        const assetItems = items.filter(i => i.itemType === 'asset');
+        
+        const modalSelect = $('#assetItemID');
+        modalSelect.html('<option value="">Select Base Item</option>');
+        assetItems.forEach(i => {
+            modalSelect.append(`<option value="${i.id}">${escapeHtml(i.name)}</option>`);
+        });
+        modalSelect.dropdown('refresh');
+
+        const filterSelect = $('#filterAssetItem');
+        filterSelect.html('<option value="">All Asset Types</option>');
+        assetItems.forEach(i => {
+            filterSelect.append(`<option value="${i.id}">${escapeHtml(i.name)}</option>`);
+        });
+        filterSelect.dropdown('refresh');
+    });
+}
+
+function showAssetModal(){
+    clearAndReset();
+    $('#assetModal').modal('show');
+}
+
+function editAsset(id){
+    clearAndReset();
+    $.get("{% url 'inventoryAppAPI:asset_detail_api' %}", {id: id}, function(r){
+        if(r.success && r.data){
+            const d = r.data;
+            $('#assetID').val(d.id);
+            $('#assetItemID').dropdown('set selected', d.itemID || '');
+            $('#assetTag').val(d.assetTag);
+            $('#assetSerial').val(d.serialNumber);
+            $('#assetStatus').dropdown('set selected', d.status);
+            $('#assetNotes').val(d.notes);
+            
+            $('.saveBtn').hide();
+            $('.saveBtnUpdate').show();
+            $('#assetModal').modal('show');
+        } else {
+            addErrorNotification(r.message);
+        }
+    });
+}
+
+function saveAsset(){
+    const item = $('#assetItemID');
+    const tag = $('#assetTag');
+    const status = $('#assetStatus');
+
+    let isValid = true;
+    if (!item.val()) { item.closest('.field').addClass('error'); isValid = false; }
+    if (!tag.val().trim()) { tag.closest('.field').addClass('error'); isValid = false; }
+    if (!status.val()) { status.closest('.field').addClass('error'); isValid = false; }
+
+    if (!isValid) {
+        requiredFieldError();
+        return;
+    }
+
+    $('.saveBtn').hide();
+    $('.saveBtnUpdate').hide();
+    $('.saveBtnLoad').show();
+
+    const data = new FormData();
+    data.append('id', $('#assetID').val());
+    data.append('itemID', item.val());
+    data.append('assetTag', tag.val().trim());
+    data.append('serialNumber', $('#assetSerial').val().trim());
+    data.append('status', status.val());
+    data.append('notes', $('#assetNotes').val().trim());
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+    $.ajax({
+        url: "{% url 'inventoryAppAPI:assets_api' %}",
+        type: 'POST',
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function(r){
+            $('.saveBtnLoad').hide();
+            if(r.success){
+                addSuccessNotification(r.message, 'green');
+                $('#assetModal').modal('hide');
+                reloadAssets();
+            } else {
+                if ($('#assetID').val()) { $('.saveBtnUpdate').show(); } else { $('.saveBtn').show(); }
+                addErrorNotification(r.message);
+            }
+        },
+        error: function(x){
+            $('.saveBtnLoad').hide();
+            if ($('#assetID').val()) { $('.saveBtnUpdate').show(); } else { $('.saveBtn').show(); }
+            addErrorNotification((x.responseJSON||{}).message || 'Unable to save asset.');
+        }
+    });
+}
+
+function confirmDeleteAsset(id){
+    showInventoryDeleteModal(
+        id, 
+        'Delete Asset Tag?', 
+        'This serialized asset record will be deleted, are you sure?', 
+        deleteAsset
+    );
+}
+
+function deleteAsset(id){
+    const data = new FormData();
+    data.append('id', id);
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+    $.ajax({
+        url: "{% url 'inventoryAppAPI:delete_asset_api' %}",
+        type: 'POST',
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function(r){
+            $('#inventoryDeleteModal').modal('hide');
+            if(r.success){
+                addSuccessNotification(r.message, 'green');
+                reloadAssets();
+            } else {
+                addErrorNotification(r.message);
+            }
+        },
+        error: function(x){
+            $('#inventoryDeleteModal').modal('hide');
+            addErrorNotification((x.responseJSON||{}).message || 'Unable to delete asset.');
+        }
+    });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+</script>
+{% endblock %}

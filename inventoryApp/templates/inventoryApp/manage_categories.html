@@ -1,0 +1,239 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Inventory Categories</title>{% endblock %}
+{% block page_title %}Inventory Categories{% endblock %}
+{% block page_subtitle %}Manage stock classification groups (e.g. Stationery, Electronics, Lab Equipment){% endblock %}
+{% block page_actions %}
+    {% if management_permissions.inventory.add %}
+    <button class="ui green button inventory-page-action" type="button" onclick="showCategoryModal()">
+        <i class="plus icon"></i>Add Category
+    </button>
+    {% endif %}
+{% endblock %}
+{% block body %}
+{% include 'inventoryApp/_inventory_styles.html' %}
+<form>{% csrf_token %}</form>
+
+<div class="ui right aligned basic grid inventory-list-shell">
+    <div class="sixteen wide column">
+        <div class="ui tab active" data-tab="inventory-categories">
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="list alternate outline icon"></i>
+                    Category list
+                </h4>
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="CategoryTable" style="margin-top: 5px; width: 100%">
+                        <thead>
+                            <tr>
+                                <th>Category Name</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Form -->
+<div class="ui modal" id="categoryModal">
+    <i class="close icon"></i>
+    <div class="header">Inventory Category</div>
+    <div class="content">
+        <form class="ui tiny form" id="categoryForm">
+            <input type="hidden" id="categoryID">
+            <div class="field required">
+                <label>Category Name</label>
+                <input type="text" id="categoryName" placeholder="e.g. Science Lab Supplies">
+            </div>
+            <div class="field">
+                <label>Description</label>
+                <textarea id="categoryDescription" rows="3" placeholder="Enter short category description..."></textarea>
+            </div>
+        </form>
+    </div>
+    <div class="actions inventory-modal-actions">
+        <button type="button" class="ui cancel button">
+            Cancel
+        </button>
+        <button type="button" id="saveBtn" class="ui green button saveBtn" onclick="saveCategory()">
+            Add
+            <i class="checkmark icon"></i>
+        </button>
+        <button type="button" id="saveBtnUpdate" class="ui orange button saveBtnUpdate" style="display:none;" onclick="saveCategory()">
+            Update
+            <i class="redo icon"></i>
+        </button>
+        <button type="button" id="saveBtnLoad" class="ui green button saveBtnLoad" style="display:none;">
+            Saving ...
+            <i class="checkmark icon"></i>
+        </button>
+    </div>
+</div>
+
+{% endblock %}
+{% block js %}
+<script>
+let categoryTable;
+$(function(){
+    categoryTable = $('#CategoryTable').DataTable({
+        dom: 'Blfrtip',
+        "scrollY": "350px",
+        "scrollX": true,
+        stateSave: true,
+        fixedColumns: {
+            left: 1,
+            right: 1
+        },
+        buttons: [{
+            extend: 'excel',
+            exportOptions: {
+                columns: [0, 1]
+            }
+        }],
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+        pageLength: 10,
+        processing: true,
+        serverSide: true,
+        ajax: "{% url 'inventoryAppAPI:CategoryListJson' %}",
+        "columnDefs": [
+            {"name": "name", "targets": 0, "orderable": true},
+            {"name": "description", "targets": 1, "orderable": true},
+            {"name": "action", "targets": 2, "orderable": false}
+        ]
+    });
+
+    // Remove validation errors when typing
+    $('#categoryName').on('input change', function(){
+        $(this).closest('.field').removeClass('error');
+    });
+});
+
+function reloadCategories(){
+    categoryTable.ajax.reload(null, false);
+}
+
+function clearAndReset(){
+    $('#categoryForm')[0].reset();
+    $('#categoryID').val('');
+    $('#categoryForm .field').removeClass('error');
+    $('.saveBtn').show();
+    $('.saveBtnUpdate').hide();
+    $('.saveBtnLoad').hide();
+}
+
+function showCategoryModal(){
+    clearAndReset();
+    $('#categoryModal').modal('show');
+}
+
+function editCategory(id){
+    clearAndReset();
+    $.get("{% url 'inventoryAppAPI:category_detail_api' %}", {id: id}, function(r){
+        if(r.success && r.data){
+            const d = r.data;
+            $('#categoryID').val(d.id);
+            $('#categoryName').val(d.name);
+            $('#categoryDescription').val(d.description);
+            
+            // Toggle buttons for update mode
+            $('.saveBtn').hide();
+            $('.saveBtnUpdate').show();
+            $('#categoryModal').modal('show');
+        } else {
+            addErrorNotification(r.message);
+        }
+    });
+}
+
+function saveCategory(){
+    const nameInput = $('#categoryName');
+    if (!nameInput.val().trim()) {
+        nameInput.closest('.field').addClass('error');
+        requiredFieldError();
+        return;
+    }
+
+    // Show loading buttons
+    $('.saveBtn').hide();
+    $('.saveBtnUpdate').hide();
+    $('.saveBtnLoad').show();
+
+    const data = new FormData();
+    data.append('id', $('#categoryID').val());
+    data.append('name', nameInput.val().trim());
+    data.append('description', $('#categoryDescription').val().trim());
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+    $.ajax({
+        url: "{% url 'inventoryAppAPI:categories_api' %}",
+        type: 'POST',
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function(r){
+            $('.saveBtnLoad').hide();
+            if(r.success){
+                addSuccessNotification(r.message, 'green');
+                $('#categoryModal').modal('hide');
+                reloadCategories();
+            } else {
+                if ($('#categoryID').val()) {
+                    $('.saveBtnUpdate').show();
+                } else {
+                    $('.saveBtn').show();
+                }
+                addErrorNotification(r.message);
+            }
+        },
+        error: function(x){
+            $('.saveBtnLoad').hide();
+            if ($('#categoryID').val()) {
+                $('.saveBtnUpdate').show();
+            } else {
+                $('.saveBtn').show();
+            }
+            addErrorNotification((x.responseJSON||{}).message || 'Unable to save category.');
+        }
+    });
+}
+
+function confirmDeleteCategory(id){
+    showInventoryDeleteModal(
+        id, 
+        'Delete Category?', 
+        'This inventory category will be deleted, are you sure to delete this classification group?', 
+        deleteCategory
+    );
+}
+
+function deleteCategory(id){
+    const data = new FormData();
+    data.append('id', id);
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+    $.ajax({
+        url: "{% url 'inventoryAppAPI:delete_category_api' %}",
+        type: 'POST',
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function(r){
+            $('#inventoryDeleteModal').modal('hide');
+            if(r.success){
+                addSuccessNotification(r.message, 'green');
+                reloadCategories();
+            } else {
+                addErrorNotification(r.message);
+            }
+        },
+        error: function(x){
+            $('#inventoryDeleteModal').modal('hide');
+            addErrorNotification((x.responseJSON||{}).message || 'Unable to delete category.');
+        }
+    });
+}
+</script>
+{% endblock %}

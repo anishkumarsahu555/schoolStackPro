@@ -1,0 +1,502 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Inventory Allocations</title>{% endblock %}
+{% block page_title %}Inventory & Asset Allocations{% endblock %}
+{% block page_subtitle %}Allocate school resources/assets to teachers, students, rooms, or vehicles and track returns{% endblock %}
+{% block page_actions %}
+    {% if management_permissions.inventory.add %}
+    <button class="ui green button inventory-page-action" type="button" onclick="showAllocationModal()">
+        <i class="plus icon"></i>Allocate Item
+    </button>
+    {% endif %}
+{% endblock %}
+{% block body %}
+{% include 'inventoryApp/_inventory_styles.html' %}
+<form>{% csrf_token %}</form>
+
+<div class="ui right aligned basic grid inventory-list-shell">
+    <div class="sixteen wide column">
+        <div class="ui tab active" data-tab="inventory-allocations">
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="list alternate outline icon"></i>
+                    Allocation list
+                </h4>
+                <div class="ui segment inventory-filter-segment">
+                    <div class="ui tiny form">
+                        <div class="three fields">
+                            <div class="field">
+                                <label>Filter by Status</label>
+                                <select class="ui fluid dropdown" id="filterStatus" onchange="reloadAllocations()">
+                                    <option value="">All Allocations</option>
+                                    <option value="allocated">Currently Allocated</option>
+                                    <option value="returned">Returned</option>
+                                    <option value="lost">Lost</option>
+                                    <option value="damaged">Damaged</option>
+                                </select>
+                            </div>
+                            <div class="field" style="display: flex; align-items: flex-end;">
+                                <button type="button" class="ui mini red button" onclick="clearFilters()">
+                                    <i class="times circle icon"></i>Clear Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="AllocationTable" style="margin-top: 5px; width: 100%">
+                        <thead>
+                            <tr>
+                                <th>Allocation Date</th>
+                                <th>Item / Asset Info</th>
+                                <th>Allocated To</th>
+                                <th>Qty</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Form -->
+<div class="ui modal" id="allocationModal">
+    <i class="close icon"></i>
+    <div class="header">Allocate Inventory / Asset</div>
+    <div class="content">
+        <form class="ui tiny form" id="allocationForm">
+            <input type="hidden" id="allocationID">
+            
+            <!-- Type and Item Select -->
+            <div class="two fields">
+                <div class="field required">
+                    <label>Allocation Type</label>
+                    <select class="ui fluid dropdown" id="allocationType" onchange="toggleItemTypeView()">
+                        <option value="asset">Fixed Asset (Tracked/Serialized)</option>
+                        <option value="consumable">Consumable (Non-serialized quantity)</option>
+                    </select>
+                </div>
+                
+                <!-- Serialized Asset Select Wrapper -->
+                <div class="field required" id="assetSelectField">
+                    <label>Select Serialized Asset</label>
+                    <select class="ui fluid search dropdown" id="allocAssetItemID"></select>
+                </div>
+                
+                <!-- Consumable Item Select Wrapper (Default hidden) -->
+                <div class="field required" id="consumableSelectField" style="display: none;">
+                    <label>Select Consumable Item</label>
+                    <select class="ui fluid search dropdown" id="allocItemID"></select>
+                </div>
+            </div>
+
+            <!-- Destination Select -->
+            <div class="two fields">
+                <div class="field required">
+                    <label>Allocate To (Destination Type)</label>
+                    <select class="ui fluid dropdown" id="allocTargetType" onchange="toggleTargetTypeView()">
+                        <option value="staff">Staff Member</option>
+                        <option value="student">Student</option>
+                        <option value="room">Hostel Room</option>
+                        <option value="vehicle">Vehicle / School Bus</option>
+                        <option value="location">Custom Location / Lab</option>
+                    </select>
+                </div>
+
+                <!-- Dynamic Target Value Fields -->
+                <div class="field required target-field-wrapper" id="targetStaffField">
+                    <label>Select Staff Member</label>
+                    <select class="ui fluid search dropdown" id="allocStaffID"></select>
+                </div>
+                <div class="field required target-field-wrapper" id="targetStudentField" style="display: none;">
+                    <label>Select Student</label>
+                    <select class="ui fluid search dropdown" id="allocStudentID"></select>
+                </div>
+                <div class="field required target-field-wrapper" id="targetRoomField" style="display: none;">
+                    <label>Select Hostel Room</label>
+                    <select class="ui fluid search dropdown" id="allocRoomID"></select>
+                </div>
+                <div class="field required target-field-wrapper" id="targetVehicleField" style="display: none;">
+                    <label>Select Vehicle</label>
+                    <select class="ui fluid search dropdown" id="allocVehicleID"></select>
+                </div>
+                <div class="field required target-field-wrapper" id="targetLocationField" style="display: none;">
+                    <label>Custom Location / Department Name</label>
+                    <input type="text" id="allocLocationText" placeholder="e.g. Physics Lab B, Admin Office">
+                </div>
+            </div>
+
+            <div class="three fields">
+                <!-- Quantity (only visible for consumables) -->
+                <div class="field required" id="allocQtyField" style="display: none;">
+                    <label>Quantity to Allocate</label>
+                    <input type="number" id="allocQty" min="1" value="1">
+                </div>
+                <div class="field">
+                    <label>Expected Return Date</label>
+                    <div class="ui calendar" id="expectedReturnCalendar">
+                        <div class="ui input left icon">
+                            <i class="calendar icon"></i>
+                            <input type="text" id="expectedReturnDate" placeholder="YYYY-MM-DD">
+                        </div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Allocation Notes</label>
+                    <input type="text" id="allocNotes" placeholder="Remarks or descriptions...">
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="actions inventory-modal-actions">
+        <button type="button" class="ui cancel button">
+            Cancel
+        </button>
+        <button type="button" id="saveBtn" class="ui green button saveBtn" onclick="saveAllocation()">
+            Allocate
+            <i class="checkmark icon"></i>
+        </button>
+        <button type="button" id="saveBtnLoad" class="ui green button saveBtnLoad" style="display:none;">
+            Allocating ...
+            <i class="checkmark icon"></i>
+        </button>
+    </div>
+</div>
+
+{% endblock %}
+{% block js %}
+<script>
+let allocationTable;
+let residentsData = {students: [], teachers: []};
+
+$(function(){
+    $('.ui.dropdown').dropdown();
+    initInventoryDatePicker('#expectedReturnCalendar');
+    loadDropdownOptions();
+
+    allocationTable = $('#AllocationTable').DataTable({
+        dom: 'Blfrtip',
+        "scrollY": "350px",
+        "scrollX": true,
+        stateSave: true,
+        fixedColumns: {
+            left: 1,
+            right: 1
+        },
+        buttons: [{
+            extend: 'excel',
+            exportOptions: {
+                columns: [0, 1, 2, 3, 4]
+            }
+        }],
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+        pageLength: 10,
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{% url 'inventoryAppAPI:AllocationListJson' %}",
+            data: function(d) {
+                d.status = $('#filterStatus').val();
+            }
+        },
+        "columnDefs": [
+            {"name": "allocationDate", "targets": 0, "orderable": true},
+            {"name": "itemID__name", "targets": 1, "orderable": true},
+            {"name": "allocatedToTeacher__name", "targets": 2, "orderable": true},
+            {"name": "quantity", "targets": 3, "orderable": true},
+            {"name": "status", "targets": 4, "orderable": true},
+            {"name": "action", "targets": 5, "orderable": false}
+        ]
+    });
+
+    // Clear validation error highlights on user correction
+    $('#allocAssetItemID, #allocItemID, #allocStaffID, #allocStudentID, #allocRoomID, #allocVehicleID, #allocLocationText').on('change input', function(){
+        $(this).closest('.field').removeClass('error');
+    });
+});
+
+function reloadAllocations(){
+    allocationTable.ajax.reload(null, false);
+}
+
+function clearFilters(){
+    $('#filterStatus').dropdown('clear');
+    reloadAllocations();
+}
+
+function clearAndReset(){
+    $('#allocationForm')[0].reset();
+    $('#allocationID').val('');
+    $('#allocationType').dropdown('set selected', 'asset');
+    $('#allocAssetItemID').dropdown('clear');
+    $('#allocItemID').dropdown('clear');
+    $('#allocTargetType').dropdown('set selected', 'staff');
+    $('#allocStaffID').dropdown('clear');
+    $('#allocStudentID').dropdown('clear');
+    $('#allocRoomID').dropdown('clear');
+    $('#allocVehicleID').dropdown('clear');
+    $('#allocLocationText').val('');
+    $('#allocQty').val('1');
+    $('#expectedReturnDate').val('');
+    $('#allocationForm .field').removeClass('error');
+    
+    toggleItemTypeView();
+    toggleTargetTypeView();
+    $('.saveBtn').show();
+    $('.saveBtnLoad').hide();
+}
+
+function toggleItemTypeView(){
+    const type = $('#allocationType').val();
+    if (type === 'asset') {
+        $('#assetSelectField').show();
+        $('#consumableSelectField').hide();
+        $('#allocQtyField').hide();
+    } else {
+        $('#assetSelectField').hide();
+        $('#consumableSelectField').show();
+        $('#allocQtyField').show();
+    }
+}
+
+function toggleTargetTypeView(){
+    const target = $('#allocTargetType').val();
+    $('.target-field-wrapper').hide();
+    if (target === 'staff') {
+        $('#targetStaffField').show();
+    } else if (target === 'student') {
+        $('#targetStudentField').show();
+    } else if (target === 'room') {
+        $('#targetRoomField').show();
+    } else if (target === 'vehicle') {
+        $('#targetVehicleField').show();
+    } else if (target === 'location') {
+        $('#targetLocationField').show();
+    }
+}
+
+function loadDropdownOptions(){
+    // 1. Load available Serialized Assets tag choices
+    $.get("{% url 'inventoryAppAPI:assets_api' %}", {available_only: 'true'}, function(r){
+        const assets = r.data || [];
+        const select = $('#allocAssetItemID');
+        select.html('<option value="">Select Serialized Asset Tag</option>');
+        assets.forEach(a => {
+            select.append(`<option value="${a.id}">${escapeHtml(a.assetTag)} (${escapeHtml(a.itemName)})</option>`);
+        });
+        select.dropdown('refresh');
+    });
+
+    // 2. Load Consumable Items
+    $.get("{% url 'inventoryAppAPI:items_api' %}", function(r){
+        const items = r.data || [];
+        const consumables = items.filter(i => i.itemType === 'consumable');
+        const select = $('#allocItemID');
+        select.html('<option value="">Select Consumable Item</option>');
+        consumables.forEach(c => {
+            select.append(`<option value="${c.id}">${escapeHtml(c.name)} (Stock: ${c.currentStockQty} ${c.standardUnit})</option>`);
+        });
+        select.dropdown('refresh');
+    });
+
+    // 3. Load Teachers & Students
+    $.get("{% url 'hostelAppAPI:resident_options_api' %}", function(r){
+        residentsData = r.data || {students: [], teachers: []};
+        
+        const staffSelect = $('#allocStaffID');
+        staffSelect.html('<option value="">Select Staff Member</option>');
+        residentsData.teachers.forEach(t => {
+            staffSelect.append(`<option value="${t.id}">${escapeHtml(t.text)}</option>`);
+        });
+        staffSelect.dropdown('refresh');
+
+        const studentSelect = $('#allocStudentID');
+        studentSelect.html('<option value="">Select Student</option>');
+        residentsData.students.forEach(s => {
+            studentSelect.append(`<option value="${s.id}">${escapeHtml(s.text)}</option>`);
+        });
+        studentSelect.dropdown('refresh');
+    });
+
+    // 4. Load Hostel Rooms
+    $.get("{% url 'hostelAppAPI:hostel_options_api' %}", function(r){
+        const rooms = (r.data || {}).rooms || [];
+        const select = $('#allocRoomID');
+        select.html('<option value="">Select Hostel Room</option>');
+        rooms.forEach(rm => {
+            select.append(`<option value="${rm.id}">${escapeHtml(rm.text)}</option>`);
+        });
+        select.dropdown('refresh');
+    });
+
+    // 5. Load Vehicles
+    $.get("{% url 'transportAppAPI:transport_options_api' %}", function(r){
+        const vehicles = (r.data || {}).vehicles || [];
+        const select = $('#allocVehicleID');
+        select.html('<option value="">Select Vehicle</option>');
+        vehicles.forEach(v => {
+            select.append(`<option value="${v.id}">${escapeHtml(v.text)}</option>`);
+        });
+        select.dropdown('refresh');
+    });
+}
+
+function showAllocationModal(){
+    clearAndReset();
+    loadDropdownOptions(); // Refresh lists so newly returned assets are visible
+    $('#allocationModal').modal('show');
+}
+
+function saveAllocation(){
+    const allocType = $('#allocationType').val();
+    const assetSelect = $('#allocAssetItemID');
+    const consumableSelect = $('#allocItemID');
+    
+    const targetType = $('#allocTargetType').val();
+    const staffSelect = $('#allocStaffID');
+    const studentSelect = $('#allocStudentID');
+    const roomSelect = $('#allocRoomID');
+    const vehicleSelect = $('#allocVehicleID');
+    const locationInput = $('#allocLocationText');
+
+    let isValid = true;
+    
+    // Check items/assets
+    if (allocType === 'asset' && !assetSelect.val()) { assetSelect.closest('.field').addClass('error'); isValid = false; }
+    if (allocType === 'consumable' && !consumableSelect.val()) { consumableSelect.closest('.field').addClass('error'); isValid = false; }
+
+    // Check destinations
+    if (targetType === 'staff' && !staffSelect.val()) { staffSelect.closest('.field').addClass('error'); isValid = false; }
+    if (targetType === 'student' && !studentSelect.val()) { studentSelect.closest('.field').addClass('error'); isValid = false; }
+    if (targetType === 'room' && !roomSelect.val()) { roomSelect.closest('.field').addClass('error'); isValid = false; }
+    if (targetType === 'vehicle' && !vehicleSelect.val()) { vehicleSelect.closest('.field').addClass('error'); isValid = false; }
+    if (targetType === 'location' && !locationInput.val().trim()) { locationInput.closest('.field').addClass('error'); isValid = false; }
+
+    if (!isValid) {
+        requiredFieldError();
+        return;
+    }
+
+    $('.saveBtn').hide();
+    $('.saveBtnLoad').show();
+
+    const data = new FormData();
+    data.append('id', $('#allocationID').val());
+    data.append('allocationType', allocType);
+    
+    if (allocType === 'asset') {
+        data.append('assetItemID', assetSelect.val());
+    } else {
+        data.append('itemID', consumableSelect.val());
+        data.append('quantity', $('#allocQty').val());
+    }
+
+    data.append('targetType', targetType);
+    if (targetType === 'staff') data.append('allocatedToTeacher', staffSelect.val());
+    else if (targetType === 'student') data.append('allocatedToStudent', studentSelect.val());
+    else if (targetType === 'room') data.append('allocatedToRoom', roomSelect.val());
+    else if (targetType === 'vehicle') data.append('allocatedToVehicle', vehicleSelect.val());
+    else if (targetType === 'location') data.append('allocatedToLocation', locationInput.val().trim());
+
+    data.append('expectedReturnDate', $('#expectedReturnDate').val());
+    data.append('notes', $('#allocNotes').val().trim());
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+    $.ajax({
+        url: "{% url 'inventoryAppAPI:allocations_api' %}",
+        type: 'POST',
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function(r){
+            $('.saveBtnLoad').hide();
+            if(r.success){
+                addSuccessNotification(r.message, 'green');
+                $('#allocationModal').modal('hide');
+                reloadAllocations();
+            } else {
+                $('.saveBtn').show();
+                addErrorNotification(r.message);
+            }
+        },
+        error: function(x){
+            $('.saveBtnLoad').hide();
+            $('.saveBtn').show();
+            addErrorNotification((x.responseJSON||{}).message || 'Unable to save allocation.');
+        }
+    });
+}
+
+function returnAllocation(id){
+    const data = new FormData();
+    data.append('id', id);
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+    $.ajax({
+        url: "{% url 'inventoryAppAPI:return_allocation_api' %}",
+        type: 'POST',
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function(r){
+            if(r.success){
+                addSuccessNotification(r.message, 'green');
+                reloadAllocations();
+            } else {
+                addErrorNotification(r.message);
+            }
+        },
+        error: function(x){
+            addErrorNotification((x.responseJSON||{}).message || 'Unable to return allocation.');
+        }
+    });
+}
+
+function returnAsset(id){
+    return returnAllocation(id);
+}
+
+function confirmDeleteAllocation(id){
+    showInventoryDeleteModal(
+        id, 
+        'Delete Allocation?', 
+        'Deleting this allocation log will void it. If it is active, the associated asset will be set back to Available. Continue?', 
+        deleteAllocation
+    );
+}
+
+function deleteAllocation(id){
+    const data = new FormData();
+    data.append('id', id);
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+    $.ajax({
+        url: "{% url 'inventoryAppAPI:delete_allocation_api' %}",
+        type: 'POST',
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function(r){
+            $('#inventoryDeleteModal').modal('hide');
+            if(r.success){
+                addSuccessNotification(r.message, 'green');
+                reloadAllocations();
+            } else {
+                addErrorNotification(r.message);
+            }
+        },
+        error: function(x){
+            $('#inventoryDeleteModal').modal('hide');
+            addErrorNotification((x.responseJSON||{}).message || 'Unable to delete allocation.');
+        }
+    });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+</script>
+{% endblock %}

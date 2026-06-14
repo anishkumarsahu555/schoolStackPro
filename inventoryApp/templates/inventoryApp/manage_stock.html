@@ -1,0 +1,309 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Stock Ledger</title>{% endblock %}
+{% block page_title %}Stock Ledger{% endblock %}
+{% block page_subtitle %}Log purchases, allocations deductions, and inventory stock adjustments{% endblock %}
+{% block page_actions %}
+    {% if management_permissions.inventory.add %}
+    <button class="ui green button inventory-page-action" type="button" onclick="showStockModal()">
+        <i class="plus icon"></i>Log Stock Entry
+    </button>
+    {% endif %}
+{% endblock %}
+{% block body %}
+{% include 'inventoryApp/_inventory_styles.html' %}
+<form>{% csrf_token %}</form>
+
+<div class="ui right aligned basic grid inventory-list-shell">
+    <div class="sixteen wide column">
+        <div class="ui tab active" data-tab="inventory-stock">
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="list alternate outline icon"></i>
+                    Stock ledger list
+                </h4>
+                <div class="ui segment inventory-filter-segment">
+                    <div class="ui tiny form">
+                        <div class="two fields">
+                            <div class="field">
+                                <label>Filter by Item</label>
+                                <select class="ui fluid search dropdown" id="filterItem" onchange="reloadStock()"></select>
+                            </div>
+                            <div class="field" style="display: flex; align-items: flex-end;">
+                                <button type="button" class="ui mini red button" onclick="clearFilters()">
+                                    <i class="times circle icon"></i>Clear Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="StockTable" style="margin-top: 5px; width: 100%">
+                        <thead>
+                            <tr>
+                                <th>Date / Time</th>
+                                <th>Item Name</th>
+                                <th>Transaction Type</th>
+                                <th>Quantity</th>
+                                <th>Unit Cost</th>
+                                <th>Supplier</th>
+                                <th>Ref Number</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Form -->
+<div class="ui modal" id="stockModal">
+    <i class="close icon"></i>
+    <div class="header">Log Inventory Stock Entry</div>
+    <div class="content">
+        <form class="ui tiny form" id="stockForm">
+            <input type="hidden" id="stockID">
+            <div class="two fields">
+                <div class="field required">
+                    <label>Select Item</label>
+                    <select class="ui fluid search dropdown" id="stockItemID" onchange="updateItemUnitLabel()"></select>
+                </div>
+                <div class="field required">
+                    <label>Transaction Type</label>
+                    <select class="ui fluid dropdown" id="stockTxType">
+                        <option value="stock_in">Stock In (Purchase / Donation)</option>
+                        <option value="stock_out">Stock Out (Usage / Discard)</option>
+                        <option value="adjustment">Stock Count Adjustment</option>
+                    </select>
+                </div>
+            </div>
+            <div class="three fields">
+                <div class="field required">
+                    <label>Quantity (<span id="unitLabel">pcs</span>)</label>
+                    <input type="number" id="stockQty" min="1" placeholder="Enter quantity value">
+                </div>
+                <div class="field">
+                    <label>Unit Cost (₹)</label>
+                    <input type="number" id="stockUnitCost" min="0" step="0.01" value="0.00">
+                </div>
+                <div class="field">
+                    <label>Reference # / Invoice #</label>
+                    <input type="text" id="stockRefNo" placeholder="e.g. INV-99882">
+                </div>
+            </div>
+            <div class="two fields">
+                <div class="field">
+                    <label>Supplier / Vendor</label>
+                    <select class="ui fluid search dropdown" id="stockSupplierID"></select>
+                </div>
+                <div class="field">
+                    <label>Transaction Notes</label>
+                    <input type="text" id="stockNotes" placeholder="Enter details or adjustment rationale...">
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="actions inventory-modal-actions">
+        <button type="button" class="ui cancel button">
+            Cancel
+        </button>
+        <button type="button" id="saveBtn" class="ui green button saveBtn" onclick="saveStock()">
+            Log Entry
+            <i class="checkmark icon"></i>
+        </button>
+        <button type="button" id="saveBtnLoad" class="ui green button saveBtnLoad" style="display:none;">
+            Logging Entry ...
+            <i class="checkmark icon"></i>
+        </button>
+    </div>
+</div>
+
+{% endblock %}
+{% block js %}
+<script>
+let stockTable;
+let itemsData = [];
+
+$(function(){
+    $('.ui.dropdown').dropdown();
+    loadFormDropdowns();
+
+    stockTable = $('#StockTable').DataTable({
+        dom: 'Blfrtip',
+        "scrollY": "350px",
+        "scrollX": true,
+        stateSave: true,
+        fixedColumns: {
+            left: 1,
+            right: 1
+        },
+        buttons: [{
+            extend: 'excel',
+            exportOptions: {
+                columns: [0, 1, 2, 3, 4, 5, 6]
+            }
+        }],
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+        pageLength: 10,
+        aaSorting: [[0, 'desc']],
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{% url 'inventoryAppAPI:StockLedgerListJson' %}",
+            data: function(d) {
+                d.itemID = $('#filterItem').val();
+            }
+        },
+        "columnDefs": [
+            {"name": "datetime", "targets": 0, "orderable": true},
+            {"name": "itemID__name", "targets": 1, "orderable": true},
+            {"name": "transactionType", "targets": 2, "orderable": true},
+            {"name": "quantity", "targets": 3, "orderable": true},
+            {"name": "unitCost", "targets": 4, "orderable": true},
+            {"name": "supplierID__companyName", "targets": 5, "orderable": true},
+            {"name": "referenceNo", "targets": 6, "orderable": false},
+            {"name": "action", "targets": 7, "orderable": false, "visible": false}
+        ]
+    });
+
+    $('#stockItemID, #stockTxType, #stockQty').on('input change', function(){
+        $(this).closest('.field').removeClass('error');
+    });
+});
+
+function reloadStock(){
+    stockTable.ajax.reload(null, false);
+}
+
+function clearFilters(){
+    $('#filterItem').dropdown('clear');
+    reloadStock();
+}
+
+function clearAndReset(){
+    $('#stockForm')[0].reset();
+    $('#stockID').val('');
+    $('#stockItemID').dropdown('clear');
+    $('#stockSupplierID').dropdown('clear');
+    $('#stockTxType').dropdown('set selected', 'stock_in');
+    $('#stockUnitCost').val('0.00');
+    $('#stockQty').val('');
+    $('#unitLabel').text('pcs');
+    $('#stockForm .field').removeClass('error');
+    
+    $('.saveBtn').show();
+    $('.saveBtnLoad').hide();
+}
+
+function loadFormDropdowns(){
+    // Load Items
+    $.get("{% url 'inventoryAppAPI:items_api' %}", function(r){
+        itemsData = r.data || [];
+        
+        // Populate modal selection dropdown
+        const modalSelect = $('#stockItemID');
+        modalSelect.html('<option value="">Select Item</option>');
+        itemsData.forEach(i => {
+            modalSelect.append(`<option value="${i.id}">${escapeHtml(i.name)} (${i.itemType === 'asset' ? 'Asset' : 'Consumable'})</option>`);
+        });
+        modalSelect.dropdown('refresh');
+
+        // Populate filter dropdown
+        const filterSelect = $('#filterItem');
+        filterSelect.html('<option value="">All Items</option>');
+        itemsData.forEach(i => {
+            filterSelect.append(`<option value="${i.id}">${escapeHtml(i.name)}</option>`);
+        });
+        filterSelect.dropdown('refresh');
+    });
+
+    // Load Suppliers
+    $.get("{% url 'inventoryAppAPI:suppliers_api' %}", function(r){
+        const suppliers = r.data || [];
+        const supplierSelect = $('#stockSupplierID');
+        supplierSelect.html('<option value="">Select Supplier (Optional)</option>');
+        suppliers.forEach(s => {
+            supplierSelect.append(`<option value="${s.id}">${escapeHtml(s.companyName)}</option>`);
+        });
+        supplierSelect.dropdown('refresh');
+    });
+}
+
+function updateItemUnitLabel(){
+    const selectedId = $('#stockItemID').val();
+    if (selectedId) {
+        const item = itemsData.find(i => i.id == selectedId);
+        if (item) {
+            $('#unitLabel').text(item.standardUnit || 'pcs');
+        }
+    } else {
+        $('#unitLabel').text('pcs');
+    }
+}
+
+function showStockModal(){
+    clearAndReset();
+    $('#stockModal').modal('show');
+}
+
+function saveStock(){
+    const item = $('#stockItemID');
+    const type = $('#stockTxType');
+    const qty = $('#stockQty');
+
+    let isValid = true;
+    if (!item.val()) { item.closest('.field').addClass('error'); isValid = false; }
+    if (!type.val()) { type.closest('.field').addClass('error'); isValid = false; }
+    if (!qty.val() || parseInt(qty.val()) <= 0) { qty.closest('.field').addClass('error'); isValid = false; }
+
+    if (!isValid) {
+        requiredFieldError();
+        return;
+    }
+
+    $('.saveBtn').hide();
+    $('.saveBtnLoad').show();
+
+    const data = new FormData();
+    data.append('id', $('#stockID').val());
+    data.append('itemID', item.val());
+    data.append('transactionType', type.val());
+    data.append('quantity', qty.val());
+    data.append('unitCost', $('#stockUnitCost').val());
+    data.append('referenceNo', $('#stockRefNo').val().trim());
+    data.append('supplierID', $('#stockSupplierID').val() || '');
+    data.append('notes', $('#stockNotes').val().trim());
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+    $.ajax({
+        url: "{% url 'inventoryAppAPI:stock_ledger_api' %}",
+        type: 'POST',
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function(r){
+            $('.saveBtnLoad').hide();
+            if(r.success){
+                addSuccessNotification(r.message, 'green');
+                $('#stockModal').modal('hide');
+                reloadStock();
+            } else {
+                $('.saveBtn').show();
+                addErrorNotification(r.message);
+            }
+        },
+        error: function(x){
+            $('.saveBtnLoad').hide();
+            $('.saveBtn').show();
+            addErrorNotification((x.responseJSON||{}).message || 'Unable to log stock transaction.');
+        }
+    });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+</script>
+{% endblock %}
