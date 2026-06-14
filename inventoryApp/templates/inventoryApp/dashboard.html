@@ -59,6 +59,42 @@
     .inventory-dashboard .chart-wrap.short {
         height: 224px;
     }
+    html[data-theme="dark"] .inventory-dashboard .metric-card,
+    html[data-theme="dark"] .inventory-dashboard .chart-panel {
+        background: var(--app-surface) !important;
+        border-color: var(--app-border) !important;
+        box-shadow: 0 8px 22px rgba(0,0,0,.22) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard .metric-label,
+    html[data-theme="dark"] .inventory-dashboard .chart-subtitle,
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable td.center.aligned {
+        color: var(--app-muted) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard .metric-value,
+    html[data-theme="dark"] .inventory-dashboard .chart-title,
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable td,
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable td strong {
+        color: var(--app-text) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard .ui.header .sub.header {
+        color: var(--app-muted) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable.ui.table {
+        background: var(--app-surface) !important;
+        color: var(--app-text) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable.ui.table thead th {
+        background: #202733 !important;
+        color: var(--app-text) !important;
+        border-color: var(--app-border) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable.ui.celled.table tr td,
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable.ui.celled.table tr th {
+        border-color: var(--app-border) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable.ui.table tbody tr:hover td {
+        background: var(--app-hover) !important;
+    }
     @media (max-width: 767px) {
         .inventory-dashboard .chart-wrap,
         .inventory-dashboard .chart-wrap.short {
@@ -235,11 +271,20 @@ const chartColors = ['#2185d0', '#21ba45', '#f2711c', '#e03997', '#00b5ad', '#a3
 $(function(){
     if (window.Chart && Chart.defaults && Chart.defaults.global) {
         Chart.defaults.global.defaultFontFamily = "'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif";
-        Chart.defaults.global.defaultFontColor = '#4b5563';
+        Chart.defaults.global.defaultFontColor = chartTheme().text;
     }
     loadDashboardSummary();
     loadLowStockAlerts();
 });
+
+function chartTheme(){
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        text: isDark ? '#e5e7eb' : '#4b5563',
+        muted: isDark ? '#c0c7d1' : '#767676',
+        grid: isDark ? 'rgba(192,199,209,.16)' : 'rgba(34,36,38,.08)'
+    };
+}
 
 function loadDashboardSummary(){
     $.get("{% url 'inventoryAppAPI:dashboard_summary' %}", function(r){
@@ -311,6 +356,7 @@ function renderDoughnutChart(canvasId, data, colors){
     const ctx = resetChart(canvasId);
     if (!ctx || !window.Chart) return;
     const ds = chartDataset(data);
+    const theme = chartTheme();
     inventoryCharts[canvasId] = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -325,7 +371,12 @@ function renderDoughnutChart(canvasId, data, colors){
             responsive: true,
             maintainAspectRatio: false,
             cutoutPercentage: 64,
-            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 14 } }
+            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 14, fontColor: theme.text } },
+            tooltips: {
+                backgroundColor: document.documentElement.getAttribute('data-theme') === 'dark' ? '#111827' : 'rgba(0,0,0,.8)',
+                titleFontColor: '#ffffff',
+                bodyFontColor: '#ffffff'
+            }
         }
     });
 }
@@ -334,6 +385,7 @@ function renderBarChart(canvasId, data, color, horizontal){
     const ctx = resetChart(canvasId);
     if (!ctx || !window.Chart) return;
     const ds = chartDataset(data);
+    const theme = chartTheme();
     inventoryCharts[canvasId] = new Chart(ctx, {
         type: horizontal ? 'horizontalBar' : 'bar',
         data: {
@@ -349,8 +401,13 @@ function renderBarChart(canvasId, data, color, horizontal){
             maintainAspectRatio: false,
             legend: { display: false },
             scales: {
-                xAxes: [{ ticks: { beginAtZero: true, precision: 0 }, gridLines: { color: 'rgba(34,36,38,.08)' } }],
-                yAxes: [{ ticks: { beginAtZero: true, precision: 0 }, gridLines: { display: false } }]
+                xAxes: [{ ticks: { beginAtZero: true, precision: 0, fontColor: theme.text }, gridLines: { color: theme.grid, zeroLineColor: theme.grid } }],
+                yAxes: [{ ticks: { beginAtZero: true, precision: 0, fontColor: theme.text }, gridLines: { color: horizontal ? theme.grid : 'rgba(0,0,0,0)', zeroLineColor: theme.grid } }]
+            },
+            tooltips: {
+                backgroundColor: document.documentElement.getAttribute('data-theme') === 'dark' ? '#111827' : 'rgba(0,0,0,.8)',
+                titleFontColor: '#ffffff',
+                bodyFontColor: '#ffffff'
             }
         }
     });
