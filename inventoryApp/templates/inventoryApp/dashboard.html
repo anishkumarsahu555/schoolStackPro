@@ -1,0 +1,420 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Inventory Dashboard</title>{% endblock %}
+{% block page_title %}Inventory & Asset Dashboard{% endblock %}
+{% block page_subtitle %}Overview of school assets, consumables stock levels, and active allocations{% endblock %}
+{% block body %}
+{% include 'inventoryApp/_inventory_styles.html' %}
+
+<style>
+    .inventory-dashboard .metric-card {
+        border-radius: 8px !important;
+        box-shadow: 0 4px 12px rgba(34,36,38,.05) !important;
+        min-height: 104px;
+    }
+    .inventory-dashboard .metric-label {
+        color: #767676;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .inventory-dashboard .metric-value {
+        color: #1f2937;
+        font-size: 28px;
+        font-weight: 800;
+        line-height: 1.2;
+        margin-top: 9px;
+    }
+    .inventory-dashboard .metric-icon {
+        float: right;
+        font-size: 1.75rem;
+        line-height: 1;
+    }
+    .inventory-dashboard .chart-panel {
+        border-radius: 8px !important;
+        box-shadow: 0 4px 12px rgba(34,36,38,.05) !important;
+        margin-bottom: 18px !important;
+    }
+    .inventory-dashboard .chart-header {
+        align-items: center;
+        display: flex;
+        gap: 0.6rem;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+    .inventory-dashboard .chart-title {
+        color: #1f2937;
+        font-size: 15px;
+        font-weight: 800;
+    }
+    .inventory-dashboard .chart-subtitle {
+        color: #767676;
+        font-size: 12px;
+        margin-top: 2px;
+    }
+    .inventory-dashboard .chart-wrap {
+        height: 260px;
+        position: relative;
+        width: 100%;
+    }
+    .inventory-dashboard .chart-wrap.short {
+        height: 224px;
+    }
+    html[data-theme="dark"] .inventory-dashboard .metric-card,
+    html[data-theme="dark"] .inventory-dashboard .chart-panel {
+        background: var(--app-surface) !important;
+        border-color: var(--app-border) !important;
+        box-shadow: 0 8px 22px rgba(0,0,0,.22) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard .metric-label,
+    html[data-theme="dark"] .inventory-dashboard .chart-subtitle,
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable td.center.aligned {
+        color: var(--app-muted) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard .metric-value,
+    html[data-theme="dark"] .inventory-dashboard .chart-title,
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable td,
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable td strong {
+        color: var(--app-text) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard .ui.header .sub.header {
+        color: var(--app-muted) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable.ui.table {
+        background: var(--app-surface) !important;
+        color: var(--app-text) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable.ui.table thead th {
+        background: #202733 !important;
+        color: var(--app-text) !important;
+        border-color: var(--app-border) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable.ui.celled.table tr td,
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable.ui.celled.table tr th {
+        border-color: var(--app-border) !important;
+    }
+    html[data-theme="dark"] .inventory-dashboard #lowStockTable.ui.table tbody tr:hover td {
+        background: var(--app-hover) !important;
+    }
+    @media (max-width: 767px) {
+        .inventory-dashboard .chart-wrap,
+        .inventory-dashboard .chart-wrap.short {
+            height: 240px;
+        }
+    }
+</style>
+
+<div class="inventory-dashboard">
+<div class="ui grid">
+    <div class="four wide computer eight wide tablet sixteen wide mobile column">
+        <div class="ui segment metric-card" style="border-left: 5px solid #21ba45;">
+            <i class="tags icon metric-icon" style="color: #21ba45;"></i>
+            <div class="metric-label">Categories</div>
+            <div class="metric-value" id="valCategories">0</div>
+        </div>
+    </div>
+    <div class="four wide computer eight wide tablet sixteen wide mobile column">
+        <div class="ui segment metric-card" style="border-left: 5px solid #2185d0;">
+            <i class="box icon metric-icon" style="color: #2185d0;"></i>
+            <div class="metric-label">Item Types</div>
+            <div class="metric-value" id="valItems">0</div>
+        </div>
+    </div>
+    <div class="four wide computer eight wide tablet sixteen wide mobile column">
+        <div class="ui segment metric-card" style="border-left: 5px solid #e03997;">
+            <i class="barcode icon metric-icon" style="color: #e03997;"></i>
+            <div class="metric-label">Tracked Assets</div>
+            <div class="metric-value" id="valAssets">0</div>
+        </div>
+    </div>
+    <div class="four wide computer eight wide tablet sixteen wide mobile column">
+        <div class="ui segment metric-card" style="border-left: 5px solid #f2711c;">
+            <i class="handshake icon metric-icon" style="color: #f2711c;"></i>
+            <div class="metric-label">Active Allocations</div>
+            <div class="metric-value" id="valAllocations">0</div>
+        </div>
+    </div>
+</div>
+
+<div class="ui grid">
+    <div class="four wide computer eight wide tablet sixteen wide mobile column">
+        <div class="ui segment metric-card" style="border-left: 5px solid #a333c8;">
+            <i class="money bill alternate outline icon metric-icon" style="color: #a333c8;"></i>
+            <div class="metric-label">Inventory Value</div>
+            <div class="metric-value" id="valTotalCost">₹0.00</div>
+        </div>
+    </div>
+    <div class="four wide computer eight wide tablet sixteen wide mobile column">
+        <div class="ui segment metric-card" style="border-left: 5px solid #db2828;">
+            <i class="exclamation triangle icon metric-icon" style="color: #db2828;"></i>
+            <div class="metric-label">Low Stock</div>
+            <div class="metric-value" id="valLowStock">0</div>
+        </div>
+    </div>
+</div>
+
+<div class="ui grid">
+    <div class="eight wide computer sixteen wide tablet column">
+        <div class="ui segment chart-panel">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">Inventory Mix</div>
+                    <div class="chart-subtitle">Consumables and fixed assets</div>
+                </div>
+                <i class="chart pie icon" style="color:#2185d0;"></i>
+            </div>
+            <div class="chart-wrap short">
+                <canvas id="itemTypeChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="eight wide computer sixteen wide tablet column">
+        <div class="ui segment chart-panel">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">Asset Status</div>
+                    <div class="chart-subtitle">Current state of serialized assets</div>
+                </div>
+                <i class="barcode icon" style="color:#e03997;"></i>
+            </div>
+            <div class="chart-wrap short">
+                <canvas id="assetStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ui grid">
+    <div class="eight wide computer sixteen wide tablet column">
+        <div class="ui segment chart-panel">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">Allocation Status</div>
+                    <div class="chart-subtitle">Open and completed allocation records</div>
+                </div>
+                <i class="tasks icon" style="color:#f2711c;"></i>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="allocationStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="eight wide computer sixteen wide tablet column">
+        <div class="ui segment chart-panel">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">Top Consumable Stock</div>
+                    <div class="chart-subtitle">Highest quantity items currently in store</div>
+                </div>
+                <i class="boxes icon" style="color:#21ba45;"></i>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="topStockChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ui grid">
+    <div class="six wide computer sixteen wide tablet column">
+        <div class="ui segment chart-panel">
+            <div class="chart-header">
+                <div>
+                    <div class="chart-title">Stock By Category</div>
+                    <div class="chart-subtitle">Quantity distribution across categories</div>
+                </div>
+                <i class="sitemap icon" style="color:#00b5ad;"></i>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="categoryStockChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="ten wide computer sixteen wide tablet column">
+        <div class="ui segment chart-panel">
+            <h3 class="ui header" style="color: #db2828;">
+                <i class="exclamation triangle icon"></i>
+                <div class="content">
+                    Low Stock Alerts
+                    <div class="sub header">Items currently at or below their minimum warning limit</div>
+                </div>
+            </h3>
+            <div style="overflow-x: auto; max-height: 300px;">
+                <table class="ui celled very compact table" id="lowStockTable">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th class="right aligned">Current Stock</th>
+                            <th class="right aligned">Min Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="4" class="center aligned" style="color: #767676; padding: 20px;">
+                                <i class="check circle green icon"></i> All stock levels are healthy!
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+{% endblock %}
+{% block js %}
+<script>
+const inventoryCharts = {};
+const chartColors = ['#2185d0', '#21ba45', '#f2711c', '#e03997', '#00b5ad', '#a333c8', '#db2828', '#6435c9'];
+
+$(function(){
+    if (window.Chart && Chart.defaults && Chart.defaults.global) {
+        Chart.defaults.global.defaultFontFamily = "'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif";
+        Chart.defaults.global.defaultFontColor = chartTheme().text;
+    }
+    loadDashboardSummary();
+    loadLowStockAlerts();
+});
+
+function chartTheme(){
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        text: isDark ? '#e5e7eb' : '#4b5563',
+        muted: isDark ? '#c0c7d1' : '#767676',
+        grid: isDark ? 'rgba(192,199,209,.16)' : 'rgba(34,36,38,.08)'
+    };
+}
+
+function loadDashboardSummary(){
+    $.get("{% url 'inventoryAppAPI:dashboard_summary' %}", function(r){
+        if(r.success && r.data){
+            const d = r.data;
+            $('#valCategories').text(d.categoriesCount);
+            $('#valItems').text(d.itemsCount);
+            $('#valAssets').text(d.assetsCount);
+            $('#valAllocations').text(d.allocationsCount);
+            $('#valTotalCost').text('₹' + d.totalValue);
+            $('#valLowStock').text(d.lowStockCount);
+            renderInventoryCharts(d.charts || {});
+        }
+    });
+}
+
+function loadLowStockAlerts(){
+    $.get("{% url 'inventoryAppAPI:low_stock_api' %}", function(r){
+        if(r.success && r.data && r.data.length > 0){
+            let html = '';
+            r.data.forEach(item => {
+                html += `
+                    <tr>
+                        <td><strong>${escapeHtml(item.name)}</strong></td>
+                        <td>${escapeHtml(item.category)}</td>
+                        <td class="right aligned negative">
+                            <i class="attention icon"></i> ${item.current} ${escapeHtml(item.unit)}
+                        </td>
+                        <td class="right aligned">${item.minLevel} ${escapeHtml(item.unit)}</td>
+                    </tr>
+                `;
+            });
+            $('#lowStockTable tbody').html(html);
+        }
+    });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+function renderInventoryCharts(charts){
+    renderDoughnutChart('itemTypeChart', charts.itemTypes, ['#2185d0', '#21ba45']);
+    renderDoughnutChart('assetStatusChart', charts.assetStatuses, ['#21ba45', '#f2711c', '#fbbd08', '#db2828']);
+    renderBarChart('allocationStatusChart', charts.allocationStatuses, '#f2711c', false);
+    renderBarChart('topStockChart', charts.topStockItems, '#21ba45', true);
+    renderHorizontalChart('categoryStockChart', charts.stockByCategory, '#00b5ad');
+}
+
+function chartDataset(data){
+    const labels = (data && data.labels) || [];
+    const values = (data && data.values) || [];
+    return {
+        labels: labels.length ? labels : ['No data'],
+        values: values.length ? values : [0]
+    };
+}
+
+function resetChart(canvasId){
+    if (inventoryCharts[canvasId]) {
+        inventoryCharts[canvasId].destroy();
+    }
+    const canvas = document.getElementById(canvasId);
+    return canvas ? canvas.getContext('2d') : null;
+}
+
+function renderDoughnutChart(canvasId, data, colors){
+    const ctx = resetChart(canvasId);
+    if (!ctx || !window.Chart) return;
+    const ds = chartDataset(data);
+    const theme = chartTheme();
+    inventoryCharts[canvasId] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ds.labels,
+            datasets: [{
+                data: ds.values,
+                backgroundColor: colors.concat(chartColors),
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutoutPercentage: 64,
+            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 14, fontColor: theme.text } },
+            tooltips: {
+                backgroundColor: document.documentElement.getAttribute('data-theme') === 'dark' ? '#111827' : 'rgba(0,0,0,.8)',
+                titleFontColor: '#ffffff',
+                bodyFontColor: '#ffffff'
+            }
+        }
+    });
+}
+
+function renderBarChart(canvasId, data, color, horizontal){
+    const ctx = resetChart(canvasId);
+    if (!ctx || !window.Chart) return;
+    const ds = chartDataset(data);
+    const theme = chartTheme();
+    inventoryCharts[canvasId] = new Chart(ctx, {
+        type: horizontal ? 'horizontalBar' : 'bar',
+        data: {
+            labels: ds.labels,
+            datasets: [{
+                data: ds.values,
+                backgroundColor: color,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            legend: { display: false },
+            scales: {
+                xAxes: [{ ticks: { beginAtZero: true, precision: 0, fontColor: theme.text }, gridLines: { color: theme.grid, zeroLineColor: theme.grid } }],
+                yAxes: [{ ticks: { beginAtZero: true, precision: 0, fontColor: theme.text }, gridLines: { color: horizontal ? theme.grid : 'rgba(0,0,0,0)', zeroLineColor: theme.grid } }]
+            },
+            tooltips: {
+                backgroundColor: document.documentElement.getAttribute('data-theme') === 'dark' ? '#111827' : 'rgba(0,0,0,.8)',
+                titleFontColor: '#ffffff',
+                bodyFontColor: '#ffffff'
+            }
+        }
+    });
+}
+
+function renderHorizontalChart(canvasId, data, color){
+    renderBarChart(canvasId, data, color, true);
+}
+</script>
+{% endblock %}

@@ -41,6 +41,7 @@ from homeApp.utils import init_session, get_all_session_list, custom_login_requi
 from managementApp.access_control import has_management_permission, init_staff_management_session, user_has_management_access
 from managementApp.models import TeacherDetail, Student
 from utils.custom_decorators import check_groups
+from utils.logger import logger
 
 
 def _render_error_page(request, *, status_code, title, heading, message, accent="blue"):
@@ -101,14 +102,17 @@ def forgot_password_sent(request):
 
 def _send_password_reset_email_async(subject, text_message, html_message, recipient_email):
     def worker():
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=text_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[recipient_email],
-        )
-        email.attach_alternative(html_message, "text/html")
-        email.send(fail_silently=True)
+        try:
+            email = EmailMultiAlternatives(
+                subject=subject,
+                body=text_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[recipient_email],
+            )
+            email.attach_alternative(html_message, "text/html")
+            email.send(fail_silently=False)
+        except Exception as exc:
+            logger.error('Email delivery failed recipient=%s error=%s', recipient_email, exc)
 
     threading.Thread(target=worker, daemon=True).start()
 

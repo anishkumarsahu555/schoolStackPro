@@ -1,0 +1,356 @@
+{% extends 'managementApp/index.html' %}
+{% block title %}<title>Item Registry</title>{% endblock %}
+{% block page_title %}Item Registry{% endblock %}
+{% block page_subtitle %}Catalogue school inventory items, define warn thresholds, and configure tracking rules{% endblock %}
+{% block page_actions %}
+    {% if management_permissions.inventory.add %}
+    <button class="ui green button inventory-page-action" type="button" onclick="showItemModal()">
+        <i class="plus icon"></i>Add Item
+    </button>
+    {% endif %}
+{% endblock %}
+{% block body %}
+{% include 'inventoryApp/_inventory_styles.html' %}
+<form>{% csrf_token %}</form>
+
+<div class="ui right aligned basic grid inventory-list-shell">
+    <div class="sixteen wide column">
+        <div class="ui tab active" data-tab="inventory-items">
+            <div class="ui segment">
+                <h4 class="ui horizontal left aligned divider header">
+                    <i class="list alternate outline icon"></i>
+                    Item list
+                </h4>
+                <div class="ui segment inventory-filter-segment">
+                    <div class="ui tiny form">
+                        <div class="three fields">
+                            <div class="field">
+                                <label>Category Filter</label>
+                                <select class="ui fluid search dropdown" id="filterCategory" onchange="reloadItems()"></select>
+                            </div>
+                            <div class="field">
+                                <label>Item Type Filter</label>
+                                <select class="ui fluid dropdown" id="filterType" onchange="reloadItems()">
+                                    <option value="">All Types</option>
+                                    <option value="consumable">Consumable (Stocked Qty)</option>
+                                    <option value="asset">Fixed Asset (Serialized)</option>
+                                </select>
+                            </div>
+                            <div class="field" style="display: flex; align-items: flex-end;">
+                                <button type="button" class="ui mini red button" onclick="clearFilters()">
+                                    <i class="times circle icon"></i>Clear Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="wide">
+                    <table class="ui unstackable tiny sortable celled very nowrap very compact table" id="ItemTable" style="margin-top: 5px; width: 100%">
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Category</th>
+                                <th>Type</th>
+                                <th>SKU/Model</th>
+                                <th>Min Level</th>
+                                <th>Current Stock</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Form -->
+<div class="ui modal" id="itemModal">
+    <i class="close icon"></i>
+    <div class="header">Inventory Item Detail</div>
+    <div class="content">
+        <form class="ui tiny form" id="itemForm">
+            <input type="hidden" id="itemID">
+            <div class="two fields">
+                <div class="field required">
+                    <label>Item Name</label>
+                    <input type="text" id="itemName" placeholder="e.g. Dell Latitude 3420">
+                </div>
+                <div class="field required">
+                    <label>Category</label>
+                    <select class="ui fluid search dropdown" id="itemCategoryID"></select>
+                </div>
+            </div>
+            <div class="three fields">
+                <div class="field required">
+                    <label>Item Type</label>
+                    <select class="ui fluid dropdown" id="itemType">
+                        <option value="consumable">Consumable (Stocked Qty)</option>
+                        <option value="asset">Fixed Asset (Serialized Items)</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>SKU / Model Number</label>
+                    <input type="text" id="itemSku" placeholder="e.g. LAT3420-01">
+                </div>
+                <div class="field">
+                    <label>Standard Unit</label>
+                    <input type="text" id="itemUnit" placeholder="e.g. pcs, boxes, meters" value="pcs">
+                </div>
+            </div>
+            <div class="two fields">
+                <div class="field required">
+                    <label>Min Stock Warning Level</label>
+                    <input type="number" id="itemMinLevel" value="5" min="0">
+                </div>
+                <div class="field">
+                    <label>Description</label>
+                    <input type="text" id="itemDescription" placeholder="Optional notes/details...">
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="actions inventory-modal-actions">
+        <button type="button" class="ui cancel button">
+            Cancel
+        </button>
+        <button type="button" id="saveBtn" class="ui green button saveBtn" onclick="saveItem()">
+            Add
+            <i class="checkmark icon"></i>
+        </button>
+        <button type="button" id="saveBtnUpdate" class="ui orange button saveBtnUpdate" style="display:none;" onclick="saveItem()">
+            Update
+            <i class="redo icon"></i>
+        </button>
+        <button type="button" id="saveBtnLoad" class="ui green button saveBtnLoad" style="display:none;">
+            Saving ...
+            <i class="checkmark icon"></i>
+        </button>
+    </div>
+</div>
+
+{% endblock %}
+{% block js %}
+<script>
+let itemTable;
+$(function(){
+    // Initialise Semantic Dropdowns
+    $('.ui.dropdown').dropdown();
+    loadCategoryOptions();
+
+    itemTable = $('#ItemTable').DataTable({
+        dom: 'Blfrtip',
+        "scrollY": "350px",
+        "scrollX": true,
+        stateSave: true,
+        fixedColumns: {
+            left: 1,
+            right: 1
+        },
+        buttons: [{
+            extend: 'excel',
+            exportOptions: {
+                columns: [0, 1, 2, 3, 4, 5]
+            }
+        }],
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+        pageLength: 10,
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{% url 'inventoryAppAPI:ItemListJson' %}",
+            data: function(d) {
+                d.categoryID = $('#filterCategory').val();
+                d.itemType = $('#filterType').val();
+            }
+        },
+        "columnDefs": [
+            {"name": "name", "targets": 0, "orderable": true},
+            {"name": "categoryID__name", "targets": 1, "orderable": true},
+            {"name": "itemType", "targets": 2, "orderable": true},
+            {"name": "sku", "targets": 3, "orderable": true},
+            {"name": "minStockAlertLevel", "targets": 4, "orderable": true},
+            {"name": "currentStockQty", "targets": 5, "orderable": true},
+            {"name": "action", "targets": 6, "orderable": false}
+        ]
+    });
+
+    // Remove validation errors when typing/modifying
+    $('#itemName, #itemCategoryID, #itemType, #itemMinLevel').on('input change', function(){
+        $(this).closest('.field').removeClass('error');
+    });
+});
+
+function reloadItems(){
+    itemTable.ajax.reload(null, false);
+}
+
+function clearFilters(){
+    $('#filterCategory').dropdown('clear');
+    $('#filterType').dropdown('clear');
+    reloadItems();
+}
+
+function clearAndReset(){
+    $('#itemForm')[0].reset();
+    $('#itemID').val('');
+    $('#itemCategoryID').dropdown('clear');
+    $('#itemType').dropdown('set selected', 'consumable');
+    $('#itemUnit').val('pcs');
+    $('#itemMinLevel').val('5');
+    $('#itemForm .field').removeClass('error');
+    
+    $('.saveBtn').show();
+    $('.saveBtnUpdate').hide();
+    $('.saveBtnLoad').hide();
+}
+
+function loadCategoryOptions(){
+    $.get("{% url 'inventoryAppAPI:categories_api' %}", function(r){
+        const categories = r.data || [];
+        
+        // Populate modal selection dropdown
+        const modalSelect = $('#itemCategoryID');
+        modalSelect.html('<option value="">Select Category</option>');
+        categories.forEach(c => {
+            modalSelect.append(`<option value="${c.id}">${escapeHtml(c.name)}</option>`);
+        });
+        modalSelect.dropdown('refresh');
+
+        // Populate filter dropdown
+        const filterSelect = $('#filterCategory');
+        filterSelect.html('<option value="">All Categories</option>');
+        categories.forEach(c => {
+            filterSelect.append(`<option value="${c.id}">${escapeHtml(c.name)}</option>`);
+        });
+        filterSelect.dropdown('refresh');
+    });
+}
+
+function showItemModal(){
+    clearAndReset();
+    $('#itemModal').modal('show');
+}
+
+function editItem(id){
+    clearAndReset();
+    $.get("{% url 'inventoryAppAPI:item_detail_api' %}", {id: id}, function(r){
+        if(r.success && r.data){
+            const d = r.data;
+            $('#itemID').val(d.id);
+            $('#itemName').val(d.name);
+            $('#itemCategoryID').dropdown('set selected', d.categoryID || '');
+            $('#itemType').dropdown('set selected', d.itemType);
+            $('#itemSku').val(d.sku);
+            $('#itemUnit').val(d.standardUnit);
+            $('#itemMinLevel').val(d.minStockAlertLevel);
+            $('#itemDescription').val(d.description);
+            
+            $('.saveBtn').hide();
+            $('.saveBtnUpdate').show();
+            $('#itemModal').modal('show');
+        } else {
+            addErrorNotification(r.message);
+        }
+    });
+}
+
+function saveItem(){
+    const name = $('#itemName');
+    const cat = $('#itemCategoryID');
+    const type = $('#itemType');
+    const minLevel = $('#itemMinLevel');
+
+    let isValid = true;
+    if (!name.val().trim()) { name.closest('.field').addClass('error'); isValid = false; }
+    if (!cat.val()) { cat.closest('.field').addClass('error'); isValid = false; }
+    if (!type.val()) { type.closest('.field').addClass('error'); isValid = false; }
+    if (!minLevel.val() || parseInt(minLevel.val()) < 0) { minLevel.closest('.field').addClass('error'); isValid = false; }
+
+    if (!isValid) {
+        requiredFieldError();
+        return;
+    }
+
+    $('.saveBtn').hide();
+    $('.saveBtnUpdate').hide();
+    $('.saveBtnLoad').show();
+
+    const data = new FormData();
+    data.append('id', $('#itemID').val());
+    data.append('name', name.val().trim());
+    data.append('categoryID', cat.val());
+    data.append('itemType', type.val());
+    data.append('sku', $('#itemSku').val().trim());
+    data.append('standardUnit', $('#itemUnit').val().trim() || 'pcs');
+    data.append('minStockAlertLevel', minLevel.val());
+    data.append('description', $('#itemDescription').val().trim());
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+    $.ajax({
+        url: "{% url 'inventoryAppAPI:items_api' %}",
+        type: 'POST',
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function(r){
+            $('.saveBtnLoad').hide();
+            if(r.success){
+                addSuccessNotification(r.message, 'green');
+                $('#itemModal').modal('hide');
+                reloadItems();
+            } else {
+                if ($('#itemID').val()) { $('.saveBtnUpdate').show(); } else { $('.saveBtn').show(); }
+                addErrorNotification(r.message);
+            }
+        },
+        error: function(x){
+            $('.saveBtnLoad').hide();
+            if ($('#itemID').val()) { $('.saveBtnUpdate').show(); } else { $('.saveBtn').show(); }
+            addErrorNotification((x.responseJSON||{}).message || 'Unable to save item.');
+        }
+    });
+}
+
+function confirmDeleteItem(id){
+    showInventoryDeleteModal(
+        id, 
+        'Delete Item Registry?', 
+        'The selected inventory item details will be deleted. Are you sure you want to proceed?', 
+        deleteItem
+    );
+}
+
+function deleteItem(id){
+    const data = new FormData();
+    data.append('id', id);
+    data.append('csrfmiddlewaretoken', $("input[name='csrfmiddlewaretoken']").val());
+
+    $.ajax({
+        url: "{% url 'inventoryAppAPI:delete_item_api' %}",
+        type: 'POST',
+        data: data,
+        contentType: false,
+        processData: false,
+        success: function(r){
+            $('#inventoryDeleteModal').modal('hide');
+            if(r.success){
+                addSuccessNotification(r.message, 'green');
+                reloadItems();
+            } else {
+                addErrorNotification(r.message);
+            }
+        },
+        error: function(x){
+            $('#inventoryDeleteModal').modal('hide');
+            addErrorNotification((x.responseJSON||{}).message || 'Unable to delete item.');
+        }
+    });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+</script>
+{% endblock %}

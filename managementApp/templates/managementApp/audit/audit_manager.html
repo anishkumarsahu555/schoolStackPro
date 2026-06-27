@@ -10,6 +10,16 @@
         width: min(94vw, 1280px) !important;
     }
 
+    .audit-filter-segment {
+        overflow: visible !important;
+        position: relative;
+        z-index: 12;
+    }
+
+    .audit-filter-segment .ui.dropdown .menu {
+        z-index: 3000 !important;
+    }
+
     .audit-detail-modal .audit-modal-header {
         align-items: center;
         display: flex;
@@ -670,7 +680,7 @@
     <div class="ui right aligned basic  grid">
         <div class="sixteen wide column">
             <div class="ui tab active" data-tab="user">
-                <div class="ui segment">
+                <div class="ui segment audit-filter-segment">
             <h4 class="ui horizontal left aligned divider header">
                 <i class="history icon"></i>
                 Audit filters
