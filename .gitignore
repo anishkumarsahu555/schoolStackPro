@@ -1,5 +1,6 @@
 .idea/
 creds
+.env
 __pycache__
 .venv
 **/migrations/*.py
