@@ -1,5 +1,5 @@
 {% extends 'managementApp/index.html' %}
-{% load static %}
+{% load management_access %}
 
 {% block title %}
     <title>Management Dashboard</title>
@@ -7,584 +7,1054 @@
 
 {% block css %}
     <style>
-        .management-dashboard .hero {
-            background: linear-gradient(135deg, #114a7a 0%, #1773b8 52%, #30a46c 100%);
-            border-radius: 24px;
-            box-shadow: 0 18px 38px rgba(17, 74, 122, 0.24);
-            color: #fff;
-            margin-bottom: 1rem;
-            overflow: hidden;
-            padding: 1.35rem 1.45rem;
-            position: relative;
-        }
-
-        .management-dashboard .hero:before,
-        .management-dashboard .hero:after {
-            background: rgba(255, 255, 255, 0.12);
-            border-radius: 999px;
-            content: "";
-            position: absolute;
-        }
-
-        .management-dashboard .hero:before {
-            height: 260px;
-            right: -80px;
-            top: -120px;
-            width: 260px;
-        }
-
-        .management-dashboard .hero:after {
-            bottom: -90px;
-            height: 180px;
-            left: -60px;
-            width: 180px;
-        }
-
-        .management-dashboard .hero-content {
-            align-items: flex-start;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            justify-content: space-between;
-            position: relative;
-            z-index: 1;
-        }
-
-        .management-dashboard .hero-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.45rem;
-            margin-top: 0.85rem;
-        }
-
-        .management-dashboard .hero-tag {
-            align-items: center;
-            background: rgba(255, 255, 255, 0.14);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            border-radius: 999px;
-            color: #fff;
-            display: inline-flex;
-            font-size: 0.88rem;
-            gap: 0.35rem;
-            padding: 0.42rem 0.75rem;
-        }
-
-        .management-dashboard .hero-tag i.icon {
-            color: #fff !important;
-        }
-
-        .management-dashboard .hero-note {
-            background: rgba(255, 255, 255, 0.14);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            border-radius: 16px;
-            color: #fff;
-            font-size: 0.92rem;
-            max-width: 280px;
-            min-width: 220px;
-            padding: 0.85rem 0.95rem;
-        }
-
-        .management-dashboard .license-panel {
-            border: 1px solid var(--app-border);
-            border-radius: 18px;
-            padding: 1rem 1.05rem;
-            margin-bottom: 1rem;
-            background:
-                radial-gradient(circle at top right, rgba(37, 99, 235, 0.11), transparent 26%),
-                linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
-            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
-        }
-
-        .management-dashboard .license-panel-top {
-            display: flex;
-            justify-content: space-between;
-            gap: 0.8rem;
-            align-items: flex-start;
-            margin-bottom: 0.9rem;
-        }
-
-        .management-dashboard .license-panel-title {
-            margin: 0;
-            font-size: 1.02rem;
-            font-weight: 800;
+        .management-dashboard {
             color: var(--app-text);
         }
 
-        .management-dashboard .license-panel-subtitle {
-            margin-top: 0.3rem;
-            color: var(--app-muted);
-            font-size: 0.9rem;
-        }
-
-        .management-dashboard .license-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.42rem 0.8rem;
-            border-radius: 999px;
-            font-size: 0.78rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .management-dashboard .license-pill.positive {
-            background: rgba(16, 185, 129, 0.12);
-            color: #047857;
-        }
-
-        .management-dashboard .license-pill.warning {
-            background: rgba(245, 158, 11, 0.14);
-            color: #b45309;
-        }
-
-        .management-dashboard .license-pill.negative {
-            background: rgba(239, 68, 68, 0.14);
-            color: #b91c1c;
-        }
-
-        .management-dashboard .license-metrics {
+        .management-dashboard .dashboard-hero {
+            align-items: stretch;
+            background: linear-gradient(135deg, #0f766e 0%, #2563eb 58%, #7c3aed 100%);
+            border-radius: 8px;
+            color: #fff;
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.75rem;
+            gap: 1rem;
+            grid-template-columns: minmax(0, 1fr) auto;
+            margin-bottom: 1rem;
+            padding: 1.15rem;
         }
 
-        .management-dashboard .license-metric {
-            border: 1px solid rgba(148, 163, 184, 0.18);
-            border-radius: 14px;
-            padding: 0.85rem 0.95rem;
-            background: rgba(255, 255, 255, 0.72);
-        }
-
-        .management-dashboard .license-metric-label {
-            font-size: 0.76rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--app-muted);
-        }
-
-        .management-dashboard .license-metric-value {
-            margin-top: 0.3rem;
-            color: var(--app-text);
-            font-weight: 800;
-            font-size: 0.98rem;
-        }
-
-        .management-dashboard .hero-title {
-            margin: 0;
-            font-size: 1.6rem;
-            font-weight: 800;
+        .management-dashboard .dashboard-hero h2,
+        .management-dashboard .dashboard-hero p {
             color: #fff;
+            margin: 0;
         }
 
-        .management-dashboard .hero-subtitle {
-            margin-top: 0.4rem;
-            color: rgba(255, 255, 255, 0.92);
-            font-size: 0.92rem;
-            max-width: 640px;
+        .management-dashboard .dashboard-hero h2 {
+            font-size: 1.55rem;
+            font-weight: 800;
+        }
+
+        .management-dashboard .dashboard-hero p {
+            font-size: 0.94rem;
+            margin-top: 0.35rem;
+            opacity: 0.92;
+        }
+
+        .management-dashboard .hero-metrics {
+            display: grid;
+            gap: 0.55rem;
+            grid-template-columns: repeat(3, minmax(92px, 1fr));
+            min-width: 320px;
+        }
+
+        .management-dashboard .hero-metric {
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 8px;
+            padding: 0.65rem 0.75rem;
+        }
+
+        .management-dashboard .hero-metric span {
+            display: block;
+            font-size: 0.72rem;
+            opacity: 0.85;
+            text-transform: uppercase;
+        }
+
+        .management-dashboard .hero-metric strong {
+            color: #fff;
+            display: block;
+            font-size: 1.1rem;
+            margin-top: 0.2rem;
+        }
+
+        .management-dashboard .dashboard-section {
+            margin-top: 1rem;
+        }
+
+        .management-dashboard .section-heading {
+            align-items: center;
+            display: flex;
+            gap: 0.55rem;
+            justify-content: space-between;
+            margin: 0 0 0.65rem;
+        }
+
+        .management-dashboard .section-heading h3 {
+            color: var(--app-text);
+            font-size: 1.05rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .management-dashboard .section-heading span {
+            color: var(--app-muted);
+            font-size: 0.84rem;
+        }
+
+        .management-dashboard .kpi-grid {
+            display: grid;
+            gap: 0.8rem;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .management-dashboard .kpi-card,
+        .management-dashboard .panel,
+        .management-dashboard .mini-stat,
+        .management-dashboard .license-panel {
+            background: var(--app-surface);
+            border: 1px solid var(--app-border);
+            border-radius: 8px;
+            box-shadow: none;
         }
 
         .management-dashboard .kpi-card {
-            border: 1px solid var(--app-border) !important;
-            border-radius: 12px !important;
-            box-shadow: none !important;
-            height: 100%;
+            align-items: flex-start;
+            color: var(--app-text);
+            display: grid;
+            gap: 0.75rem;
+            grid-template-columns: 40px minmax(0, 1fr);
+            min-height: 112px;
+            padding: 0.9rem;
+            text-decoration: none;
+        }
+
+        .management-dashboard .kpi-card:hover {
+            background: var(--app-hover);
+            color: var(--app-text);
+        }
+
+        .management-dashboard .kpi-icon {
+            align-items: center;
+            border-radius: 8px;
+            display: inline-flex;
+            height: 40px;
+            justify-content: center;
+            width: 40px;
+        }
+
+        .management-dashboard .tone-blue .kpi-icon,
+        .management-dashboard .status-info {
+            background: rgba(37, 99, 235, 0.12);
+            color: #2563eb;
+        }
+
+        .management-dashboard .tone-green .kpi-icon,
+        .management-dashboard .status-positive {
+            background: rgba(22, 163, 74, 0.12);
+            color: #15803d;
+        }
+
+        .management-dashboard .tone-amber .kpi-icon,
+        .management-dashboard .status-warning {
+            background: rgba(217, 119, 6, 0.13);
+            color: #b45309;
+        }
+
+        .management-dashboard .tone-red .kpi-icon,
+        .management-dashboard .status-negative {
+            background: rgba(220, 38, 38, 0.12);
+            color: #b91c1c;
+        }
+
+        .management-dashboard .tone-teal .kpi-icon {
+            background: rgba(13, 148, 136, 0.13);
+            color: #0f766e;
+        }
+
+        .management-dashboard .tone-purple .kpi-icon {
+            background: rgba(124, 58, 237, 0.12);
+            color: #6d28d9;
         }
 
         .management-dashboard .kpi-label {
             color: var(--app-muted);
-            font-size: 0.86rem;
-            text-transform: uppercase;
+            display: block;
+            font-size: 0.74rem;
+            font-weight: 800;
             letter-spacing: 0.04em;
+            text-transform: uppercase;
         }
 
         .management-dashboard .kpi-value {
-            font-size: 1.7rem;
-            font-weight: 700;
-            line-height: 1.2;
             color: var(--app-text);
-            margin-top: 0.25rem;
+            display: block;
+            font-size: 1.45rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-top: 0.24rem;
+            overflow-wrap: anywhere;
         }
 
         .management-dashboard .kpi-meta {
-            margin-top: 0.4rem;
             color: var(--app-muted);
-            font-size: 0.84rem;
+            display: block;
+            font-size: 0.82rem;
+            margin-top: 0.35rem;
         }
 
-        .management-dashboard .block-card {
-            border: 1px solid var(--app-border) !important;
-            border-radius: 12px !important;
-            box-shadow: none !important;
-            margin-top: 1rem;
-            height: calc(100% - 1rem);
+        .management-dashboard .dashboard-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+        }
+
+        .management-dashboard .dashboard-grid.three {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .management-dashboard .panel {
+            min-width: 0;
+            padding: 1rem;
+        }
+
+        .management-dashboard .panel-title {
+            align-items: center;
+            color: var(--app-text);
+            display: flex;
+            font-size: 1rem;
+            font-weight: 800;
+            gap: 0.45rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .management-dashboard .panel-subtitle {
+            color: var(--app-muted);
+            font-size: 0.82rem;
+            font-weight: 400;
+            margin-left: auto;
+        }
+
+        .management-dashboard .attention-list,
+        .management-dashboard .detail-list {
+            display: grid;
+            gap: 0.6rem;
+        }
+
+        .management-dashboard .attention-item,
+        .management-dashboard .detail-item,
+        .management-dashboard .check-item {
+            align-items: center;
+            border: 1px solid var(--app-border);
+            border-radius: 8px;
+            color: var(--app-text);
+            display: grid;
+            gap: 0.7rem;
+            grid-template-columns: 38px minmax(0, 1fr) auto;
+            padding: 0.68rem;
+            text-decoration: none;
+        }
+
+        .management-dashboard .attention-item:hover,
+        .management-dashboard .detail-item:hover,
+        .management-dashboard .check-item:hover {
+            background: var(--app-hover);
+            color: var(--app-text);
+        }
+
+        .management-dashboard .item-icon,
+        .management-dashboard .status-badge {
+            align-items: center;
+            border-radius: 8px;
+            display: inline-flex;
+            justify-content: center;
+        }
+
+        .management-dashboard .item-icon {
+            height: 38px;
+            width: 38px;
+        }
+
+        .management-dashboard .item-title {
+            color: var(--app-text);
+            display: block;
+            font-weight: 700;
+            min-width: 0;
+        }
+
+        .management-dashboard .item-meta {
+            color: var(--app-muted);
+            display: block;
+            font-size: 0.82rem;
+            margin-top: 0.16rem;
+            min-width: 0;
+        }
+
+        .management-dashboard .status-badge {
+            font-size: 0.82rem;
+            font-weight: 800;
+            min-width: 36px;
+            padding: 0.25rem 0.55rem;
+        }
+
+        .management-dashboard .mini-stat-grid {
+            display: grid;
+            gap: 0.7rem;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            margin-bottom: 0.85rem;
+        }
+
+        .management-dashboard .mini-stat {
+            padding: 0.75rem;
+        }
+
+        .management-dashboard .mini-stat span {
+            color: var(--app-muted);
+            display: block;
+            font-size: 0.76rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .management-dashboard .mini-stat strong {
+            color: var(--app-text);
+            display: block;
+            font-size: 1.22rem;
+            margin-top: 0.24rem;
         }
 
         .management-dashboard .chart-wrap {
+            height: 280px;
+            min-height: 240px;
             position: relative;
-            height: 300px;
         }
 
-        .management-dashboard .empty-note {
-            color: var(--app-muted);
-            font-size: 0.92rem;
-            text-align: center;
-            padding: 1rem 0.2rem;
+        .management-dashboard .chart-wrap.compact {
+            height: 230px;
         }
 
-        .management-dashboard .list-item {
-            display: flex;
-            justify-content: space-between;
-            gap: 0.8rem;
-            padding: 0.55rem 0;
-            border-bottom: 1px dashed rgba(128, 145, 170, 0.28);
-        }
-
-        .management-dashboard .list-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .management-dashboard .list-title {
-            color: var(--app-text);
-            font-weight: 600;
-        }
-
-        .management-dashboard .list-meta {
-            color: var(--app-muted);
-            font-size: 0.84rem;
-        }
-
-        .management-dashboard .event-list-grid {
+        .management-dashboard .check-list {
             display: grid;
-            gap: 0.65rem;
+            gap: 0.55rem;
         }
 
-        .management-dashboard .event-tile {
-            display: grid;
-            grid-template-columns: 36px minmax(0, 1fr) auto;
-            gap: 0.7rem;
-            align-items: flex-start;
-            border: 1px solid var(--app-border);
-            background: var(--app-surface);
-            border-radius: 12px;
-            padding: 0.7rem 0.75rem;
+        .management-dashboard .check-item {
+            grid-template-columns: 30px minmax(0, 1fr) auto;
+            padding: 0.58rem 0.65rem;
         }
 
-        .management-dashboard .event-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            display: inline-flex;
+        .management-dashboard .check-dot {
             align-items: center;
-            justify-content: center;
-            background: rgba(26, 115, 232, 0.12);
-            color: var(--app-brand);
-        }
-
-        .management-dashboard .event-date-pill {
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: var(--app-brand);
-            background: rgba(26, 115, 232, 0.12);
-            border: 1px solid rgba(26, 115, 232, 0.2);
             border-radius: 999px;
-            padding: 0.22rem 0.58rem;
+            display: inline-flex;
+            height: 24px;
+            justify-content: center;
+            width: 24px;
+        }
+
+        .management-dashboard .check-dot.complete {
+            background: rgba(22, 163, 74, 0.13);
+            color: #15803d;
+        }
+
+        .management-dashboard .check-dot.missing {
+            background: rgba(217, 119, 6, 0.13);
+            color: #b45309;
+        }
+
+        .management-dashboard .event-date {
+            color: var(--app-brand);
+            font-size: 0.78rem;
+            font-weight: 800;
             white-space: nowrap;
-            line-height: 1.2;
-        }
-
-        html[data-theme="dark"] .management-dashboard .event-tile {
-            background: #1e2632;
-            border-color: #324156;
-        }
-
-        html[data-theme="dark"] .management-dashboard .event-icon {
-            background: rgba(116, 169, 255, 0.2);
-            color: #a8cbff;
-        }
-
-        html[data-theme="dark"] .management-dashboard .event-date-pill {
-            color: #d7e7ff;
-            background: rgba(116, 169, 255, 0.18);
-            border-color: rgba(116, 169, 255, 0.34);
-        }
-
-        html[data-theme="dark"] .management-dashboard .license-panel {
-            background:
-                radial-gradient(circle at top right, rgba(96, 165, 250, 0.14), transparent 26%),
-                linear-gradient(135deg, rgba(22, 29, 39, 0.98), rgba(24, 34, 47, 0.95));
-        }
-
-        html[data-theme="dark"] .management-dashboard .license-metric {
-            background: rgba(15, 23, 42, 0.38);
-            border-color: rgba(148, 163, 184, 0.18);
         }
 
         .management-dashboard .quick-actions {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.7rem;
+            gap: 0.6rem;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
         }
 
         .management-dashboard .quick-actions .button {
+            align-items: center;
+            display: inline-flex;
+            justify-content: center;
+            min-height: 38px;
             width: 100%;
         }
 
-        @media (max-width: 767px) {
-            .management-dashboard .hero {
-                padding: 1rem;
+        .management-dashboard .license-panel {
+            margin-bottom: 1rem;
+            padding: 0.9rem 1rem;
+        }
+
+        .management-dashboard .license-row {
+            align-items: center;
+            display: grid;
+            gap: 0.75rem;
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .management-dashboard .license-title {
+            color: var(--app-text);
+            font-weight: 800;
+        }
+
+        .management-dashboard .license-note {
+            color: var(--app-muted);
+            font-size: 0.86rem;
+            margin-top: 0.2rem;
+        }
+
+        .management-dashboard .license-pill {
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 800;
+            padding: 0.38rem 0.75rem;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .management-dashboard .license-pill.positive {
+            background: rgba(22, 163, 74, 0.12);
+            color: #15803d;
+        }
+
+        .management-dashboard .license-pill.warning {
+            background: rgba(217, 119, 6, 0.13);
+            color: #b45309;
+        }
+
+        .management-dashboard .license-pill.negative {
+            background: rgba(220, 38, 38, 0.12);
+            color: #b91c1c;
+        }
+
+        .management-dashboard .empty-note {
+            border: 1px dashed var(--app-border);
+            border-radius: 8px;
+            color: var(--app-muted);
+            padding: 0.9rem;
+            text-align: center;
+        }
+
+        html[data-theme="dark"] .management-dashboard .kpi-card,
+        html[data-theme="dark"] .management-dashboard .panel,
+        html[data-theme="dark"] .management-dashboard .mini-stat,
+        html[data-theme="dark"] .management-dashboard .license-panel {
+            background: var(--app-surface);
+            border-color: var(--app-border);
+        }
+
+        html[data-theme="dark"] .management-dashboard .attention-item,
+        html[data-theme="dark"] .management-dashboard .detail-item,
+        html[data-theme="dark"] .management-dashboard .check-item {
+            background: color-mix(in srgb, var(--app-surface) 94%, #ffffff 6%);
+            border-color: var(--app-border);
+        }
+
+        html[data-theme="dark"] .management-dashboard .attention-item:hover,
+        html[data-theme="dark"] .management-dashboard .detail-item:hover,
+        html[data-theme="dark"] .management-dashboard .check-item:hover {
+            background: var(--app-hover);
+        }
+
+        html[data-theme="dark"] .management-dashboard .event-date {
+            color: #93c5fd;
+        }
+
+        @media (max-width: 1199px) {
+            .management-dashboard .kpi-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
             }
 
-            .management-dashboard .hero-note {
-                max-width: none;
+            .management-dashboard .dashboard-grid.three {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 991px) {
+            .management-dashboard .dashboard-hero,
+            .management-dashboard .dashboard-grid,
+            .management-dashboard .dashboard-grid.three {
+                grid-template-columns: 1fr;
+            }
+
+            .management-dashboard .hero-metrics {
                 min-width: 0;
-                width: 100%;
             }
 
-            .management-dashboard .kpi-value {
-                font-size: 1.45rem;
+            .management-dashboard .quick-actions {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 767px) {
+            .management-dashboard .dashboard-hero {
+                padding: 0.95rem;
             }
 
-            .management-dashboard .chart-wrap {
-                height: 260px;
+            .management-dashboard .dashboard-hero h2 {
+                font-size: 1.28rem;
             }
 
+            .management-dashboard .hero-metrics,
+            .management-dashboard .kpi-grid,
+            .management-dashboard .mini-stat-grid,
             .management-dashboard .quick-actions {
                 grid-template-columns: 1fr;
             }
 
-            .management-dashboard .event-tile {
-                grid-template-columns: 32px 1fr;
+            .management-dashboard .kpi-card {
+                min-height: 0;
             }
 
-            .management-dashboard .event-date-pill {
-                justify-self: start;
+            .management-dashboard .attention-item,
+            .management-dashboard .detail-item {
+                grid-template-columns: 34px minmax(0, 1fr);
+            }
+
+            .management-dashboard .attention-item .status-badge,
+            .management-dashboard .detail-item .event-date {
                 grid-column: 2;
+                justify-self: start;
             }
 
-            .management-dashboard .license-metrics {
+            .management-dashboard .license-row {
                 grid-template-columns: 1fr;
             }
-        }
 
-        html[data-theme="dark"] .management-dashboard .hero,
-        body.dark .management-dashboard .hero,
-        .dark-mode .management-dashboard .hero {
-            box-shadow: 0 20px 44px rgba(2, 6, 23, 0.5);
+            .management-dashboard .chart-wrap,
+            .management-dashboard .chart-wrap.compact {
+                height: 240px;
+            }
         }
     </style>
 {% endblock %}
 
 {% block body %}
+    {% can_manage 'attendance' 'view' as can_view_attendance %}
+    {% can_manage 'attendance' 'add' as can_add_attendance %}
+    {% can_manage 'finance' 'view' as can_view_finance %}
+    {% can_manage 'fees' 'view' as can_view_fees %}
+    {% can_manage 'students' 'view' as can_view_students %}
+    {% can_manage 'staff' 'view' as can_view_staff %}
+    {% can_manage 'classes' 'view' as can_view_classes %}
+    {% can_manage 'school_settings' 'view' as can_view_school_settings %}
+    {% can_manage 'subjects' 'view' as can_view_subjects %}
+    {% can_manage 'subjects' 'edit' as can_edit_subjects %}
+    {% can_manage 'exams' 'view' as can_view_exams %}
+    {% can_manage 'marks' 'view' as can_view_marks %}
+    {% can_manage 'events' 'view' as can_view_events %}
+    {% can_manage 'leave' 'view' as can_view_leave %}
+    {% can_manage 'audit' 'view' as can_view_audit %}
+    {% can_manage 'access_control' 'view' as can_view_access_control %}
     <div class="management-dashboard ui left aligned basic grid">
         <div class="sixteen wide column">
-            <div class="hero">
-                <div class="hero-content">
-                    <div>
-                        <h2 class="hero-title">Management Dashboard</h2>
-                        <div class="hero-subtitle">
-                            Session: {{ current_session_year }} | Overview of students, teachers, academics, and operations
-                        </div>
-                        <div class="hero-tags">
-                            <span class="hero-tag"><i class="graduation cap icon"></i> Students</span>
-                            <span class="hero-tag"><i class="chalkboard teacher icon"></i> Teachers</span>
-                            <span class="hero-tag"><i class="chart line icon"></i> Operations</span>
-                        </div>
+            <section class="dashboard-hero">
+                <div>
+                    <h2>Management Dashboard</h2>
+                    <p>Session {{ current_session_year }} with live academic, attendance, finance, and operations signals.</p>
+                </div>
+                <div class="hero-metrics">
+                    {% if can_view_attendance %}
+                    <div class="hero-metric">
+                        <span>Student Attendance</span>
+                        <strong>{{ attendance_summary.student_rate|default:0 }}%</strong>
                     </div>
-                    <div class="hero-note">
-                        <i class="calendar check outline icon"></i>
-                        Live session overview with key academic and administration signals.
+                    {% endif %}
+                    {% if can_view_finance or can_view_fees %}
+                    <div class="hero-metric">
+                        <span>Month Collection</span>
+                        <strong>Rs. {{ finance_summary.collected_month|floatformat:0 }}</strong>
+                    </div>
+                    {% endif %}
+                    <div class="hero-metric">
+                        <span>Pending Actions</span>
+                        <strong>{{ pending_action_count|default:0 }}</strong>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="license-panel">
-                <div class="license-panel-top">
+            <section class="license-panel">
+                <div class="license-row">
                     <div>
-                        <h3 class="license-panel-title">License Validation</h3>
-                        <div class="license-panel-subtitle">{{ school_license.dashboard_note }}</div>
+                        <div class="license-title">License Validation</div>
+                        <div class="license-note">{{ school_license.dashboard_note }}{% if school_license.valid_until %} Valid until {{ school_license.valid_until|date:'d M Y' }}.{% endif %}</div>
                     </div>
-                    <div class="license-pill {{ school_license.badge_class }}">
-                        <i class="shield alternate icon"></i>
-                        {{ school_license.label }}
-                    </div>
+                    <div class="license-pill {{ school_license.badge_class }}">{{ school_license.label }}</div>
                 </div>
-                <div class="license-metrics">
-                    <div class="license-metric">
-                        <div class="license-metric-label">School</div>
-                        <div class="license-metric-value">{{ school_license.school_name }}</div>
+            </section>
+
+            <section class="dashboard-section">
+                <div class="kpi-grid">
+                    {% for kpi in dashboard_kpis %}
+                        {% can_manage kpi.module kpi.action as can_view_kpi %}
+                        {% if can_view_kpi %}
+                        <a class="kpi-card tone-{{ kpi.tone }}" href="{{ kpi.url }}">
+                            <span class="kpi-icon"><i class="{{ kpi.icon }} icon"></i></span>
+                            <span>
+                                <span class="kpi-label">{{ kpi.label }}</span>
+                                <span class="kpi-value">
+                                    {% if kpi.is_money %}Rs. {{ kpi.value|floatformat:0 }}{% else %}{{ kpi.value }}{% endif %}
+                                </span>
+                                <span class="kpi-meta">{{ kpi.meta }}</span>
+                            </span>
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="dashboard-section dashboard-grid">
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="bell outline icon"></i>
+                        Needs Attention
+                        <span class="panel-subtitle">Today and next 7 days</span>
                     </div>
-                    <div class="license-metric">
-                        <div class="license-metric-label">Valid Until</div>
-                        <div class="license-metric-value">
-                            {% if school_license.valid_until %}
-                                {{ school_license.valid_until|date:'d M Y' }}
-                            {% else %}
-                                Not configured
+                    <div class="attention-list">
+                        {% for item in attention_items %}
+                            {% can_manage item.module item.action as can_view_attention %}
+                            {% if can_view_attention %}
+                            <a class="attention-item" href="{{ item.url }}">
+                                <span class="item-icon status-{{ item.status }}"><i class="{{ item.icon }} icon"></i></span>
+                                <span>
+                                    <span class="item-title">{{ item.label }}</span>
+                                    <span class="item-meta">Open the related workflow</span>
+                                </span>
+                                <span class="status-badge status-{{ item.status }}">{{ item.value }}</span>
+                            </a>
                             {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% if can_view_attendance %}
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="tasks icon"></i>
+                        Attendance Snapshot
+                        <span class="panel-subtitle">Today</span>
+                    </div>
+                    <div class="mini-stat-grid">
+                        <div class="mini-stat">
+                            <span>Students</span>
+                            <strong>{{ attendance_summary.student_rate }}%</strong>
+                        </div>
+                        <div class="mini-stat">
+                            <span>Staff</span>
+                            <strong>{{ attendance_summary.staff_rate }}%</strong>
+                        </div>
+                        <div class="mini-stat">
+                            <span>Classes Marked</span>
+                            <strong>{{ attendance_summary.classes_marked }}/{{ total_classes }}</strong>
                         </div>
                     </div>
-                    <div class="license-metric">
-                        <div class="license-metric-label">Validation Detail</div>
-                        <div class="license-metric-value">{{ school_license.detail }}</div>
+                    <div class="chart-wrap compact">
+                        <canvas id="attendanceTrend"></canvas>
                     </div>
                 </div>
-            </div>
+                {% endif %}
+            </section>
 
-            <div class="ui stackable five column grid">
-                <div class="column">
-                    <div class="ui segment kpi-card">
-                        <div class="kpi-label">Students</div>
-                        <div class="kpi-value">{{ total_students|default:0 }}</div>
-                        <div class="kpi-meta">Active in current session</div>
+            {% if can_view_finance or can_view_fees or can_view_attendance %}
+            <section class="dashboard-section dashboard-grid">
+                {% if can_view_finance or can_view_fees %}
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="rupee sign icon"></i>
+                        Finance Pulse
+                        <span class="panel-subtitle">This month</span>
+                    </div>
+                    <div class="mini-stat-grid">
+                        <div class="mini-stat">
+                            <span>Collected Today</span>
+                            <strong>Rs. {{ finance_summary.collected_today|floatformat:0 }}</strong>
+                        </div>
+                        <div class="mini-stat">
+                            <span>Pending Fees</span>
+                            <strong>Rs. {{ finance_summary.pending_total|floatformat:0 }}</strong>
+                        </div>
+                        <div class="mini-stat">
+                            <span>Net Month</span>
+                            <strong>Rs. {{ finance_summary.net_month|floatformat:0 }}</strong>
+                        </div>
+                    </div>
+                    <div class="chart-wrap compact">
+                        <canvas id="financeBar"></canvas>
                     </div>
                 </div>
-                <div class="column">
-                    <div class="ui segment kpi-card">
-                        <div class="kpi-label">Teachers</div>
-                        <div class="kpi-value">{{ total_teachers|default:0 }}</div>
-                        <div class="kpi-meta">Mapped staff profiles</div>
-                    </div>
-                </div>
-                <div class="column">
-                    <div class="ui segment kpi-card">
-                        <div class="kpi-label">Subjects</div>
-                        <div class="kpi-value">{{ total_subjects|default:0 }}</div>
-                        <div class="kpi-meta">Configured subjects</div>
-                    </div>
-                </div>
-                <div class="column">
-                    <div class="ui segment kpi-card">
-                        <div class="kpi-label">Classes</div>
-                        <div class="kpi-value">{{ total_classes|default:0 }}</div>
-                        <div class="kpi-meta">Available class sections</div>
-                    </div>
-                </div>
-                <div class="column">
-                    <div class="ui segment kpi-card">
-                        <div class="kpi-label">Parents</div>
-                        <div class="kpi-value">{{ total_parents|default:0 }}</div>
-                        <div class="kpi-meta">Registered guardian records</div>
-                    </div>
-                </div>
-            </div>
+                {% endif %}
 
-            <div class="ui stackable two column grid">
-                <div class="column">
-                    <div class="ui segment block-card">
-                        <h4 class="ui header">
-                            <i class="calendar check icon"></i>
-                            <div class="content">Upcoming Events (30 Days)</div>
-                        </h4>
-                        {% if upcoming_events %}
-                            <div class="event-list event-list-grid">
-                                {% for event in upcoming_events %}
-                                    <div class="event-tile">
-                                        <div class="event-icon">
-                                            <i class="calendar check outline icon"></i>
-                                        </div>
-                                        <div>
-                                            <div class="list-title">{{ event.title|default:'Untitled Event' }}</div>
-                                            <div class="list-meta">{{ event.message|default:'No description' }}</div>
-                                        </div>
-                                        <div class="event-date-pill">{{ event.startDate|date:'d M Y' }}</div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="empty-note">No upcoming events in this session.</div>
+                {% if can_view_attendance %}
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="chart bar icon"></i>
+                        Class Attendance
+                        <span class="panel-subtitle">Present vs absent</span>
+                    </div>
+                    <div class="chart-wrap compact">
+                        <canvas id="classAttendanceBar"></canvas>
+                    </div>
+                </div>
+                {% endif %}
+            </section>
+            {% endif %}
+
+            <section class="dashboard-section dashboard-grid three">
+                {% if can_view_subjects or can_edit_subjects or can_view_exams or can_view_marks %}
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="book icon"></i>
+                        Academic Readiness
+                    </div>
+                    <div class="detail-list">
+                        {% if can_edit_subjects %}
+                        <a class="detail-item" href="{% url 'managementApp:assign_subjects_to_class' %}">
+                            <span class="item-icon status-warning"><i class="linkify icon"></i></span>
+                            <span>
+                                <span class="item-title">Classes without subjects</span>
+                                <span class="item-meta">{{ academic_summary.subject_class_assignments }} subject-class assignments</span>
+                            </span>
+                            <span class="status-badge status-warning">{{ academic_summary.classes_without_subjects }}</span>
+                        </a>
+                        <a class="detail-item" href="{% url 'managementApp:assign_subjects_to_teacher' %}">
+                            <span class="item-icon status-info"><i class="chalkboard teacher icon"></i></span>
+                            <span>
+                                <span class="item-title">Teachers without subjects</span>
+                                <span class="item-meta">{{ academic_summary.subject_teacher_assignments }} teacher assignments</span>
+                            </span>
+                            <span class="status-badge status-info">{{ academic_summary.teachers_without_subjects }}</span>
+                        </a>
+                        {% endif %}
+                        {% if can_view_exams %}
+                        <a class="detail-item" href="{% url 'managementApp:manage_exam_timetable' %}">
+                            <span class="item-icon status-positive"><i class="clipboard check icon"></i></span>
+                            <span>
+                                <span class="item-title">Exams this week</span>
+                                <span class="item-meta">{{ academic_summary.marks_entered_count }} mark records entered</span>
+                            </span>
+                            <span class="status-badge status-positive">{{ academic_summary.upcoming_exam_count }}</span>
+                        </a>
                         {% endif %}
                     </div>
                 </div>
+                {% endif %}
 
-                <div class="column">
-                    <div class="ui segment block-card">
-                        <h4 class="ui header">
-                            <i class="user plus icon"></i>
-                            <div class="content">Recent Student Admissions</div>
-                        </h4>
-                        {% if recent_students %}
-                            <div>
-                                {% for student in recent_students %}
-                                    <div class="list-item">
-                                        <div>
-                                            <div class="list-title">{{ student.name|default:'N/A' }}</div>
-                                            <div class="list-meta">{{ student.standardID.name|default:'N/A' }}</div>
-                                        </div>
-                                        <div class="list-meta">
-                                            <a href="{% url 'managementApp:student_detail' student.id %}" class="ui tiny button">View</a>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="empty-note">No recent students found.</div>
+                {% if can_view_students %}
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="graduation cap icon"></i>
+                        Student Data Quality
+                    </div>
+                    <div class="detail-list">
+                        <a class="detail-item" href="{% url 'managementApp:student_list' %}">
+                            <span class="item-icon status-positive"><i class="user plus icon"></i></span>
+                            <span>
+                                <span class="item-title">Admissions this month</span>
+                                <span class="item-meta">{{ student_summary.leaving_this_month }} leaving records this month</span>
+                            </span>
+                            <span class="status-badge status-positive">{{ student_summary.admissions_this_month }}</span>
+                        </a>
+                        <a class="detail-item" href="{% url 'managementApp:student_list' %}">
+                            <span class="item-icon status-warning"><i class="users icon"></i></span>
+                            <span>
+                                <span class="item-title">Missing parent mapping</span>
+                                <span class="item-meta">Guardian records should be linked</span>
+                            </span>
+                            <span class="status-badge status-warning">{{ student_summary.missing_parent }}</span>
+                        </a>
+                        <a class="detail-item" href="{% url 'managementApp:student_list' %}">
+                            <span class="item-icon status-negative"><i class="address card outline icon"></i></span>
+                            <span>
+                                <span class="item-title">Missing contact/photo</span>
+                                <span class="item-meta">{{ student_summary.missing_contact }} contact gaps, {{ student_summary.missing_photo }} photo gaps</span>
+                            </span>
+                            <span class="status-badge status-negative">{{ student_summary.missing_contact }}</span>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if can_view_staff or can_view_access_control or can_view_finance %}
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="user shield icon"></i>
+                        Staff Operations
+                    </div>
+                    <div class="detail-list">
+                        {% if can_view_staff %}
+                        <a class="detail-item" href="{% url 'managementApp:teacher_list' %}">
+                            <span class="item-icon status-positive"><i class="chalkboard teacher icon"></i></span>
+                            <span>
+                                <span class="item-title">Active teachers</span>
+                                <span class="item-meta">Staff profiles in current session</span>
+                            </span>
+                            <span class="status-badge status-positive">{{ total_teachers }}</span>
+                        </a>
+                        {% endif %}
+                        {% if can_view_access_control %}
+                        <a class="detail-item" href="{% url 'managementApp:manage_staff_access' %}">
+                            <span class="item-icon status-info"><i class="key icon"></i></span>
+                            <span>
+                                <span class="item-title">Management access enabled</span>
+                                <span class="item-meta">{{ staff_summary.active_roles }} active role definitions</span>
+                            </span>
+                            <span class="status-badge status-info">{{ staff_summary.access_enabled }}</span>
+                        </a>
+                        {% endif %}
+                        {% if can_edit_subjects %}
+                        <a class="detail-item" href="{% url 'managementApp:assign_subjects_to_teacher' %}">
+                            <span class="item-icon status-warning"><i class="book reader icon"></i></span>
+                            <span>
+                                <span class="item-title">Teachers without subjects</span>
+                                <span class="item-meta">Complete academic mapping</span>
+                            </span>
+                            <span class="status-badge status-warning">{{ staff_summary.without_subjects }}</span>
+                        </a>
+                        {% endif %}
+                        {% if can_view_finance %}
+                        <a class="detail-item" href="{% url 'managementApp:finance_payroll' %}">
+                            <span class="item-icon status-negative"><i class="money check alternate icon"></i></span>
+                            <span>
+                                <span class="item-title">Pending payroll</span>
+                                <span class="item-meta">Unpaid or in-process payroll lines</span>
+                            </span>
+                            <span class="status-badge status-negative">Rs. {{ staff_summary.pending_payroll|floatformat:0 }}</span>
+                        </a>
                         {% endif %}
                     </div>
                 </div>
-            </div>
+                {% endif %}
+            </section>
 
-            <div class="ui stackable two column grid">
-                <div class="column">
-                    <div class="ui segment block-card">
-                        <h4 class="ui header">
-                            <i class="chart pie icon"></i>
-                            <div class="content">Overall Distribution</div>
-                        </h4>
-                        <div class="chart-wrap">
-                            <canvas id="summaryPie"></canvas>
-                        </div>
+            {% if can_view_students or can_view_subjects or can_view_exams or can_view_finance or can_view_staff or can_view_access_control or can_view_classes or can_view_school_settings %}
+            <section class="dashboard-section dashboard-grid">
+                {% if can_view_students %}
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="chart pie icon"></i>
+                        Students By Class
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="classBar"></canvas>
                     </div>
                 </div>
-                <div class="column">
-                    {% include 'chatApp/partials/recent_chat_widget.html' %}
-                </div>
-                <div class="column">
-                    <div class="ui segment block-card">
-                        <h4 class="ui header">
-                            <i class="chart bar icon"></i>
-                            <div class="content">Students By Class</div>
-                        </h4>
-                        <div class="chart-wrap">
-                            <canvas id="classBar"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                {% endif %}
 
-            <div class="ui stackable two column grid">
-                <div class="column">
-                    <div class="ui segment block-card">
-                        <h4 class="ui header">
-                            <i class="compass outline icon"></i>
-                            <div class="content">Quick Actions</div>
-                        </h4>
-                        <div class="quick-actions">
-                            <a href="{% url 'managementApp:student_list' %}" class="ui primary button">Students</a>
-                            <a href="{% url 'managementApp:teacher_list' %}" class="ui primary button">Teachers</a>
-                            <a href="{% url 'managementApp:manage_class' %}" class="ui primary button">Classes</a>
-                            <a href="{% url 'managementApp:manage_subjects' %}" class="ui primary button">Subjects</a>
-                            <a href="{% url 'managementApp:manage_parents' %}" class="ui primary button">Parents</a>
-                            <a href="{% url 'managementApp:manage_event' %}" class="ui primary button">Events</a>
-                            <a href="{% url 'managementApp:finance_dashboard' %}" class="ui teal button">Finance Dashboard</a>
-                            <a href="{% url 'chatApp:inbox' %}" class="ui teal button">Chat</a>
-                            <a href="{% url 'chatApp:moderation' %}" class="ui button">Moderation</a>
-                        </div>
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="check circle outline icon"></i>
+                        Session Setup Checklist
+                    </div>
+                    <div class="check-list">
+                        {% for item in setup_checklist %}
+                            {% can_manage item.module item.action as can_view_check %}
+                            {% if can_view_check %}
+                            <a class="check-item" href="{{ item.url }}">
+                                <span class="check-dot {% if item.complete %}complete{% else %}missing{% endif %}">
+                                    <i class="{% if item.complete %}check{% else %}exclamation{% endif %} icon"></i>
+                                </span>
+                                <span>
+                                    <span class="item-title">{{ item.label }}</span>
+                                    <span class="item-meta">Current value: {{ item.value }}</span>
+                                </span>
+                                <span class="status-badge {% if item.complete %}status-positive{% else %}status-warning{% endif %}">
+                                    {% if item.complete %}Done{% else %}Open{% endif %}
+                                </span>
+                            </a>
+                            {% endif %}
+                        {% endfor %}
                     </div>
                 </div>
-                <div class="column">
-                    <div class="ui segment block-card">
-                        <h4 class="ui header">
-                            <i class="chart line icon"></i>
-                            <div class="content">Summary Comparison</div>
-                        </h4>
-                        <div class="chart-wrap">
-                            <canvas id="summaryBar"></canvas>
+            </section>
+            {% endif %}
+
+            {% if can_view_events or can_view_exams or can_view_leave %}
+            <section class="dashboard-section dashboard-grid three">
+                {% if can_view_events %}
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="calendar check icon"></i>
+                        Upcoming Events
+                    </div>
+                    {% if upcoming_events %}
+                        <div class="detail-list">
+                            {% for event in upcoming_events %}
+                                <a class="detail-item" href="{% url 'managementApp:manage_event' %}">
+                                    <span class="item-icon status-info"><i class="calendar alternate outline icon"></i></span>
+                                    <span>
+                                        <span class="item-title">{{ event.title|default:'Untitled Event' }}</span>
+                                        <span class="item-meta">{{ event.message|default:'No description'|truncatechars:80 }}</span>
+                                    </span>
+                                    <span class="event-date">{{ event.startDate|date:'d M' }}</span>
+                                </a>
+                            {% endfor %}
                         </div>
+                    {% else %}
+                        <div class="empty-note">No upcoming events in the next 30 days.</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if can_view_exams %}
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="clipboard outline icon"></i>
+                        Upcoming Exams
+                    </div>
+                    {% if upcoming_exams %}
+                        <div class="detail-list">
+                            {% for exam in upcoming_exams %}
+                                <a class="detail-item" href="{% url 'managementApp:manage_exam_timetable' %}">
+                                    <span class="item-icon status-warning"><i class="clipboard check icon"></i></span>
+                                    <span>
+                                        <span class="item-title">{{ exam.examID.name|default:'Exam' }}</span>
+                                        <span class="item-meta">{{ exam.standardID.name|default:'Class not set' }}</span>
+                                    </span>
+                                    <span class="event-date">{{ exam.startDate|date:'d M' }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-note">No exams scheduled in the next 30 days.</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if can_view_leave %}
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="calendar check outline icon"></i>
+                        Pending Leave
+                    </div>
+                    {% if pending_leaves %}
+                        <div class="detail-list">
+                            {% for leave in pending_leaves %}
+                                <a class="detail-item" href="{% url 'managementApp:manage_leave_applications' %}">
+                                    <span class="item-icon status-warning"><i class="user clock icon"></i></span>
+                                    <span>
+                                        <span class="item-title">
+                                            {% if leave.teacherID %}{{ leave.teacherID.name }}{% elif leave.studentID %}{{ leave.studentID.name }}{% else %}Leave request{% endif %}
+                                        </span>
+                                        <span class="item-meta">{{ leave.applicantRole|title }} - {{ leave.totalDays }} day(s)</span>
+                                    </span>
+                                    <span class="event-date">{{ leave.startDate|date:'d M' }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-note">No pending leave requests.</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </section>
+            {% endif %}
+
+            {% if can_view_students or can_view_finance or can_view_fees or can_view_audit %}
+            <section class="dashboard-section dashboard-grid three">
+                {% if can_view_students %}
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="user plus icon"></i>
+                        Recent Admissions
+                    </div>
+                    {% if recent_students %}
+                        <div class="detail-list">
+                            {% for student in recent_students %}
+                                <a class="detail-item" href="{% url 'managementApp:student_detail' student.id %}">
+                                    <span class="item-icon status-positive"><i class="graduation cap icon"></i></span>
+                                    <span>
+                                        <span class="item-title">{{ student.name|default:'N/A' }}</span>
+                                        <span class="item-meta">{{ student.standardID.name|default:'Class not set' }}</span>
+                                    </span>
+                                    <span class="event-date">{{ student.datetime|date:'d M' }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-note">No recent students found.</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if can_view_finance or can_view_fees %}
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="receipt icon"></i>
+                        Recent Collections
+                    </div>
+                    {% if recent_receipts %}
+                        <div class="detail-list">
+                            {% for receipt in recent_receipts %}
+                                <a class="detail-item" href="{% url 'managementApp:finance_receipt_detail' receipt.id %}">
+                                    <span class="item-icon status-positive"><i class="rupee sign icon"></i></span>
+                                    <span>
+                                        <span class="item-title">Rs. {{ receipt.amountReceived|floatformat:0 }}</span>
+                                        <span class="item-meta">{{ receipt.studentID.name|default:receipt.receivedFromName|default:'Receipt' }}</span>
+                                    </span>
+                                    <span class="event-date">{{ receipt.receiptDate|date:'d M' }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-note">No confirmed collections found.</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if can_view_audit %}
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="history icon"></i>
+                        Recent Activity
+                    </div>
+                    {% if recent_audit_logs %}
+                        <div class="detail-list">
+                            {% for log in recent_audit_logs %}
+                                <a class="detail-item" href="{% url 'managementApp:audit_manager' %}">
+                                    <span class="item-icon status-info"><i class="history icon"></i></span>
+                                    <span>
+                                        <span class="item-title">{{ log.action|title }} {{ log.content_type.model|default:'record' }}</span>
+                                        <span class="item-meta">{{ log.userID.username|default:'System' }}</span>
+                                    </span>
+                                    <span class="event-date">{{ log.datetime|date:'d M' }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-note">No recent audit activity.</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </section>
+            {% endif %}
+
+            <section class="dashboard-section">
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="compass outline icon"></i>
+                        Quick Actions
+                    </div>
+                    <div class="quick-actions">
+                        {% if can_add_attendance %}
+                        <a href="{% url 'managementApp:student_attendance' %}" class="ui primary button"><i class="tasks icon"></i> Attendance</a>
+                        {% endif %}
+                        {% if can_view_finance or can_view_fees %}
+                        <a href="{% url 'managementApp:manage_receipts' %}" class="ui teal button"><i class="receipt icon"></i> Collect Fees</a>
+                        {% endif %}
+                        {% if can_view_leave %}
+                        <a href="{% url 'managementApp:manage_leave_applications' %}" class="ui orange button"><i class="calendar check outline icon"></i> Leave</a>
+                        {% endif %}
+                        {% if can_view_exams %}
+                        <a href="{% url 'managementApp:manage_exam_timetable' %}" class="ui violet button"><i class="clipboard outline icon"></i> Exams</a>
+                        {% endif %}
+                        {% if can_view_students %}
+                        <a href="{% url 'managementApp:student_list' %}" class="ui button"><i class="graduation cap icon"></i> Students</a>
+                        {% endif %}
+                        {% if can_view_staff %}
+                        <a href="{% url 'managementApp:teacher_list' %}" class="ui button"><i class="chalkboard teacher icon"></i> Teachers</a>
+                        {% endif %}
+                        {% if can_view_events %}
+                        <a href="{% url 'managementApp:manage_event' %}" class="ui button"><i class="calendar alternate outline icon"></i> Events</a>
+                        {% endif %}
+                        {% if can_view_finance %}
+                        <a href="{% url 'managementApp:finance_dashboard' %}" class="ui button"><i class="chart line icon"></i> Finance</a>
+                        {% endif %}
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
     </div>
 {% endblock %}
@@ -592,50 +1062,105 @@
 {% block js %}
     <script>
         (function () {
-            const labels = {{ summary_labels_json|safe }};
-            const values = {{ summary_values_json|safe }};
             const classLabels = {{ class_labels_json|safe }};
             const classValues = {{ class_values_json|safe }};
+            const attendanceLabels = {{ attendance_trend_labels_json|safe }};
+            const studentAttendance = {{ attendance_student_values_json|safe }};
+            const staffAttendance = {{ attendance_staff_values_json|safe }};
+            const classAttendanceLabels = {{ attendance_class_labels_json|safe }};
+            const classPresent = {{ attendance_class_present_json|safe }};
+            const classAbsent = {{ attendance_class_absent_json|safe }};
+            const financeLabels = {{ finance_labels_json|safe }};
+            const financeValues = {{ finance_values_json|safe }};
             const surfaceText = getComputedStyle(document.documentElement).getPropertyValue('--app-text').trim() || '#1f2937';
             const gridLine = getComputedStyle(document.documentElement).getPropertyValue('--app-border').trim() || '#dfe3ea';
-            const palette = ['#1f77d2', '#2dbf63', '#f59e0b', '#8b5cf6', '#ef4444'];
 
-            const pieCtx = document.getElementById('summaryPie');
-            if (pieCtx) {
-                new Chart(pieCtx.getContext('2d'), {
-                    type: 'doughnut',
+            function chartScales(stacked) {
+                return {
+                    yAxes: [{
+                        stacked: !!stacked,
+                        ticks: {beginAtZero: true, fontColor: surfaceText},
+                        gridLines: {color: gridLine}
+                    }],
+                    xAxes: [{
+                        stacked: !!stacked,
+                        ticks: {fontColor: surfaceText},
+                        gridLines: {color: gridLine}
+                    }]
+                };
+            }
+
+            const trendCtx = document.getElementById('attendanceTrend');
+            if (trendCtx) {
+                new Chart(trendCtx.getContext('2d'), {
+                    type: 'line',
                     data: {
-                        labels: labels,
-                        datasets: [{data: values, backgroundColor: palette}]
+                        labels: attendanceLabels,
+                        datasets: [
+                            {
+                                label: 'Students',
+                                data: studentAttendance,
+                                borderColor: '#2563eb',
+                                backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                                pointRadius: 3,
+                                fill: true,
+                                lineTension: 0.25
+                            },
+                            {
+                                label: 'Staff',
+                                data: staffAttendance,
+                                borderColor: '#16a34a',
+                                backgroundColor: 'rgba(22, 163, 74, 0.10)',
+                                pointRadius: 3,
+                                fill: true,
+                                lineTension: 0.25
+                            }
+                        ]
                     },
                     options: {
                         maintainAspectRatio: false,
-                        legend: {labels: {fontColor: surfaceText}}
+                        legend: {labels: {fontColor: surfaceText}},
+                        scales: chartScales(false)
                     }
                 });
             }
 
-            const barCtx = document.getElementById('summaryBar');
-            if (barCtx) {
-                new Chart(barCtx.getContext('2d'), {
+            const financeCtx = document.getElementById('financeBar');
+            if (financeCtx) {
+                new Chart(financeCtx.getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: labels,
+                        labels: financeLabels,
                         datasets: [{
-                            label: 'Count',
-                            data: values,
-                            backgroundColor: palette,
-                            borderColor: palette,
-                            borderWidth: 1
+                            label: 'Amount',
+                            data: financeValues,
+                            backgroundColor: ['#16a34a', '#dc2626', '#d97706', '#7c3aed'],
+                            borderWidth: 0
                         }]
                     },
                     options: {
                         maintainAspectRatio: false,
                         legend: {display: false},
-                        scales: {
-                            yAxes: [{ticks: {beginAtZero: true, fontColor: surfaceText}, gridLines: {color: gridLine}}],
-                            xAxes: [{ticks: {fontColor: surfaceText}, gridLines: {color: gridLine}}]
-                        }
+                        scales: chartScales(false)
+                    }
+                });
+            }
+
+            const classAttendanceCtx = document.getElementById('classAttendanceBar');
+            if (classAttendanceCtx) {
+                new Chart(classAttendanceCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: classAttendanceLabels,
+                        datasets: [
+                            {label: 'Present', data: classPresent, backgroundColor: '#16a34a', borderWidth: 0},
+                            {label: 'Absent', data: classAbsent, backgroundColor: '#dc2626', borderWidth: 0}
+                        ]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        legend: {labels: {fontColor: surfaceText}},
+                        scales: chartScales(true)
                     }
                 });
             }
@@ -649,8 +1174,8 @@
                         datasets: [{
                             label: 'Students',
                             data: classValues,
-                            backgroundColor: '#3b82f6',
-                            borderColor: '#3b82f6',
+                            backgroundColor: '#2563eb',
+                            borderColor: '#2563eb',
                             borderWidth: 1
                         }]
                     },

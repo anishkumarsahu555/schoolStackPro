@@ -2,10 +2,11 @@ from datetime import date
 
 from django.contrib.auth.models import User
 from django.urls import reverse
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 
 from homeApp.models import SchoolDetail, SchoolSession
 from managementApp.holiday_utils import holiday_audiences, resync_holidays_for_scope
+from managementApp.services.dashboard import build_management_dashboard_context
 from managementApp.access_control import (
     API_PERMISSION_MAP,
     APP_API_PERMISSION_MAP,
@@ -235,6 +236,57 @@ class StaffAccessPermissionTests(TestCase):
         self.assertNotIn(reverse('managementApp:school_detail'), sidebar_html)
         self.assertNotIn(reverse('managementApp:manage_session_import'), sidebar_html)
         self.assertNotIn(reverse('managementApp:add_teacher'), sidebar_html)
+
+    def test_dashboard_context_filters_widgets_by_staff_permissions(self):
+        user, _role = self.create_staff_user(
+            'qa_dashboard_context_staff',
+            {
+                'dashboard': ['view'],
+                'attendance': ['view', 'add'],
+            },
+        )
+        request = RequestFactory().get(reverse('managementApp:admin_home'))
+        request.user = user
+        request.session = {
+            'current_session': {
+                'Id': self.session.id,
+                'SchoolID': self.school.id,
+                'currentSessionYear': self.session.sessionYear,
+            },
+        }
+
+        context = build_management_dashboard_context(request)
+
+        kpi_labels = {item['label'] for item in context['dashboard_kpis']}
+        attention_labels = {item['label'] for item in context['attention_items']}
+        checklist_labels = {item['label'] for item in context['setup_checklist']}
+
+        self.assertIn('Today Student Attendance', kpi_labels)
+        self.assertIn('Classes without attendance', attention_labels)
+        self.assertNotIn('Fees Collected', kpi_labels)
+        self.assertNotIn('Overdue fee records', attention_labels)
+        self.assertNotIn('Fee heads configured', checklist_labels)
+        self.assertEqual(list(context['recent_receipts']), [])
+        self.assertEqual(list(context['recent_audit_logs']), [])
+
+    def test_dashboard_page_hides_restricted_staff_widgets(self):
+        user, _role = self.create_staff_user(
+            'qa_dashboard_page_staff',
+            {
+                'dashboard': ['view'],
+                'attendance': ['view', 'add'],
+            },
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('managementApp:admin_home'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Attendance Snapshot')
+        self.assertContains(response, 'Classes without attendance')
+        self.assertNotContains(response, 'Finance Pulse')
+        self.assertNotContains(response, 'Staff Operations')
+        self.assertNotContains(response, 'Recent Activity')
 
     def test_all_management_api_routes_have_explicit_permission_mapping(self):
         api_names = {
