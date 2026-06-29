@@ -1090,9 +1090,10 @@
                 };
             }
 
-            const trendCtx = document.getElementById('attendanceTrend');
-            if (trendCtx) {
-                new Chart(trendCtx.getContext('2d'), {
+            function initDashboardCharts() {
+                const trendCtx = document.getElementById('attendanceTrend');
+                if (trendCtx) {
+                    new Chart(trendCtx.getContext('2d'), {
                     type: 'line',
                     data: {
                         labels: attendanceLabels,
@@ -1123,11 +1124,11 @@
                         scales: chartScales(false)
                     }
                 });
-            }
+                }
 
-            const financeCtx = document.getElementById('financeBar');
-            if (financeCtx) {
-                new Chart(financeCtx.getContext('2d'), {
+                const financeCtx = document.getElementById('financeBar');
+                if (financeCtx) {
+                    new Chart(financeCtx.getContext('2d'), {
                     type: 'bar',
                     data: {
                         labels: financeLabels,
@@ -1144,11 +1145,11 @@
                         scales: chartScales(false)
                     }
                 });
-            }
+                }
 
-            const classAttendanceCtx = document.getElementById('classAttendanceBar');
-            if (classAttendanceCtx) {
-                new Chart(classAttendanceCtx.getContext('2d'), {
+                const classAttendanceCtx = document.getElementById('classAttendanceBar');
+                if (classAttendanceCtx) {
+                    new Chart(classAttendanceCtx.getContext('2d'), {
                     type: 'bar',
                     data: {
                         labels: classAttendanceLabels,
@@ -1163,11 +1164,11 @@
                         scales: chartScales(true)
                     }
                 });
-            }
+                }
 
-            const classBarCtx = document.getElementById('classBar');
-            if (classBarCtx) {
-                new Chart(classBarCtx.getContext('2d'), {
+                const classBarCtx = document.getElementById('classBar');
+                if (classBarCtx) {
+                    new Chart(classBarCtx.getContext('2d'), {
                     type: 'horizontalBar',
                     data: {
                         labels: classLabels,
@@ -1188,7 +1189,13 @@
                         }
                     }
                 });
+                }
             }
+
+            const firstChart = document.getElementById('attendanceTrend') || document.getElementById('financeBar') || document.getElementById('classAttendanceBar') || document.getElementById('classBar');
+            runWhenVisible(firstChart, function () {
+                loadChartJs().then(initDashboardCharts);
+            });
         })();
     </script>
 {% endblock %}

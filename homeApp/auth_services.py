@@ -12,19 +12,26 @@ from managementApp.models import Student, TeacherDetail
 
 
 def resolve_user_profile(user):
+    if hasattr(user, '_resolved_profile_cache'):
+        return user._resolved_profile_cache
+
     student = Student.objects.filter(userID_id=user.id, isDeleted=False).order_by('-datetime').first()
     if student:
-        return 'student', student
+        user._resolved_profile_cache = ('student', student)
+        return user._resolved_profile_cache
 
     teacher = TeacherDetail.objects.filter(userID_id=user.id, isDeleted=False).order_by('-datetime').first()
     if teacher:
-        return 'teacher', teacher
+        user._resolved_profile_cache = ('teacher', teacher)
+        return user._resolved_profile_cache
 
     owner = SchoolOwner.objects.filter(userID_id=user.id, isDeleted=False).order_by('-datetime').first()
     if owner:
-        return 'owner', owner
+        user._resolved_profile_cache = ('owner', owner)
+        return user._resolved_profile_cache
 
-    return None, None
+    user._resolved_profile_cache = (None, None)
+    return user._resolved_profile_cache
 
 
 def get_password_reset_email(user):

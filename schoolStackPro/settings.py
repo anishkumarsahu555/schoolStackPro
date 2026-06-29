@@ -59,6 +59,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.gzip.GZipMiddleware',
+    'homeApp.middleware.RequestPerformanceMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.http.ConditionalGetMiddleware',
@@ -216,6 +217,19 @@ WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "media_cdn")
+
+# Performance instrumentation
+PERFORMANCE_LOG_ENABLED = os.getenv('PERFORMANCE_LOG_ENABLED', 'true').lower() == 'true'
+PERFORMANCE_QUERY_LOG_ENABLED = os.getenv('PERFORMANCE_QUERY_LOG_ENABLED', str(DEBUG).lower()).lower() == 'true'
+PERFORMANCE_SLOW_REQUEST_MS = int(os.getenv('PERFORMANCE_SLOW_REQUEST_MS', '800'))
+PERFORMANCE_QUERY_WARNING_COUNT = int(os.getenv('PERFORMANCE_QUERY_WARNING_COUNT', '50'))
+PERFORMANCE_SKIP_PATH_PREFIXES = (
+    STATIC_URL,
+    MEDIA_URL,
+    '/serviceworker.js',
+    '/manifest.webmanifest',
+)
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 

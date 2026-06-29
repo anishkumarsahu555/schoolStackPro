@@ -65,10 +65,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.0/semantic.min.js"></script>
     <script src="{% static 'sw/app.js' %}?v=20260309"></script>
 
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/dataTables.semanticui.min.css">
-    <link rel="stylesheet" type="text/css"
-          href="https://cdn.datatables.net/fixedcolumns/4.1.0/css/fixedColumns.dataTables.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
     {% block css %}
 
     {% endblock %}
@@ -5883,19 +5879,224 @@
         }
     });
 </script>
-<script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
-{#<script src="https://cdn.datatables.net/1.12.1/js/dataTables.semanticui.min.js"></script>#}
-<script src="{% static 'js/dataTables.semanticui.js' %}"></script>
-<script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.semanticui.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
-<script src="https://cdn.datatables.net/fixedcolumns/4.1.0/js/dataTables.fixedColumns.min.js"></script>
-
 <script>
+    (function () {
+        const chartJsUrl = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js';
+        let chartPromise = null;
+
+        window.runWhenBrowserIsIdle = function (callback, timeout) {
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(callback, {timeout: timeout || 900});
+                return;
+            }
+            window.setTimeout(callback, 80);
+        };
+
+        window.loadChartJs = function () {
+            if (window.Chart) {
+                return Promise.resolve(window.Chart);
+            }
+            if (!chartPromise) {
+                chartPromise = new Promise(function (resolve, reject) {
+                    const script = document.createElement('script');
+                    script.src = chartJsUrl;
+                    script.async = true;
+                    script.onload = function () { resolve(window.Chart); };
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+            return chartPromise;
+        };
+
+        window.runWhenVisible = function (element, callback) {
+            if (!element || !('IntersectionObserver' in window)) {
+                window.runWhenBrowserIsIdle(callback);
+                return;
+            }
+            const observer = new IntersectionObserver(function (entries) {
+                if (!entries.some(function (entry) { return entry.isIntersecting; })) {
+                    return;
+                }
+                observer.disconnect();
+                window.runWhenBrowserIsIdle(callback);
+            }, {rootMargin: '220px 0px'});
+            observer.observe(element);
+        };
+    })();
+
+    (function () {
+        if (!window.jQuery || !$.fn) {
+            return;
+        }
+
+        const dataTableScripts = [
+            'https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js',
+            "{% static 'js/dataTables.semanticui.js' %}",
+            'https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js',
+            'https://cdn.datatables.net/buttons/2.2.2/js/buttons.semanticui.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js',
+            'https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js',
+            'https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js',
+            'https://cdn.datatables.net/fixedcolumns/4.1.0/js/dataTables.fixedColumns.min.js'
+        ];
+        const dataTableStyles = [
+            'https://cdn.datatables.net/1.12.1/css/dataTables.semanticui.min.css',
+            'https://cdn.datatables.net/fixedcolumns/4.1.0/css/fixedColumns.dataTables.min.css'
+        ];
+        const deferredExt = {pager: {}};
+        let dataTablePromise = null;
+        let realDataTable = null;
+
+        function loadScript(src) {
+            return new Promise(function (resolve, reject) {
+                const existing = document.querySelector('script[src="' + src + '"]');
+                if (existing) {
+                    if (existing.dataset.loaded === 'true') {
+                        resolve();
+                        return;
+                    }
+                    existing.addEventListener('load', resolve, {once: true});
+                    existing.addEventListener('error', reject, {once: true});
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = src;
+                script.async = false;
+                script.onload = function () {
+                    script.dataset.loaded = 'true';
+                    resolve();
+                };
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        function loadStyle(href) {
+            return new Promise(function (resolve, reject) {
+                const existing = document.querySelector('link[href="' + href + '"]');
+                if (existing) {
+                    resolve();
+                    return;
+                }
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = href;
+                link.onload = resolve;
+                link.onerror = reject;
+                document.head.appendChild(link);
+            });
+        }
+
+        function loadDataTables() {
+            if (realDataTable) {
+                return Promise.resolve(realDataTable);
+            }
+            if (!dataTablePromise) {
+                dataTablePromise = Promise.all(dataTableStyles.map(loadStyle)).then(function () {
+                    return dataTableScripts.reduce(function (promise, src) {
+                        return promise.then(function () { return loadScript(src); });
+                    }, Promise.resolve());
+                }).then(function () {
+                    realDataTable = $.fn.DataTable;
+                    if (realDataTable && realDataTable.ext && realDataTable.ext.pager && deferredExt.pager.numbers_length) {
+                        realDataTable.ext.pager.numbers_length = deferredExt.pager.numbers_length;
+                    }
+                    installDeferredDataTableWrapper();
+                    return realDataTable;
+                });
+            }
+            return dataTablePromise;
+        }
+
+        function createDeferredApi($table, args) {
+            let realApi = null;
+            const pendingCalls = [];
+            const ready = new Promise(function (resolve) {
+                loadDataTables().then(function (loadedDataTable) {
+                    window.runWhenBrowserIsIdle(function () {
+                        realApi = loadedDataTable.apply($table, args);
+                        pendingCalls.splice(0).forEach(function (call) {
+                            let target = realApi;
+                            for (let index = 0; index < call.path.length - 1; index += 1) {
+                                target = target && target[call.path[index]];
+                            }
+                            const methodName = call.path[call.path.length - 1];
+                            if (target && typeof target[methodName] === 'function') {
+                                target[methodName].apply(target, call.args);
+                            }
+                        });
+                        resolve(realApi);
+                    }, 700);
+                });
+            });
+
+            function buildProxy(path) {
+                const callable = function () {
+                    pendingCalls.push({path: path, args: Array.prototype.slice.call(arguments)});
+                    return proxy;
+                };
+                const proxy = new Proxy(callable, {
+                    get: function (target, prop) {
+                        if (prop === 'ready') {
+                            return ready;
+                        }
+                        if (prop === 'then') {
+                            return ready.then.bind(ready);
+                        }
+                        if (realApi) {
+                            let value = realApi;
+                            path.concat([prop]).forEach(function (key) {
+                                value = value && value[key];
+                            });
+                            return typeof value === 'function' ? value.bind(realApi) : value;
+                        }
+                        return buildProxy(path.concat([prop]));
+                    },
+                    apply: function (target, thisArg, callArgs) {
+                        pendingCalls.push({path: path, args: Array.prototype.slice.call(callArgs)});
+                        return proxy;
+                    }
+                });
+                return proxy;
+            }
+
+            return new Proxy({ready: ready}, {
+                get: function (target, prop) {
+                    if (prop in target) {
+                        return target[prop];
+                    }
+                    if (realApi) {
+                        const value = realApi[prop];
+                        return typeof value === 'function' ? value.bind(realApi) : value;
+                    }
+                    return buildProxy([prop]);
+                }
+            });
+        }
+
+        function installDeferredDataTableWrapper() {
+            const loadedDataTable = realDataTable || $.fn.DataTable;
+            $.fn.DataTable = function () {
+                const args = Array.prototype.slice.call(arguments);
+                const hasInitOptions = args.length && typeof args[0] === 'object';
+                if (!hasInitOptions || this.data('datatable-immediate')) {
+                    return loadedDataTable.apply(this, args);
+                }
+                return createDeferredApi(this, args);
+            };
+            $.fn.DataTable.ext = (loadedDataTable && loadedDataTable.ext) || ($.fn.dataTable && $.fn.dataTable.ext) || deferredExt;
+        }
+
+        $.fn.DataTable = function () {
+            return createDeferredApi(this, Array.prototype.slice.call(arguments));
+        };
+        $.fn.DataTable.ext = deferredExt;
+        window.loadDataTables = loadDataTables;
+    })();
+
           $('.ui.accordion')
             .accordion()
         ;

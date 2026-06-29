@@ -689,7 +689,15 @@ def _models():
 def user_group_names(user):
     if not getattr(user, 'is_authenticated', False):
         return set()
-    return set(user.groups.values_list('name', flat=True))
+    cached = getattr(user, '_management_group_names_cache', None)
+    if cached is not None:
+        return cached
+    if hasattr(user, '_prefetched_objects_cache') and 'groups' in user._prefetched_objects_cache:
+        names = {group.name for group in user._prefetched_objects_cache['groups']}
+    else:
+        names = set(user.groups.values_list('name', flat=True))
+    user._management_group_names_cache = names
+    return names
 
 
 def is_owner_or_admin(user):
@@ -699,24 +707,31 @@ def is_owner_or_admin(user):
 def get_staff_profile(user):
     if not getattr(user, 'is_authenticated', False):
         return None
+    if hasattr(user, '_management_staff_profile_cache'):
+        return user._management_staff_profile_cache
     StaffAccess, StaffRole, StaffRolePermission, TeacherDetail = _models()
-    return TeacherDetail.objects.select_related('schoolID', 'sessionID', 'userID').filter(
+    user._management_staff_profile_cache = TeacherDetail.objects.select_related('schoolID', 'sessionID', 'userID').filter(
         userID_id=user.id,
         isDeleted=False,
     ).order_by('-datetime').first()
+    return user._management_staff_profile_cache
 
 
 def get_staff_access(user):
+    if hasattr(user, '_management_staff_access_cache'):
+        return user._management_staff_access_cache
     staff = get_staff_profile(user)
     if not staff:
+        user._management_staff_access_cache = None
         return None
     StaffAccess, StaffRole, StaffRolePermission, TeacherDetail = _models()
-    return StaffAccess.objects.select_related('staffID', 'roleID').filter(
+    user._management_staff_access_cache = StaffAccess.objects.select_related('staffID', 'roleID').filter(
         staffID=staff,
         isManagementAccessEnabled=True,
         roleID__isActive=True,
         roleID__isDeleted=False,
     ).first()
+    return user._management_staff_access_cache
 
 
 def user_has_management_access(user):
@@ -754,14 +769,18 @@ def has_management_permission(user, module_key, action='view'):
 
 
 def get_user_permission_flags(user):
+    if hasattr(user, '_management_permission_flags_cache'):
+        return user._management_permission_flags_cache
     flags = {module: {action: False for action, label in MANAGEMENT_ACTIONS} for module, label, icon in MANAGEMENT_MODULES}
     if is_owner_or_admin(user):
         for module in flags:
             for action in flags[module]:
                 flags[module][action] = True
+        user._management_permission_flags_cache = flags
         return flags
     access = get_staff_access(user)
     if not access or not access.roleID_id:
+        user._management_permission_flags_cache = flags
         return flags
     StaffAccess, StaffRole, StaffRolePermission, TeacherDetail = _models()
     for perm in StaffRolePermission.objects.filter(roleID_id=access.roleID_id):
@@ -769,6 +788,7 @@ def get_user_permission_flags(user):
             continue
         for action, label in MANAGEMENT_ACTIONS:
             flags[perm.moduleKey][action] = bool(getattr(perm, ACTION_FIELD_MAP[action], False))
+    user._management_permission_flags_cache = flags
     return flags
 
 
@@ -929,7 +949,8 @@ def management_permission_required(module_key, action='view'):
 
 
 def can_pass_group_gate(request, groups):
-    if any(request.user.groups.filter(name=group).exists() for group in groups):
+    group_names = user_group_names(request.user)
+    if group_names & set(groups):
         return True
     if STAFF_GROUP in groups and user_has_management_access(request.user):
         return True

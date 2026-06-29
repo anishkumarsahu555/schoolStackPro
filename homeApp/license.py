@@ -11,6 +11,9 @@ DEFAULT_EXPIRED_MESSAGE = "Activation expired. Please contact the administrator 
 
 
 def resolve_school_for_request(request) -> Optional[SchoolDetail]:
+    if hasattr(request, "_resolved_school_cache"):
+        return request._resolved_school_cache
+
     current_session = request.session.get("current_session", {})
     if not isinstance(current_session, dict):
         current_session = {}
@@ -21,9 +24,11 @@ def resolve_school_for_request(request) -> Optional[SchoolDetail]:
             isDeleted=False,
         ).first()
         if school:
+            request._resolved_school_cache = school
             return school
 
     if not getattr(request, "user", None) or not request.user.is_authenticated:
+        request._resolved_school_cache = None
         return None
 
     owner = SchoolOwner.objects.filter(userID_id=request.user.id, isDeleted=False).order_by("-datetime").first()
@@ -33,6 +38,7 @@ def resolve_school_for_request(request) -> Optional[SchoolDetail]:
             isDeleted=False,
         ).distinct().order_by("-datetime").first()
         if school:
+            request._resolved_school_cache = school
             return school
 
     from managementApp.models import Student, TeacherDetail
@@ -42,6 +48,7 @@ def resolve_school_for_request(request) -> Optional[SchoolDetail]:
         isDeleted=False,
     ).order_by("-datetime").first()
     if teacher and teacher.schoolID and not teacher.schoolID.isDeleted:
+        request._resolved_school_cache = teacher.schoolID
         return teacher.schoolID
 
     student = Student.objects.select_related("schoolID").filter(
@@ -49,8 +56,10 @@ def resolve_school_for_request(request) -> Optional[SchoolDetail]:
         isDeleted=False,
     ).order_by("-datetime").first()
     if student and student.schoolID and not student.schoolID.isDeleted:
+        request._resolved_school_cache = student.schoolID
         return student.schoolID
 
+    request._resolved_school_cache = None
     return None
 
 

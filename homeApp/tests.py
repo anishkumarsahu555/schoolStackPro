@@ -2,12 +2,15 @@ from datetime import date, timedelta
 
 from django.contrib.auth.models import Group, User
 from django.core import mail
+from django.http import HttpResponse
+from django.test import RequestFactory
 from django.test import override_settings
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 import time
 from homeApp.auth_services import get_password_reset_email, sync_profile_password, token_hash
+from homeApp.middleware import RequestPerformanceMiddleware
 from homeApp.models import AccessLink, EmailVerification, SchoolDetail, SchoolOwner, SchoolSession
 from managementApp.models import Student
 
@@ -87,6 +90,45 @@ class SchoolLicenseMiddlewareTests(TestCase):
         self.assertEqual(payload["license"]["status"], "expired")
         self.assertEqual(payload["license"]["valid_until"], str(expired_on))
         self.assertEqual(payload["license"]["school_name"], "Sunrise School")
+
+
+class RequestPerformanceMiddlewareTests(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @override_settings(
+        PERFORMANCE_LOG_ENABLED=True,
+        PERFORMANCE_QUERY_LOG_ENABLED=False,
+        PERFORMANCE_SLOW_REQUEST_MS=999999,
+    )
+    def test_adds_request_duration_header(self):
+        middleware = RequestPerformanceMiddleware(lambda request: HttpResponse("ok"))
+        response = middleware(self.factory.get("/home/"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("X-Request-Duration-ms", response)
+        self.assertNotIn("X-DB-Query-Count", response)
+
+    @override_settings(
+        PERFORMANCE_LOG_ENABLED=True,
+        PERFORMANCE_QUERY_LOG_ENABLED=True,
+        PERFORMANCE_SLOW_REQUEST_MS=999999,
+        PERFORMANCE_QUERY_WARNING_COUNT=999999,
+    )
+    def test_adds_query_count_headers_when_enabled(self):
+        SchoolDetail.objects.create(schoolName="Perf School", address="Main road")
+
+        def get_response(request):
+            SchoolDetail.objects.count()
+            return HttpResponse("ok")
+
+        middleware = RequestPerformanceMiddleware(get_response)
+        response = middleware(self.factory.get("/home/"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("X-DB-Query-Count", response)
+        self.assertGreaterEqual(int(response["X-DB-Query-Count"]), 1)
+        self.assertIn("X-DB-Query-Time-ms", response)
 
 
 class AuthRecoveryServiceTests(TestCase):
