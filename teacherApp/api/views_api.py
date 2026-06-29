@@ -10,7 +10,6 @@ from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.html import escape, strip_tags
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from homeApp.models import SchoolSession
@@ -44,6 +43,7 @@ from managementApp.leave_utils import (
 )
 from teacherApp.models import SubjectNote, SubjectNoteVersion
 from managementApp.signals import pre_save_with_user
+from teacherApp.sanitizers import sanitize_subject_note_html
 from utils.conts import MONTHS_LIST
 from utils.custom_decorators import check_groups
 from utils.custom_response import SuccessResponse, ErrorResponse
@@ -750,7 +750,6 @@ def _component_input_html(mark_row_id, student_id, rules, component_mark_map):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Teaching')
 def teacher_publish_progress_report_api(request):
@@ -880,7 +879,6 @@ def teacher_publish_progress_report_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Teaching')
 def teacher_set_progress_report_ready_state_api(request):
@@ -955,7 +953,6 @@ def teacher_set_progress_report_ready_state_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Teaching')
 def teacher_upsert_term_remark_api(request):
@@ -1569,7 +1566,6 @@ def teacher_get_exam_component_type_list_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Teaching')
 def teacher_add_exam_component_type_api(request):
@@ -1702,7 +1698,6 @@ def teacher_get_exam_subject_component_rules_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Teaching')
 def teacher_save_exam_subject_component_rules_api(request):
@@ -2036,7 +2031,6 @@ class TeacherMarksOfSubjectsByStudentJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Teaching')
 def teacher_add_subject_mark_api(request):
@@ -2309,7 +2303,6 @@ def get_teacher_subject_note_detail_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Teaching')
 @validate_input(['title', 'assignedSubjectTeacherID', 'contentHtml'])
@@ -2323,7 +2316,7 @@ def upsert_teacher_subject_note_api(request):
 
     note_id = (request.POST.get('id') or '').strip()
     title = (request.POST.get('title') or '').strip()
-    content_html = (request.POST.get('contentHtml') or '').strip()
+    content_html = sanitize_subject_note_html(request.POST.get('contentHtml') or '')
     status_value = (request.POST.get('status') or 'draft').strip().lower()
     assigned_subject_teacher_id = (request.POST.get('assignedSubjectTeacherID') or '').strip()
 
@@ -2398,7 +2391,6 @@ def upsert_teacher_subject_note_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Teaching')
 @validate_input(['id'])

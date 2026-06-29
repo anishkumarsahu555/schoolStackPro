@@ -63,7 +63,7 @@
     <link rel="stylesheet" type="text/css"
           href="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.0/semantic.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fomantic-ui/2.9.0/semantic.min.js"></script>
-    <script src="{% static 'sw/app.js' %}?v=20260309"></script>
+    <script src="{% static 'sw/app.js' %}?v=20260629"></script>
 
     {% block css %}
 
@@ -156,6 +156,77 @@
             border-color: rgba(245, 158, 11, 0.36);
             background: linear-gradient(135deg, rgba(255, 251, 235, 0.99), rgba(254, 243, 199, 0.96));
             color: #7c2d12;
+        }
+
+        .app-connectivity-banner {
+            position: fixed;
+            left: 50%;
+            top: calc(var(--top-nav-height) + 14px);
+            transform: translate(-50%, -10px);
+            z-index: 1210;
+            width: min(560px, calc(100vw - 28px));
+            border: 1px solid rgba(245, 158, 11, 0.36);
+            border-left: 5px solid #f59e0b;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(255, 251, 235, 0.99), rgba(254, 243, 199, 0.96));
+            color: #7c2d12;
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.16);
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.78rem 0.95rem;
+            opacity: 0;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        .app-connectivity-banner.visible {
+            display: flex;
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .app-connectivity-banner.online {
+            border-color: rgba(16, 185, 129, 0.32);
+            border-left-color: #10b981;
+            background: linear-gradient(135deg, rgba(236, 253, 245, 0.98), rgba(220, 252, 231, 0.95));
+            color: #064e3b;
+        }
+
+        .app-connectivity-banner .icon-wrap {
+            align-items: center;
+            background: rgba(245, 158, 11, 0.16);
+            border-radius: 999px;
+            display: inline-flex;
+            flex: 0 0 auto;
+            height: 1.8rem;
+            justify-content: center;
+            width: 1.8rem;
+        }
+
+        .app-connectivity-banner.online .icon-wrap {
+            background: rgba(16, 185, 129, 0.16);
+        }
+
+        .app-connectivity-banner .content {
+            flex: 1;
+            font-size: 0.92rem;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .app-connectivity-banner .dismiss {
+            align-items: center;
+            background: transparent;
+            border: 0;
+            color: inherit;
+            cursor: pointer;
+            display: inline-flex;
+            height: 1.7rem;
+            justify-content: center;
+            margin: -0.25rem;
+            opacity: 0.68;
+            padding: 0;
+            width: 1.7rem;
         }
 
         .app-notice .icon-wrap {
@@ -276,9 +347,22 @@
             color: #fee2e2;
         }
 
+        html[data-theme="dark"] .app-connectivity-banner {
+            background: linear-gradient(135deg, rgba(120, 66, 18, 0.96), rgba(146, 64, 14, 0.92));
+            border-color: rgba(245, 158, 11, 0.5);
+            color: #ffedd5;
+        }
+
+        html[data-theme="dark"] .app-connectivity-banner.online {
+            background: linear-gradient(135deg, rgba(15, 57, 45, 0.96), rgba(16, 74, 53, 0.92));
+            border-color: rgba(16, 185, 129, 0.46);
+            color: #d1fae5;
+        }
+
         @media print {
             .app-notice-stack,
-            .app-notice {
+            .app-notice,
+            .app-connectivity-banner {
                 display: none !important;
                 visibility: hidden !important;
             }
@@ -5348,6 +5432,32 @@
         return cookieValue ? decodeURIComponent(cookieValue.split('=')[1]) : '';
     }
 
+    function isUnsafeHttpMethod(method) {
+        return !/^(GET|HEAD|OPTIONS|TRACE)$/i.test(method || 'GET');
+    }
+
+    function isSameOriginUrl(url) {
+        if (!url) return true;
+        try {
+            const parsedUrl = new URL(url, window.location.href);
+            return parsedUrl.origin === window.location.origin;
+        } catch (error) {
+            return true;
+        }
+    }
+
+    if (window.jQuery && $.ajaxSetup) {
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                const method = settings && settings.type ? settings.type : 'GET';
+                const url = settings && settings.url ? settings.url : '';
+                if (isUnsafeHttpMethod(method) && isSameOriginUrl(url)) {
+                    xhr.setRequestHeader('X-CSRFToken', getCsrfTokenValue());
+                }
+            }
+        });
+    }
+
     function ensureNoticeStack() {
         let stack = document.getElementById('appNoticeStack');
         if (stack) return stack;
@@ -5394,6 +5504,111 @@
         closeBtn.addEventListener('click', dismiss);
         stack.prepend(notice);
         setTimeout(dismiss, 4200);
+    }
+
+    function ensureConnectivityBanner() {
+        let banner = document.getElementById('appConnectivityBanner');
+        if (banner) return banner;
+        banner = document.createElement('div');
+        banner.id = 'appConnectivityBanner';
+        banner.className = 'app-connectivity-banner';
+        banner.setAttribute('role', 'status');
+        banner.setAttribute('aria-live', 'polite');
+        banner.innerHTML = [
+            '<span class="icon-wrap"><i class="wifi icon"></i></span>',
+            '<span class="content"></span>',
+            '<button class="dismiss" type="button" aria-label="Dismiss connectivity notice"><i class="close icon"></i></button>'
+        ].join('');
+        banner.querySelector('.dismiss').addEventListener('click', function () {
+            hideConnectivityBanner();
+        });
+        document.body.appendChild(banner);
+        return banner;
+    }
+
+    function showConnectivityBanner(message, mode = 'offline') {
+        const banner = ensureConnectivityBanner();
+        const content = banner.querySelector('.content');
+        const icon = banner.querySelector('.icon-wrap i');
+        banner.classList.toggle('online', mode === 'online');
+        if (icon) {
+            icon.className = mode === 'online' ? 'check icon' : 'wifi icon';
+        }
+        if (content) {
+            content.textContent = message;
+        }
+        banner.classList.add('visible');
+        window.__connectivityBannerMode = mode;
+        if (window.__connectivityBannerTimer) {
+            clearTimeout(window.__connectivityBannerTimer);
+            window.__connectivityBannerTimer = null;
+        }
+        if (mode === 'online') {
+            window.__connectivityBannerTimer = setTimeout(hideConnectivityBanner, 2800);
+        }
+    }
+
+    function hideConnectivityBanner() {
+        const banner = document.getElementById('appConnectivityBanner');
+        if (!banner) return;
+        banner.classList.remove('visible');
+        window.__connectivityBannerMode = '';
+        if (window.__connectivityBannerTimer) {
+            clearTimeout(window.__connectivityBannerTimer);
+            window.__connectivityBannerTimer = null;
+        }
+    }
+
+    function showOfflineDataNotice(message) {
+        const now = Date.now();
+        const state = window.__offlineDataNoticeState || {lastAt: 0, message: ''};
+        const nextMessage = message || 'Live data cannot sync while you are offline. Reconnect and retry.';
+        showConnectivityBanner(nextMessage, 'offline');
+        if (state.message !== nextMessage || now - state.lastAt > 12000) {
+            showNotificationBanner(nextMessage, 'warning');
+            window.__offlineDataNoticeState = {lastAt: now, message: nextMessage};
+        }
+    }
+
+    function isOfflineAjaxFailure(xhr) {
+        if (!xhr) return false;
+        const response = xhr.responseJSON || {};
+        if (response && response.offline === true) return true;
+        if (xhr.status === 0 && navigator.onLine === false) return true;
+        if (xhr.status === 503 && /offline/i.test(String(xhr.statusText || response.message || ''))) return true;
+        return false;
+    }
+
+    function bindConnectivityStatusHandlers() {
+        if (window.__connectivityStatusHandlersBound) return;
+        window.__connectivityStatusHandlersBound = true;
+
+        window.addEventListener('offline', function () {
+            showOfflineDataNotice('You are offline. Saved screens may remain visible, but live data cannot sync.');
+        });
+        window.addEventListener('online', function () {
+            showConnectivityBanner('Back online. Live data can sync again.', 'online');
+        });
+        window.addEventListener('app:notice', function (event) {
+            const detail = event.detail || {};
+            showNotificationBanner(detail.message || 'Please note this update.', detail.type || 'info');
+        });
+
+        if (window.jQuery) {
+            $(document).ajaxError(function (event, xhr) {
+                if (!isOfflineAjaxFailure(xhr)) return;
+                const response = xhr.responseJSON || {};
+                showOfflineDataNotice(response.message || 'You are offline. Reconnect and try again.');
+            });
+            $(document).ajaxSuccess(function (event, xhr, settings) {
+                const url = settings && settings.url ? settings.url : '';
+                if (!isSameOriginUrl(url)) return;
+                if (navigator.onLine === false) return;
+                if (window.__connectivityBannerMode === 'offline') {
+                    showConnectivityBanner('Back online. Live data can sync again.', 'online');
+                }
+            });
+        }
     }
 
     function showInstallPromptBanner() {
@@ -5786,6 +6001,7 @@
 
 
     $(function () {
+        bindConnectivityStatusHandlers();
         if (shouldShowPostLoginInstallPrompt()) {
             startPostLoginInstallWatcher();
         }

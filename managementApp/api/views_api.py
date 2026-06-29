@@ -13,7 +13,6 @@ from django.http import JsonResponse as DjangoJsonResponse
 from django.utils.crypto import get_random_string
 from django.utils.html import escape
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from financeApp.models import (
@@ -97,6 +96,7 @@ from managementApp.holiday_utils import (
     resync_holidays_for_scope,
 )
 from teacherApp.models import SubjectNote, SubjectNoteVersion
+from teacherApp.sanitizers import sanitize_subject_note_html
 from utils.conts import MONTHS_LIST
 from utils.get_school_detail import get_school_id
 
@@ -131,6 +131,28 @@ def _api_response(payload, safe=False, status=200):
             ).to_json_response()
 
     return DjangoJsonResponse(payload, safe=safe, status=status)
+
+
+def _new_account_setup_payload(*, request, target_user, purpose):
+    try:
+        from homeApp.auth_services import create_access_link
+
+        access_link, setup_url = create_access_link(
+            target_user=target_user,
+            created_by=request.user,
+            purpose=purpose,
+            request=request,
+            expires_hours=48,
+            max_uses=1,
+        )
+    except Exception as exc:
+        logger.error("Failed to create setup link for user=%s purpose=%s error=%s", getattr(target_user, "id", None), purpose, exc)
+        return {}
+
+    return {
+        "setupUrl": setup_url,
+        "setupExpiresAt": access_link.expiresAt.strftime("%d-%m-%Y %I:%M %p"),
+    }
 
 
 def _current_session_id(request):
@@ -840,7 +862,6 @@ def get_session_import_meta_api(request):
     ).to_json_response()
 
 
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def preview_session_import_api(request):
@@ -890,7 +911,6 @@ def preview_session_import_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def run_session_import_api(request):
@@ -997,7 +1017,7 @@ def _management_serialize_subject_note(row):
         'teacherName': row.teacherID.name if row.teacherID else 'N/A',
         'publishedAt': row.publishedAt.strftime('%d-%m-%Y %I:%M %p') if row.publishedAt else '',
         'lastUpdatedOn': row.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if row.lastUpdatedOn else '',
-        'contentHtml': row.contentHtml or '',
+        'contentHtml': sanitize_subject_note_html(row.contentHtml or ''),
     }
 
 
@@ -1095,7 +1115,6 @@ def get_management_subject_note_detail_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 @validate_input(['id'])
@@ -1123,6 +1142,7 @@ def toggle_management_subject_note_publish_api(request):
         note_obj.publishedAt = timezone.now()
         message = 'Note published successfully.'
 
+    note_obj.contentHtml = sanitize_subject_note_html(note_obj.contentHtml or '')
     note_obj.currentVersionNo = (note_obj.currentVersionNo or 1) + 1
     note_obj.lastEditedBy = _editor_name(request.user)
     note_obj.updatedByUserID_id = request.user.id
@@ -1182,7 +1202,6 @@ def get_school_detail_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def update_school_detail_api(request):
@@ -1238,7 +1257,6 @@ def update_school_detail_api(request):
 
 # Class ------------------
 @transaction.atomic
-@csrf_exempt
 @login_required
 @validate_input(["className","classLocation","hasSection","startRoll0","endRoll0"])
 def add_class(request):
@@ -1328,7 +1346,6 @@ def add_class(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 # @validate_input()
 def update_class(request):
@@ -1476,7 +1493,6 @@ def get_class_detail(request, **kwargs):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def delete_class(request):
     if request.method == 'POST':
@@ -1503,7 +1519,6 @@ def delete_class(request):
 # subject
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_subject(request):
     if request.method == 'POST':
@@ -1575,7 +1590,6 @@ class SubjectListJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def delete_subject(request):
     if request.method == 'POST':
@@ -1610,7 +1624,6 @@ def get_subject_detail(request, **kwargs):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def edit_subject(request):
     if request.method == 'POST':
@@ -1648,7 +1661,6 @@ def edit_subject(request):
 # assign subjects to class------------------------------------------------------------------
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_subject_to_class(request):
     if request.method == 'POST':
@@ -1739,7 +1751,6 @@ class AssignSubjectToClassListJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def delete_assign_subject_to_class(request):
     if request.method == 'POST':
@@ -1775,7 +1786,6 @@ def get_assigned_subject_to_class_detail(request, **kwargs):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def update_subject_to_class(request):
     if request.method == 'POST':
@@ -2314,7 +2324,6 @@ def get_school_timetable_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def save_school_timetable_settings_api(request):
     if request.method != 'POST':
@@ -2385,7 +2394,6 @@ def save_school_timetable_settings_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def copy_school_timetable_from_class_api(request):
     if request.method != 'POST':
@@ -2495,7 +2503,6 @@ def copy_school_timetable_from_class_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def copy_school_timetable_day_api(request):
     if request.method != 'POST':
@@ -2625,7 +2632,6 @@ def get_teacher_school_timetable_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def save_school_timetable_entry_api(request):
     if request.method != 'POST':
@@ -2727,7 +2733,6 @@ def validate_school_timetable_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def publish_school_timetable_api(request):
     if request.method != 'POST':
@@ -2755,7 +2760,6 @@ def publish_school_timetable_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def unpublish_school_timetable_api(request):
     if request.method != 'POST':
@@ -2782,7 +2786,6 @@ def unpublish_school_timetable_api(request):
 
 # Assign Subjects To Teacher --------------------------------------------------------------
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_subject_to_teacher(request):
     if request.method == 'POST':
@@ -2943,7 +2946,6 @@ class AssignSubjectToClassListJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def delete_assign_teacher_to_subject(request):
     if request.method == 'POST':
@@ -2980,7 +2982,6 @@ def get_assigned_subject_to_teacher_detail(request, **kwargs):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def update_subject_to_teacher(request):
     if request.method == 'POST':
@@ -3018,7 +3019,6 @@ def update_subject_to_teacher(request):
 # Teachers ---------------------------------------------------------------------------------------
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_teacher_api(request):
     if request.method == 'POST':
@@ -3077,17 +3077,16 @@ def add_teacher_api(request):
             instance.staffType = staffType
 
             username = 'T' + get_random_string(length=5, allowed_chars='1234567890')
-            password = get_random_string(length=8, allowed_chars='1234567890')
             while User.objects.filter(username__exact=username).exists():
                 username = 'T' + get_random_string(length=5, allowed_chars='1234567890')
             else:
                 new_user = User()
                 new_user.username = username
-                new_user.set_password(password)
+                new_user.set_unusable_password()
 
                 new_user.save()
                 instance.username = username
-                instance.password = password
+                instance.password = ''
                 instance.userID_id = new_user.pk
 
                 instance.save()
@@ -3113,13 +3112,22 @@ def add_teacher_api(request):
                 request.session['current_session'].get('SchoolID'),
                 request.session['current_session'].get('Id'),
             )
+            setup_payload = _new_account_setup_payload(
+                request=request,
+                target_user=new_user,
+                purpose='staff_quick_login',
+            )
             return _api_response(
-                {'status': 'success', 'message': 'New Teacher added successfully.', 'color': 'success'},
+                {
+                    'status': 'success',
+                    'message': 'New Teacher added successfully. Share the setup link so the staff member can set a password.',
+                    'color': 'success',
+                    **setup_payload,
+                },
                 safe=False)
     return _api_response({'status': 'error'}, safe=False)
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def update_teacher_api(request):
     if request.method == 'POST':
@@ -3284,7 +3292,6 @@ class TeacherListJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def delete_teacher(request):
     if request.method == 'POST':
@@ -3454,7 +3461,6 @@ def student_import_registration_suggestions_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_student_api(request):
 
@@ -3565,9 +3571,10 @@ def add_student_api(request):
         student_obj.photo = imported_previous_student.photo.name
 
     # ---------- USER ----------
+    setup_payload = {}
     if imported_previous_student and imported_previous_student.userID_id:
         student_obj.username = imported_previous_student.username
-        student_obj.password = imported_previous_student.password
+        student_obj.password = ''
         student_obj.userID = imported_previous_student.userID
         if student_obj.userID and not student_obj.userID.is_active:
             student_obj.userID.is_active = True
@@ -3575,11 +3582,12 @@ def add_student_api(request):
         Group.objects.get_or_create(name="Student")[0].user_set.add(student_obj.userID)
     else:
         username = 'STU' + get_random_string(5, '1234567890')
-        password = get_random_string(8, '1234567890')
 
-        new_user = User.objects.create_user(username=username, password=password)
+        new_user = User(username=username)
+        new_user.set_unusable_password()
+        new_user.save()
         student_obj.username = username
-        student_obj.password = password
+        student_obj.password = ''
         student_obj.userID = new_user
         Group.objects.get_or_create(name="Student")[0].user_set.add(new_user)
 
@@ -3596,9 +3604,21 @@ def add_student_api(request):
         request.session['current_session'].get('SchoolID'),
         request.session['current_session'].get('Id'),
     )
+    if not imported_previous_student:
+        setup_payload = _new_account_setup_payload(
+            request=request,
+            target_user=student_obj.userID,
+            purpose='student_quick_login',
+        )
     return SuccessResponse(
-        "New Student added successfully.",
-        data={'status': 'success', 'message': 'New Student added successfully.', 'color': 'success'},
+        "New Student added successfully. Share the setup link so the student can set a password.",
+        data={
+            'status': 'success',
+            'message': 'New Student added successfully.',
+            'color': 'success',
+            **setup_payload,
+        },
+        extra=setup_payload,
     ).to_json_response()
 
 @login_required
@@ -3796,7 +3816,6 @@ class StudentIdCardRecordListJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_student_id_card_record_api(request):
     if request.method != 'POST':
@@ -3872,7 +3891,6 @@ def _clean_number(value, fallback, minimum, maximum):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def save_student_id_card_design_api(request):
@@ -3992,7 +4010,6 @@ def save_student_id_card_design_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def delete_student(request):
     if request.method == 'POST':
@@ -4020,7 +4037,6 @@ def delete_student(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def edit_student_api(request):
     try:
@@ -4130,7 +4146,6 @@ def edit_student_api(request):
 
 # ---------------------Exam -------------------------------------------------
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_exam(request):
     if request.method == 'POST':
@@ -4196,7 +4211,6 @@ class ExamListJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def delete_exam(request):
     if request.method == 'POST':
@@ -4230,7 +4244,6 @@ def get_exam_detail(request, **kwargs):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def edit_exam(request):
     if request.method == 'POST':
@@ -4373,7 +4386,6 @@ def _validate_exam_timetable_business_rules(
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_exam_timetable(request):
     if request.method != 'POST':
@@ -4561,7 +4573,6 @@ def get_exam_timetable_detail(request, **kwargs):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def update_exam_timetable(request):
     if request.method != 'POST':
@@ -4654,7 +4665,6 @@ def update_exam_timetable(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def delete_exam_timetable(request):
     if request.method != 'POST':
@@ -4854,7 +4864,6 @@ def _assigned_exam_subject_marks_data(assign_exam):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_exam_to_class(request):
     if request.method == 'POST':
@@ -4967,7 +4976,6 @@ class AssignExamToClassListJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def delete_assign_exam_to_class(request):
     if request.method == 'POST':
@@ -5015,7 +5023,6 @@ def get_assigned_exam_to_class_detail(request, **kwargs):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def update_exam_to_class(request):
     if request.method == 'POST':
@@ -5432,7 +5439,6 @@ class TakeStudentAttendanceByClassJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_student_attendance_by_class(request):
     if request.method == 'POST':
@@ -5478,7 +5484,6 @@ def add_student_attendance_by_class(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_student_attendance_bulk_by_class(request):
     if request.method != 'POST':
@@ -6002,7 +6007,6 @@ class TakeTeacherAttendanceJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_staff_attendance_api(request):
     if request.method == 'POST':
@@ -6048,7 +6052,6 @@ def add_staff_attendance_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_staff_attendance_bulk_api(request):
     if request.method != 'POST':
@@ -6474,7 +6477,6 @@ def get_exam_component_type_list_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def add_exam_component_type_api(request):
@@ -6598,7 +6600,6 @@ def get_exam_subject_component_rules_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def save_exam_subject_component_rules_api(request):
@@ -6874,7 +6875,6 @@ class MarksOfSubjectsByStudentJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def add_subject_mark_api(request):
@@ -6959,7 +6959,6 @@ def add_subject_mark_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def publish_progress_report_api(request):
@@ -7073,7 +7072,6 @@ def publish_progress_report_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def set_progress_report_ready_state_api(request):
@@ -7145,7 +7143,6 @@ def set_progress_report_ready_state_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def management_upsert_term_remark_api(request):
@@ -7736,7 +7733,6 @@ class EventTypeListJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_event_type_api(request):
     if request.method != 'POST':
@@ -7793,7 +7789,6 @@ def get_event_type_detail(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def update_event_type_api(request):
     if request.method != 'POST':
@@ -7923,7 +7918,6 @@ class HolidayListJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_holiday_api(request):
     if request.method != 'POST':
@@ -7984,7 +7978,6 @@ def get_holiday_detail(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def update_holiday_api(request):
     if request.method != 'POST':
@@ -8035,7 +8028,6 @@ def update_holiday_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def delete_holiday(request):
     if request.method != 'POST':
@@ -8067,7 +8059,6 @@ def delete_holiday(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def delete_event_type(request):
     if request.method != 'POST':
@@ -8088,7 +8079,6 @@ def delete_event_type(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_event_api(request):
     if request.method == 'POST':
@@ -8180,7 +8170,6 @@ class EventListJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def delete_event(request):
     if request.method == 'POST':
@@ -8223,7 +8212,6 @@ def get_event_detail(request, **kwargs):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def update_event_api(request):
     if request.method == 'POST':

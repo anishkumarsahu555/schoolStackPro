@@ -95,11 +95,11 @@ def create_email_verification(*, user, email, request, expires_hours=48):
     return verification, verify_url
 
 
-def sync_profile_password(user, raw_password):
+def sync_profile_password(user, raw_password=None):
     role, profile = resolve_user_profile(user)
     if not profile:
         return
-    profile.password = raw_password
+    profile.password = ''
     profile.save(update_fields=['password', 'lastUpdatedOn'])
 
 

@@ -160,20 +160,14 @@ class RoleSessionBootstrapMiddleware:
         current = dict(raw_current) if isinstance(raw_current, dict) else {}
         current_id = current.get("Id")
 
-        is_current_valid = False
-        if current_id and school_id:
-            is_current_valid = SchoolSession.objects.filter(
-                pk=current_id,
-                isDeleted=False,
-                schoolID_id=school_id,
-            ).exists()
-
         target_session = None
-        if is_current_valid:
+        if current_id and school_id:
             target_session = SchoolSession.objects.filter(
                 pk=current_id,
                 isDeleted=False,
+                schoolID_id=school_id,
             ).first()
+
         if not target_session and school_id:
             target_session = SchoolSession.objects.filter(
                 isDeleted=False,
@@ -190,19 +184,22 @@ class RoleSessionBootstrapMiddleware:
             return
 
         payload = build_current_session_payload(target_session)
-        current.update(payload)
-
-        request.session["current_session"] = current
+        updated_current = {**current, **payload}
+        if current != updated_current:
+            request.session["current_session"] = updated_current
 
         if school_id:
-            session_qs = SchoolSession.objects.filter(
-                isDeleted=False,
-                schoolID_id=school_id,
-            ).order_by("-datetime")
-            request.session["session_list"] = [
-                build_session_list_item(s)
-                for s in session_qs
-            ]
+            cached_school_id = request.session.get("_session_list_school_id")
+            if cached_school_id != school_id or not request.session.get("session_list"):
+                session_qs = SchoolSession.objects.filter(
+                    isDeleted=False,
+                    schoolID_id=school_id,
+                ).order_by("-datetime")
+                request.session["session_list"] = [
+                    build_session_list_item(s)
+                    for s in session_qs
+                ]
+                request.session["_session_list_school_id"] = school_id
 
 
 class ManagementAccessPermissionMiddleware:

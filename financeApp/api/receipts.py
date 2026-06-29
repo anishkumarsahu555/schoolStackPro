@@ -7,7 +7,6 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils.html import escape
-from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from financeApp.models import (
@@ -450,7 +449,6 @@ def get_receipt_adjustment_history_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def create_manual_payment_receipt_api(request):
@@ -557,7 +555,6 @@ def create_manual_payment_receipt_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def create_payment_refund_api(request):
@@ -655,7 +652,6 @@ def create_payment_refund_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def reverse_payment_receipt_api(request):
@@ -707,7 +703,6 @@ def reverse_payment_receipt_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def approve_payment_receipt_api(request):
@@ -737,7 +732,6 @@ def approve_payment_receipt_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def approve_payment_refund_api(request):

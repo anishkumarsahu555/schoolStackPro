@@ -6,7 +6,6 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.html import escape
-from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from financeApp.services import clear_payment_receipt, sync_payment_receipt, sync_student_charge
@@ -255,7 +254,6 @@ class FeeByStudentJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def add_student_fee_api(request):
     if request.method != 'POST':

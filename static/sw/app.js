@@ -1,30 +1,98 @@
+(function () {
+    if (!('serviceWorker' in navigator)) {
+        return;
+    }
 
+    var hasRefreshedForUpdate = false;
 
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.getRegistrations()
-            .then(registrations => {
-                const staleRegs = registrations.filter(reg => reg.scope && reg.scope.includes('/static/sw/'));
-                return Promise.all(staleRegs.map(reg => reg.unregister()));
+    function notify(message, type) {
+        if (!message) return;
+        if (typeof window.showNotificationBanner === 'function') {
+            window.showNotificationBanner(message, type || 'info');
+            return;
+        }
+        window.dispatchEvent(new CustomEvent('app:notice', {
+            detail: {message: message, type: type || 'info'}
+        }));
+    }
+
+    async function unregisterStaleWorkers() {
+        var registrations = await navigator.serviceWorker.getRegistrations();
+        var stale = registrations.filter(function (registration) {
+            return registration.scope && registration.scope.indexOf('/static/sw/') !== -1;
+        });
+        await Promise.all(stale.map(function (registration) {
+            return registration.unregister();
+        }));
+    }
+
+    function postSkipWaiting(registration) {
+        if (registration && registration.waiting) {
+            registration.waiting.postMessage({type: 'SKIP_WAITING'});
+        }
+    }
+
+    function watchForUpdates(registration) {
+        if (!registration) return;
+
+        if (registration.waiting) {
+            postSkipWaiting(registration);
+        }
+
+        registration.addEventListener('updatefound', function () {
+            var installingWorker = registration.installing;
+            if (!installingWorker) return;
+
+            installingWorker.addEventListener('statechange', function () {
+                if (installingWorker.state !== 'installed') return;
+                if (!navigator.serviceWorker.controller) return;
+                notify('Updating offline files...', 'info');
+                postSkipWaiting(registration);
+            });
+        });
+    }
+
+    function bindConnectivityNotices() {
+        window.addEventListener('offline', function () {
+            notify('You are offline. Some saved pages may still open.', 'warning');
+        });
+        window.addEventListener('online', function () {
+            notify('Back online. Syncing fresh data.', 'success');
+            navigator.serviceWorker.ready.then(function (registration) {
+                return registration.update();
+            }).catch(function () {
+                // Update checks are best-effort.
+            });
+        });
+    }
+
+    window.addEventListener('load', function () {
+        unregisterStaleWorkers()
+            .then(function () {
+                return navigator.serviceWorker.register('/serviceworker.js', {scope: '/'});
             })
-            .then(() => navigator.serviceWorker.register('/serviceworker.js', {scope: '/'}))
-            .then(registration => {
-                console.log('SW Registered', registration.scope);
+            .then(function (registration) {
                 window.__swRegistrationPromise = Promise.resolve(registration);
-
-                // OPTIONAL: Check for updates automatically every time page loads
+                watchForUpdates(registration);
                 registration.update();
             })
-            .catch(err => console.log('SW Registration failed:', err));
+            .catch(function () {
+                window.__swRegistrationPromise = Promise.resolve(null);
+            });
 
-        // AUTO-REFRESH LOGIC
-        // If the SW updates the cache, we reload the page to show new content
-        let refreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (!refreshing) {
-                window.location.reload();
-                refreshing = true;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+            if (hasRefreshedForUpdate) return;
+            hasRefreshedForUpdate = true;
+            window.location.reload();
+        });
+
+        navigator.serviceWorker.addEventListener('message', function (event) {
+            var data = event.data || {};
+            if (data.type === 'SW_ACTIVATED' && navigator.serviceWorker.controller) {
+                notify('Offline support updated.', 'success');
             }
         });
+
+        bindConnectivityNotices();
     });
-}
+})();

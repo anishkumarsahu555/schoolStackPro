@@ -6,7 +6,6 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
-from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from managementApp.leave_utils import add_leave_log, leave_duration_label, normalize_quota_days, revert_leave_attendance_sync, sync_leave_to_attendance
@@ -127,7 +126,6 @@ class LeaveTypeListJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def add_leave_type_api(request):
@@ -200,7 +198,6 @@ def get_leave_type_detail(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def update_leave_type_api(request):
@@ -249,7 +246,6 @@ def update_leave_type_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def delete_leave_type(request):
@@ -360,7 +356,6 @@ class LeaveApplicationListJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def review_leave_application_api(request):

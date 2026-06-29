@@ -152,14 +152,14 @@ class AuthRecoveryServiceTests(TestCase):
         self.assertEqual(role, "student")
         self.assertIsNotNone(profile)
 
-    def test_sync_profile_password_updates_linked_student_record(self):
+    def test_sync_profile_password_clears_linked_student_plaintext_password(self):
         user = User.objects.create_user(username="student3", email="user@example.com", password="pass12345")
         student = Student.objects.create(userID=user, name="Student Three", email="student@example.com", password="old")
 
         sync_profile_password(user, "newpass123")
 
         student.refresh_from_db()
-        self.assertEqual(student.password, "newpass123")
+        self.assertEqual(student.password, "")
 
     def test_update_email_updates_user_and_linked_student_profile(self):
         user = User.objects.create_user(username="student_email", email="", password="pass12345")
@@ -327,7 +327,22 @@ class AuthRecoveryServiceTests(TestCase):
         student.refresh_from_db()
         link.refresh_from_db()
         self.assertTrue(user.check_password("newpass12345"))
-        self.assertEqual(student.password, "newpass12345")
+        self.assertEqual(student.password, "")
         self.assertEqual(link.usedCount, 1)
         self.assertIsNotNone(link.usedAt)
         self.assertFalse(response.wsgi_request.user.is_authenticated)
+
+
+class PWAServiceWorkerTests(TestCase):
+    def test_service_worker_serves_root_scope_no_cache_script(self):
+        response = self.client.get(reverse("homeApp:service_worker"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Service-Worker-Allowed"], "/")
+        self.assertIn("no-store", response["Cache-Control"])
+        self.assertIn("application/javascript", response["Content-Type"])
+        self.assertContains(response, "const APP_VERSION = 'v1.0.49';")
+        self.assertNotContains(response, "    '/',")
+        self.assertContains(response, "'/static/sw/offline.html'")
+        self.assertContains(response, "CLEAR_OFFLINE_CACHE")
+        self.assertContains(response, "No internet connection")

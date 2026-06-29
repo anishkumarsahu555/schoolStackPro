@@ -4,7 +4,6 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse as DjangoJsonResponse
 from django.utils.html import escape
-from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from homeApp.models import SchoolDetail, WebPushSubscription
@@ -51,7 +50,6 @@ def _endpoint_hash(endpoint):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def change_session(request):
     if request.method == 'POST':
@@ -105,7 +103,6 @@ def get_push_public_config_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def upsert_push_subscription_api(request):
     if request.method != 'POST':
@@ -163,7 +160,6 @@ def upsert_push_subscription_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 def disable_push_subscription_api(request):
     if request.method != 'POST':
@@ -177,7 +173,6 @@ def disable_push_subscription_api(request):
     return SuccessResponse('Push subscription removed.', extra={'color': 'green'}).to_json_response()
 
 
-@csrf_exempt
 @login_required
 def send_test_push_api(request):
     app_name = ((request.POST.get('app_name') or request.GET.get('app_name') or '').strip().lower())
