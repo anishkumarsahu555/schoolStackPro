@@ -1,6 +1,7 @@
 from datetime import date
 
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.urls import reverse
 from django.test import RequestFactory, TestCase
 
@@ -27,6 +28,10 @@ from libraryApp.api.urls_api import urlpatterns as library_api_urlpatterns
 from libraryApp.models import LibraryCategory, LibraryFine, LibraryMember
 from libraryApp.urls import urlpatterns as library_urlpatterns
 from managementApp.models import (
+    AssignExamToClass,
+    AssignSubjectsToClass,
+    Exam,
+    MarkOfStudentsByExam,
     SchoolHoliday,
     StaffAccess,
     StaffRole,
@@ -37,6 +42,7 @@ from managementApp.models import (
     TeacherAttendance,
     TeacherDetail,
 )
+from managementApp.services.session_rollover import preview_session_import, run_session_import
 from transportApp.api.urls_api import urlpatterns as transport_api_urlpatterns
 from transportApp.models import TransportRoute
 from transportApp.urls import urlpatterns as transport_urlpatterns
@@ -955,3 +961,156 @@ class HolidayAttendanceSyncTests(TestCase):
 
         self.assertTrue(StudentAttendance.objects.filter(isDeleted=False, sourceHoliday=holiday).exists())
         self.assertFalse(TeacherAttendance.objects.filter(isDeleted=False, sourceHoliday=holiday).exists())
+
+
+class SessionImportRolloverTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command('seed_session_import_demo')
+        cls.school = SchoolDetail.objects.get(schoolName='Session Import Demo School', isDeleted=False)
+        cls.source_session = SchoolSession.objects.get(
+            schoolID=cls.school,
+            sessionYear='2030-2031',
+            isDeleted=False,
+        )
+        cls.target_session = SchoolSession.objects.get(
+            schoolID=cls.school,
+            sessionYear='2031-2032',
+            isDeleted=False,
+        )
+
+    def import_options(self):
+        return {
+            'copy_teachers': True,
+            'copy_classes': True,
+            'copy_subjects': True,
+            'copy_class_subjects': True,
+            'copy_teacher_subjects': True,
+            'copy_exam_setup': True,
+            'copy_grading_setup': True,
+            'copy_leave_types': True,
+            'copy_event_types': True,
+            'copy_holidays': True,
+            'copy_id_card_designs': True,
+            'copy_timetable_setup': True,
+            'copy_finance_setup': True,
+            'copy_transport_setup': True,
+            'copy_hostel_setup': True,
+            'copy_library_setup': True,
+            'copy_inventory_setup': True,
+            'copy_students': True,
+            'promote_students': True,
+        }
+
+    def preview(self):
+        return preview_session_import(
+            school_id=self.school.id,
+            source_session_id=self.source_session.id,
+            target_session_id=self.target_session.id,
+            options=self.import_options(),
+        )
+
+    def run_import(self):
+        return run_session_import(
+            school_id=self.school.id,
+            source_session_id=self.source_session.id,
+            target_session_id=self.target_session.id,
+            options=self.import_options(),
+        )
+
+    def test_preview_includes_academic_and_operations_setup_counts(self):
+        payload = self.preview()
+
+        self.assertEqual(payload['counts']['copy_teachers'], 2)
+        self.assertEqual(payload['counts']['copy_classes'], 2)
+        self.assertEqual(payload['counts']['copy_students'], 1)
+        self.assertEqual(payload['counts']['copy_finance_accounts'], 5)
+        self.assertEqual(payload['counts']['copy_transport_routes'], 1)
+        self.assertEqual(payload['counts']['copy_hostel_rooms'], 1)
+        self.assertEqual(payload['counts']['copy_library_books'], 1)
+        self.assertEqual(payload['counts']['copy_inventory_items'], 1)
+        self.assertGreaterEqual(sum(payload['counts'].values()), 50)
+
+    def test_run_import_copies_linked_setup_and_promotes_student(self):
+        result = self.run_import()
+
+        self.assertGreater(sum(result['copied'].values()), 0)
+        promoted_student = Student.objects.get(
+            schoolID=self.school,
+            sessionID=self.target_session,
+            registrationCode='SID-DEMO-001',
+            isDeleted=False,
+        )
+        self.assertEqual(promoted_student.standardID.name, 'Class 6')
+        self.assertEqual(promoted_student.standardID.section, 'A')
+        self.assertTrue(TransportRoute.objects.filter(
+            schoolID=self.school,
+            sessionID=self.target_session,
+            routeCode='R1',
+            isDeleted=False,
+        ).exists())
+        self.assertTrue(LibraryCategory.objects.filter(
+            schoolID=self.school,
+            sessionID=self.target_session,
+            name='Reference',
+            isDeleted=False,
+        ).exists())
+
+    def test_second_import_is_idempotent(self):
+        first = self.run_import()
+        second = self.run_import()
+
+        self.assertGreater(sum(first['copied'].values()), 0)
+        self.assertEqual(sum(second['copied'].values()), 0)
+        self.assertGreaterEqual(sum(second['skipped'].values()), sum(first['copied'].values()))
+
+    def test_transactional_history_rows_are_not_copied(self):
+        source_student = Student.objects.get(
+            schoolID=self.school,
+            sessionID=self.source_session,
+            registrationCode='SID-DEMO-001',
+            isDeleted=False,
+        )
+        source_subject = AssignSubjectsToClass.objects.filter(
+            schoolID=self.school,
+            sessionID=self.source_session,
+            isDeleted=False,
+        ).first()
+        source_exam = AssignExamToClass.objects.filter(
+            schoolID=self.school,
+            sessionID=self.source_session,
+            isDeleted=False,
+        ).first()
+        StudentAttendance.objects.create(
+            schoolID=self.school,
+            sessionID=self.source_session,
+            studentID=source_student,
+            standardID=source_student.standardID,
+            attendanceDate=date(2030, 7, 10),
+            isPresent=True,
+            attendanceStatus='present',
+            isDeleted=False,
+        )
+        MarkOfStudentsByExam.objects.create(
+            schoolID=self.school,
+            sessionID=self.source_session,
+            examID=source_exam,
+            studentID=source_student,
+            standardID=source_student.standardID,
+            subjectID=source_subject,
+            mark=88,
+            isDeleted=False,
+        )
+
+        self.run_import()
+
+        self.assertFalse(StudentAttendance.objects.filter(
+            schoolID=self.school,
+            sessionID=self.target_session,
+            isDeleted=False,
+        ).exists())
+        self.assertFalse(MarkOfStudentsByExam.objects.filter(
+            schoolID=self.school,
+            sessionID=self.target_session,
+            isDeleted=False,
+        ).exists())
