@@ -49,6 +49,7 @@ from utils.custom_decorators import check_groups
 from utils.custom_response import SuccessResponse, ErrorResponse
 from utils.image_utils import safe_image_url, avatar_image_html
 from utils.json_validator import validate_input
+from utils.lookup_badge import render_lookup_badge
 from utils.logger import logger
 
 
@@ -1512,7 +1513,7 @@ class TeacherStudentMarksDetailsByStudentJson(BaseDatatableView):
                 escape(mark_row.mark if mark_row and mark_row.mark is not None else 0),
                 escape(component_summary),
                 escape(mark_row.note if mark_row and mark_row.note else ''),
-                escape(mark_row.lastEditedBy if mark_row and mark_row.lastEditedBy else 'N/A'),
+                render_lookup_badge(mark_row, mark_row.lastEditedBy if mark_row else None),
                 escape(mark_row.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if mark_row and mark_row.lastUpdatedOn else 'N/A'),
             ])
         return json_data
@@ -2023,7 +2024,7 @@ class TeacherMarksOfSubjectsByStudentJson(BaseDatatableView):
                 pass_mark,
                 marks_obtained,
                 note,
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
             ])

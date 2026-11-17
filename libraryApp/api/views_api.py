@@ -40,6 +40,7 @@ from libraryApp.services import (
 from financeApp.services import sync_library_fine_finance
 from managementApp.access_control import has_management_permission
 from utils.custom_response import ErrorResponse, SuccessResponse
+from utils.lookup_badge import render_lookup_badge
 from utils.logger import logger
 
 
@@ -427,7 +428,7 @@ class LibraryCategoryListJson(BaseDatatableView):
             escape(item.code or 'N/A'),
             escape(item.parent.name if item.parent_id else 'N/A'),
             _active_pill(item.isActive),
-            escape(item.lastEditedBy or 'N/A'),
+            render_lookup_badge(item, item.lastEditedBy),
             escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
             _dt_actions('editCategory', 'confirmDeleteCategory', item.id, request=self.request),
         ] for item in qs]
@@ -446,7 +447,7 @@ class LibraryAuthorListJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.name), escape(i.country or 'N/A'), _active_pill(i.isActive), escape(i.lastEditedBy or 'N/A'), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _dt_actions('editAuthor', 'confirmDeleteAuthor', i.id, request=self.request)] for i in qs]
+        return [[escape(i.name), escape(i.country or 'N/A'), _active_pill(i.isActive), render_lookup_badge(i, i.lastEditedBy), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _dt_actions('editAuthor', 'confirmDeleteAuthor', i.id, request=self.request)] for i in qs]
 
 
 class LibraryPublisherListJson(BaseDatatableView):
@@ -462,7 +463,7 @@ class LibraryPublisherListJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.name), escape(i.phoneNumber or 'N/A'), escape(i.email or 'N/A'), _active_pill(i.isActive), escape(i.lastEditedBy or 'N/A'), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _dt_actions('editPublisher', 'confirmDeletePublisher', i.id, request=self.request)] for i in qs]
+        return [[escape(i.name), escape(i.phoneNumber or 'N/A'), escape(i.email or 'N/A'), _active_pill(i.isActive), render_lookup_badge(i, i.lastEditedBy), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _dt_actions('editPublisher', 'confirmDeletePublisher', i.id, request=self.request)] for i in qs]
 
 
 class LibraryBookListJson(BaseDatatableView):

@@ -106,6 +106,7 @@ from utils.custom_response import SuccessResponse, ErrorResponse
 from utils.cache_modfier import add_item_to_existing_cache, delete_item_from_existing_cache, update_item_in_existing_cache
 from utils.custom_decorators import check_groups
 from utils.image_utils import safe_image_url, avatar_image_html, optimize_uploaded_image
+from utils.lookup_badge import render_lookup_badge
 
 
 def _api_response(payload, safe=False, status=200):
@@ -1461,15 +1462,24 @@ class StandardListJson(BaseDatatableView):
                 edit_handler=f"GetDataDetails('{item.pk}')",
                 delete_handler=f"delData('{item.pk}')",
             )
-            teacher = item.classTeacher.name if item.classTeacher and item.classTeacher.name else "N/A"
+            teacher = "N/A"
+            if item.classTeacher and item.classTeacher.name:
+                teacher = render_lookup_badge(
+                    item.classTeacher,
+                    item.classTeacher.name,
+                    icon='chalkboard teacher icon',
+                    variant='success',
+                    lookup_context='reference',
+            )
+            editor = render_lookup_badge(item, item.lastEditedBy)
             json_data.append([
                 escape(item.name),
                 escape(item.section if item.section else "N/A"),
-                escape(teacher),
+                teacher,
                 escape(item.startingRoll),
                 escape(item.endingRoll),
                 escape(item.classLocation),
-                escape(item.lastEditedBy or 'N/A'),
+                editor,
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
@@ -1596,7 +1606,7 @@ class SubjectListJson(BaseDatatableView):
 
             json_data.append([
                 escape(item.name),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
@@ -1755,9 +1765,21 @@ class AssignSubjectToClassListJson(BaseDatatableView):
                 name = item.standardID.name
 
             json_data.append([
-                escape(name),
-                escape(item.subjectID.name),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(
+                    item.standardID,
+                    name,
+                    icon='school icon',
+                    variant='success',
+                    lookup_context='reference',
+                ),
+                render_lookup_badge(
+                    item.subjectID,
+                    item.subjectID.name,
+                    icon='book icon',
+                    variant='success',
+                    lookup_context='reference',
+                ),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
@@ -2882,12 +2904,30 @@ class AssignSubjectToTeacherListJson(BaseDatatableView):
                 section = 'N/A'
 
             json_data.append([
-                escape(item.assignedSubjectID.standardID.name),
+                render_lookup_badge(
+                    item.assignedSubjectID.standardID,
+                    item.assignedSubjectID.standardID.name,
+                    icon='school icon',
+                    variant='success',
+                    lookup_context='reference',
+                ),
                 escape(section),
-                escape(item.assignedSubjectID.subjectID.name),
-                escape(item.teacherID.name),
+                render_lookup_badge(
+                    item.assignedSubjectID.subjectID,
+                    item.assignedSubjectID.subjectID.name,
+                    icon='book icon',
+                    variant='success',
+                    lookup_context='reference',
+                ),
+                render_lookup_badge(
+                    item.teacherID,
+                    item.teacherID.name,
+                    icon='chalkboard teacher icon',
+                    variant='success',
+                    lookup_context='reference',
+                ),
                 escape(item.subjectBranch),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
@@ -2950,9 +2990,21 @@ class AssignSubjectToClassListJson(BaseDatatableView):
                 name = item.standardID.name
 
             json_data.append([
-                escape(name),
-                escape(item.subjectID.name),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(
+                    item.standardID,
+                    name,
+                    icon='school icon',
+                    variant='success',
+                    lookup_context='reference',
+                ),
+                render_lookup_badge(
+                    item.subjectID,
+                    item.subjectID.name,
+                    icon='book icon',
+                    variant='success',
+                    lookup_context='reference',
+                ),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
@@ -3298,7 +3350,7 @@ class TeacherListJson(BaseDatatableView):
                 escape(item.staffType),
                 escape(item.presentCity),
                 escape(item.isActive),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
@@ -3737,7 +3789,7 @@ class StudentListJson(BaseDatatableView):
                 escape(item.parentID.phoneNumber),
                 escape(item.presentCity),
                 escape(item.isActive),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
@@ -3824,7 +3876,7 @@ class StudentIdCardRecordListJson(BaseDatatableView):
                 escape(action_label),
                 escape(item.validTill.strftime('%d-%m-%Y') if item.validTill else 'Upto 2026'),
                 escape(item.remark or 'N/A'),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 preview_action,
             ])
@@ -4217,7 +4269,7 @@ class ExamListJson(BaseDatatableView):
 
             json_data.append([
                 escape(item.name),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
@@ -4549,7 +4601,7 @@ class ExamTimeTableListJson(BaseDatatableView):
                 escape(item.startTime.strftime('%I:%M %p') if item.startTime else 'N/A'),
                 escape(item.endTime.strftime('%I:%M %p') if item.endTime else 'N/A'),
                 escape(item.roomNo if item.roomNo else 'N/A'),
-                escape(item.lastEditedBy if item.lastEditedBy else 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
             ])
@@ -4982,7 +5034,7 @@ class AssignExamToClassListJson(BaseDatatableView):
                 escape(item.passMarks),
                 escape(item.startDate.strftime('%d-%m-%Y')),
                 escape(item.endDate.strftime('%d-%m-%Y')),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
@@ -5186,7 +5238,7 @@ def _student_attendance_datatable_row(item, *, pending_leave=None):
         status_chip,
         is_present,
         reason,
-        escape(item.lastEditedBy or 'N/A'),
+        render_lookup_badge(item, item.lastEditedBy),
         escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
         action,
     ]
@@ -5790,7 +5842,7 @@ class StudentAttendanceHistoryByDateRangeAndStudentJson(BaseDatatableView):
                 escape(Present),
                 escape(Absent),
                 escape(reason),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
 
             ])
@@ -5862,7 +5914,7 @@ def _staff_attendance_datatable_row(item, *, pending_leave=None):
         status_chip,
         is_present,
         reason,
-        escape(item.lastEditedBy or 'N/A'),
+        render_lookup_badge(item, item.lastEditedBy),
         escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
         action,
     ]
@@ -6355,7 +6407,7 @@ class StaffAttendanceHistoryByDateRangeAndStaffJson(BaseDatatableView):
                 escape(Absent),
                 escape(Leave),
                 escape(reason),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
 
             ])
@@ -6881,7 +6933,7 @@ class MarksOfSubjectsByStudentJson(BaseDatatableView):
                 pass_mark,
                 marks_obtained,
                 note,
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
@@ -7658,7 +7710,7 @@ class StudentMarksDetailsByStudentJson(BaseDatatableView):
                 escape(item.mark if item and item.mark is not None else 0),
                 escape(component_summary),
                 escape(item.note if item and item.note else ''),
-                escape(item.lastEditedBy if item and item.lastEditedBy else 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy if item else None),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item and item.lastUpdatedOn else 'N/A'),
             ])
         return json_data
@@ -7741,7 +7793,7 @@ class EventTypeListJson(BaseDatatableView):
                 escape(item.name or 'N/A'),
                 escape(item.get_audience_display()),
                 escape(item.description or ''),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
             ])
@@ -7926,7 +7978,7 @@ class HolidayListJson(BaseDatatableView):
                 escape(item.startDate.strftime('%d-%m-%Y') if item.startDate else 'N/A'),
                 escape(item.endDate.strftime('%d-%m-%Y') if item.endDate else 'N/A'),
                 escape(item.description or ''),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
             ])
@@ -8176,7 +8228,7 @@ class EventListJson(BaseDatatableView):
                 escape(item.startDate.strftime('%d-%m-%Y')),
                 escape(item.endDate.strftime('%d-%m-%Y')),
                 escape(item.message),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 
@@ -8348,7 +8400,7 @@ class ParentsListJson(BaseDatatableView):
                 escape(item.guardianPhone if item.guardianPhone else 'N/A'),
                 escape(item.totalFamilyMembers if item.totalFamilyMembers else '1'),
                 f'<div class="parent-students-wrap">{students_markup}</div>',
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
 

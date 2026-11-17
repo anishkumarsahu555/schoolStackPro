@@ -91,6 +91,11 @@
             margin: 0 0 0 0.45rem !important;
         }
 
+        #ClassTable td:nth-child(7) {
+            text-align: left !important;
+            vertical-align: middle !important;
+        }
+
         @media (max-width: 767px) {
             .class-modal-actions {
                 justify-content: center;
@@ -570,7 +575,6 @@
             "serverSide": true,
             "ajax": "{% url 'managementAppAPI:class_list' %}"
         });
-
 
         function delData(id) {
             $('#deleteDataModal')

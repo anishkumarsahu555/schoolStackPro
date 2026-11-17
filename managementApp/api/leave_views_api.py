@@ -12,6 +12,7 @@ from managementApp.leave_utils import add_leave_log, leave_duration_label, norma
 from managementApp.models import LeaveApplication, LeaveType
 from utils.custom_decorators import check_groups
 from utils.custom_response import ErrorResponse, SuccessResponse
+from utils.lookup_badge import render_lookup_badge
 from utils.logger import logger
 
 
@@ -36,6 +37,26 @@ def _status_badge(status_value):
     color = color_map.get(status, 'blue')
     label = status.capitalize() if status else 'N/A'
     return f'<span class="ui tiny {color} label">{escape(label)}</span>'
+
+
+def _leave_applicant_lookup_badge(leave):
+    if leave.applicantRole == 'teacher' and leave.teacherID:
+        return render_lookup_badge(
+            leave.teacherID,
+            leave.teacherID.name,
+            icon='chalkboard teacher icon',
+            variant='success',
+            lookup_context='reference',
+        )
+    if leave.applicantRole == 'student' and leave.studentID:
+        return render_lookup_badge(
+            leave.studentID,
+            leave.studentID.name,
+            icon='graduation cap icon',
+            variant='success',
+            lookup_context='reference',
+        )
+    return escape('N/A')
 
 
 def _parse_quota_days(raw_value):
@@ -118,7 +139,7 @@ class LeaveTypeListJson(BaseDatatableView):
                 escape(item.quotaDays if item.quotaDays else 'Unlimited'),
                 f'<span class="ui tiny {"green" if item.requiresApproval else "grey"} label">{"Yes" if item.requiresApproval else "No"}</span>',
                 f'<span class="ui tiny {"green" if item.isActive else "red"} label">{"Active" if item.isActive else "Inactive"}</span>',
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
             ])
@@ -318,12 +339,6 @@ class LeaveApplicationListJson(BaseDatatableView):
     def prepare_results(self, qs):
         rows = []
         for item in qs:
-            applicant_name = 'N/A'
-            if item.applicantRole == 'teacher' and item.teacherID:
-                applicant_name = item.teacherID.name or 'N/A'
-            elif item.applicantRole == 'student' and item.studentID:
-                applicant_name = item.studentID.name or 'N/A'
-
             attachment = '-'
             if item.attachment:
                 attachment = f'<a href="{escape(item.attachment.url)}" target="_blank" class="ui tiny basic blue button">View</a>'
@@ -339,7 +354,7 @@ class LeaveApplicationListJson(BaseDatatableView):
 
             rows.append([
                 escape(item.get_applicantRole_display()),
-                escape(applicant_name),
+                _leave_applicant_lookup_badge(item),
                 escape(item.leaveTypeID.name if item.leaveTypeID else 'N/A'),
                 escape(item.startDate.strftime('%d-%m-%Y') if item.startDate else 'N/A'),
                 escape(item.endDate.strftime('%d-%m-%Y') if item.endDate else 'N/A'),
@@ -348,7 +363,7 @@ class LeaveApplicationListJson(BaseDatatableView):
                 _status_badge(item.status),
                 attachment,
                 escape(item.reason or ''),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
             ])

@@ -17,6 +17,7 @@ from utils.custom_decorators import check_groups
 from utils.custom_response import ErrorResponse, SuccessResponse
 from utils.get_school_detail import get_school_id
 from utils.image_utils import avatar_image_html
+from utils.lookup_badge import render_lookup_badge
 from utils.logger import logger
 
 
@@ -246,7 +247,7 @@ class FeeByStudentJson(BaseDatatableView):
                 pay_date,
                 amount,
                 reason,
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
                 action,
             ])
@@ -406,7 +407,7 @@ class StudentFeeDetailsByStudentJson(BaseDatatableView):
                 pay_date,
                 escape(item.amount),
                 escape(item.note or ''),
-                escape(item.lastEditedBy or 'N/A'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
             ])
         return json_data
