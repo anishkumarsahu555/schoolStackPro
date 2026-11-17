@@ -9,7 +9,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 import time
-from homeApp.auth_services import get_password_reset_email, sync_profile_password, token_hash
+from homeApp.auth_services import email_is_configured, get_password_reset_email, sync_profile_password, token_hash
 from homeApp.middleware import RequestPerformanceMiddleware
 from homeApp.models import AccessLink, EmailVerification, SchoolDetail, SchoolOwner, SchoolSession
 from managementApp.models import Student
@@ -132,6 +132,10 @@ class RequestPerformanceMiddlewareTests(TestCase):
 
 
 class AuthRecoveryServiceTests(TestCase):
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend", EMAIL_HOST="")
+    def test_smtp_email_requires_a_host(self):
+        self.assertFalse(email_is_configured())
+
     def test_password_reset_email_prefers_linked_student_profile_email(self):
         user = User.objects.create_user(username="student1", email="user@example.com", password="pass12345")
         student = Student.objects.create(userID=user, name="Student One", email="student@example.com")
@@ -178,6 +182,7 @@ class AuthRecoveryServiceTests(TestCase):
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
         DEFAULT_FROM_EMAIL="no-reply@example.com",
+        EMAIL_HOST="",
     )
     def test_update_email_sends_verification_email(self):
         user = User.objects.create_user(username="verify_email_user", email="", password="pass12345")
@@ -222,6 +227,7 @@ class AuthRecoveryServiceTests(TestCase):
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
         DEFAULT_FROM_EMAIL="no-reply@example.com",
+        EMAIL_HOST="",
     )
     def test_forgot_password_sends_html_email_to_verified_email_in_background(self):
         user = User.objects.create_user(username="student_reset_verified", email="", password="pass12345")

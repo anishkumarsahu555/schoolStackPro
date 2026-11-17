@@ -151,6 +151,6 @@ def get_user_by_username(username):
 
 def email_is_configured():
     backend = getattr(settings, 'EMAIL_BACKEND', '')
-    if backend == 'django.core.mail.backends.console.EmailBackend':
+    if backend and backend != 'django.core.mail.backends.smtp.EmailBackend':
         return True
     return bool(getattr(settings, 'EMAIL_HOST', '') and getattr(settings, 'DEFAULT_FROM_EMAIL', ''))
