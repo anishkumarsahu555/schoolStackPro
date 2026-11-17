@@ -11,7 +11,6 @@ from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.utils.dateparse import parse_date
 from django.utils.html import escape
-from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from libraryApp.models import (
@@ -41,6 +40,7 @@ from libraryApp.services import (
 from financeApp.services import sync_library_fine_finance
 from managementApp.access_control import has_management_permission
 from utils.custom_response import ErrorResponse, SuccessResponse
+from utils.lookup_badge import render_lookup_badge
 from utils.logger import logger
 
 
@@ -428,7 +428,7 @@ class LibraryCategoryListJson(BaseDatatableView):
             escape(item.code or 'N/A'),
             escape(item.parent.name if item.parent_id else 'N/A'),
             _active_pill(item.isActive),
-            escape(item.lastEditedBy or 'N/A'),
+            render_lookup_badge(item, item.lastEditedBy),
             escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else 'N/A'),
             _dt_actions('editCategory', 'confirmDeleteCategory', item.id, request=self.request),
         ] for item in qs]
@@ -447,7 +447,7 @@ class LibraryAuthorListJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.name), escape(i.country or 'N/A'), _active_pill(i.isActive), escape(i.lastEditedBy or 'N/A'), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _dt_actions('editAuthor', 'confirmDeleteAuthor', i.id, request=self.request)] for i in qs]
+        return [[escape(i.name), escape(i.country or 'N/A'), _active_pill(i.isActive), render_lookup_badge(i, i.lastEditedBy), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _dt_actions('editAuthor', 'confirmDeleteAuthor', i.id, request=self.request)] for i in qs]
 
 
 class LibraryPublisherListJson(BaseDatatableView):
@@ -463,7 +463,7 @@ class LibraryPublisherListJson(BaseDatatableView):
         return qs
 
     def prepare_results(self, qs):
-        return [[escape(i.name), escape(i.phoneNumber or 'N/A'), escape(i.email or 'N/A'), _active_pill(i.isActive), escape(i.lastEditedBy or 'N/A'), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _dt_actions('editPublisher', 'confirmDeletePublisher', i.id, request=self.request)] for i in qs]
+        return [[escape(i.name), escape(i.phoneNumber or 'N/A'), escape(i.email or 'N/A'), _active_pill(i.isActive), render_lookup_badge(i, i.lastEditedBy), escape(i.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if i.lastUpdatedOn else 'N/A'), _dt_actions('editPublisher', 'confirmDeletePublisher', i.id, request=self.request)] for i in qs]
 
 
 class LibraryBookListJson(BaseDatatableView):
@@ -711,7 +711,6 @@ def settings_detail_api(request):
         return ErrorResponse('Unable to load library settings.').to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def settings_api(request):
@@ -742,7 +741,6 @@ def _get_or_new(request, model):
     return model(), True
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def category_api(request):
@@ -763,7 +761,6 @@ def category_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to save category.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def author_api(request):
@@ -783,7 +780,6 @@ def author_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to save author.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def publisher_api(request):
@@ -804,7 +800,6 @@ def publisher_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to save publisher.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def book_api(request):
@@ -837,7 +832,6 @@ def book_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to save book.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def copy_api(request):
@@ -863,7 +857,6 @@ def copy_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to save book copy.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def member_api(request):
@@ -887,7 +880,6 @@ def member_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to save member.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def issue_book_api(request):
@@ -904,7 +896,6 @@ def issue_book_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to issue book.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def return_book_api(request):
@@ -954,7 +945,6 @@ def return_book_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to return book.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def renew_book_api(request):
@@ -977,7 +967,6 @@ def renew_book_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to renew book.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def reservation_api(request):
@@ -999,7 +988,6 @@ def reservation_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to save reservation.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def fine_api(request):
@@ -1031,7 +1019,6 @@ def fine_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to save fine.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def pay_fine_api(request):
@@ -1062,7 +1049,6 @@ def pay_fine_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to save fine payment.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def waive_fine_api(request):
@@ -1079,7 +1065,6 @@ def waive_fine_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to waive fine.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def save_member_card_design_api(request):
@@ -1186,7 +1171,6 @@ def save_member_card_design_api(request):
         return ErrorResponse('Failed to save library card design.').to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def bulk_copy_api(request):
@@ -1232,7 +1216,6 @@ def bulk_copy_api(request):
         return ErrorResponse(_validation_message(exc, 'Unable to create bulk copies.')).to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def issue_reservation_api(request):
@@ -1358,7 +1341,6 @@ def detail_api(request):
         return ErrorResponse('Unable to fetch detail.').to_json_response()
 
 
-@csrf_exempt
 @transaction.atomic
 @login_required
 def delete_api(request):

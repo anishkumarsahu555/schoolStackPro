@@ -11,6 +11,7 @@ from homeApp.models import SchoolSession
 from utils.custom_decorators import check_groups
 from utils.custom_response import ErrorResponse, SuccessResponse
 from utils.get_school_detail import get_school_id
+from utils.lookup_badge import render_lookup_badge
 from utils.logger import logger
 
 
@@ -188,7 +189,7 @@ class FinanceAuditTrailListJson(BaseDatatableView):
                 escape(item.description or '-'),
                 escape(f"{item.sourceModule or '-'} / {item.sourceRecordID or '-'}"),
                 entry_summary,
-                escape(item.lastEditedBy or '-'),
+                render_lookup_badge(item, item.lastEditedBy),
                 escape(item.lastUpdatedOn.strftime('%d-%m-%Y %I:%M %p') if item.lastUpdatedOn else '-'),
                 _finance_status_pill(item.status),
             ])

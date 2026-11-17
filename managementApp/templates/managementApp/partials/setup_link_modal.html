@@ -1,0 +1,62 @@
+<div class="ui small modal setup-link-modal" id="{{ modal_id }}" data-setup-link-modal>
+    <i class="close icon"></i>
+    <div class="header">
+        <i class="linkify icon"></i>
+        {{ title }}
+    </div>
+    <div class="content">
+        <p>{{ description }}</p>
+        {% if show_options %}
+            <div class="ui form">
+                <div class="two fields">
+                    <div class="field">
+                        <label>Expires In</label>
+                        <select class="ui fluid selection dropdown" data-setup-link-expiry>
+                            <option value="24">24 hours</option>
+                            <option value="48">48 hours</option>
+                            <option value="72">3 days</option>
+                            <option value="168">7 days</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Maximum Uses</label>
+                        <div class="ui fluid input">
+                            <input type="number" min="1" max="20" value="1" data-setup-link-max-uses>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        <div class="access-result setup-link-result" data-setup-link-result{% if show_options %} style="display:none;"{% endif %}>
+            <label>Generated setup link</label>
+            <input type="text" readonly data-setup-link-input>
+            <div class="access-result-actions setup-link-actions">
+                <button type="button" class="ui mini button" data-setup-link-copy>
+                    <i class="copy icon"></i>Copy
+                </button>
+                {% if show_open %}
+                    <a class="ui mini blue button" target="_blank" rel="noopener" data-setup-link-open>
+                        <i class="external alternate icon"></i>Open
+                    </a>
+                {% endif %}
+                <button type="button" class="ui mini teal button" data-setup-link-share>
+                    <i class="share alternate icon"></i>Share
+                </button>
+                <a class="ui mini green button" target="_blank" rel="noopener" data-setup-link-whatsapp>
+                    <i class="whatsapp icon"></i>WhatsApp
+                </a>
+            </div>
+            <div class="ui tiny grey text setup-link-note" data-setup-link-meta></div>
+        </div>
+    </div>
+    <div class="actions">
+        <button type="button" class="ui button cancel">Close</button>
+        {% if show_options %}
+            <button type="button" class="ui blue button" data-setup-link-create>
+                <i class="linkify icon"></i>Create Link
+            </button>
+        {% else %}
+            <button type="button" class="ui primary button approve">Done</button>
+        {% endif %}
+    </div>
+</div>

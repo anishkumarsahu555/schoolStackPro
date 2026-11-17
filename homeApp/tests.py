@@ -2,12 +2,15 @@ from datetime import date, timedelta
 
 from django.contrib.auth.models import Group, User
 from django.core import mail
+from django.http import HttpResponse
+from django.test import RequestFactory
 from django.test import override_settings
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 import time
-from homeApp.auth_services import get_password_reset_email, sync_profile_password, token_hash
+from homeApp.auth_services import email_is_configured, get_password_reset_email, sync_profile_password, token_hash
+from homeApp.middleware import RequestPerformanceMiddleware
 from homeApp.models import AccessLink, EmailVerification, SchoolDetail, SchoolOwner, SchoolSession
 from managementApp.models import Student
 
@@ -89,7 +92,50 @@ class SchoolLicenseMiddlewareTests(TestCase):
         self.assertEqual(payload["license"]["school_name"], "Sunrise School")
 
 
+class RequestPerformanceMiddlewareTests(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @override_settings(
+        PERFORMANCE_LOG_ENABLED=True,
+        PERFORMANCE_QUERY_LOG_ENABLED=False,
+        PERFORMANCE_SLOW_REQUEST_MS=999999,
+    )
+    def test_adds_request_duration_header(self):
+        middleware = RequestPerformanceMiddleware(lambda request: HttpResponse("ok"))
+        response = middleware(self.factory.get("/home/"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("X-Request-Duration-ms", response)
+        self.assertNotIn("X-DB-Query-Count", response)
+
+    @override_settings(
+        PERFORMANCE_LOG_ENABLED=True,
+        PERFORMANCE_QUERY_LOG_ENABLED=True,
+        PERFORMANCE_SLOW_REQUEST_MS=999999,
+        PERFORMANCE_QUERY_WARNING_COUNT=999999,
+    )
+    def test_adds_query_count_headers_when_enabled(self):
+        SchoolDetail.objects.create(schoolName="Perf School", address="Main road")
+
+        def get_response(request):
+            SchoolDetail.objects.count()
+            return HttpResponse("ok")
+
+        middleware = RequestPerformanceMiddleware(get_response)
+        response = middleware(self.factory.get("/home/"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("X-DB-Query-Count", response)
+        self.assertGreaterEqual(int(response["X-DB-Query-Count"]), 1)
+        self.assertIn("X-DB-Query-Time-ms", response)
+
+
 class AuthRecoveryServiceTests(TestCase):
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend", EMAIL_HOST="")
+    def test_smtp_email_requires_a_host(self):
+        self.assertFalse(email_is_configured())
+
     def test_password_reset_email_prefers_linked_student_profile_email(self):
         user = User.objects.create_user(username="student1", email="user@example.com", password="pass12345")
         student = Student.objects.create(userID=user, name="Student One", email="student@example.com")
@@ -110,14 +156,14 @@ class AuthRecoveryServiceTests(TestCase):
         self.assertEqual(role, "student")
         self.assertIsNotNone(profile)
 
-    def test_sync_profile_password_updates_linked_student_record(self):
+    def test_sync_profile_password_clears_linked_student_plaintext_password(self):
         user = User.objects.create_user(username="student3", email="user@example.com", password="pass12345")
         student = Student.objects.create(userID=user, name="Student Three", email="student@example.com", password="old")
 
         sync_profile_password(user, "newpass123")
 
         student.refresh_from_db()
-        self.assertEqual(student.password, "newpass123")
+        self.assertEqual(student.password, "")
 
     def test_update_email_updates_user_and_linked_student_profile(self):
         user = User.objects.create_user(username="student_email", email="", password="pass12345")
@@ -136,6 +182,7 @@ class AuthRecoveryServiceTests(TestCase):
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
         DEFAULT_FROM_EMAIL="no-reply@example.com",
+        EMAIL_HOST="",
     )
     def test_update_email_sends_verification_email(self):
         user = User.objects.create_user(username="verify_email_user", email="", password="pass12345")
@@ -180,6 +227,7 @@ class AuthRecoveryServiceTests(TestCase):
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
         DEFAULT_FROM_EMAIL="no-reply@example.com",
+        EMAIL_HOST="",
     )
     def test_forgot_password_sends_html_email_to_verified_email_in_background(self):
         user = User.objects.create_user(username="student_reset_verified", email="", password="pass12345")
@@ -285,7 +333,22 @@ class AuthRecoveryServiceTests(TestCase):
         student.refresh_from_db()
         link.refresh_from_db()
         self.assertTrue(user.check_password("newpass12345"))
-        self.assertEqual(student.password, "newpass12345")
+        self.assertEqual(student.password, "")
         self.assertEqual(link.usedCount, 1)
         self.assertIsNotNone(link.usedAt)
         self.assertFalse(response.wsgi_request.user.is_authenticated)
+
+
+class PWAServiceWorkerTests(TestCase):
+    def test_service_worker_serves_root_scope_no_cache_script(self):
+        response = self.client.get(reverse("homeApp:service_worker"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Service-Worker-Allowed"], "/")
+        self.assertIn("no-store", response["Cache-Control"])
+        self.assertIn("application/javascript", response["Content-Type"])
+        self.assertContains(response, "const APP_VERSION = 'v1.0.49';")
+        self.assertNotContains(response, "    '/',")
+        self.assertContains(response, "'/static/sw/offline.html'")
+        self.assertContains(response, "CLEAR_OFFLINE_CACHE")
+        self.assertContains(response, "No internet connection")

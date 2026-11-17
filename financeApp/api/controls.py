@@ -7,7 +7,6 @@ from django.db import transaction
 from django.db import connection
 from django.db.models import Q
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 
 from financeApp.models import (
     ExpenseVoucher,
@@ -347,7 +346,6 @@ def get_finance_control_center_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def upsert_finance_period_api(request):
@@ -426,7 +424,6 @@ def upsert_finance_period_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def upsert_finance_approval_rule_api(request):
@@ -531,7 +528,6 @@ def upsert_finance_approval_rule_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def delete_finance_approval_rule_api(request):

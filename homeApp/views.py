@@ -15,7 +15,6 @@ from django.urls import reverse
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.conf import settings
 import os
@@ -327,7 +326,6 @@ def access_link_login(request, token):
     return render(request, 'homeApp/access_link_set_password.html', {'access_link': access_link})
 
 
-@csrf_exempt
 def post_login(request):
     if request.method == 'POST':
         username = request.POST.get('userName')
@@ -530,23 +528,7 @@ def change_password(request):
     user.set_password(new_password)
     user.save()
     update_session_auth_hash(request, user)
-
-    groups = set(user.groups.values_list('name', flat=True))
-    if 'Student' in groups:
-        student = Student.objects.filter(userID_id=user.id, isDeleted=False).order_by('-datetime').first()
-        if student:
-            student.password = new_password
-            student.save(update_fields=['password', 'lastUpdatedOn'])
-    elif 'Teaching' in groups:
-        teacher = TeacherDetail.objects.filter(userID_id=user.id, isDeleted=False).order_by('-datetime').first()
-        if teacher:
-            teacher.password = new_password
-            teacher.save(update_fields=['password', 'lastUpdatedOn'])
-    else:
-        owner = SchoolOwner.objects.filter(userID_id=user.id, isDeleted=False).order_by('-datetime').first()
-        if owner:
-            owner.password = new_password
-            owner.save(update_fields=['password', 'lastUpdatedOn'])
+    sync_profile_password(user)
 
     return JsonResponse({'success': True, 'message': 'Password changed successfully.', 'color': 'green'}, safe=False)
 

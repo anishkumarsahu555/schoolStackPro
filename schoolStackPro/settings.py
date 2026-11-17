@@ -16,6 +16,17 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def _env_bool(name, default=False):
+    return os.getenv(name, str(default)).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def _env_list(name, default=None):
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return list(default or [])
+    return [item.strip() for item in raw_value.split(',') if item.strip()]
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -23,11 +34,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = _env_bool('DEBUG', False)
 
-ALLOWED_HOSTS = ['*']
-USE_X_FORWARDED_HOST = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS', ['localhost', '127.0.0.1', '[::1]', 'testserver'])
+CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
+USE_X_FORWARDED_HOST = _env_bool('USE_X_FORWARDED_HOST', False)
+if _env_bool('TRUST_PROXY_SSL_HEADER', False):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
+SESSION_COOKIE_SECURE = _env_bool('SESSION_COOKIE_SECURE', not DEBUG)
+CSRF_COOKIE_SECURE = _env_bool('CSRF_COOKIE_SECURE', not DEBUG)
+SECURE_SSL_REDIRECT = _env_bool('SECURE_SSL_REDIRECT', False)
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', False)
+SECURE_HSTS_PRELOAD = _env_bool('SECURE_HSTS_PRELOAD', False)
 
 # Application definition
 
@@ -59,6 +81,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.gzip.GZipMiddleware',
+    'homeApp.middleware.RequestPerformanceMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.http.ConditionalGetMiddleware',
@@ -216,6 +239,19 @@ WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "media_cdn")
+
+# Performance instrumentation
+PERFORMANCE_LOG_ENABLED = os.getenv('PERFORMANCE_LOG_ENABLED', 'true').lower() == 'true'
+PERFORMANCE_QUERY_LOG_ENABLED = os.getenv('PERFORMANCE_QUERY_LOG_ENABLED', str(DEBUG).lower()).lower() == 'true'
+PERFORMANCE_SLOW_REQUEST_MS = int(os.getenv('PERFORMANCE_SLOW_REQUEST_MS', '800'))
+PERFORMANCE_QUERY_WARNING_COUNT = int(os.getenv('PERFORMANCE_QUERY_WARNING_COUNT', '50'))
+PERFORMANCE_SKIP_PATH_PREFIXES = (
+    STATIC_URL,
+    MEDIA_URL,
+    '/serviceworker.js',
+    '/manifest.webmanifest',
+)
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 

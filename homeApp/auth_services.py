@@ -12,19 +12,26 @@ from managementApp.models import Student, TeacherDetail
 
 
 def resolve_user_profile(user):
+    if hasattr(user, '_resolved_profile_cache'):
+        return user._resolved_profile_cache
+
     student = Student.objects.filter(userID_id=user.id, isDeleted=False).order_by('-datetime').first()
     if student:
-        return 'student', student
+        user._resolved_profile_cache = ('student', student)
+        return user._resolved_profile_cache
 
     teacher = TeacherDetail.objects.filter(userID_id=user.id, isDeleted=False).order_by('-datetime').first()
     if teacher:
-        return 'teacher', teacher
+        user._resolved_profile_cache = ('teacher', teacher)
+        return user._resolved_profile_cache
 
     owner = SchoolOwner.objects.filter(userID_id=user.id, isDeleted=False).order_by('-datetime').first()
     if owner:
-        return 'owner', owner
+        user._resolved_profile_cache = ('owner', owner)
+        return user._resolved_profile_cache
 
-    return None, None
+    user._resolved_profile_cache = (None, None)
+    return user._resolved_profile_cache
 
 
 def get_password_reset_email(user):
@@ -88,11 +95,11 @@ def create_email_verification(*, user, email, request, expires_hours=48):
     return verification, verify_url
 
 
-def sync_profile_password(user, raw_password):
+def sync_profile_password(user, raw_password=None):
     role, profile = resolve_user_profile(user)
     if not profile:
         return
-    profile.password = raw_password
+    profile.password = ''
     profile.save(update_fields=['password', 'lastUpdatedOn'])
 
 
@@ -144,6 +151,6 @@ def get_user_by_username(username):
 
 def email_is_configured():
     backend = getattr(settings, 'EMAIL_BACKEND', '')
-    if backend == 'django.core.mail.backends.console.EmailBackend':
+    if backend and backend != 'django.core.mail.backends.smtp.EmailBackend':
         return True
     return bool(getattr(settings, 'EMAIL_HOST', '') and getattr(settings, 'DEFAULT_FROM_EMAIL', ''))

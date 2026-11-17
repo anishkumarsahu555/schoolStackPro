@@ -1058,12 +1058,6 @@ function addStudentData() {
         data.append('imageUpload', croppedImageFile);
     }
 
-    // ---------- DEBUG ----------
-    console.log("Collected Data (by ID):");
-    for (let pair of data.entries()) {
-        console.log(pair[0]);
-    }
-
     // ---------- BASIC REQUIRED CHECK ----------
     const requiredIds = [
         'name',
@@ -1078,7 +1072,6 @@ function addStudentData() {
     let hasError = false;
     requiredIds.forEach(id => {
         if (!data.get(id)) {
-            console.log(id);
             if (id === 'imageUpload') {
                 setPhotoFieldError();
             } else {

@@ -11,6 +11,8 @@
 
     <link rel="icon" href="{% static 'sw/images/favicon.ico' %}">
     <link rel="apple-touch-icon" href="{% static 'sw/images/apple-touch-icon.png' %}">
+    <link rel="manifest" href="{% url 'homeApp:dynamic_manifest' %}">
+    <script src="{% static 'sw/app.js' %}?v=20260629"></script>
 
     <!-- jQuery -->
   <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
@@ -249,6 +251,7 @@
             let data = new FormData();
             data.append("userName", username);
             data.append("password", password);
+            data.append("csrfmiddlewaretoken", $('[name=csrfmiddlewaretoken]').val());
 
             $.ajax({
                 type: "POST",

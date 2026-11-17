@@ -1,3 +1,8 @@
+import time
+from decimal import Decimal
+
+from django.conf import settings
+from django.db import connection, reset_queries
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import Resolver404, resolve
@@ -15,6 +20,82 @@ from managementApp.access_control import (
     user_has_management_access,
 )
 from managementApp.models import Student, TeacherDetail
+from utils.logger import logger
+
+
+class RequestPerformanceMiddleware:
+    """
+    Logs slow requests and optionally records per-request DB query counts.
+
+    Query counting relies on Django's debug cursor and should stay disabled in
+    production unless you are actively profiling a short window.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.enabled = getattr(settings, "PERFORMANCE_LOG_ENABLED", True)
+        self.query_logging_enabled = getattr(settings, "PERFORMANCE_QUERY_LOG_ENABLED", settings.DEBUG)
+        self.slow_ms = getattr(settings, "PERFORMANCE_SLOW_REQUEST_MS", 800)
+        self.query_warning_count = getattr(settings, "PERFORMANCE_QUERY_WARNING_COUNT", 50)
+        self.skip_prefixes = tuple(getattr(settings, "PERFORMANCE_SKIP_PATH_PREFIXES", (settings.STATIC_URL, settings.MEDIA_URL)))
+
+    def __call__(self, request):
+        if not self.enabled or self._should_skip(request):
+            return self.get_response(request)
+
+        original_force_debug_cursor = connection.force_debug_cursor
+        if self.query_logging_enabled:
+            connection.force_debug_cursor = True
+            reset_queries()
+
+        started = time.perf_counter()
+        response = None
+        try:
+            response = self.get_response(request)
+            return response
+        finally:
+            duration_ms = round((time.perf_counter() - started) * 1000, 2)
+            query_count = len(connection.queries) if self.query_logging_enabled else None
+            query_time_ms = self._query_time_ms() if self.query_logging_enabled else None
+
+            if response is not None:
+                response["X-Request-Duration-ms"] = str(duration_ms)
+                if query_count is not None:
+                    response["X-DB-Query-Count"] = str(query_count)
+                    response["X-DB-Query-Time-ms"] = str(query_time_ms)
+
+            if self._should_log(duration_ms, query_count):
+                logger.warning(
+                    "Slow request method=%s path=%s status=%s duration_ms=%s query_count=%s query_time_ms=%s user=%s",
+                    request.method,
+                    request.get_full_path(),
+                    getattr(response, "status_code", "error"),
+                    duration_ms,
+                    query_count if query_count is not None else "disabled",
+                    query_time_ms if query_time_ms is not None else "disabled",
+                    getattr(getattr(request, "user", None), "id", None),
+                )
+
+            if self.query_logging_enabled:
+                connection.force_debug_cursor = original_force_debug_cursor
+
+    def _should_skip(self, request):
+        path = request.path or ""
+        return any(prefix and path.startswith(prefix) for prefix in self.skip_prefixes)
+
+    def _should_log(self, duration_ms, query_count):
+        if duration_ms >= self.slow_ms:
+            return True
+        return query_count is not None and query_count >= self.query_warning_count
+
+    def _query_time_ms(self):
+        total_seconds = Decimal("0")
+        for query in connection.queries:
+            try:
+                total_seconds += Decimal(str(query.get("time") or "0"))
+            except Exception:
+                continue
+        return round(float(total_seconds * Decimal("1000")), 2)
 
 
 class RoleSessionBootstrapMiddleware:
@@ -79,20 +160,14 @@ class RoleSessionBootstrapMiddleware:
         current = dict(raw_current) if isinstance(raw_current, dict) else {}
         current_id = current.get("Id")
 
-        is_current_valid = False
-        if current_id and school_id:
-            is_current_valid = SchoolSession.objects.filter(
-                pk=current_id,
-                isDeleted=False,
-                schoolID_id=school_id,
-            ).exists()
-
         target_session = None
-        if is_current_valid:
+        if current_id and school_id:
             target_session = SchoolSession.objects.filter(
                 pk=current_id,
                 isDeleted=False,
+                schoolID_id=school_id,
             ).first()
+
         if not target_session and school_id:
             target_session = SchoolSession.objects.filter(
                 isDeleted=False,
@@ -109,19 +184,22 @@ class RoleSessionBootstrapMiddleware:
             return
 
         payload = build_current_session_payload(target_session)
-        current.update(payload)
-
-        request.session["current_session"] = current
+        updated_current = {**current, **payload}
+        if current != updated_current:
+            request.session["current_session"] = updated_current
 
         if school_id:
-            session_qs = SchoolSession.objects.filter(
-                isDeleted=False,
-                schoolID_id=school_id,
-            ).order_by("-datetime")
-            request.session["session_list"] = [
-                build_session_list_item(s)
-                for s in session_qs
-            ]
+            cached_school_id = request.session.get("_session_list_school_id")
+            if cached_school_id != school_id or not request.session.get("session_list"):
+                session_qs = SchoolSession.objects.filter(
+                    isDeleted=False,
+                    schoolID_id=school_id,
+                ).order_by("-datetime")
+                request.session["session_list"] = [
+                    build_session_list_item(s)
+                    for s in session_qs
+                ]
+                request.session["_session_list_school_id"] = school_id
 
 
 class ManagementAccessPermissionMiddleware:

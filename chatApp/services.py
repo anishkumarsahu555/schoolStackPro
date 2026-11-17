@@ -1,7 +1,8 @@
 from homeApp.models import SchoolOwner
 from managementApp.models import Student, TeacherDetail
+from django.db.models import Count, F, Q
 
-from .models import ChatRoom
+from .models import ChatParticipant, ChatRoom
 
 
 def display_name(user):
@@ -52,4 +53,19 @@ def room_cards_for_user(user, limit=None):
 
 
 def unread_count_for_user(user):
-    return sum(card['unread_count'] for card in room_cards_for_user(user))
+    if not user or not user.is_authenticated:
+        return 0
+    unread_filter = (
+        Q(roomID__messages__isDeleted=False)
+        & ~Q(roomID__messages__senderID=user)
+        & (
+            Q(lastReadMessage_id__isnull=False, roomID__messages__id__gt=F('lastReadMessage_id'))
+            | Q(lastReadMessage_id__isnull=True, lastReadAt__isnull=False, roomID__messages__datetime__gt=F('lastReadAt'))
+            | Q(lastReadMessage_id__isnull=True, lastReadAt__isnull=True)
+        )
+    )
+    row = ChatParticipant.objects.filter(
+        userID=user,
+        roomID__isActive=True,
+    ).aggregate(total=Count('roomID__messages', filter=unread_filter))
+    return row.get('total') or 0

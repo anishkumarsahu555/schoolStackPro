@@ -3,7 +3,6 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.utils.html import escape
-from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
 
 from financeApp.models import ExpenseCategory, ExpenseVoucher, FinanceAccount
@@ -171,7 +170,6 @@ class FinanceExpenseCategoryListJson(BaseDatatableView):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def upsert_expense_category_api(request):
@@ -270,7 +268,6 @@ def upsert_expense_category_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def delete_expense_category_api(request):

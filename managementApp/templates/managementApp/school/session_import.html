@@ -174,6 +174,19 @@
             margin-bottom: 0.85rem;
         }
 
+        .options-card-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .import-preset-field {
+            min-width: 220px;
+            margin: 0 !important;
+        }
+
         .options-card-header h4,
         .sidebar-panel h4 {
             margin: 0;
@@ -627,6 +640,12 @@
             color: #9bc5ff;
         }
 
+        html[data-theme="dark"] .import-preset-field .ui.selection.dropdown {
+            background: rgba(24, 30, 39, 0.98);
+            border-color: rgba(96, 112, 136, 0.34);
+            color: #edf4ff;
+        }
+
         html[data-theme="dark"] .preview-box,
         html[data-theme="dark"] .summary-box {
             border-color: rgba(96, 112, 136, 0.34);
@@ -861,7 +880,16 @@
                                     <h4>Import Options</h4>
                                     <div class="mapping-help">Choose which setup blocks to carry forward. You can further narrow rows inside each category from the preview detail view.</div>
                                 </div>
-                                <span class="session-pill"><i class="sliders horizontal icon"></i> Selective Control</span>
+                                <div class="options-card-actions">
+                                    <div class="field import-preset-field">
+                                        <select class="ui dropdown" id="importPreset" onchange="applyImportPreset(this.value)">
+                                            <option value="academic" selected>Academic Only</option>
+                                            <option value="operations">Operations Setup</option>
+                                            <option value="full">Full Setup Rollover</option>
+                                        </select>
+                                    </div>
+                                    <span class="session-pill"><i class="sliders horizontal icon"></i> Selective Control</span>
+                                </div>
                             </div>
 
                             <div class="field" style="margin-bottom:0;">
@@ -901,6 +929,38 @@
                                     <div class="ui checkbox">
                                         <input type="checkbox" checked id="copyEventTypes" name="copyEventTypes">
                                         <label>Event Types</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" id="copyHolidays" name="copyHolidays">
+                                        <label>School Holidays</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" id="copyIdCardDesigns" name="copyIdCardDesigns">
+                                        <label>ID Card Designs</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" id="copyTimetableSetup" name="copyTimetableSetup">
+                                        <label>Timetable Setup</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" id="copyFinanceSetup" name="copyFinanceSetup">
+                                        <label>Finance Setup</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" id="copyTransportSetup" name="copyTransportSetup">
+                                        <label>Transport Setup</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" id="copyHostelSetup" name="copyHostelSetup">
+                                        <label>Hostel Setup</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" id="copyLibrarySetup" name="copyLibrarySetup">
+                                        <label>Library Setup</label>
+                                    </div>
+                                    <div class="ui checkbox">
+                                        <input type="checkbox" id="copyInventorySetup" name="copyInventorySetup">
+                                        <label>Inventory Setup</label>
                                     </div>
                                 </div>
                             </div>
@@ -1014,6 +1074,34 @@
         let latestPreviewDetails = {};
         let selectionOverrides = {};
         let activeDetailCategory = null;
+        const importOptionFields = [
+            'copyTeachers', 'copyClasses', 'copySubjects', 'copyClassSubjects',
+            'copyTeacherSubjects', 'copyExamSetup', 'copyGradingSetup',
+            'copyLeaveTypes', 'copyEventTypes', 'copyHolidays',
+            'copyIdCardDesigns', 'copyTimetableSetup', 'copyFinanceSetup',
+            'copyTransportSetup', 'copyHostelSetup', 'copyLibrarySetup',
+            'copyInventorySetup'
+        ];
+        const importPresetMap = {
+            academic: [
+                'copyTeachers', 'copyClasses', 'copySubjects', 'copyClassSubjects',
+                'copyTeacherSubjects', 'copyExamSetup', 'copyGradingSetup',
+                'copyLeaveTypes', 'copyEventTypes'
+            ],
+            operations: [
+                'copyHolidays', 'copyIdCardDesigns', 'copyTimetableSetup',
+                'copyFinanceSetup', 'copyTransportSetup', 'copyHostelSetup',
+                'copyLibrarySetup', 'copyInventorySetup'
+            ],
+            full: [
+                'copyTeachers', 'copyClasses', 'copySubjects', 'copyClassSubjects',
+                'copyTeacherSubjects', 'copyExamSetup', 'copyGradingSetup',
+                'copyLeaveTypes', 'copyEventTypes', 'copyHolidays',
+                'copyIdCardDesigns', 'copyTimetableSetup', 'copyFinanceSetup',
+                'copyTransportSetup', 'copyHostelSetup', 'copyLibrarySetup',
+                'copyInventorySetup'
+            ]
+        };
 
         function inferSessionYear(sessionYearText) {
             const match = String(sessionYearText || '').match(/(19|20)\d{2}/);
@@ -1056,19 +1144,35 @@
             form.append('targetSessionID', $('#targetSessionID').val());
             form.append('promotionOverrides', $('#promotionOverrides').val());
             form.append('selectionOverrides', JSON.stringify(selectionOverrides));
-            [
-                'copyTeachers', 'copyClasses', 'copySubjects', 'copyClassSubjects',
-                'copyTeacherSubjects', 'copyExamSetup', 'copyGradingSetup',
-                'copyLeaveTypes', 'copyEventTypes', 'copyStudents', 'promoteStudents'
-            ].forEach(function (fieldName) {
+            importOptionFields.forEach(function (fieldName) {
                 form.append(fieldName, $('#' + fieldName).is(':checked') ? 'true' : 'false');
             });
             return form;
         }
 
+        function setImportOption(fieldName, checked) {
+            const field = $('#' + fieldName);
+            field.prop('checked', checked);
+            field.closest('.ui.checkbox').checkbox(checked ? 'set checked' : 'set unchecked');
+        }
+
+        function applyImportPreset(presetKey) {
+            const selectedFields = importPresetMap[presetKey] || importPresetMap.academic;
+            importOptionFields.forEach(function (fieldName) {
+                setImportOption(fieldName, selectedFields.indexOf(fieldName) !== -1);
+            });
+            selectionOverrides = {};
+            togglePromotionOverrideField();
+        }
+
         function togglePromotionOverrideField() {
             const shouldShow = $('#copyStudents').is(':checked') && $('#promoteStudents').is(':checked');
             $('#promotionOverrideField').toggle(shouldShow);
+            $('#promoteStudents').prop('disabled', !$('#copyStudents').is(':checked'));
+            if (!$('#copyStudents').is(':checked')) {
+                $('#promoteStudents').prop('checked', false);
+            }
+            $('#promoteStudents').closest('.ui.checkbox').toggleClass('disabled', !$('#copyStudents').is(':checked'));
         }
 
         $('#copyStudents, #promoteStudents').on('change', togglePromotionOverrideField);

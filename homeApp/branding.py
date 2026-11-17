@@ -1,5 +1,6 @@
 from homeApp.models import SchoolDetail, SchoolOwner, SchoolSession
 from homeApp.owner_access import school_owner_user_q
+from homeApp.license import resolve_school_for_request
 from managementApp.models import TeacherDetail, Student
 
 
@@ -7,6 +8,9 @@ def get_school_branding(request):
     """
     Resolve current school branding for any logged-in user type (owner/admin, teacher, student).
     """
+    if hasattr(request, "_school_branding_cache"):
+        return request._school_branding_cache
+
     school_id = None
     school_name = "SCHOOLS-STACK"
     icon_url = None
@@ -15,6 +19,13 @@ def get_school_branding(request):
     if not isinstance(session_info, dict):
         session_info = {}
     school_id = session_info.get("SchoolID")
+    if school_id:
+        school_name = session_info.get("SchoolName") or school_name
+        icon_url = session_info.get("SchoolLogo") or icon_url
+
+    school = resolve_school_for_request(request)
+    if school:
+        school_id = school.id
 
     if not school_id and session_info.get("Id"):
         school_id = SchoolSession.objects.filter(
@@ -41,8 +52,7 @@ def get_school_branding(request):
             isDeleted=False,
         ).values_list("schoolID_id", flat=True).first()
 
-    school = None
-    if school_id:
+    if not school and school_id:
         school = SchoolDetail.objects.only("id", "schoolName", "name", "logo").filter(
             pk=school_id,
             isDeleted=False,
@@ -69,8 +79,9 @@ def get_school_branding(request):
         if changed:
             request.session["current_session"] = current
 
-    return {
+    request._school_branding_cache = {
         "school_id": school_id,
         "school_name": school_name,
         "icon_url": icon_url,
     }
+    return request._school_branding_cache

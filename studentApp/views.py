@@ -19,6 +19,7 @@ from managementApp.models import *
 from managementApp.reporting import build_report_cards_for_student
 from managementApp.services.id_cards import build_id_card_context
 from teacherApp.models import SubjectNote
+from teacherApp.sanitizers import sanitize_subject_note_html
 from transportApp.portal_services import build_my_transport_context
 from utils.custom_decorators import check_groups
 from utils.logger import logger
@@ -596,6 +597,8 @@ def student_subject_notes(request):
 
         notes_qs = notes_qs.order_by('-publishedAt', '-lastUpdatedOn')
         notes = list(notes_qs)
+        for row in notes:
+            row.contentHtml = sanitize_subject_note_html(row.contentHtml or '')
 
         subject_map = {}
         for row in notes:

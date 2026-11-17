@@ -5,7 +5,6 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import DecimalField, Sum, Value
 from django.db.models.functions import Coalesce
-from django.views.decorators.csrf import csrf_exempt
 
 from financeApp.api.expense_vouchers import _apply_finance_approval_rules, _assert_finance_date_open
 from financeApp.models import FinancePaymentMode, PayrollLine, PayrollRun
@@ -220,7 +219,6 @@ def get_payroll_run_detail_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def create_payroll_run_api(request):
@@ -294,7 +292,6 @@ def create_payroll_run_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def post_payroll_run_api(request):
@@ -352,7 +349,6 @@ def post_payroll_run_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def pay_payroll_line_api(request):
@@ -425,7 +421,6 @@ def pay_payroll_line_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def approve_payroll_run_api(request):
@@ -465,7 +460,6 @@ def approve_payroll_run_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def approve_payroll_payment_api(request):

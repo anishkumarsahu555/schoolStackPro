@@ -1,7 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.views.decorators.csrf import csrf_exempt
 
 from financeApp.models import FinanceAccount, FinanceConfiguration, FinancePaymentMode
 from financeApp.services import (
@@ -149,7 +148,6 @@ def get_finance_settings_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def upsert_finance_settings_api(request):

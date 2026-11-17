@@ -8,7 +8,6 @@ from django.db.models import DecimalField, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.http import JsonResponse as DjangoJsonResponse
 from django.utils.html import escape
-from django.views.decorators.csrf import csrf_exempt
 
 from financeApp.models import (
     ExpenseVoucher,
@@ -454,7 +453,6 @@ def finance_recon_payroll_rows_api(request):
 
 
 @transaction.atomic
-@csrf_exempt
 @login_required
 @check_groups('Admin', 'Owner')
 def repair_finance_reconciliation_issue_api(request):

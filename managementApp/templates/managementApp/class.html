@@ -91,6 +91,11 @@
             margin: 0 0 0 0.45rem !important;
         }
 
+        #ClassTable td:nth-child(7) {
+            text-align: left !important;
+            vertical-align: middle !important;
+        }
+
         @media (max-width: 767px) {
             .class-modal-actions {
                 justify-content: center;
@@ -411,12 +416,6 @@
         $("input[name='csrfmiddlewaretoken']").val()
     );
 
-    // ---------- DEBUG ----------
-    console.log("Collected Add-Data:");
-    for (let pair of data.entries()) {
-        console.log(pair[0] + ": " + pair[1]);
-    }
-
     // ---------- BASIC REQUIRED VALIDATION ----------
     const requiredIds = [
         'className', 'classLocation', 'startRoll0', 'endRoll0'
@@ -446,8 +445,6 @@
         cache: false,
 
         success: function (response) {
-            console.log(response);
-
             if (response.success) {
                 addSuccessNotification(response.message, response.color);
                 classTab.ajax.reload(null, false);
@@ -461,8 +458,6 @@
         },
 
         error: function (xhr) {
-            console.log("ERROR:", xhr);
-
             let msg = "Request failed. Please check your inputs.";
 
             if (xhr.responseJSON) {
@@ -581,7 +576,6 @@
             "ajax": "{% url 'managementAppAPI:class_list' %}"
         });
 
-
         function delData(id) {
             $('#deleteDataModal')
                 .modal('show')
@@ -629,7 +623,6 @@
 
                 success: function (response) {
                      if (response.success) {
-                               console.log(response);
                     $('#dataIDEdit').val(response.data['ClassID']);
                     $('#classNameEdit').val(response.data['Class']);
                     $('#classLocationEdit').val(response.data['Location']);
@@ -694,12 +687,6 @@ function updateData() {
         $("input[name='csrfmiddlewaretoken']").val()
     );
 
-    // ---------- DEBUG ----------
-    console.log("Collected Data (by ID):");
-    for (let pair of data.entries()) {
-        console.log(pair[0]);
-    }
-
     // ---------- BASIC REQUIRED CHECK ----------
     const requiredIds = [
     'dataIDEdit', 'classNameEdit', 'classLocationEdit', 'endRoll0Edit'
@@ -708,7 +695,6 @@ function updateData() {
     let hasError = false;
     requiredIds.forEach(id => {
         if (!data.get(id)) {
-            console.log(id);
              $(`#${id}`).closest('.field').addClass('error');
             hasError = true;
         }
@@ -730,8 +716,6 @@ function updateData() {
     cache: false,
 
     success: function (response) {
-        console.log(response);
-
         if (response.success) {
             classTab.ajax.reload(null, false);
             addSuccessNotification(response.message, 'green');
@@ -745,8 +729,6 @@ function updateData() {
     },
 
     error: function (xhr) {
-        console.log("ERROR RESPONSE:", xhr);
-
         // Extract message if backend sent JSON
         let msg = "Request failed. Please check your inputs.";
 

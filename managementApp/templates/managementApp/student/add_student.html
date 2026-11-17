@@ -426,6 +426,24 @@
         .student-form-actions .ui.button {
             margin: 0.25rem !important;
         }
+
+        .setup-link-result input {
+            font-family: monospace !important;
+            font-size: 0.9rem !important;
+        }
+
+        .setup-link-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.8rem;
+        }
+
+        .setup-link-note {
+            margin-top: 0.75rem;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
     </style>
 {% endblock %}
 {% block body %}
@@ -1075,9 +1093,11 @@
             </div>
         </div>
     </div>
+    {% include 'managementApp/partials/setup_link_modal.html' with modal_id='newStudentSetupLinkModal' title='Student Password Setup Link' description='The student login was created. Share this secure link so the student can set a password before signing in.' show_open=True %}
 {% endblock %}
 
 {% block js %}
+    <script src="{% static 'js/setup-link-modal.js' %}?v=20260629b"></script>
     <script>
         let pendingImportedStudentPayload = null;
         let registrationSuggestionRequest = null;
@@ -1625,12 +1645,6 @@ function addStudentData() {
         data.append('imageUpload', croppedImageFile);
     }
 
-    // ---------- DEBUG ----------
-    console.log("Collected Data (by ID):");
-    for (let pair of data.entries()) {
-        console.log(pair[0]);
-    }
-
     // ---------- BASIC REQUIRED CHECK ----------
     const requiredIds = [
         'imageUpload',
@@ -1650,7 +1664,6 @@ function addStudentData() {
             return;
         }
         if (!data.get(id)) {
-            console.log(id);
             if (id === 'imageUpload') {
                 setPhotoFieldError();
             } else {
@@ -1679,6 +1692,13 @@ function addStudentData() {
         success: function (response) {
             if (response.success) {
                 addSuccessNotification(response.message, 'green');
+                const setupUrl = response.setupUrl || (response.data || {}).setupUrl;
+                if (setupUrl) {
+                    SetupLinkModal.show('#newStudentSetupLinkModal', {
+                        url: setupUrl,
+                        expiresAt: response.setupExpiresAt || (response.data || {}).setupExpiresAt
+                    });
+                }
                 $('#addForm').trigger('reset');
                 croppedImageFile = null;
                 $('#imageUpload').val('');

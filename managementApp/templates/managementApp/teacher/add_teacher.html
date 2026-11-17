@@ -55,6 +55,24 @@
         .teacher-form-actions .ui.button {
             margin: 0.25rem !important;
         }
+
+        .setup-link-result input {
+            font-family: monospace !important;
+            font-size: 0.9rem !important;
+        }
+
+        .setup-link-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.8rem;
+        }
+
+        .setup-link-note {
+            margin-top: 0.75rem;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
     </style>
 {% endblock %}
 {% block body %}
@@ -325,11 +343,12 @@
             </div>
         </div>
     </div>
+    {% include 'managementApp/partials/setup_link_modal.html' with modal_id='newStaffSetupLinkModal' title='Staff Password Setup Link' description='The staff login was created. Share this secure link so the staff member can set a password before signing in.' show_open=True %}
 {% endblock %}
 
 {% block js %}
+    <script src="{% static 'js/setup-link-modal.js' %}?v=20260629b"></script>
     <script>
-
 
         $('.ui.checkbox')
             .checkbox()
@@ -590,8 +609,6 @@
             let empCode = $('#empCode').val();
             let staffType = $('#staffType').val();
             let doj = $('#doj').val();
-            debugger
-
 
             if (name.trim() === '' || email.trim() === '' || phone.trim() === '' || bloodGroup.trim() === '' || gender.trim() === '' || dob.trim() === '' || aadhar.trim() === '' || qualification.trim() === '' || !imageUpload
                 || address.trim() === '' || city.trim() === '' || state.trim() === '' || country.trim() === '' || pincode.trim() === ''
@@ -635,6 +652,13 @@
                     success: function (response) {
                         if (response.success) {
                             addSuccessNotification(response.message, response.color);
+                            const setupUrl = response.setupUrl || (response.data || {}).setupUrl;
+                            if (setupUrl) {
+                                SetupLinkModal.show('#newStaffSetupLinkModal', {
+                                    url: setupUrl,
+                                    expiresAt: response.setupExpiresAt || (response.data || {}).setupExpiresAt
+                                });
+                            }
                             {#subjectTab.ajax.reload(null, false);#}
                             myOwnReset();
                             hideLoading();
