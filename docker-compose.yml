@@ -1,0 +1,121 @@
+name: ${COMPOSE_PROJECT_NAME:-${PROJECT_NAME:-schoolstackpro}${DEPLOY_ENV:+-${DEPLOY_ENV}}}
+
+x-runtime: &runtime
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-app: &app
+  image: ${APP_IMAGE:-${IMAGE_NAME:-${COMPOSE_PROJECT_NAME:-schoolstackpro}-web}:${APP_IMAGE_TAG:-local}}
+  init: true
+  security_opt: [no-new-privileges:true]
+  user: "10001:10001"
+  pids_limit: 128
+  mem_limit: ${WEB_MEMORY_LIMIT:-1g}
+  cpus: ${WEB_CPUS:-1.0}
+  volumes: &app-volumes
+    - ${MEDIA_DATA_DIR:-media}:/srv/media
+    - ${DATA_DIR:-app_data}:/data
+  env_file: ${APP_ENV_FILE:-.env.docker}
+  environment:
+    SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in the Docker environment file}
+    MEDIA_ROOT: /srv/media
+    STATIC_ROOT: /srv/static
+    APP_PORT: ${APP_PORT:-${PORT:-8000}}
+    WEB_WORKERS: ${WEB_WORKERS:-1}
+    WEB_TIMEOUT: ${WEB_TIMEOUT:-120}
+    DB_ENGINE: postgres
+    db: postgres
+    DB_NAME: ${DB_NAME:-schoolstack}
+    DB_USER: ${DB_USER:-schoolstack}
+    DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the Docker environment file}
+    DB_HOST: postgres
+    DB_PORT: "5432"
+    REDIS_URL: redis://redis:6379/1
+
+services:
+  postgres:
+    <<: *runtime
+    image: postgres:17-alpine
+    stop_grace_period: 60s
+    mem_limit: ${POSTGRES_MEMORY_LIMIT:-1g}
+    cpus: ${POSTGRES_CPUS:-1.0}
+    environment:
+      POSTGRES_DB: ${DB_NAME:-schoolstack}
+      POSTGRES_USER: ${DB_USER:-schoolstack}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the Docker environment file}
+    volumes:
+      - ${POSTGRES_DATA_DIR:-postgres_data}:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    <<: *runtime
+    image: redis:7-alpine
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  storage-init:
+    image: ${APP_IMAGE:-${IMAGE_NAME:-${COMPOSE_PROJECT_NAME:-schoolstackpro}-web}:${APP_IMAGE_TAG:-local}}
+    pull_policy: never
+    restart: "no"
+    user: "0:0"
+    command:
+      - sh
+      - -ec
+      - |
+        for dir in /srv/media /data; do
+          if ! setpriv --reuid=10001 --regid=10001 --clear-groups test -w "$$dir" || ! setpriv --reuid=10001 --regid=10001 --clear-groups test -x "$$dir"; then
+            chown 10001:10001 "$$dir"
+            chmod u+rwx "$$dir"
+          fi
+        done
+    volumes: *app-volumes
+
+  migrate:
+    <<: *app
+    restart: "no"
+    pull_policy: never
+    command: [python, manage.py, migrate, --noinput]
+    depends_on:
+      storage-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+
+  web:
+    <<: [*app, *runtime]
+    build:
+      context: .
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.14-slim-bookworm}
+        UV_IMAGE: ${UV_IMAGE:-ghcr.io/astral-sh/uv:0.8.5}
+    depends_on:
+      storage-init:
+        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    stop_grace_period: 45s
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-${PORT:-${APP_PORT:-8000}}}:${APP_PORT:-${PORT:-8000}}"
+    healthcheck:
+      test: [CMD, python, /app/schoolStackPro/healthcheck.py]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  media:
+  app_data:

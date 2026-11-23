@@ -12,8 +12,13 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+# An exported legacy selector also takes precedence over a selector in dotenv.
+_exported_db_engine = os.getenv("DB_ENGINE") or os.getenv("db")
+load_dotenv(os.getenv("SCHOOLSTACK_ENV_FILE") or BASE_DIR / ".env", override=False)
 
 
 def _env_bool(name, default=False):
@@ -37,7 +42,9 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = _env_bool('DEBUG', False)
 
 ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS', ['localhost', '127.0.0.1', '[::1]', 'testserver'])
-CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
+_DEFAULT_ORIGINS = ['https://schoolsstack.in', 'https://www.schoolsstack.in']
+CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS', _DEFAULT_ORIGINS)
+CORS_ALLOWED_ORIGINS = _env_list('CORS_ALLOWED_ORIGINS', _DEFAULT_ORIGINS)
 USE_X_FORWARDED_HOST = _env_bool('USE_X_FORWARDED_HOST', False)
 if _env_bool('TRUST_PROXY_SSL_HEADER', False):
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -46,6 +53,7 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SECURE = _env_bool('SESSION_COOKIE_SECURE', not DEBUG)
 CSRF_COOKIE_SECURE = _env_bool('CSRF_COOKIE_SECURE', not DEBUG)
+SECURE_REDIRECT_EXEMPT = [r"^healthz$", r"^livez$"]
 SECURE_SSL_REDIRECT = _env_bool('SECURE_SSL_REDIRECT', False)
 SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0'))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', False)
@@ -137,16 +145,16 @@ WSGI_APPLICATION = 'schoolStackPro.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 
-USE_MYSQL = os.getenv('USE_MYSQL', 'false').lower() == 'true'
+DB_ENGINE = (_exported_db_engine or os.getenv('DB_ENGINE') or os.getenv('db') or 'sqlite').strip().lower()
 DB_CONN_MAX_AGE = int(os.getenv('DB_CONN_MAX_AGE', '0'))
 
-if os.getenv('db') =="mysql":
+if DB_ENGINE == "mysql":
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'schoolstack',
+            'NAME': os.getenv('DB_NAME', 'schoolstack'),
             'USER': os.getenv('DB_USER', 'root'),
-            'PASSWORD': os.getenv('DB_PASSWORD', 'pass'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
             'HOST': os.getenv('DB_HOST', 'localhost'),
             'PORT': os.getenv('DB_PORT', '3306'),
             'CONN_MAX_AGE': DB_CONN_MAX_AGE,
@@ -155,23 +163,23 @@ if os.getenv('db') =="mysql":
             },
         }
     }
-elif os.getenv('db') =="postgres":
+elif DB_ENGINE == "postgres":
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.environ.get('DB_NAME', 'schoolsstack'),
             'USER': os.environ.get('DB_USER', 'postgres'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'pass'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
             'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
             'PORT': os.environ.get('DB_PORT', '5432'),
-            'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', '0')),
+            'CONN_MAX_AGE': DB_CONN_MAX_AGE,
         }
     }
 else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': BASE_DIR / os.getenv('SQLITE_PATH', 'db.sqlite3'),
             'CONN_MAX_AGE': DB_CONN_MAX_AGE,
             'OPTIONS': {
                 'timeout': 20,
@@ -204,8 +212,8 @@ EMAIL_HOST = os.getenv('EMAIL_HOST', '')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'true').lower() == 'true'
-EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'false').lower() == 'true'
+EMAIL_USE_TLS = _env_bool('EMAIL_USE_TLS', True)
+EMAIL_USE_SSL = _env_bool('EMAIL_USE_SSL', False)
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'no-reply@schoolsstack.local')
 PASSWORD_RESET_TIMEOUT = int(os.getenv('PASSWORD_RESET_TIMEOUT', '86400'))
 
@@ -231,18 +239,24 @@ STATICFILES_DIRS = [
     #'/var/www/static/',
 ]
 
-STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), "static_cdn")
+STATIC_ROOT = (BASE_DIR / os.getenv("STATIC_ROOT", "../static_cdn")).resolve()
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 WHITENOISE_AUTOREFRESH = DEBUG
 WHITENOISE_USE_FINDERS = DEBUG
 WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "media_cdn")
+MEDIA_ROOT = (BASE_DIR / os.getenv("MEDIA_ROOT", "../media_cdn")).resolve()
+
+VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '')
+VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '')
+VAPID_ADMIN_EMAIL = os.getenv('VAPID_ADMIN_EMAIL', 'mailto:admin@schoolsstack.in')
+WRITE_LOG_ON_FILE = _env_bool('WRITE_LOG_ON_FILE', True)
+WRITE_LOG_ON_CONSOLE = _env_bool('WRITE_LOG_ON_CONSOLE', True)
 
 # Performance instrumentation
-PERFORMANCE_LOG_ENABLED = os.getenv('PERFORMANCE_LOG_ENABLED', 'true').lower() == 'true'
-PERFORMANCE_QUERY_LOG_ENABLED = os.getenv('PERFORMANCE_QUERY_LOG_ENABLED', str(DEBUG).lower()).lower() == 'true'
+PERFORMANCE_LOG_ENABLED = _env_bool('PERFORMANCE_LOG_ENABLED', True)
+PERFORMANCE_QUERY_LOG_ENABLED = _env_bool('PERFORMANCE_QUERY_LOG_ENABLED', DEBUG)
 PERFORMANCE_SLOW_REQUEST_MS = int(os.getenv('PERFORMANCE_SLOW_REQUEST_MS', '800'))
 PERFORMANCE_QUERY_WARNING_COUNT = int(os.getenv('PERFORMANCE_QUERY_WARNING_COUNT', '50'))
 PERFORMANCE_SKIP_PATH_PREFIXES = (
@@ -289,21 +303,9 @@ PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'schoolStackPro', '../static/sw
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     }
 }
-
-
-CORS_ALLOWED_ORIGINS = [
-    'https://schoolsstack.in',
-    'https://www.schoolsstack.in',
-]
-
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://schoolsstack.in",
-    "https://www.schoolsstack.in",
-]

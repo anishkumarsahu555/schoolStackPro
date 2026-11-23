@@ -96,11 +96,6 @@ jobs:
           ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" <<EOF
           set -euo pipefail
           cd "$DEPLOY_PATH"
-          if [ -f .env ]; then
-            set -a
-            . ./.env
-            set +a
-          fi
           git fetch origin "$DEPLOY_BRANCH"
           git reset --hard "origin/$DEPLOY_BRANCH"
           uv sync --frozen

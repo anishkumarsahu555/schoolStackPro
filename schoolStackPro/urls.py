@@ -20,11 +20,16 @@ from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import path, include
 
+from schoolStackPro.health import healthz, livez
+
 handler403 = "homeApp.views.error_403"
 handler404 = "homeApp.views.error_404"
 handler500 = "homeApp.views.error_500"
 
+
 urlpatterns = [
+    path("livez", livez, name="livez"),
+    path("healthz", healthz, name="healthz"),
     path('admin/', admin.site.urls),
     path('', include(('homeApp.urls', 'homeApp'), namespace='homeApp')),
     path('api/', include(('homeApp.api.urls_api', 'homeApp'), namespace='homeAppAPI')),

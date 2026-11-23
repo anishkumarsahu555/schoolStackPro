@@ -1,0 +1,13 @@
+services:
+  postgres:
+    profiles: [postgres]
+  migrate:
+    environment: &sqlite
+      DB_ENGINE: sqlite
+      db: sqlite
+      SQLITE_PATH: /data/db.sqlite3
+    depends_on: !override
+      storage-init:
+        condition: service_completed_successfully
+  web:
+    environment: *sqlite

@@ -8,6 +8,8 @@ import inspect
 from datetime import datetime, timedelta
 from queue import Queue
 
+from django.conf import settings
+
 # root project path
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOG_DIR = os.path.join(BASE_DIR, "logs")
@@ -21,8 +23,8 @@ _rotation_thread = None
 _stop_rotation = False
 
 # Flags to control logging destinations
-LOG_TO_FILE = os.getenv("WRITE_LOG_ON_FILE", "true").lower() == "true"
-LOG_TO_CONSOLE = os.getenv("WRITE_LOG_ON_CONSOLE", "true").lower() == "true"
+LOG_TO_FILE = settings.WRITE_LOG_ON_FILE
+LOG_TO_CONSOLE = settings.WRITE_LOG_ON_CONSOLE
 
 def _get_caller_app_name():
     stack = inspect.stack()
