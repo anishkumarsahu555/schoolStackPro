@@ -20,6 +20,12 @@ Each `--docker-up` builds a fresh image under `IMAGE_NAME`, which defaults to `P
 
 Gunicorn serves local uploads through Django at `MEDIA_URL` (default `/media/`). Forward this prefix to web when configuring the proxy. An alias to the host directory would bypass session authentication. To reuse existing files, point `MEDIA_DATA_DIR` at the directory containing the upload tree and grant UID 10001 access. The directory is mounted at `/srv/media` inside the container. The HTTP probe calls `/healthz` with an allowed host and requires a successful database query. `/livez` checks the HTTP process independently. Web binds to loopback for a host reverse proxy. Configure HTTPS, Django trusted origins, allowed hosts and secure cookies for the public hostname.
 
+## Diagnose a slow build
+
+Run `BUILDKIT_PROGRESS=plain ./start.sh --docker-build` to see the active command and layer timings without starting services. A new release tag still reuses layers on the same builder. A cold builder downloads system packages, locked Python dependencies and Chromium. The build and runtime stages share a locked, architecture-specific APT cache on the builder. Downloaded Debian packages and package lists stay available across layer rebuilds. The uv cache also retains Python downloads and built wheels when the lockfile changes. A first build on a fresh VPS still depends on its connection to the Debian mirror.
+
+A PyPI timeout fetching `setuptools` while building `http-ece` occurs during build dependency resolution. The Docker build gives uv a 180-second HTTP timeout, five retries for retryable failures and four concurrent downloads. Override `UV_HTTP_TIMEOUT`, `UV_HTTP_RETRIES` or `UV_CONCURRENT_DOWNLOADS` in `.env` if needed. After a transient failure, rerun the launcher on the same builder to reuse the caches.
+
 ## Separate production and staging
 
 For a new named VPS environment, use a separate private file for each stack. Include the following entries alongside its own credentials and Django settings. Edit the example’s identity, root and port entries in place. Keep the derived mount variables below these entries so Compose interpolates the selected values.

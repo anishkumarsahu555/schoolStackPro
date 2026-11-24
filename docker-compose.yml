@@ -99,6 +99,9 @@ services:
       args:
         PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.14-slim-bookworm}
         UV_IMAGE: ${UV_IMAGE:-ghcr.io/astral-sh/uv:0.8.5}
+        UV_HTTP_TIMEOUT: "${UV_HTTP_TIMEOUT:-180}"
+        UV_HTTP_RETRIES: "${UV_HTTP_RETRIES:-5}"
+        UV_CONCURRENT_DOWNLOADS: "${UV_CONCURRENT_DOWNLOADS:-4}"
     depends_on:
       storage-init:
         condition: service_completed_successfully

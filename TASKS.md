@@ -92,6 +92,7 @@ Choose and test environment contracts with backward compatibility, verify effect
 
 | ID | Date | Outcome | Verification |
 | --- | --- | --- | --- |
+| DOCKER-008 | 2026-11-24 | Reuse Debian package downloads and locked Python dependencies across image rebuilds | On local ARM64 Docker, both APT stages shared archives, the updated image built in 228 s, an unchanged repeat took 4 s, and headless Chromium produced a PDF. VPS logs later showed a PyPI timeout during http-ece build dependency resolution. Verified default and overridden uv network settings with Compose and imported http-ece 1.2.1 and pywebpush 2.3.0 in the rebuilt local image. VPS retry remains unverified. |
 | DOCKER-007 | 2026-11-19 | Activate the eight requested Docker and web settings and honor the selected image and listener | Five script tests passed. Verified the configured release image, resolved Compose settings and Gunicorn arguments in dry runs. |
 | DOCKER-006 | 2026-11-19 | Reduce the web image size while retaining certificate and report exports | Rebuilt the verified 706,844,208-byte ARM64 image, checked certificate and report PDFs, migration status and live readiness, then removed the superseded 1,052,585,649-byte image. |
 | DOCKER-005 | 2026-11-18 | Match the Hansika host mount layout for SchoolStack | Launcher and direct Compose resolved all three host paths. PostgreSQL 16 to 17 restore verified across 125 tables and sequence values. Original volume retained. Three Compose configuration tests passed. |
