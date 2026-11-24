@@ -21,7 +21,7 @@ flowchart TD
     Services --> External[SMTP / Web Push]
 ```
 
-The ASGI wrapper additionally handles eligible static/media GET and HEAD requests before Django. This means its file-serving path does not inherit Django view authorization.
+ASGI serves collected static assets directly. Local upload requests pass through Django session authentication in both ASGI and WSGI.
 
 ## Repository layers
 
@@ -121,11 +121,11 @@ For each multi-record change, inspect service and signal effects before adding d
 - SQLite defaults to root `db.sqlite3`; `SQLITE_PATH` overrides that location. MySQL and PostgreSQL use `DB_NAME`.
 - Redis uses `REDIS_URL` and defaults to local database 1. Cache ownership/invalidation must match school/session context.
 - `STATIC_ROOT` and `MEDIA_ROOT` default to sibling `static_cdn` and `media_cdn` directories.
-- WhiteNoise is configured in middleware. ASGI adds `StaticMediaASGIWrapper`, path containment checks, chunked reads, and public one-year caching for served files.
+- WhiteNoise is configured in middleware. ASGI adds `StaticASGIWrapper`, path containment checks, chunked reads, and public one-year caching for served files.
 - SMTP handles email flows; web push uses VAPID configuration. PWA metadata and worker path are in settings.
 - Time handling currently uses India time with naive datetimes (`USE_TZ=False`).
 
-Private media authorization and the ASGI cache policy need review (T-004). No claim is made that uploaded files are all intended to be public.
+The local upload view uses private, no-store responses. School and record-level upload authorization remains open under T-004.
 
 ## Delivery and observability
 

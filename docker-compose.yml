@@ -9,7 +9,7 @@ x-runtime: &runtime
       max-file: "3"
 
 x-app: &app
-  image: ${APP_IMAGE:-${IMAGE_NAME:-${COMPOSE_PROJECT_NAME:-schoolstackpro}-web}:${APP_IMAGE_TAG:-local}}
+  image: &app-image ${APP_IMAGE:-${IMAGE_NAME:-${PROJECT_NAME:-schoolstackpro}}:${APP_IMAGE_TAG:-local}}
   init: true
   security_opt: [no-new-privileges:true]
   user: "10001:10001"
@@ -19,7 +19,7 @@ x-app: &app
   volumes: &app-volumes
     - ${MEDIA_DATA_DIR:-media}:/srv/media
     - ${DATA_DIR:-app_data}:/data
-  env_file: ${APP_ENV_FILE:-.env.docker}
+  env_file: ${APP_ENV_FILE:-.env}
   environment:
     SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in the Docker environment file}
     MEDIA_ROOT: /srv/media
@@ -65,7 +65,7 @@ services:
       retries: 10
 
   storage-init:
-    image: ${APP_IMAGE:-${IMAGE_NAME:-${COMPOSE_PROJECT_NAME:-schoolstackpro}-web}:${APP_IMAGE_TAG:-local}}
+    image: *app-image
     pull_policy: never
     restart: "no"
     user: "0:0"

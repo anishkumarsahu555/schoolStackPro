@@ -13,7 +13,7 @@ run() {
     if ((dry)); then printf '%q ' "$@"; printf '\n'; else "$@"; fi
 }
 source scripts/docker-common.sh
-configure_stack "${selected:-$repo/.env.docker}" "${3:-}"
+configure_stack "${selected:-$repo/.env}" "${3:-}"
 
 docker_up() (
     set -e
@@ -27,12 +27,13 @@ docker_up() (
     trap cleanup_up EXIT
     trap 'exit 130' INT
     trap 'exit 143' TERM
-    if [[ -z ${APP_IMAGE:-} ]]; then
-        local revision dirty=''
-        revision=$(git rev-parse --short=12 HEAD)
-        [[ -z $(git status --porcelain) ]] || dirty=-dirty
-        export APP_IMAGE="${IMAGE_NAME:-$COMPOSE_PROJECT_NAME-web}:release-$(date -u +%Y%m%dT%H%M%SZ)-$revision$dirty-$(openssl rand -hex 4)"
-    fi
+    local revision dirty='' build_id
+    revision=$(git rev-parse --verify --short=12 HEAD)
+    [[ -z $(git status --porcelain --untracked-files=normal) ]] || dirty=-dirty
+    build_id=$(openssl rand -hex 6)
+    export APP_IMAGE_TAG="release-$(date -u +%Y%m%dT%H%M%SZ)-$revision$dirty-$build_id"
+    export APP_IMAGE="${IMAGE_NAME:-${PROJECT_NAME:-schoolstackpro}}:$APP_IMAGE_TAG"
+    printf 'Building release image: %s\n' "$APP_IMAGE"
     run "${compose[@]}" build web
     run "${compose[@]}" run --no-deps --rm -T storage-init
     local services=(redis)

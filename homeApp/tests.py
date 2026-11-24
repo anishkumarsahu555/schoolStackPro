@@ -347,7 +347,7 @@ class PWAServiceWorkerTests(TestCase):
         self.assertEqual(response["Service-Worker-Allowed"], "/")
         self.assertIn("no-store", response["Cache-Control"])
         self.assertIn("application/javascript", response["Content-Type"])
-        self.assertContains(response, "const APP_VERSION = 'v1.0.49';")
+        self.assertContains(response, "const APP_VERSION = 'v1.0.50';")
         self.assertNotContains(response, "    '/',")
         self.assertContains(response, "'/static/sw/offline.html'")
         self.assertContains(response, "CLEAR_OFFLINE_CACHE")

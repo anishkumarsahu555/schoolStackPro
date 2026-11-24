@@ -14,7 +14,7 @@ YAML
     while IFS='=' read -r key value; do
         case "$key" in
             COMPOSE_PROJECT_NAME) [[ $value == schoolstack-config-probe ]] || export "$key=$value" ;;
-            PROJECT_NAME|DEPLOY_ENV|VPS_STORAGE_ROOT|APP_DATA_ROOT|DATA_DIR|MEDIA_DATA_DIR|POSTGRES_DATA_DIR|DATABASE_ENGINE|DB_ENGINE|APP_IMAGE|IMAGE_NAME|PORT|HOST_PORT|APP_PORT) export "$key=$value" ;;
+            VAPID_KEY_FILE|PROJECT_NAME|DEPLOY_ENV|VPS_STORAGE_ROOT|APP_DATA_ROOT|DATA_DIR|MEDIA_DATA_DIR|POSTGRES_DATA_DIR|DATABASE_ENGINE|DB_ENGINE|APP_IMAGE|IMAGE_NAME|PORT|HOST_PORT|APP_PORT) export "$key=$value" ;;
         esac
     done <<< "$resolved"
     if [[ -n ${VPS_STORAGE_ROOT:-} || -n ${DEPLOY_ENV:-} ]]; then
@@ -41,6 +41,9 @@ YAML
             compose+=(-f "$repo/docker-compose.sqlite.yml") ;;
         *) fail 'Choose postgres or sqlite' ;;
     esac
+    if [[ -n ${VAPID_KEY_FILE:-} ]]; then
+        compose+=(-f "$repo/docker-compose.vapid.yml")
+    fi
     "${compose[@]}" config --quiet
 }
 

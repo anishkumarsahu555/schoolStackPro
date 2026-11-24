@@ -54,14 +54,14 @@ Consequences: legacy material may drift; use current code for factual conflicts 
 
 ### D-003 — Use PostgreSQL in Docker (2026-11-18)
 
-Compose selects the existing PostgreSQL backend and uses Redis for the Django cache. Docker media uses a host bind mount when MEDIA_DATA_DIR is set and preserves the original media volume when unset. The controlled release script pins the application image ID and rehearses against a disposable PostgreSQL instance using a custom-format database dump. The Docker environment is separate from the local dotenv configuration. Numbered migration history must accompany schema upgrades until T-001 is resolved. See [COMMANDS.md](COMMANDS.md#docker-compose).
+Compose selects the existing PostgreSQL backend and uses Redis for the Django cache. Docker media uses a host bind mount when MEDIA_DATA_DIR is set and preserves the original media volume when unset. The controlled release script pins the application image ID and rehearses against a disposable PostgreSQL instance using a custom-format database dump. Docker, the release script and local Django share the repository-root .env by default. Explicit environment file overrides remain supported. Numbered migration history must accompany schema upgrades until T-001 is resolved. See [COMMANDS.md](COMMANDS.md#docker-compose).
 
 ## Known caveats and unknowns
 
 - Migration history and live database state require reconciliation before changing migration delivery (T-001).
 - `.env.dev` is tracked; its contents were not read or copied for this task (T-002).
 - An explicit `CSRF_TRUSTED_ORIGINS` replaces the default list. A blank value clears it.
-- ASGI public media serving needs privacy/cache review (T-004).
+- Local uploads require a session under ASGI and WSGI. School and record-level access and existing proxy rules still need review (T-004).
 - Requirements/lockfile drift and account-specific diagnostics need cleanup (T-005/T-006).
 - Actual systemd configuration, production backend, proxy rules, scheduled jobs, backup restore, and deployment health have not been verified (T-007).
 - Clean onboarding and many end-to-end workflows are not validated by this source review (T-008/T-009).

@@ -11,7 +11,7 @@ usage() {
 ./release.sh check                              Check local model/migration drift
 ./release.sh deploy IMAGE BACKUP_DIR --maintenance
 
-Use APP_ENV_FILE to select the running PostgreSQL stack (default .env.docker).
+Use APP_ENV_FILE to select the running PostgreSQL stack (default .env).
 Supply a local candidate image and an existing private backup directory outside
 the checkout. Pause all external writers first. The release stops web, saves a
 PostgreSQL custom-format dump, rehearses fresh and restored migrations, then
@@ -34,7 +34,7 @@ esac
 [[ $2 == /* && -d $2 ]] || fail 'Use an existing absolute backup directory'
 destination=$(cd "$2" && pwd -P)
 case "$destination/" in "$repo/"*) fail 'Choose a backup directory outside the checkout' ;; esac
-selected=${APP_ENV_FILE:-$repo/.env.docker}
+selected=${APP_ENV_FILE:-$repo/.env}
 [[ $selected == /* ]] || selected="$caller/$selected"
 source scripts/docker-common.sh
 configure_stack "$selected"

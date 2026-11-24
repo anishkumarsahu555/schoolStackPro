@@ -6,7 +6,7 @@ Before starting this configuration against existing data, use the running Postgr
 
 ## Start or update an environment
 
-Copy `.env.docker.example` to a private file and generate independent values for `SECRET_KEY` and `DB_PASSWORD`. Run the launcher from any directory. A relative `--env` argument resolves against your current directory.
+For a fresh install, copy `.env.example` to the repository-root `.env` and generate independent values for `SECRET_KEY` and `DB_PASSWORD`. On an existing stack, reuse its credentials, port, project name, storage paths and VAPID settings when consolidating configuration. Run the launcher from any directory. A relative `--env` argument resolves against your current directory.
 
 ```sh
 ./start.sh --db postgres --docker-up
@@ -14,11 +14,11 @@ Copy `.env.docker.example` to a private file and generate independent values for
 ./start.sh --db postgres --docker-down
 ```
 
-The launcher reads `.env.docker` by default. Use `DB_ENGINE=postgres` for PostgreSQL. An explicit `--db` overrides `DATABASE_ENGINE`, which overrides `DB_ENGINE` for Docker. The example lists image, resource, port and storage overrides.
+The launcher reads `.env` by default. Use `DB_ENGINE=postgres` for PostgreSQL. An explicit `--db` overrides `DATABASE_ENGINE`, which overrides `DB_ENGINE` for Docker. The example lists image, resource, port and storage overrides.
 
-The launcher builds and runs the configured `APP_IMAGE`. When that variable is unset it generates a timestamped tag with the Git revision and a dirty-checkout marker when applicable. It prepares storage, waits for Redis and the database, checks Django and migration drift, then stops web. It runs migrations once and recreates web from the same image. A project lock serializes releases. A failed deployment after downtime leaves web stopped for investigation. Record the printed release image. `--docker-build` builds an image without starting services.
+Each `--docker-up` builds a fresh image under `IMAGE_NAME`, which defaults to `PROJECT_NAME` (here `schoolstackpro`). Its tag includes the UTC timestamp, Git revision, optional `-dirty` marker and a random build ID. `APP_IMAGE` and `APP_IMAGE_TAG` can pin manual builds and direct Compose commands. To recreate web with an existing release through direct Compose, set `APP_IMAGE` to the exact printed release image. It prepares storage, waits for Redis and the database, checks Django and migration drift, then stops web. It runs migrations once and recreates web from the same image. A project lock serializes releases. A failed deployment after downtime leaves web stopped for investigation. Record the printed release image. `--docker-build` builds an image without starting services.
 
-Gunicorn serves the ASGI application, including uploads. The HTTP probe calls `/healthz` with an allowed host and requires a successful database query. `/livez` checks the HTTP process independently. Web binds to loopback for a host reverse proxy. Configure HTTPS, Django trusted origins, allowed hosts and secure cookies for the public hostname.
+Gunicorn serves local uploads through Django at `MEDIA_URL` (default `/media/`). Forward this prefix to web when configuring the proxy. An alias to the host directory would bypass session authentication. To reuse existing files, point `MEDIA_DATA_DIR` at the directory containing the upload tree and grant UID 10001 access. The directory is mounted at `/srv/media` inside the container. The HTTP probe calls `/healthz` with an allowed host and requires a successful database query. `/livez` checks the HTTP process independently. Web binds to loopback for a host reverse proxy. Configure HTTPS, Django trusted origins, allowed hosts and secure cookies for the public hostname.
 
 ## Separate production and staging
 
@@ -34,7 +34,7 @@ APP_PORT=8102
 
 This selects the Compose project `schoolstackpro-staging` and host directories under `/srv/apps/schoolstackpro/staging` for PostgreSQL, media and application data. Use a distinct port and directories for each stack. `--port` sets both the published and internal ports. `HOST_PORT` sets only the published port. `WEB_WORKERS`, `WEB_TIMEOUT`, `WEB_MEMORY_LIMIT` and `POSTGRES_MEMORY_LIMIT` can be set per environment.
 
-Keep existing project names and storage paths when upgrading. The original non-VPS setup retains its named PostgreSQL volume and, when `MEDIA_DATA_DIR` is unset and no path overrides apply, its named media volume. Existing local `APP_DATA_ROOT` selects `data` and `media_data` below it. A storage path or project name change selects different files and requires a planned copy or restore. Keep the same environment and database selection for later launcher commands. For direct Compose commands against VPS defaults, include the resolved project identity and mounts in the environment file, or use the launcher.
+Keep existing project names and storage paths when upgrading. The original non-VPS setup retains its named PostgreSQL volume and, when `MEDIA_DATA_DIR` is unset and no path overrides apply, its named media volume. Existing local `APP_DATA_ROOT` selects `data` and `media_data` below it. A storage path or project name change selects different files and requires a planned copy or restore. Keep the same environment and database selection for later launcher commands. The launcher derives host directories from `APP_DATA_ROOT`. Direct Compose commands require explicit `MEDIA_DATA_DIR`, `DATA_DIR` and `POSTGRES_DATA_DIR` to use the same bind mounts. Keep those entries from the Docker environment template when switching between the two commands.
 
 SQLite is available for an isolated alternative installation using `--db sqlite` and a separate project name and storage. It stores the database under `/data/db.sqlite3`. The controlled release flow below targets PostgreSQL.
 
@@ -46,7 +46,7 @@ Restore the applicable numbered migration history to the build checkout before c
 ./release.sh generate
 ./release.sh check
 APP_IMAGE=schoolstackpro:reviewed-001 ./start.sh --db postgres --docker-build
-APP_ENV_FILE=.env.docker ./release.sh deploy schoolstackpro:reviewed-001 /absolute/private/backups --maintenance
+./release.sh deploy schoolstackpro:reviewed-001 /absolute/private/backups --maintenance
 ```
 
 Choose a unique tag per reviewed build. Create the private backup directory outside the checkout before deploying. Pause external writers and take a coordinated copy of uploaded media. PostgreSQL and Redis must already be running. The script resolves the candidate to its local image ID and validates Django configuration and the migration plan before downtime.

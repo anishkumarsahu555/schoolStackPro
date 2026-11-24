@@ -7,32 +7,40 @@ Baseline: 2026-11-17. Run from the repository root. Commands are drawn from sour
 Use Docker Engine with Compose v2.24.4 or later and the environment file from the [Docker setup](README.md#docker-setup-with-postgresql). Run these commands in the same checkout so Compose reuses the project volumes.
 
 ```sh
-docker compose --env-file .env.docker config --quiet
+docker compose config --quiet
 ./start.sh --db postgres --docker-build
 ./start.sh --db postgres --docker-up
-docker compose --env-file .env.docker ps -a
+docker compose ps -a
 ./start.sh --db postgres --docker-logs
-docker compose --env-file .env.docker exec web python manage.py createsuperuser
+docker compose exec web python manage.py createsuperuser
 ./start.sh --db postgres --docker-down
 ```
 
-The launcher reads `.env.docker` by default.
+The launcher reads `.env` by default.
 
 Use `--port 8101` to override the Docker host port. Run `./start.sh --help` for local options, including `--prod`, `--migrate`, `--check-migrations` and `--dry-run`. For example, `./start.sh --env ./private.env --db postgres --check --no-run` checks the selected local configuration. The production launcher uses Gunicorn with Uvicorn workers to serve the project's ASGI routes, including uploaded media.
 
 The Docker launcher builds the image, checks Django and model drift against the selected PostgreSQL service, and stops the web process before applying migrations. The migration and media directory initialization jobs must exit successfully before web starts. The web health check calls `/healthz` and requires Django to execute a database query. The example bind-mounts `POSTGRES_DATA_DIR` at `/var/lib/postgresql/data` and `DATA_DIR` at `/data`. Legacy configurations without host path settings use named volumes. The example binds `MEDIA_DATA_DIR` on the host to Django's `/srv/media`; set it to a dedicated absolute path on the VPS, for example `/srv/apps/schoolstackpro/production/media`. Existing files retain their relative paths and URLs. The initialization job prepares the mount directory for UID 10001. Existing subdirectories must already permit that UID to write wherever new uploads will be saved. Both database and uploads survive `--docker-down`.
+
+Local media responses now require a signed-in session and send `Cache-Control: private, no-store`. When upgrading, purge any proxy cache for the media prefix. Previously downloaded files and fresh browser cache entries can outlive the change.
 
 Existing deployments with `MEDIA_DATA_DIR` unset keep their named `media` volume. To switch one to a host directory, stop web writes, copy the contents of its `/srv/media/.` to the chosen host directory using `docker compose cp`, verify the copy and permissions, then set the variable and start the stack. Changing the mount alone does not copy files. Back up the database and uploaded files together. PostgreSQL initialization credentials apply when its volume is empty. Changing the password on an initialized stack requires updating the database role as well.
 
 The image includes migration files present in the build checkout and runs `makemigrations` during the build to support a fresh installation. Because numbered migrations are ignored by Git, retain the exact generated history before replacing an image after model changes. For a stack bootstrapped from a clean checkout, extract the migration files from its running image into a clean release checkout (example for one app below, repeat for each app with a migration package). Review the subsequent incremental migrations and test against a restored database before upgrading. Rebuilding initial migrations from a changed schema can leave existing tables out of sync.
 
 ```sh
-docker compose --env-file .env.docker cp web:/app/financeApp/migrations/. ./financeApp/migrations/
+docker compose cp web:/app/financeApp/migrations/. ./financeApp/migrations/
 ```
 
 The example cookie settings support loopback HTTP. When routing the loopback web port through an HTTPS reverse proxy, set the public `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` and secure cookie settings for that site. Add SMTP and VAPID settings to the same file as needed. If using a different environment filename, supply its path as both `APP_ENV_FILE` and Compose's `--env-file`.
 
 See the [Docker deployment guide](DOCKER_DEPLOYMENT_GUIDE.md) for release locking and image tags, named VPS environments, the optional SQLite stack, and `release.sh` and `dockerGenerator.sh` procedures.
+
+### Docker web push
+
+Set `VAPID_KEY_FILE` in the private Docker environment file to the absolute host path of the existing P-256 signing PEM. Keep it in a private directory outside the checkout and upload tree. The container user (UID/GID 10001) needs read access. Set `VAPID_PUBLIC_KEY` to the matching URL-safe base64 public key and `VAPID_ADMIN_EMAIL` to a contact URI. Reusing the key pair preserves existing subscriptions.
+
+The launch and release scripts include `docker-compose.vapid.yml` when `VAPID_KEY_FILE` is set. For direct Compose commands that create or recreate web, include `-f docker-compose.yml -f docker-compose.vapid.yml` (also include `-f docker-compose.sqlite.yml` for SQLite). For the default PostgreSQL stack on macOS or Linux, setting `COMPOSE_FILE=docker-compose.yml:docker-compose.vapid.yml` in the Docker environment file also enables the secret for direct Compose commands. The secret appears only in web at `/run/secrets/vapid_private_key`.
 
 ## Environment and dependencies
 
@@ -96,7 +104,7 @@ uv run uvicorn schoolStackPro.asgi:application --host 127.0.0.1 --port 8002
 uv run gunicorn schoolStackPro.wsgi:application --bind 127.0.0.1:8002
 ```
 
-Choose the serving entry point appropriate to the deployment; do not start both on the same port. ASGI and WSGI have different media-serving paths. By default static collection writes to sibling `../static_cdn`; uploads use `../media_cdn`. These may require separate filesystem permissions.
+Choose the serving entry point appropriate to the deployment; do not start both on the same port. ASGI and WSGI share the session-authenticated upload route. By default static collection writes to sibling `../static_cdn`; uploads use `../media_cdn`. These may require separate filesystem permissions.
 
 CI/deploy use `collectstatic --noinput --clear`, which clears existing collected assets first. Use that variant only for an intended rebuild of the correct static output directory. The former README's `schoolStackPro:application` entry point did not match the defined ASGI callable; use the explicit module above.
 

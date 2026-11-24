@@ -43,6 +43,21 @@ class ComposeTests(unittest.TestCase):
             self.assertEqual(web["image"], services["storage-init"]["image"])
             self.assertEqual(web["volumes"], services["migrate"]["volumes"])
 
+    def test_optional_vapid_secret(self):
+        self.assertNotIn("secrets", self.config("")["services"]["web"])
+        with tempfile.TemporaryDirectory() as temp:
+            pem = Path(temp) / "private key.pem"
+            pem.touch()
+            config = self.config(f'VAPID_KEY_FILE="{pem}"\nVAPID_PUBLIC_KEY=fixture\n')
+            self.assertEqual(config["secrets"]["vapid_private_key"]["file"], str(pem))
+            web = config["services"]["web"]
+            self.assertEqual(web["secrets"][0]["source"], "vapid_private_key")
+            self.assertEqual(web["environment"]["VAPID_PRIVATE_KEY"], "/run/secrets/vapid_private_key")
+            self.assertEqual(web["environment"]["VAPID_PUBLIC_KEY"], "fixture")
+            for name, service in config["services"].items():
+                if name != "web":
+                    self.assertNotIn("secrets", service)
+
     def test_reference_environment_variables(self):
         settings = ("DB_ENGINE=sqlite\nDATABASE_ENGINE=postgres\nPORT=8127\n"
                     "IMAGE_NAME=schools-web\nAPP_IMAGE_TAG=staging\n"

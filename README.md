@@ -50,22 +50,24 @@ These are source-code capabilities; completeness and end-to-end readiness must b
 
 ## Docker setup with PostgreSQL
 
-Docker Compose runs Django, PostgreSQL 17 and Redis 7 using the Alpine database and cache images. From the repository root, create a dedicated configuration and generate two secrets. Run the generator once for each empty value in the copied file.
+Docker Compose runs Django, PostgreSQL 17 and Redis 7 using the Alpine database and cache images. For a fresh installation, create the repository-root `.env` and generate a separate value for each required secret. Existing installations should retain their database credentials, project name and storage paths.
 
 ```sh
-cp -n .env.docker.example .env.docker
+cp -n .env.example .env
 openssl rand -hex 32
 ```
 
-Set `SECRET_KEY` and `DB_PASSWORD` in `.env.docker`, then start the stack.
+Set `SECRET_KEY` and `DB_PASSWORD` in `.env`, then start the stack.
 
 ```sh
 ./start.sh --db postgres --docker-up
 ```
 
-The launcher reads `.env.docker` by default.
+The launcher, direct Compose commands and controlled releases all default to the repository-root `.env`.
 
 The example stores uploads, application files and PostgreSQL data under `~/docker-apps/schoolstackpro/production/{media,data,postgres}` on the host.
+
+Docker serves uploads from the host directory selected by `MEDIA_DATA_DIR`. Set `MEDIA_URL` to the desired URL prefix (default `/media/`). Users need a signed-in session to open local uploads.
 
 Open [SchoolStack on localhost](http://127.0.0.1:8000/). Set `APP_PORT` in the Docker environment file if port 8000 is occupied. PostgreSQL starts with an empty database on first launch. See the [Docker runbook](COMMANDS.md#docker-compose) for account creation, storage and schema upgrades.
 
@@ -79,7 +81,7 @@ Run from the repository root. Use a disposable development database when evaluat
 uv sync --frozen
 ```
 
-For a fresh checkout, copy the [development template](.env.example) into the repository root and set `SECRET_KEY` to a unique generated value (see [COMMANDS.md](COMMANDS.md)). Keep an existing local file when updating.
+For a fresh checkout, copy the [shared configuration template](.env.example) into the repository root and set `SECRET_KEY` to a unique generated value (see [COMMANDS.md](COMMANDS.md)). Keep an existing local file when updating.
 
 ```sh
 cp -n .env.example .env
@@ -135,7 +137,7 @@ Source of truth: `schoolStackPro/settings.py` and the relevant integration modul
 | `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` | Mail credentials and sender; keep secrets outside docs |
 | `EMAIL_USE_TLS`, `EMAIL_USE_SSL` | Default true/false |
 | `PASSWORD_RESET_TIMEOUT` | Default 86400 seconds |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_ADMIN_EMAIL` | Web push keys and contact URI |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_ADMIN_EMAIL` | Web push keys and contact URI. For a Docker PEM, set `VAPID_KEY_FILE` as described in the [web push runbook](COMMANDS.md#docker-web-push). |
 | `PERFORMANCE_LOG_ENABLED` | Defaults true |
 | `PERFORMANCE_QUERY_LOG_ENABLED` | Defaults to DEBUG |
 | `PERFORMANCE_SLOW_REQUEST_MS`, `PERFORMANCE_QUERY_WARNING_COUNT` | Defaults 800 ms and 50 queries |

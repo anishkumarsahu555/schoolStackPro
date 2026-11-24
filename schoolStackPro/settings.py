@@ -245,7 +245,7 @@ WHITENOISE_AUTOREFRESH = DEBUG
 WHITENOISE_USE_FINDERS = DEBUG
 WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
 
-MEDIA_URL = "/media/"
+MEDIA_URL = os.getenv("MEDIA_URL") or "/media/"
 MEDIA_ROOT = (BASE_DIR / os.getenv("MEDIA_ROOT", "../media_cdn")).resolve()
 
 VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '')

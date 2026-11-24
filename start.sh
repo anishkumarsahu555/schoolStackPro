@@ -7,7 +7,7 @@ usage() {
 Usage: ./start.sh [options]
   --docker-build | --docker-up | --docker-logs | --docker-down
       Build, start and wait for health, follow logs, or stop and retain storage.
-  -e, --env, --env-file FILE   Configuration (Docker default: .env.docker)
+  -e, --env, --env-file FILE   Configuration (Docker default: .env)
   --db postgres|sqlite         PostgreSQL is the Docker default.
   Example: ./start.sh --db postgres --docker-up
   -p, --port PORT              Local listener or Docker published port
@@ -77,7 +77,7 @@ if [[ -n $selected && $selected != /* ]]; then selected="$caller/$selected"; fi
 if [[ -n $action ]]; then
     ((local_options == 0)) || fail 'Docker actions accept --env, --db, --port and --dry-run'
     if [[ -n $port ]]; then export HOST_PORT=$port APP_PORT=$port; fi
-    exec "$repo/scripts/docker-deploy.sh" "$action" "${selected:-${APP_ENV_FILE:-$repo/.env.docker}}" "$backend" "$dry"
+    exec "$repo/scripts/docker-deploy.sh" "$action" "${selected:-${APP_ENV_FILE:-$repo/.env}}" "$backend" "$dry"
 fi
 
 if [[ -n $selected ]]; then

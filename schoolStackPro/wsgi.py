@@ -21,10 +21,6 @@ django_application = get_wsgi_application()
 application = WhiteNoise(django_application)
 
 static_root = Path(settings.STATIC_ROOT)
-media_root = Path(settings.MEDIA_ROOT)
 
 if static_root.exists():
     application.add_files(str(static_root), prefix=settings.STATIC_URL.lstrip('/'))
-
-if media_root.exists():
-    application.add_files(str(media_root), prefix=settings.MEDIA_URL.lstrip('/'))

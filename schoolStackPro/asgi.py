@@ -20,13 +20,11 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'schoolStackPro.settings')
 django_application = get_asgi_application()
 
 
-class StaticMediaASGIWrapper:
+class StaticASGIWrapper:
     def __init__(self, app):
         self.app = app
         self.static_root = Path(settings.STATIC_ROOT)
-        self.media_root = Path(settings.MEDIA_ROOT)
         self.static_prefix = settings.STATIC_URL.rstrip("/") + "/"
-        self.media_prefix = settings.MEDIA_URL.rstrip("/") + "/"
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
@@ -70,8 +68,6 @@ class StaticMediaASGIWrapper:
         request_path = unquote(request_path or "")
         if request_path.startswith(self.static_prefix):
             return self._safe_file(self.static_root, request_path[len(self.static_prefix):])
-        if request_path.startswith(self.media_prefix):
-            return self._safe_file(self.media_root, request_path[len(self.media_prefix):])
         return None
 
     def _safe_file(self, root, relative_path):
@@ -95,4 +91,4 @@ class StaticMediaASGIWrapper:
         return target, (content_type or "application/octet-stream")
 
 
-application = StaticMediaASGIWrapper(django_application)
+application = StaticASGIWrapper(django_application)
