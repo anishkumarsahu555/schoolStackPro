@@ -1,4 +1,4 @@
-const APP_VERSION = 'v1.0.49';
+const APP_VERSION = 'v1.0.50';
 const CACHE_PREFIX = 'schoolstack';
 const CACHE_KEYS = {
     PRECACHE: `${CACHE_PREFIX}-precache-${APP_VERSION}`,

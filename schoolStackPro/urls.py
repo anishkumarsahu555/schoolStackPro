@@ -15,16 +15,22 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
-from django.conf.urls.static import static
+from urllib.parse import urlsplit
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import path, include
+
+from schoolStackPro.health import healthz, livez
+from schoolStackPro.media import uploaded_media
 
 handler403 = "homeApp.views.error_403"
 handler404 = "homeApp.views.error_404"
 handler500 = "homeApp.views.error_500"
 
+
 urlpatterns = [
+    path("livez", livez, name="livez"),
+    path("healthz", healthz, name="healthz"),
     path('admin/', admin.site.urls),
     path('', include(('homeApp.urls', 'homeApp'), namespace='homeApp')),
     path('api/', include(('homeApp.api.urls_api', 'homeApp'), namespace='homeAppAPI')),
@@ -50,8 +56,9 @@ urlpatterns = [
 
 ]
 
-
+media_url = urlsplit(settings.MEDIA_URL)
+if media_url.path.strip("/") and not media_url.netloc and not media_url.scheme:
+    urlpatterns.append(path(media_url.path.strip("/") + "/<path:filename>", uploaded_media))
 
 if settings.DEBUG:
     urlpatterns = urlpatterns + staticfiles_urlpatterns()
-    urlpatterns = urlpatterns + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

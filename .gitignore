@@ -1,12 +1,10 @@
 .idea/
 creds
 .env
+.env.*
+!.env.example
 __pycache__
 .venv
-**/migrations/*.py
-!**/migrations/__init__.py
-managementApp/migrations/0005_staff_access_control.py
-managementApp/migrations/0006_staff_role_permission_report.py
 **/migrations/__pycache__/
 .vscode/
 logs/
@@ -14,12 +12,6 @@ db.sqlite3
 .vscode
 private_key.pem
 public_key.pem
-certificateApp/migrations-ori
-homeApp/migrations-ori
-managementApp/migrations-ori
-studentApp/migrations-ori
-teacherApp/migrations-ori
-financeApp/migrations-ori
-chatApp/migrations-ori
-full_data.json
 
+
+/docker-data/

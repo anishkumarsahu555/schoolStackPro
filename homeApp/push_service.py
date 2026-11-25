@@ -1,5 +1,4 @@
 import json
-import os
 import base64
 import re
 
@@ -91,16 +90,16 @@ def get_school_logo_url(school):
 
 
 def get_vapid_public_key():
-    value = os.getenv('VAPID_PUBLIC_KEY', getattr(settings, 'VAPID_PUBLIC_KEY', '')) or ''
+    value = settings.VAPID_PUBLIC_KEY or ''
     return re.sub(r'\s+', '', value)
 
 
 def get_vapid_private_key():
-    return (os.getenv('VAPID_PRIVATE_KEY', getattr(settings, 'VAPID_PRIVATE_KEY', '')) or '').strip()
+    return (settings.VAPID_PRIVATE_KEY or '').strip()
 
 
 def get_vapid_subject():
-    return (os.getenv('VAPID_ADMIN_EMAIL', getattr(settings, 'VAPID_ADMIN_EMAIL', 'mailto:admin@schoolsstack.in')) or '').strip()
+    return (settings.VAPID_ADMIN_EMAIL or '').strip()
 
 
 def is_valid_vapid_public_key(public_key):
